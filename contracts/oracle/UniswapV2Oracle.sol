@@ -2,12 +2,10 @@
 
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
-
 import './UsingBaseOracle.sol';
 import '../utils/HomoraMath.sol';
-import '../../interfaces/IBaseOracle.sol';
-import '../../interfaces/IUniswapV2Pair.sol';
+import '../interfaces/IBaseOracle.sol';
+import '../interfaces/IUniswapV2Pair.sol';
 
 contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
     using SafeMath for uint256;

@@ -3,10 +3,8 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
-
 import '../Governable.sol';
-import '../../interfaces/IBaseOracle.sol';
+import '../interfaces/IBaseOracle.sol';
 
 interface IStdReference {
     /// A structure returned whenever someone requests for standard reference data.

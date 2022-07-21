@@ -3,15 +3,14 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/IERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
 import '../utils/HomoraMath.sol';
-import '../../interfaces/IUniswapV2Factory.sol';
-import '../../interfaces/IUniswapV2Router02.sol';
-import '../../interfaces/IUniswapV2Pair.sol';
-import '../../interfaces/IWStakingRewards.sol';
+import '../interfaces/IUniswapV2Factory.sol';
+import '../interfaces/IUniswapV2Router02.sol';
+import '../interfaces/IUniswapV2Pair.sol';
+import '../interfaces/IWStakingRewards.sol';
 
 contract UniswapV2SpellV1 is WhitelistSpell {
     using SafeMath for uint256;
@@ -20,7 +19,8 @@ contract UniswapV2SpellV1 is WhitelistSpell {
     IUniswapV2Factory public immutable factory; // Uniswap factory
     IUniswapV2Router02 public immutable router; // Uniswap router
 
-    mapping(address => mapping(address => address)) public pairs; // Mapping from tokenA to (mapping from tokenB to LP token)
+    /// @dev Mapping from tokenA to (mapping from tokenB to LP token)
+    mapping(address => mapping(address => address)) public pairs;
 
     constructor(
         IBank _bank,

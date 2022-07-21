@@ -3,14 +3,10 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
-
 import '../Governable.sol';
-import '../../interfaces/IBaseOracle.sol';
+import '../interfaces/IBaseOracle.sol';
 
 contract AggregatorOracle is IBaseOracle, Governable {
-    using SafeMath for uint256;
-
     event SetPrimarySources(
         address indexed token,
         uint256 maxPriceDeviation,
@@ -25,7 +21,7 @@ contract AggregatorOracle is IBaseOracle, Governable {
     uint256 public constant MIN_PRICE_DEVIATION = 1e18; // min price deviation
     uint256 public constant MAX_PRICE_DEVIATION = 1.5e18; // max price deviation
 
-    constructor() public {
+    constructor() {
         __Governable__init();
     }
 
@@ -128,10 +124,10 @@ contract AggregatorOracle is IBaseOracle, Governable {
             return prices[0]; // if 1 valid source, return
         } else if (validSourceCount == 2) {
             require(
-                prices[1].mul(1e18) / prices[0] <= maxPriceDeviation,
+                (prices[1] * 1e18) / prices[0] <= maxPriceDeviation,
                 'too much deviation (2 valid sources)'
             );
-            return prices[0].add(prices[1]) / 2; // if 2 valid sources, return average
+            return (prices[0] + prices[1]) / 2; // if 2 valid sources, return average
         } else if (validSourceCount == 3) {
             bool midMinOk = prices[1].mul(1e18) / prices[0] <=
                 maxPriceDeviation;

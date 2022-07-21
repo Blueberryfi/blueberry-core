@@ -3,13 +3,12 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/IERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
 import '../utils/HomoraMath.sol';
-import '../../interfaces/IBalancerPool.sol';
-import '../../interfaces/IWStakingRewards.sol';
+import '../interfaces/IBalancerPool.sol';
+import '../interfaces/IWStakingRewards.sol';
 
 contract BalancerSpellV1 is WhitelistSpell {
     using SafeMath for uint256;
@@ -21,7 +20,7 @@ contract BalancerSpellV1 is WhitelistSpell {
         IBank _bank,
         address _werc20,
         address _weth
-    ) public WhitelistSpell(_bank, _werc20, _weth) {}
+    ) WhitelistSpell(_bank, _werc20, _weth) {}
 
     /// @dev Return the underlying pairs for the lp token.
     /// @param lp LP token

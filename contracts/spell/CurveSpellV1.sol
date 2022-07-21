@@ -3,17 +3,15 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/IERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
 import '../utils/HomoraMath.sol';
-import '../../interfaces/ICurvePool.sol';
-import '../../interfaces/ICurveRegistry.sol';
-import '../../interfaces/IWLiquidityGauge.sol';
+import '../interfaces/ICurvePool.sol';
+import '../interfaces/ICurveRegistry.sol';
+import '../interfaces/IWLiquidityGauge.sol';
 
 contract CurveSpellV1 is WhitelistSpell {
-    using SafeMath for uint256;
     using HomoraMath for uint256;
 
     ICurveRegistry public immutable registry; // Curve registry

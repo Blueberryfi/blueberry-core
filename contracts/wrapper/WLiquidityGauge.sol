@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC1155/ERC1155.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/SafeERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/utils/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 import '../Governable.sol';
 import '../utils/HomoraMath.sol';
-import '../../interfaces/IERC20Wrapper.sol';
-import '../../interfaces/ICurveRegistry.sol';
-import '../../interfaces/ILiquidityGauge.sol';
+import '../interfaces/IERC20Wrapper.sol';
+import '../interfaces/ICurveRegistry.sol';
+import '../interfaces/ILiquidityGauge.sol';
 
 interface ILiquidityGaugeMinter {
     function mint(address gauge) external;

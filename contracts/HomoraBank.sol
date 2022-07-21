@@ -2,17 +2,15 @@
 
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/IERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/SafeERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC1155/IERC1155.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/Math.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
+import '@openzeppelin/contracts/utils/math/Math.sol';
 
 import './Governable.sol';
 import './utils/ERC1155NaiveReceiver.sol';
-import '../interfaces/IBank.sol';
-import '../interfaces/ICErc20.sol';
-import '../interfaces/IOracle.sol';
+import './interfaces/IBank.sol';
+import './interfaces/ICErc20.sol';
+import './interfaces/IOracle.sol';
 
 library HomoraSafeMath {
     using SafeMath for uint256;
@@ -96,7 +94,8 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
 
     uint256 public bankStatus; // Each bit stores certain bank status, e.g. borrow allowed, repay allowed
 
-    /// @dev Ensure that the function is called from EOA when allowContractCalls is set to false and caller is not whitelisted
+    /// @dev Ensure that the function is called from EOA
+    /// when allowContractCalls is set to false and caller is not whitelisted
     modifier onlyEOAEx() {
         if (!allowContractCalls && !whitelistedUsers[msg.sender]) {
             require(msg.sender == tx.origin, 'not eoa');

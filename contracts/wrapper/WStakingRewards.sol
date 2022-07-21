@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC1155/ERC1155.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/SafeERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/utils/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 import '../utils/HomoraMath.sol';
-import '../../interfaces/IERC20Wrapper.sol';
-import '../../interfaces/IStakingRewards.sol';
+import '../interfaces/IERC20Wrapper.sol';
+import '../interfaces/IStakingRewards.sol';
 
 contract WStakingRewards is
     ERC1155('WStakingRewards'),

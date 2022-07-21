@@ -3,16 +3,12 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
-
 import '../Governable.sol';
-import '../../interfaces/IOracle.sol';
-import '../../interfaces/IBaseOracle.sol';
-import '../../interfaces/IERC20Wrapper.sol';
+import '../interfaces/IOracle.sol';
+import '../interfaces/IBaseOracle.sol';
+import '../interfaces/IERC20Wrapper.sol';
 
 contract ProxyOracle is IOracle, Governable {
-    using SafeMath for uint256;
-
     /// The governor sets oracle token factor for a token.
     event SetTokenFactor(address indexed token, TokenFactors tokenFactor);
     /// The governor unsets oracle token factor for a token.

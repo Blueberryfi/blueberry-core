@@ -1,9 +1,9 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.2.0/contracts/math/SafeMath.sol';
-
 import '../Governable.sol';
-import '../../interfaces/IBaseOracle.sol';
+import '../interfaces/IBaseOracle.sol';
 
 interface IAggregatorV3Interface {
     function decimals() external view returns (uint8);

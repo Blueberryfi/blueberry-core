@@ -2,12 +2,10 @@
 
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
-
 import './UsingBaseOracle.sol';
 import '../utils/BNum.sol';
-import '../../interfaces/IBaseOracle.sol';
-import '../../interfaces/IBalancerPool.sol';
+import '../interfaces/IBaseOracle.sol';
+import '../interfaces/IBalancerPool.sol';
 
 contract BalancerPairOracle is UsingBaseOracle, IBaseOracle, BNum {
     using SafeMath for uint256;

@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/proxy/Initializable.sol';
+import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 
-import '../../interfaces/IKeep3rV1Oracle.sol';
-import '../../interfaces/IUniswapV2Pair.sol';
+import '../interfaces/IKeep3rV1Oracle.sol';
+import '../interfaces/IUniswapV2Pair.sol';
 
 contract BaseKP3ROracle is Initializable {
     uint256 public constant MIN_TWAP_TIME = 15 minutes;
@@ -15,7 +15,7 @@ contract BaseKP3ROracle is Initializable {
     address public immutable factory;
     address public immutable weth;
 
-    constructor(IKeep3rV1Oracle _kp3r) public {
+    constructor(IKeep3rV1Oracle _kp3r) {
         kp3r = _kp3r;
         factory = _kp3r.factory();
         weth = _kp3r.WETH();

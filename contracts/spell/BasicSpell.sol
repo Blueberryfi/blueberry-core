@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/IERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/SafeERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import '../utils/ERC1155NaiveReceiver.sol';
-import '../../interfaces/IBank.sol';
-import '../../interfaces/IWERC20.sol';
-import '../../interfaces/IWETH.sol';
+import '../interfaces/IBank.sol';
+import '../interfaces/IWERC20.sol';
+import '../interfaces/IWETH.sol';
 
 abstract contract BasicSpell is ERC1155NaiveReceiver {
     using SafeERC20 for IERC20;
@@ -17,13 +17,14 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
     IWERC20 public immutable werc20;
     address public immutable weth;
 
-    mapping(address => mapping(address => bool)) public approved; // Mapping from token to (mapping from spender to approve status)
+    /// @dev Mapping from token to (mapping from spender to approve status)
+    mapping(address => mapping(address => bool)) public approved;
 
     constructor(
         IBank _bank,
         address _werc20,
         address _weth
-    ) public {
+    ) {
         bank = _bank;
         werc20 = IWERC20(_werc20);
         weth = _weth;
@@ -37,7 +38,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
     /// NOTE: This is safe because spell is never built to hold fund custody.
     function ensureApprove(address token, address spender) internal {
         if (!approved[token][spender]) {
-            IERC20(token).safeApprove(spender, uint256(-1));
+            IERC20(token).safeApprove(spender, type(uint256).max);
             approved[token][spender] = true;
         }
     }
