@@ -11,14 +11,13 @@ import '../interfaces/IERC20Wrapper.sol';
 import '../interfaces/IMasterChef.sol';
 
 contract WMasterChef is ERC1155('WMasterChef'), ReentrancyGuard, IERC20Wrapper {
-    using SafeMath for uint256;
     using HomoraMath for uint256;
     using SafeERC20 for IERC20;
 
     IMasterChef public immutable chef; // Sushiswap masterChef
     IERC20 public immutable sushi; // Sushi token
 
-    constructor(IMasterChef _chef) public {
+    constructor(IMasterChef _chef) {
         chef = _chef;
         sushi = IERC20(_chef.sushi());
     }
@@ -63,7 +62,7 @@ contract WMasterChef is ERC1155('WMasterChef'), ReentrancyGuard, IERC20Wrapper {
     /// @dev Return the conversion rate from ERC-1155 to ERC-20, multiplied by 2**112.
     function getUnderlyingRate(uint256)
         external
-        view
+        pure
         override
         returns (uint256)
     {
@@ -83,10 +82,10 @@ contract WMasterChef is ERC1155('WMasterChef'), ReentrancyGuard, IERC20Wrapper {
         IERC20(lpToken).safeTransferFrom(msg.sender, address(this), amount);
         if (
             IERC20(lpToken).allowance(address(this), address(chef)) !=
-            uint256(-1)
+            type(uint256).max
         ) {
             // We only need to do this once per pool, as LP token's allowance won't decrease if it's -1.
-            IERC20(lpToken).safeApprove(address(chef), uint256(-1));
+            IERC20(lpToken).safeApprove(address(chef), type(uint256).max);
         }
         chef.deposit(pid, amount);
         (, , , uint256 sushiPerShare) = chef.poolInfo(pid);
@@ -104,7 +103,7 @@ contract WMasterChef is ERC1155('WMasterChef'), ReentrancyGuard, IERC20Wrapper {
         nonReentrant
         returns (uint256)
     {
-        if (amount == uint256(-1)) {
+        if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
         }
         (uint256 pid, uint256 stSushiPerShare) = decodeId(id);
@@ -112,10 +111,10 @@ contract WMasterChef is ERC1155('WMasterChef'), ReentrancyGuard, IERC20Wrapper {
         chef.withdraw(pid, amount);
         (address lpToken, , , uint256 enSushiPerShare) = chef.poolInfo(pid);
         IERC20(lpToken).safeTransfer(msg.sender, amount);
-        uint256 stSushi = stSushiPerShare.mul(amount).divCeil(1e12);
-        uint256 enSushi = enSushiPerShare.mul(amount).div(1e12);
+        uint256 stSushi = (stSushiPerShare * amount).divCeil(1e12);
+        uint256 enSushi = (enSushiPerShare * amount) / 1e12;
         if (enSushi > stSushi) {
-            sushi.safeTransfer(msg.sender, enSushi.sub(stSushi));
+            sushi.safeTransfer(msg.sender, enSushi - stSushi);
         }
         return pid;
     }

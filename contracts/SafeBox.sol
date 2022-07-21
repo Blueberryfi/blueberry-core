@@ -10,7 +10,6 @@ import './Governable.sol';
 import './interfaces/ICErc20.sol';
 
 contract SafeBox is Governable, ERC20, ReentrancyGuard {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
     event Claim(address user, uint256 amount);
 
@@ -25,14 +24,17 @@ contract SafeBox is Governable, ERC20, ReentrancyGuard {
         ICErc20 _cToken,
         string memory _name,
         string memory _symbol
-    ) public ERC20(_name, _symbol) {
-        _setupDecimals(_cToken.decimals());
+    ) ERC20(_name, _symbol) {
         IERC20 _uToken = IERC20(_cToken.underlying());
         __Governable__init();
         cToken = _cToken;
         uToken = _uToken;
         relayer = msg.sender;
-        _uToken.safeApprove(address(_cToken), uint256(-1));
+        _uToken.safeApprove(address(_cToken), type(uint256).max);
+    }
+
+    function decimals() public view override returns (uint8) {
+        return cToken.decimals();
     }
 
     function setRelayer(address _relayer) external onlyGov {
@@ -49,9 +51,9 @@ contract SafeBox is Governable, ERC20, ReentrancyGuard {
         uToken.safeTransferFrom(msg.sender, address(this), amount);
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
         uint256 cBalanceBefore = cToken.balanceOf(address(this));
-        require(cToken.mint(uBalanceAfter.sub(uBalanceBefore)) == 0, '!mint');
+        require(cToken.mint(uBalanceAfter - uBalanceBefore) == 0, '!mint');
         uint256 cBalanceAfter = cToken.balanceOf(address(this));
-        _mint(msg.sender, cBalanceAfter.sub(cBalanceBefore));
+        _mint(msg.sender, cBalanceAfter - cBalanceBefore);
     }
 
     function withdraw(uint256 amount) public nonReentrant {
@@ -59,7 +61,7 @@ contract SafeBox is Governable, ERC20, ReentrancyGuard {
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         require(cToken.redeem(amount) == 0, '!redeem');
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
-        uToken.safeTransfer(msg.sender, uBalanceAfter.sub(uBalanceBefore));
+        uToken.safeTransfer(msg.sender, uBalanceAfter - uBalanceBefore);
     }
 
     function claim(uint256 totalAmount, bytes32[] memory proof)
@@ -68,7 +70,7 @@ contract SafeBox is Governable, ERC20, ReentrancyGuard {
     {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, totalAmount));
         require(MerkleProof.verify(proof, root, leaf), '!proof');
-        uint256 send = totalAmount.sub(claimed[msg.sender]);
+        uint256 send = totalAmount - claimed[msg.sender];
         claimed[msg.sender] = totalAmount;
         uToken.safeTransfer(msg.sender, send);
         emit Claim(msg.sender, send);

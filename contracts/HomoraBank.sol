@@ -13,11 +13,9 @@ import './interfaces/ICErc20.sol';
 import './interfaces/IOracle.sol';
 
 library HomoraSafeMath {
-    using SafeMath for uint256;
-
     /// @dev Computes round-up division.
     function ceilDiv(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a.add(b).sub(1).div(b);
+        return (a + b - 1) / b;
     }
 }
 
@@ -45,13 +43,12 @@ contract HomoraCaster {
 }
 
 contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
-    using SafeMath for uint256;
     using HomoraSafeMath for uint256;
     using SafeERC20 for IERC20;
 
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
-    uint256 private constant _NO_ID = uint256(-1);
+    uint256 private constant _NO_ID = type(uint256).max;
     address private constant _NO_ADDRESS = address(1);
 
     struct Bank {
@@ -243,9 +240,9 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         uint256 totalDebt = bank.totalDebt;
         uint256 debt = ICErc20(bank.cToken).borrowBalanceCurrent(address(this));
         if (debt > totalDebt) {
-            uint256 fee = debt.sub(totalDebt).mul(feeBps).div(10000);
+            uint256 fee = ((debt - totalDebt) * feeBps) / 10000;
             bank.totalDebt = debt;
-            bank.reserve = bank.reserve.add(doBorrow(token, fee));
+            bank.reserve += doBorrow(token, fee);
         } else if (totalDebt != debt) {
             // We should never reach here because CREAMv2 does not support *repayBorrowBehalf*
             // functionality. We set bank.totalDebt = debt nonetheless to ensure consistency. But do
@@ -278,7 +275,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         if (share == 0 || totalDebt == 0) {
             return 0;
         } else {
-            return share.mul(totalDebt).ceilDiv(totalShare);
+            return (share * totalDebt).ceilDiv(totalShare);
         }
     }
 
@@ -388,9 +385,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
                 address token = allBanks[idx];
                 Bank storage bank = banks[token];
                 tokens[count] = token;
-                debts[count] = pos
-                    .debtShareOf[token]
-                    .mul(bank.totalDebt)
+                debts[count] = (pos.debtShareOf[token] * bank.totalDebt)
                     .ceilDiv(bank.totalShare);
                 count++;
             }
@@ -440,10 +435,10 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
                 address token = allBanks[idx];
                 uint256 share = pos.debtShareOf[token];
                 Bank storage bank = banks[token];
-                uint256 debt = share.mul(bank.totalDebt).ceilDiv(
+                uint256 debt = (share * bank.totalDebt).ceilDiv(
                     bank.totalShare
                 );
-                value = value.add(oracle.asETHBorrow(token, debt, owner));
+                value += oracle.asETHBorrow(token, debt, owner);
             }
             idx++;
             bitMap >>= 1;
@@ -464,7 +459,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         bank.index = uint8(allBanks.length);
         bank.cToken = cToken;
         IERC20(token).safeApprove(cToken, 0);
-        IERC20(token).safeApprove(cToken, uint256(-1));
+        IERC20(token).safeApprove(cToken, type(uint256).max);
         allBanks.push(token);
         emit AddBank(token, cToken);
     }
@@ -497,7 +492,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
     {
         Bank storage bank = banks[token];
         require(bank.isListed, 'bank not exist');
-        bank.reserve = bank.reserve.sub(amount);
+        bank.reserve -= amount;
         IERC20(token).safeTransfer(msg.sender, amount);
         emit WithdrawReserve(msg.sender, token, amount);
     }
@@ -530,7 +525,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
             ),
             pos.collateralSize
         );
-        pos.collateralSize = pos.collateralSize.sub(bounty);
+        pos.collateralSize -= bounty;
         IERC1155(pos.collToken).safeTransferFrom(
             address(this),
             msg.sender,
@@ -596,9 +591,9 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         uint256 totalDebt = bank.totalDebt;
         uint256 share = totalShare == 0
             ? amount
-            : amount.mul(totalShare).ceilDiv(totalDebt);
-        bank.totalShare = bank.totalShare.add(share);
-        uint256 newShare = pos.debtShareOf[token].add(share);
+            : (amount * totalShare).ceilDiv(totalDebt);
+        bank.totalShare += share;
+        uint256 newShare = pos.debtShareOf[token] + share;
         pos.debtShareOf[token] = newShare;
         if (newShare > 0) {
             pos.debtMap |= (1 << uint256(bank.index));
@@ -640,17 +635,17 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         uint256 totalShare = bank.totalShare;
         uint256 totalDebt = bank.totalDebt;
         uint256 oldShare = pos.debtShareOf[token];
-        uint256 oldDebt = oldShare.mul(totalDebt).ceilDiv(totalShare);
-        if (amountCall == uint256(-1)) {
+        uint256 oldDebt = (oldShare * totalDebt).ceilDiv(totalShare);
+        if (amountCall == type(uint256).max) {
             amountCall = oldDebt;
         }
         uint256 paid = doRepay(token, doERC20TransferIn(token, amountCall));
         require(paid <= oldDebt, 'paid exceeds debt'); // prevent share overflow attack
         uint256 lessShare = paid == oldDebt
             ? oldShare
-            : paid.mul(totalShare).div(totalDebt);
-        bank.totalShare = totalShare.sub(lessShare);
-        uint256 newShare = oldShare.sub(lessShare);
+            : (paid * totalShare) / totalDebt;
+        bank.totalShare = totalShare - lessShare;
+        uint256 newShare = oldShare - lessShare;
         pos.debtShareOf[token] = newShare;
         if (newShare == 0) {
             pos.debtMap &= ~(1 << uint256(bank.index));
@@ -689,7 +684,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
             pos.collId = collId;
         }
         uint256 amount = doERC1155TransferIn(collToken, collId, amountCall);
-        pos.collateralSize = pos.collateralSize.add(amount);
+        pos.collateralSize += amount;
         emit PutCollateral(POSITION_ID, msg.sender, collToken, collId, amount);
     }
 
@@ -705,10 +700,10 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         Position storage pos = positions[POSITION_ID];
         require(collToken == pos.collToken, 'invalid collateral token');
         require(collId == pos.collId, 'invalid collateral token');
-        if (amount == uint256(-1)) {
+        if (amount == type(uint256).max) {
             amount = pos.collateralSize;
         }
-        pos.collateralSize = pos.collateralSize.sub(amount);
+        pos.collateralSize -= amount;
         IERC1155(collToken).safeTransferFrom(
             address(this),
             msg.sender,
@@ -731,8 +726,8 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         require(ICErc20(bank.cToken).borrow(amountCall) == 0, 'bad borrow');
         uint256 balanceAfter = IERC20(token).balanceOf(address(this));
-        bank.totalDebt = bank.totalDebt.add(amountCall);
-        return balanceAfter.sub(balanceBefore);
+        bank.totalDebt += amountCall;
+        return balanceAfter - balanceBefore;
     }
 
     /// @dev Internal function to perform repay to the bank and return the amount actually repaid.
@@ -749,7 +744,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         require(cToken.repayBorrow(amountCall) == 0, 'bad repay');
         uint256 newDebt = cToken.borrowBalanceStored(address(this));
         bank.totalDebt = newDebt;
-        return oldDebt.sub(newDebt);
+        return oldDebt - newDebt;
     }
 
     /// @dev Internal function to perform ERC20 transfer in and return amount actually received.
@@ -762,7 +757,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(msg.sender, address(this), amountCall);
         uint256 balanceAfter = IERC20(token).balanceOf(address(this));
-        return balanceAfter.sub(balanceBefore);
+        return balanceAfter - balanceBefore;
     }
 
     /// @dev Internal function to perform ERC1155 transfer in and return amount actually received.
@@ -783,6 +778,6 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
             ''
         );
         uint256 balanceAfter = IERC1155(token).balanceOf(address(this), id);
-        return balanceAfter.sub(balanceBefore);
+        return balanceAfter - balanceBefore;
     }
 }

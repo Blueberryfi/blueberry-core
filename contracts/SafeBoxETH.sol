@@ -23,14 +23,17 @@ contract SafeBoxETH is Governable, ERC20, ReentrancyGuard {
         ICErc20 _cToken,
         string memory _name,
         string memory _symbol
-    ) public ERC20(_name, _symbol) {
-        _setupDecimals(_cToken.decimals());
+    ) ERC20(_name, _symbol) {
         IWETH _weth = IWETH(_cToken.underlying());
         __Governable__init();
         cToken = _cToken;
         weth = _weth;
         relayer = msg.sender;
-        _weth.approve(address(_cToken), uint256(-1));
+        _weth.approve(address(_cToken), type(uint256).max);
+    }
+
+    function decimals() public view override returns (uint8) {
+        return cToken.decimals();
     }
 
     function setRelayer(address _relayer) external onlyGov {
@@ -47,7 +50,7 @@ contract SafeBoxETH is Governable, ERC20, ReentrancyGuard {
         uint256 cBalanceBefore = cToken.balanceOf(address(this));
         require(cToken.mint(msg.value) == 0, '!mint');
         uint256 cBalanceAfter = cToken.balanceOf(address(this));
-        _mint(msg.sender, cBalanceAfter.sub(cBalanceBefore));
+        _mint(msg.sender, cBalanceAfter - cBalanceBefore);
     }
 
     function withdraw(uint256 amount) public nonReentrant {
@@ -55,7 +58,7 @@ contract SafeBoxETH is Governable, ERC20, ReentrancyGuard {
         uint256 wethBalanceBefore = weth.balanceOf(address(this));
         require(cToken.redeem(amount) == 0, '!redeem');
         uint256 wethBalanceAfter = weth.balanceOf(address(this));
-        uint256 wethAmount = wethBalanceAfter.sub(wethBalanceBefore);
+        uint256 wethAmount = wethBalanceAfter - wethBalanceBefore;
         weth.withdraw(wethAmount);
         (bool success, ) = msg.sender.call{value: wethAmount}(new bytes(0));
         require(success, '!withdraw');
@@ -67,7 +70,7 @@ contract SafeBoxETH is Governable, ERC20, ReentrancyGuard {
     {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, totalAmount));
         require(MerkleProof.verify(proof, root, leaf), '!proof');
-        uint256 send = totalAmount.sub(claimed[msg.sender]);
+        uint256 send = totalAmount - claimed[msg.sender];
         claimed[msg.sender] = totalAmount;
         weth.withdraw(send);
         (bool success, ) = msg.sender.call{value: send}(new bytes(0));

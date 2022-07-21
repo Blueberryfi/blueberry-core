@@ -25,7 +25,7 @@ contract CurveSpellV1 is WhitelistSpell {
         address _werc20,
         address _weth,
         address _wgauge
-    ) public WhitelistSpell(_bank, _werc20, _weth) {
+    ) WhitelistSpell(_bank, _werc20, _weth) {
         wgauge = IWLiquidityGauge(_wgauge);
         IWLiquidityGauge(_wgauge).setApprovalForAll(address(_bank), true);
         registry = IWLiquidityGauge(_wgauge).registry();
@@ -348,13 +348,13 @@ contract CurveSpellV1 is WhitelistSpell {
         // 1. Compute repay amount if MAX_INT is supplied (max debt)
         uint256[2] memory actualAmtsRepay;
         for (uint256 i = 0; i < 2; i++) {
-            actualAmtsRepay[i] = amtsRepay[i] == uint256(-1)
+            actualAmtsRepay[i] = amtsRepay[i] == type(uint256).max
                 ? bank.borrowBalanceCurrent(positionId, tokens[i])
                 : amtsRepay[i];
         }
         uint256[2] memory amtsDesired;
         for (uint256 i = 0; i < 2; i++) {
-            amtsDesired[i] = actualAmtsRepay[i].add(amtsMin[i]); // repay amt + slippage control
+            amtsDesired[i] = actualAmtsRepay[i] + amtsMin[i]; // repay amt + slippage control
         }
 
         // 2. Take out collateral
@@ -364,9 +364,7 @@ contract CurveSpellV1 is WhitelistSpell {
         // 3. Compute amount to actually remove. Remove to repay just enough
         uint256 amtLPToRemove;
         if (amtsDesired[0] > 0 || amtsDesired[1] > 0) {
-            amtLPToRemove = IERC20(lp).balanceOf(address(this)).sub(
-                amtLPWithdraw
-            );
+            amtLPToRemove = IERC20(lp).balanceOf(address(this)) - amtLPWithdraw;
             ICurvePool(pool).remove_liquidity_imbalance(
                 amtsDesired,
                 amtLPToRemove
@@ -374,7 +372,7 @@ contract CurveSpellV1 is WhitelistSpell {
         }
 
         // 4. Compute leftover amount to remove. Remove balancedly.
-        amtLPToRemove = IERC20(lp).balanceOf(address(this)).sub(amtLPWithdraw);
+        amtLPToRemove = IERC20(lp).balanceOf(address(this)) - amtLPWithdraw;
         if (amtLPToRemove > 0) {
             uint256[2] memory mins;
             ICurvePool(pool).remove_liquidity(amtLPToRemove, mins);
@@ -432,13 +430,13 @@ contract CurveSpellV1 is WhitelistSpell {
         // 1. Compute repay amount if MAX_INT is supplied (max debt)
         uint256[3] memory actualAmtsRepay;
         for (uint256 i = 0; i < 3; i++) {
-            actualAmtsRepay[i] = amtsRepay[i] == uint256(-1)
+            actualAmtsRepay[i] = amtsRepay[i] == type(uint256).max
                 ? bank.borrowBalanceCurrent(positionId, tokens[i])
                 : amtsRepay[i];
         }
         uint256[3] memory amtsDesired;
         for (uint256 i = 0; i < 3; i++) {
-            amtsDesired[i] = actualAmtsRepay[i].add(amtsMin[i]); // repay amt + slippage control
+            amtsDesired[i] = actualAmtsRepay[i] + amtsMin[i]; // repay amt + slippage control
         }
 
         // 2. Take out collateral
@@ -448,9 +446,7 @@ contract CurveSpellV1 is WhitelistSpell {
         // 3. Compute amount to actually remove. Remove to repay just enough
         uint256 amtLPToRemove;
         if (amtsDesired[0] > 0 || amtsDesired[1] > 0 || amtsDesired[2] > 0) {
-            amtLPToRemove = IERC20(lp).balanceOf(address(this)).sub(
-                amtLPWithdraw
-            );
+            amtLPToRemove = IERC20(lp).balanceOf(address(this)) - amtLPWithdraw;
             ICurvePool(pool).remove_liquidity_imbalance(
                 amtsDesired,
                 amtLPToRemove
@@ -458,7 +454,7 @@ contract CurveSpellV1 is WhitelistSpell {
         }
 
         // 4. Compute leftover amount to remove. Remove balancedly.
-        amtLPToRemove = IERC20(lp).balanceOf(address(this)).sub(amtLPWithdraw);
+        amtLPToRemove = IERC20(lp).balanceOf(address(this)) - amtLPWithdraw;
         if (amtLPToRemove > 0) {
             uint256[3] memory mins;
             ICurvePool(pool).remove_liquidity(amtLPToRemove, mins);
@@ -517,13 +513,13 @@ contract CurveSpellV1 is WhitelistSpell {
         // 1. Compute repay amount if MAX_INT is supplied (max debt)
         uint256[4] memory actualAmtsRepay;
         for (uint256 i = 0; i < 4; i++) {
-            actualAmtsRepay[i] = amtsRepay[i] == uint256(-1)
+            actualAmtsRepay[i] = amtsRepay[i] == type(uint256).max
                 ? bank.borrowBalanceCurrent(positionId, tokens[i])
                 : amtsRepay[i];
         }
         uint256[4] memory amtsDesired;
         for (uint256 i = 0; i < 4; i++) {
-            amtsDesired[i] = actualAmtsRepay[i].add(amtsMin[i]); // repay amt + slippage control
+            amtsDesired[i] = actualAmtsRepay[i] + amtsMin[i]; // repay amt + slippage control
         }
 
         // 2. Take out collateral
@@ -538,9 +534,7 @@ contract CurveSpellV1 is WhitelistSpell {
             amtsDesired[2] > 0 ||
             amtsDesired[3] > 0
         ) {
-            amtLPToRemove = IERC20(lp).balanceOf(address(this)).sub(
-                amtLPWithdraw
-            );
+            amtLPToRemove = IERC20(lp).balanceOf(address(this)) - amtLPWithdraw;
             ICurvePool(pool).remove_liquidity_imbalance(
                 amtsDesired,
                 amtLPToRemove
@@ -548,7 +542,7 @@ contract CurveSpellV1 is WhitelistSpell {
         }
 
         // 4. Compute leftover amount to remove. Remove balancedly.
-        amtLPToRemove = IERC20(lp).balanceOf(address(this)).sub(amtLPWithdraw);
+        amtLPToRemove = IERC20(lp).balanceOf(address(this)) - amtLPWithdraw;
         if (amtLPToRemove > 0) {
             uint256[4] memory mins;
             ICurvePool(pool).remove_liquidity(amtLPToRemove, mins);

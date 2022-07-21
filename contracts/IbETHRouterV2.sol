@@ -83,7 +83,7 @@ contract IbETHRouterV2 {
         IERC20 _alpha,
         IbETHRouterV2IbETHv2 _ibETHv2,
         IbETHRouterV2UniswapRouter _router
-    ) public {
+    ) {
         IbETHRouterV2UniswapPair _lpToken = IbETHRouterV2UniswapPair(
             IbETHRouterV2UniswapFactory(_router.factory()).getPair(
                 address(_alpha),
@@ -94,9 +94,9 @@ contract IbETHRouterV2 {
         ibETHv2 = _ibETHv2;
         lpToken = _lpToken;
         router = _router;
-        IERC20(_alpha).safeApprove(address(_router), uint256(-1));
-        IERC20(_ibETHv2).safeApprove(address(_router), uint256(-1));
-        IERC20(_lpToken).safeApprove(address(_router), uint256(-1));
+        IERC20(_alpha).safeApprove(address(_router), type(uint256).max);
+        IERC20(_ibETHv2).safeApprove(address(_router), type(uint256).max);
+        IERC20(_lpToken).safeApprove(address(_router), type(uint256).max);
     }
 
     function optimalDeposit(

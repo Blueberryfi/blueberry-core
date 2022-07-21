@@ -22,7 +22,6 @@ contract WLiquidityGauge is
     IERC20Wrapper,
     Governable
 {
-    using SafeMath for uint256;
     using HomoraMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -33,9 +32,10 @@ contract WLiquidityGauge is
 
     ICurveRegistry public immutable registry; // Curve registry
     IERC20 public immutable crv; // CRV token
-    mapping(uint256 => mapping(uint256 => GaugeInfo)) public gauges; // Mapping from pool id to (mapping from gauge id to GaugeInfo)
+    /// @dev Mapping from pool id to (mapping from gauge id to GaugeInfo)
+    mapping(uint256 => mapping(uint256 => GaugeInfo)) public gauges;
 
-    constructor(ICurveRegistry _registry, IERC20 _crv) public {
+    constructor(ICurveRegistry _registry, IERC20 _crv) {
         __Governable__init();
         registry = _registry;
         crv = _crv;
@@ -100,7 +100,7 @@ contract WLiquidityGauge is
     /// @dev Return the conversion rate from ERC-1155 to ERC-20, multiplied by 2**112.
     function getUnderlyingRate(uint256)
         external
-        view
+        pure
         override
         returns (uint256)
     {
@@ -122,7 +122,7 @@ contract WLiquidityGauge is
         require(gauge != address(0), 'no gauge');
         IERC20 lpToken = IERC20(ILiquidityGauge(gauge).lp_token());
         lpToken.approve(gauge, 0);
-        lpToken.approve(gauge, uint256(-1));
+        lpToken.approve(gauge, type(uint256).max);
         gauges[pid][gid] = GaugeInfo({
             impl: ILiquidityGauge(gauge),
             accCrvPerShare: 0
@@ -158,7 +158,7 @@ contract WLiquidityGauge is
         nonReentrant
         returns (uint256)
     {
-        if (amount == uint256(-1)) {
+        if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
         }
         (uint256 pid, uint256 gid, uint256 stCrvPerShare) = decodeId(id);
@@ -169,10 +169,10 @@ contract WLiquidityGauge is
         mintCrv(gauge);
         impl.withdraw(amount);
         IERC20(impl.lp_token()).safeTransfer(msg.sender, amount);
-        uint256 stCrv = stCrvPerShare.mul(amount).divCeil(1e18);
-        uint256 enCrv = gauge.accCrvPerShare.mul(amount).div(1e18);
+        uint256 stCrv = (stCrvPerShare * amount).divCeil(1e18);
+        uint256 enCrv = (gauge.accCrvPerShare * amount) / 1e18;
         if (enCrv > stCrv) {
-            crv.safeTransfer(msg.sender, enCrv.sub(stCrv));
+            crv.safeTransfer(msg.sender, enCrv - stCrv);
         }
         return pid;
     }
@@ -184,12 +184,10 @@ contract WLiquidityGauge is
         uint256 balanceBefore = crv.balanceOf(address(this));
         ILiquidityGaugeMinter(impl.minter()).mint(address(impl));
         uint256 balanceAfter = crv.balanceOf(address(this));
-        uint256 gain = balanceAfter.sub(balanceBefore);
+        uint256 gain = balanceAfter - balanceBefore;
         uint256 supply = impl.balanceOf(address(this));
         if (gain > 0 && supply > 0) {
-            gauge.accCrvPerShare = gauge.accCrvPerShare.add(
-                gain.mul(1e18).div(supply)
-            );
+            gauge.accCrvPerShare += (gain * 1e18) / supply;
         }
     }
 }

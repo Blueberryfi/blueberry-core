@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.9;
 
 interface MockUniswapV2Router02IUniswapV2Factory {
@@ -140,9 +142,9 @@ interface MockUniswapV2Router02IUniswapV2Pair {
 }
 
 interface MockUniswapV2Router02IUniswapV2Router01 {
-    function factory() external pure returns (address);
+    function factory() external view returns (address);
 
-    function WETH() external pure returns (address);
+    function WETH() external view returns (address);
 
     function addLiquidity(
         address tokenA,
@@ -400,7 +402,7 @@ contract MockUniswapV2Router02 is MockUniswapV2Router02IUniswapV2Router02 {
         _;
     }
 
-    constructor(address _factory, address _WETH) public {
+    constructor(address _factory, address _WETH) {
         factory = _factory;
         WETH = _WETH;
     }
@@ -656,7 +658,7 @@ contract MockUniswapV2Router02 is MockUniswapV2Router02IUniswapV2Router02 {
             tokenA,
             tokenB
         );
-        uint256 value = approveMax ? uint256(-1) : liquidity;
+        uint256 value = approveMax ? type(uint256).max : liquidity;
         MockUniswapV2Router02IUniswapV2Pair(pair).permit(
             msg.sender,
             address(this),
@@ -699,7 +701,7 @@ contract MockUniswapV2Router02 is MockUniswapV2Router02IUniswapV2Router02 {
             token,
             WETH
         );
-        uint256 value = approveMax ? uint256(-1) : liquidity;
+        uint256 value = approveMax ? type(uint256).max : liquidity;
         MockUniswapV2Router02IUniswapV2Pair(pair).permit(
             msg.sender,
             address(this),
@@ -763,7 +765,7 @@ contract MockUniswapV2Router02 is MockUniswapV2Router02IUniswapV2Router02 {
             token,
             WETH
         );
-        uint256 value = approveMax ? uint256(-1) : liquidity;
+        uint256 value = approveMax ? type(uint256).max : liquidity;
         MockUniswapV2Router02IUniswapV2Pair(pair).permit(
             msg.sender,
             address(this),

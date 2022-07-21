@@ -11,7 +11,6 @@ import '../interfaces/IBalancerPool.sol';
 import '../interfaces/IWStakingRewards.sol';
 
 contract BalancerSpellV1 is WhitelistSpell {
-    using SafeMath for uint256;
     using HomoraMath for uint256;
 
     mapping(address => address[2]) public pairs; // Mapping from lp token to underlying token (only pairs)
@@ -75,16 +74,12 @@ contract BalancerSpellV1 is WhitelistSpell {
         maxAmountsIn[0] = IERC20(tokenA).balanceOf(address(this));
         maxAmountsIn[1] = IERC20(tokenB).balanceOf(address(this));
         uint256 totalLPSupply = IBalancerPool(lp).totalSupply();
-        uint256 poolAmountFromA = maxAmountsIn[0]
-            .mul(1e18)
-            .div(IBalancerPool(lp).getBalance(tokenA))
-            .mul(totalLPSupply)
-            .div(1e18); // compute in reverse order of how Balancer's `joinPool` computes tokenAmountIn
-        uint256 poolAmountFromB = maxAmountsIn[1]
-            .mul(1e18)
-            .div(IBalancerPool(lp).getBalance(tokenB))
-            .mul(totalLPSupply)
-            .div(1e18); // compute in reverse order of how Balancer's `joinPool` computes tokenAmountIn
+        // compute in reverse order of how Balancer's `joinPool` computes tokenAmountIn
+        uint256 poolAmountFromA = (maxAmountsIn[0] * totalLPSupply) /
+            IBalancerPool(lp).getBalance(tokenA);
+        // compute in reverse order of how Balancer's `joinPool` computes tokenAmountIn
+        uint256 poolAmountFromB = (maxAmountsIn[1] * totalLPSupply) /
+            IBalancerPool(lp).getBalance(tokenB);
 
         uint256 poolAmountOut = poolAmountFromA > poolAmountFromB
             ? poolAmountFromB
@@ -202,21 +197,20 @@ contract BalancerSpellV1 is WhitelistSpell {
         // 2. Compute repay amount if MAX_INT is supplied (max debt)
         {
             uint256 positionId = bank.POSITION_ID();
-            if (amtARepay == uint256(-1)) {
+            if (amtARepay == type(uint256).max) {
                 amtARepay = bank.borrowBalanceCurrent(positionId, tokenA);
             }
-            if (amtBRepay == uint256(-1)) {
+            if (amtBRepay == type(uint256).max) {
                 amtBRepay = bank.borrowBalanceCurrent(positionId, tokenB);
             }
-            if (amtLPRepay == uint256(-1)) {
+            if (amtLPRepay == type(uint256).max) {
                 amtLPRepay = bank.borrowBalanceCurrent(positionId, lp);
             }
         }
 
         // 3.1 Remove liquidity 2 sides
-        uint256 amtLPToRemove = IERC20(lp).balanceOf(address(this)).sub(
-            amt.amtLPWithdraw
-        );
+        uint256 amtLPToRemove = IERC20(lp).balanceOf(address(this)) -
+            amt.amtLPWithdraw;
 
         if (amtLPToRemove > 0) {
             uint256[] memory minAmountsOut = new uint256[](2);
@@ -224,8 +218,8 @@ contract BalancerSpellV1 is WhitelistSpell {
         }
 
         // 3.2 Minimize trading
-        uint256 amtADesired = amtARepay.add(amt.amtAMin);
-        uint256 amtBDesired = amtBRepay.add(amt.amtBMin);
+        uint256 amtADesired = amtARepay + amt.amtAMin;
+        uint256 amtBDesired = amtBRepay + amt.amtBMin;
 
         uint256 amtA = IERC20(tokenA).balanceOf(address(this));
         uint256 amtB = IERC20(tokenB).balanceOf(address(this));
@@ -233,18 +227,18 @@ contract BalancerSpellV1 is WhitelistSpell {
         if (amtA < amtADesired && amtB > amtBDesired) {
             IBalancerPool(lp).swapExactAmountOut(
                 tokenB,
-                amtB.sub(amtBDesired),
+                amtB - amtBDesired,
                 tokenA,
-                amtADesired.sub(amtA),
-                uint256(-1)
+                amtADesired - amtA,
+                type(uint256).max
             );
         } else if (amtA > amtADesired && amtB < amtBDesired) {
             IBalancerPool(lp).swapExactAmountOut(
                 tokenA,
-                amtA.sub(amtADesired),
+                amtA - amtADesired,
                 tokenB,
-                amtBDesired.sub(amtB),
-                uint256(-1)
+                amtBDesired - amtB,
+                type(uint256).max
             );
         }
 
@@ -319,8 +313,8 @@ contract BalancerSpellV1 is WhitelistSpell {
         );
 
         // 1. Take out collateral
-        bank.takeCollateral(wstaking, collId, uint256(-1));
-        IWStakingRewards(wstaking).burn(collId, uint256(-1));
+        bank.takeCollateral(wstaking, collId, type(uint256).max);
+        IWStakingRewards(wstaking).burn(collId, type(uint256).max);
 
         // 2. put collateral
         uint256 amount = IERC20(lp).balanceOf(address(this));

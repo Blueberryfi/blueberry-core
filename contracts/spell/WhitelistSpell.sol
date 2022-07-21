@@ -12,7 +12,7 @@ contract WhitelistSpell is BasicSpell, Governable {
         IBank _bank,
         address _werc20,
         address _weth
-    ) public BasicSpell(_bank, _werc20, _weth) {
+    ) BasicSpell(_bank, _werc20, _weth) {
         __Governable__init();
     }
 

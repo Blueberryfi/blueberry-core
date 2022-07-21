@@ -3,7 +3,7 @@
 pragma solidity ^0.8.9;
 
 interface ICErc20 {
-    function decimals() external returns (uint8);
+    function decimals() external view returns (uint8);
 
     function underlying() external returns (address);
 

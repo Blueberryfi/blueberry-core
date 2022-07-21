@@ -3,7 +3,7 @@
 pragma solidity ^0.8.9;
 
 import '../Governable.sol';
-import '../../interfaces/IBaseOracle.sol';
+import '../interfaces/IBaseOracle.sol';
 
 contract SimpleOracle is IBaseOracle, Governable {
     mapping(address => uint256) public prices; // Mapping from token to price in ETH (times 2**112).
@@ -12,7 +12,7 @@ contract SimpleOracle is IBaseOracle, Governable {
     event SetETHPx(address token, uint256 px);
 
     /// @dev Create the contract and initialize the first governor.
-    constructor() public {
+    constructor() {
         __Governable__init();
     }
 

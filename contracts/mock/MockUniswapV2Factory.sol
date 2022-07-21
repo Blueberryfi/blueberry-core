@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.9;
 
 interface MockUniswapV2FactoryIUniswapV2Factory {
@@ -255,7 +257,7 @@ contract UniswapV2ERC20 {
     );
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    constructor() public {
+    constructor() {
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -319,7 +321,7 @@ contract UniswapV2ERC20 {
         address to,
         uint256 value
     ) external returns (bool) {
-        if (allowance[from][msg.sender] != uint256(-1)) {
+        if (allowance[from][msg.sender] != type(uint256).max) {
             allowance[from][msg.sender] = allowance[from][msg.sender].sub(
                 value
             );
@@ -436,7 +438,7 @@ contract MockUniswapV2FactoryUniswapV2Pair is UniswapV2ERC20 {
     );
     event Sync(uint112 reserve0, uint112 reserve1);
 
-    constructor() public {
+    constructor() {
         factory = msg.sender;
     }
 
@@ -455,7 +457,7 @@ contract MockUniswapV2FactoryUniswapV2Pair is UniswapV2ERC20 {
         uint112 _reserve1
     ) private {
         require(
-            balance0 <= uint112(-1) && balance1 <= uint112(-1),
+            balance0 <= type(uint112).max && balance1 <= type(uint112).max,
             'UniswapV2: OVERFLOW'
         );
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
@@ -514,7 +516,8 @@ contract MockUniswapV2FactoryUniswapV2Pair is UniswapV2ERC20 {
         uint256 amount1 = balance1.sub(_reserve1);
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
-        uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
+        // gas savings, must be defined here since totalSupply can update in _mintFee
+        uint256 _totalSupply = totalSupply;
         if (_totalSupply == 0) {
             liquidity = MockUniswapV2FactoryMah.sqrt(amount0.mul(amount1)).sub(
                 MINIMUM_LIQUIDITY
@@ -552,7 +555,8 @@ contract MockUniswapV2FactoryUniswapV2Pair is UniswapV2ERC20 {
         uint256 liquidity = balanceOf[address(this)];
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
-        uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
+        // gas savings, must be defined here since totalSupply can update in _mintFee
+        uint256 _totalSupply = totalSupply;
         amount0 = liquidity.mul(balance0) / _totalSupply; // using balances ensures pro-rata distribution
         amount1 = liquidity.mul(balance1) / _totalSupply; // using balances ensures pro-rata distribution
         require(
@@ -680,7 +684,7 @@ contract MockUniswapV2Factory {
         uint256
     );
 
-    constructor(address _feeToSetter) public {
+    constructor(address _feeToSetter) {
         feeToSetter = _feeToSetter;
     }
 

@@ -43,8 +43,6 @@ interface ChainlinkDetailedERC20 {
 }
 
 contract ChainlinkAdapterOracle is IBaseOracle, Governable {
-    using SafeMath for uint256;
-
     event SetRefETH(address token, address ref);
     event SetRefUSD(address token, address ref);
     event SetMaxDelayTime(address token, uint256 maxDelayTime);
@@ -56,7 +54,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
     mapping(address => address) public refsUSD; // Mapping from token address to USD price reference
     mapping(address => uint256) public maxDelayTimes; // Mapping from token address to max delay time
 
-    constructor() public {
+    constructor() {
         __Governable__init();
     }
 
@@ -135,10 +133,10 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
                 refETH
             ).latestRoundData();
             require(
-                updatedAt >= block.timestamp.sub(maxDelayTime),
+                updatedAt >= block.timestamp - maxDelayTime,
                 'delayed update time'
             );
-            return uint256(answer).mul(2**112).div(10**decimals);
+            return (uint256(answer) * 2**112) / 10**decimals;
         }
 
         // 2. Check token-USD price ref
@@ -148,7 +146,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
                 refUSD
             ).latestRoundData();
             require(
-                updatedAt >= block.timestamp.sub(maxDelayTime),
+                updatedAt >= block.timestamp - maxDelayTime,
                 'delayed update time'
             );
             (
@@ -159,13 +157,11 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
 
             ) = IAggregatorV3Interface(refETHUSD).latestRoundData();
             require(
-                ethUpdatedAt >= block.timestamp.sub(maxDelayTime),
+                ethUpdatedAt >= block.timestamp - maxDelayTime,
                 'delayed eth-usd update time'
             );
             return
-                uint256(answer).mul(2**112).div(uint256(ethAnswer)).div(
-                    10**decimals
-                );
+                (uint256(answer) * 2**112) / uint256(ethAnswer) / 10**decimals;
         }
 
         revert('no valid price reference for token');

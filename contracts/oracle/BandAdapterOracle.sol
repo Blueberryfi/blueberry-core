@@ -32,8 +32,6 @@ interface BandDetailedERC20 {
 }
 
 contract BandAdapterOracle is IBaseOracle, Governable {
-    using SafeMath for uint256;
-
     event SetSymbol(address token, string symbol);
     event SetRef(address ref);
     event SetMaxDelayTime(address token, uint256 maxDelayTime);
@@ -46,7 +44,7 @@ contract BandAdapterOracle is IBaseOracle, Governable {
     mapping(address => string) public symbols; // Mapping from token to symbol string
     mapping(address => uint256) public maxDelayTimes; // Mapping from token address to max delay time
 
-    constructor(IStdReference _ref) public {
+    constructor(IStdReference _ref) {
         __Governable__init();
         ref = _ref;
     }
@@ -106,13 +104,13 @@ contract BandAdapterOracle is IBaseOracle, Governable {
             ETH
         );
         require(
-            data.lastUpdatedBase >= block.timestamp.sub(maxDelayTime),
+            data.lastUpdatedBase >= block.timestamp - maxDelayTime,
             'delayed base data'
         );
         require(
-            data.lastUpdatedQuote >= block.timestamp.sub(maxDelayTime),
+            data.lastUpdatedQuote >= block.timestamp - maxDelayTime,
             'delayed quote data'
         );
-        return data.rate.mul(2**112).div(10**decimals);
+        return (data.rate * 2**112) / 10**decimals;
     }
 }

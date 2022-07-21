@@ -27,7 +27,7 @@ contract ProxyOracle is IOracle, Governable {
     mapping(address => bool) public whitelistERC1155; // Mapping from token address to whitelist status
 
     /// @dev Create the contract and initialize the first governor.
-    constructor(IBaseOracle _source) public {
+    constructor(IBaseOracle _source) {
         source = _source;
         __Governable__init();
     }
@@ -122,13 +122,11 @@ contract ProxyOracle is IOracle, Governable {
         require(tokenFactorOut.liqIncentive != 0, 'bad underlying out');
         uint256 pxIn = source.getETHPx(tokenIn);
         uint256 pxOut = source.getETHPx(tokenOutUnderlying);
-        uint256 amountOut = amountIn.mul(pxIn).div(pxOut);
-        amountOut = amountOut.mul(2**112).div(rateUnderlying);
+        uint256 amountOut = (amountIn * pxIn) / pxOut;
+        amountOut = (amountOut * 2**112) / rateUnderlying;
         return
-            amountOut
-                .mul(tokenFactorIn.liqIncentive)
-                .mul(tokenFactorOut.liqIncentive)
-                .div(10000 * 10000);
+            ((amountOut * tokenFactorIn.liqIncentive) *
+                tokenFactorOut.liqIncentive) / (10000 * 10000);
     }
 
     /// @dev Return the value of the given input as ETH for collateral purpose.
@@ -145,14 +143,12 @@ contract ProxyOracle is IOracle, Governable {
         require(whitelistERC1155[token], 'bad token');
         address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(id);
         uint256 rateUnderlying = IERC20Wrapper(token).getUnderlyingRate(id);
-        uint256 amountUnderlying = amount.mul(rateUnderlying).div(2**112);
+        uint256 amountUnderlying = (amount * rateUnderlying) / 2**112;
         TokenFactors memory tokenFactor = tokenFactors[tokenUnderlying];
         require(tokenFactor.liqIncentive != 0, 'bad underlying collateral');
-        uint256 ethValue = source
-            .getETHPx(tokenUnderlying)
-            .mul(amountUnderlying)
-            .div(2**112);
-        return ethValue.mul(tokenFactor.collateralFactor).div(10000);
+        uint256 ethValue = (source.getETHPx(tokenUnderlying) *
+            amountUnderlying) / 2**112;
+        return (ethValue * tokenFactor.collateralFactor) / 10000;
     }
 
     /// @dev Return the value of the given input as ETH for borrow purpose.
@@ -166,8 +162,8 @@ contract ProxyOracle is IOracle, Governable {
     ) external view override returns (uint256) {
         TokenFactors memory tokenFactor = tokenFactors[token];
         require(tokenFactor.liqIncentive != 0, 'bad underlying borrow');
-        uint256 ethValue = source.getETHPx(token).mul(amount).div(2**112);
-        return ethValue.mul(tokenFactor.borrowFactor).div(10000);
+        uint256 ethValue = (source.getETHPx(token) * amount) / 2**112;
+        return (ethValue * tokenFactor.borrowFactor) / 10000;
     }
 
     /// @dev Return whether the ERC20 token is supported

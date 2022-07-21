@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.9;
 
-import '../../interfaces/IBaseOracle.sol';
+import '../interfaces/IBaseOracle.sol';
 import '../Governable.sol';
 
 contract CoreOracle is IBaseOracle, Governable {
     event SetRoute(address indexed token, address route);
     mapping(address => address) public routes; // Mapping from token to oracle source
 
-    constructor() public {
+    constructor() {
         __Governable__init();
     }
 

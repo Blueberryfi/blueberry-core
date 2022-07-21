@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
@@ -15,7 +15,6 @@ contract WStakingRewards is
     ReentrancyGuard,
     IERC20Wrapper
 {
-    using SafeMath for uint256;
     using HomoraMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -27,11 +26,11 @@ contract WStakingRewards is
         address _staking,
         address _underlying,
         address _reward
-    ) public {
+    ) {
         staking = _staking;
         underlying = _underlying;
         reward = _reward;
-        IERC20(_underlying).safeApprove(_staking, uint256(-1));
+        IERC20(_underlying).safeApprove(_staking, type(uint256).max);
     }
 
     /// @dev Return the underlying ERC20 for the given ERC1155 token id.
@@ -47,7 +46,7 @@ contract WStakingRewards is
     /// @dev Return the conversion rate from ERC1155 to ERC20, multiplied 2**112.
     function getUnderlyingRate(uint256)
         external
-        view
+        pure
         override
         returns (uint256)
     {
@@ -72,7 +71,7 @@ contract WStakingRewards is
         nonReentrant
         returns (uint256)
     {
-        if (amount == uint256(-1)) {
+        if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
         }
         _burn(msg.sender, id, amount);
@@ -81,10 +80,10 @@ contract WStakingRewards is
         IERC20(underlying).safeTransfer(msg.sender, amount);
         uint256 stRewardPerToken = id;
         uint256 enRewardPerToken = IStakingRewards(staking).rewardPerToken();
-        uint256 stReward = stRewardPerToken.mul(amount).divCeil(1e18);
-        uint256 enReward = enRewardPerToken.mul(amount).div(1e18);
+        uint256 stReward = (stRewardPerToken * amount).divCeil(1e18);
+        uint256 enReward = (enRewardPerToken * amount) / 1e18;
         if (enReward > stReward) {
-            IERC20(reward).safeTransfer(msg.sender, enReward.sub(stReward));
+            IERC20(reward).safeTransfer(msg.sender, enReward - stReward);
         }
         return enRewardPerToken;
     }

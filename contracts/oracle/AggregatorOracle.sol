@@ -15,8 +15,10 @@ contract AggregatorOracle is IBaseOracle, Governable {
 
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH address
     mapping(address => uint256) public primarySourceCount; // Mapping from token to number of sources
-    mapping(address => mapping(uint256 => IBaseOracle)) public primarySources; // Mapping from token to (mapping from index to oracle source)
-    mapping(address => uint256) public maxPriceDeviations; // Mapping from token to max price deviation (multiplied by 1e18)
+    /// @dev Mapping from token to (mapping from index to oracle source)
+    mapping(address => mapping(uint256 => IBaseOracle)) public primarySources;
+    /// @dev Mapping from token to max price deviation (multiplied by 1e18)
+    mapping(address => uint256) public maxPriceDeviations;
 
     uint256 public constant MIN_PRICE_DEVIATION = 1e18; // min price deviation
     uint256 public constant MAX_PRICE_DEVIATION = 1.5e18; // max price deviation
@@ -129,16 +131,14 @@ contract AggregatorOracle is IBaseOracle, Governable {
             );
             return (prices[0] + prices[1]) / 2; // if 2 valid sources, return average
         } else if (validSourceCount == 3) {
-            bool midMinOk = prices[1].mul(1e18) / prices[0] <=
-                maxPriceDeviation;
-            bool maxMidOk = prices[2].mul(1e18) / prices[1] <=
-                maxPriceDeviation;
+            bool midMinOk = (prices[1] * 1e18) / prices[0] <= maxPriceDeviation;
+            bool maxMidOk = (prices[2] * 1e18) / prices[1] <= maxPriceDeviation;
             if (midMinOk && maxMidOk) {
                 return prices[1]; // if 3 valid sources, and each pair is within thresh, return median
             } else if (midMinOk) {
-                return prices[0].add(prices[1]) / 2; // return average of pair within thresh
+                return (prices[0] + prices[1]) / 2; // return average of pair within thresh
             } else if (maxMidOk) {
-                return prices[1].add(prices[2]) / 2; // return average of pair within thresh
+                return (prices[1] + prices[2]) / 2; // return average of pair within thresh
             } else {
                 revert('too much deviation (3 valid sources)');
             }
@@ -160,11 +160,11 @@ contract AggregatorOracle is IBaseOracle, Governable {
         );
         if (token0 == WETH) {
             return (
-                uint256(2**112).mul(1e18).div(getETHPx(token1)),
+                (uint256(2**112) * 1e18) / getETHPx(token1),
                 block.timestamp
             );
         } else {
-            return (getETHPx(token0).mul(1e18).div(2**112), block.timestamp);
+            return ((getETHPx(token0) * 1e18) / 2**112, block.timestamp);
         }
     }
 }

@@ -30,7 +30,7 @@ contract SushiswapSpellV1 is WhitelistSpell {
         address _werc20,
         IUniswapV2Router02 _router,
         address _wmasterchef
-    ) public WhitelistSpell(_bank, _werc20, _router.WETH()) {
+    ) WhitelistSpell(_bank, _werc20, _router.WETH()) {
         router = _router;
         factory = IUniswapV2Factory(_router.factory());
         wmasterchef = IWMasterChef(_wmasterchef);
@@ -69,7 +69,7 @@ contract SushiswapSpellV1 is WhitelistSpell {
         uint256 resA,
         uint256 resB
     ) internal pure returns (uint256 swapAmt, bool isReversed) {
-        if (amtA.mul(resB) >= amtB.mul(resA)) {
+        if (amtA * resB >= amtB * resA) {
             swapAmt = _optimalDepositA(amtA, amtB, resA, resB);
             isReversed = false;
         } else {
@@ -281,13 +281,13 @@ contract SushiswapSpellV1 is WhitelistSpell {
         uint256 amtLPRepay = amt.amtLPRepay;
 
         // 2. Compute repay amount if MAX_INT is supplied (max debt)
-        if (amtARepay == uint256(-1)) {
+        if (amtARepay == type(uint256).max) {
             amtARepay = bank.borrowBalanceCurrent(positionId, tokenA);
         }
-        if (amtBRepay == uint256(-1)) {
+        if (amtBRepay == type(uint256).max) {
             amtBRepay = bank.borrowBalanceCurrent(positionId, tokenB);
         }
-        if (amtLPRepay == uint256(-1)) {
+        if (amtLPRepay == type(uint256).max) {
             amtLPRepay = bank.borrowBalanceCurrent(positionId, lp);
         }
 
@@ -415,8 +415,8 @@ contract SushiswapSpellV1 is WhitelistSpell {
         );
 
         // 1. Take out collateral
-        bank.takeCollateral(address(wmasterchef), collId, uint256(-1));
-        wmasterchef.burn(collId, uint256(-1));
+        bank.takeCollateral(address(wmasterchef), collId, type(uint256).max);
+        wmasterchef.burn(collId, type(uint256).max);
 
         // 2. put collateral
         uint256 amount = IERC20(lp).balanceOf(address(this));

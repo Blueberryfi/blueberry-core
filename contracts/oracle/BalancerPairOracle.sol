@@ -8,9 +8,7 @@ import '../interfaces/IBaseOracle.sol';
 import '../interfaces/IBalancerPool.sol';
 
 contract BalancerPairOracle is UsingBaseOracle, IBaseOracle, BNum {
-    using SafeMath for uint256;
-
-    constructor(IBaseOracle _base) public UsingBaseOracle(_base) {}
+    constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /// @dev Return fair reserve amounts given spot reserves, weights, and fair prices.
     /// @param resA Reserve of the first asset
@@ -72,6 +70,6 @@ contract BalancerPairOracle is UsingBaseOracle, IBaseOracle, BNum {
         );
         // use fairReserveA and fairReserveB to compute LP token price
         // LP price = (fairResA * pxA + fairResB * pxB) / totalLPSupply
-        return fairResA.mul(pxA).add(fairResB.mul(pxB)).div(pool.totalSupply());
+        return ((fairResA * pxA) + (fairResB * pxB)) / pool.totalSupply();
     }
 }

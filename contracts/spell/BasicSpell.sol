@@ -117,7 +117,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
     /// @param amount The amount to take back.
     function doTakeCollateral(address token, uint256 amount) internal {
         if (amount > 0) {
-            if (amount == uint256(-1)) {
+            if (amount == type(uint256).max) {
                 (, , , amount) = bank.getCurrentPositionInfo();
             }
             bank.takeCollateral(address(werc20), uint256(token), amount);

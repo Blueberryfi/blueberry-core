@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 // https://github.com/balancer-labs/balancer-core/blob/master/contracts/BConst.sol
 
 // This program is free software: you can redistribute it and/or modify

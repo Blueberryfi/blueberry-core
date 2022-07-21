@@ -12,8 +12,6 @@ interface IERC20Decimal {
 }
 
 contract CurveOracle is UsingBaseOracle, IBaseOracle {
-    using SafeMath for uint256;
-
     ICurveRegistry public immutable registry; // Curve registry
 
     struct UnderlyingToken {
@@ -25,7 +23,6 @@ contract CurveOracle is UsingBaseOracle, IBaseOracle {
     mapping(address => address) public poolOf; // Mapping from LP token to pool
 
     constructor(IBaseOracle _base, ICurveRegistry _registry)
-        public
         UsingBaseOracle(_base)
     {
         registry = _registry;
@@ -57,19 +54,19 @@ contract CurveOracle is UsingBaseOracle, IBaseOracle {
         address pool = poolOf[lp];
         require(pool != address(0), 'lp is not registered');
         UnderlyingToken[] memory tokens = ulTokens[lp];
-        uint256 minPx = uint256(-1);
+        uint256 minPx = type(uint256).max;
         uint256 n = tokens.length;
         for (uint256 idx = 0; idx < n; idx++) {
             UnderlyingToken memory ulToken = tokens[idx];
             uint256 tokenPx = base.getETHPx(ulToken.token);
             if (ulToken.decimals < 18)
-                tokenPx = tokenPx.div(10**(18 - uint256(ulToken.decimals)));
+                tokenPx = tokenPx / 10**(18 - uint256(ulToken.decimals));
             if (ulToken.decimals > 18)
-                tokenPx = tokenPx.mul(10**(uint256(ulToken.decimals) - 18));
+                tokenPx = tokenPx * (10**(uint256(ulToken.decimals) - 18));
             if (tokenPx < minPx) minPx = tokenPx;
         }
-        require(minPx != uint256(-1), 'no min px');
+        require(minPx != type(uint256).max, 'no min px');
         // use min underlying token prices
-        return minPx.mul(ICurvePool(pool).get_virtual_price()).div(1e18);
+        return (minPx * ICurvePool(pool).get_virtual_price()) / 1e18;
     }
 }
