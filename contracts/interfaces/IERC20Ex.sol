@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.2.0/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 // Export IERC20 interface for mainnet-fork testing.
 interface IERC20Ex is IERC20 {

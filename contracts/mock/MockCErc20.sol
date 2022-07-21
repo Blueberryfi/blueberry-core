@@ -1,42 +1,41 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.9;
 
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/IERC20.sol';
-import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-import '../../interfaces/ICErc20.sol';
+import '../interfaces/ICErc20.sol';
 
 contract MockCErc20 is ICErc20 {
-    using SafeMath for uint256;
-
     IERC20 public token;
     uint256 public interestPerYear = 10e16; // 10% per year
 
     mapping(address => uint256) public borrows;
     mapping(address => uint256) public lastBlock;
 
-    constructor(IERC20 _token) public {
+    constructor(IERC20 _token) {
         token = _token;
     }
 
-    function decimals() external override returns (uint8) {
+    function decimals() external pure override returns (uint8) {
         return 8;
     }
 
-    function underlying() external override returns (address) {
+    function underlying() external view override returns (address) {
         return address(token);
     }
 
-    function mint(uint256 mintAmount) external override returns (uint256) {
+    function mint(uint256) external pure override returns (uint256) {
         // Not implemented
         return 0;
     }
 
-    function redeem(uint256 redeemTokens) external override returns (uint256) {
+    function redeem(uint256) external pure override returns (uint256) {
         // Not implemented
         return 0;
     }
 
-    function balanceOf(address user) external view override returns (uint256) {
+    function balanceOf(address) external pure override returns (uint256) {
         // Not implemented
         return 0;
     }
@@ -46,15 +45,12 @@ contract MockCErc20 is ICErc20 {
         override
         returns (uint256)
     {
-        uint256 timePast = now - lastBlock[account];
+        uint256 timePast = block.timestamp - lastBlock[account];
         if (timePast > 0) {
-            uint256 interest = borrows[account]
-                .mul(interestPerYear)
-                .div(100e16)
-                .mul(timePast)
-                .div(365 days);
-            borrows[account] = borrows[account].add(interest);
-            lastBlock[account] = now;
+            uint256 interest = (((borrows[account] * interestPerYear) /
+                100e16) * timePast) / 365 days;
+            borrows[account] = borrows[account] + interest;
+            lastBlock[account] = block.timestamp;
         }
         return borrows[account];
     }
@@ -71,7 +67,7 @@ contract MockCErc20 is ICErc20 {
     function borrow(uint256 borrowAmount) external override returns (uint256) {
         borrowBalanceCurrent(msg.sender);
         token.transfer(msg.sender, borrowAmount);
-        borrows[msg.sender] = borrows[msg.sender].add(borrowAmount);
+        borrows[msg.sender] = borrows[msg.sender] + borrowAmount;
         return 0;
     }
 
@@ -82,7 +78,7 @@ contract MockCErc20 is ICErc20 {
     {
         borrowBalanceCurrent(msg.sender);
         token.transferFrom(msg.sender, address(this), repayAmount);
-        borrows[msg.sender] = borrows[msg.sender].sub(repayAmount);
+        borrows[msg.sender] = borrows[msg.sender] - repayAmount;
         return 0;
     }
 }
