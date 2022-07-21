@@ -1,23 +1,26 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity ^0.8.9;
 
 interface ICErc20 {
-  function decimals() external returns (uint8);
+    function decimals() external returns (uint8);
 
-  function underlying() external returns (address);
+    function underlying() external returns (address);
 
-  function mint(uint mintAmount) external returns (uint);
+    function mint(uint256 mintAmount) external returns (uint256);
 
-  function redeem(uint redeemTokens) external returns (uint);
+    function redeem(uint256 redeemTokens) external returns (uint256);
 
-  function balanceOf(address user) external view returns (uint);
+    function balanceOf(address user) external view returns (uint256);
 
-  function borrowBalanceCurrent(address account) external returns (uint);
+    function borrowBalanceCurrent(address account) external returns (uint256);
 
-  function borrowBalanceStored(address account) external view returns (uint);
+    function borrowBalanceStored(address account)
+        external
+        view
+        returns (uint256);
 
-  function borrow(uint borrowAmount) external returns (uint);
+    function borrow(uint256 borrowAmount) external returns (uint256);
 
-  function repayBorrow(uint repayAmount) external returns (uint);
+    function repayBorrow(uint256 repayAmount) external returns (uint256);
 }

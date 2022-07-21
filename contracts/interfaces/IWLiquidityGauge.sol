@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity ^0.8.9;
 
 import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC1155/IERC1155.sol';
 import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/IERC20.sol';
@@ -10,34 +10,37 @@ import './ICurveRegistry.sol';
 import './ILiquidityGauge.sol';
 
 interface IWLiquidityGauge is IERC1155, IERC20Wrapper {
-  /// @dev Mint ERC1155 token for the given ERC20 token.
-  function mint(
-    uint pid,
-    uint gid,
-    uint amount
-  ) external returns (uint id);
+    /// @dev Mint ERC1155 token for the given ERC20 token.
+    function mint(
+        uint256 pid,
+        uint256 gid,
+        uint256 amount
+    ) external returns (uint256 id);
 
-  /// @dev Burn ERC1155 token to redeem ERC20 token back.
-  function burn(uint id, uint amount) external returns (uint pid);
+    /// @dev Burn ERC1155 token to redeem ERC20 token back.
+    function burn(uint256 id, uint256 amount) external returns (uint256 pid);
 
-  function crv() external returns (IERC20);
+    function crv() external returns (IERC20);
 
-  function registry() external returns (ICurveRegistry);
+    function registry() external returns (ICurveRegistry);
 
-  function encodeId(
-    uint,
-    uint,
-    uint
-  ) external pure returns (uint);
+    function encodeId(
+        uint256,
+        uint256,
+        uint256
+    ) external pure returns (uint256);
 
-  function decodeId(uint id)
-    external
-    pure
-    returns (
-      uint,
-      uint,
-      uint
-    );
+    function decodeId(uint256 id)
+        external
+        pure
+        returns (
+            uint256,
+            uint256,
+            uint256
+        );
 
-  function getUnderlyingTokenFromIds(uint pid, uint gid) external view returns (address);
+    function getUnderlyingTokenFromIds(uint256 pid, uint256 gid)
+        external
+        view
+        returns (address);
 }

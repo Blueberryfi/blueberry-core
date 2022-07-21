@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity ^0.8.9;
 
 import 'OpenZeppelin/openzeppelin-contracts@3.4.0/contracts/token/ERC20/IERC20.sol';
 
@@ -9,40 +9,40 @@ import '../../interfaces/IBank.sol';
 import '../../interfaces/IWETH.sol';
 
 contract HouseHoldSpell is BasicSpell {
-  constructor(
-    IBank _bank,
-    address _werc20,
-    address _weth
-  ) public BasicSpell(_bank, _werc20, _weth) {}
+    constructor(
+        IBank _bank,
+        address _werc20,
+        address _weth
+    ) public BasicSpell(_bank, _werc20, _weth) {}
 
-  function borrowETH(uint amount) external {
-    doBorrow(weth, amount);
-    doRefundETH();
-  }
+    function borrowETH(uint256 amount) external {
+        doBorrow(weth, amount);
+        doRefundETH();
+    }
 
-  function borrow(address token, uint amount) external {
-    doBorrow(token, amount);
-    doRefund(token);
-  }
+    function borrow(address token, uint256 amount) external {
+        doBorrow(token, amount);
+        doRefund(token);
+    }
 
-  function repayETH(uint amount) external payable {
-    doTransmitETH();
-    doRepay(weth, amount);
-    doRefundETH();
-  }
+    function repayETH(uint256 amount) external payable {
+        doTransmitETH();
+        doRepay(weth, amount);
+        doRefundETH();
+    }
 
-  function repay(address token, uint amount) external {
-    doTransmit(token, amount);
-    doRepay(token, IERC20(token).balanceOf(address(this)));
-  }
+    function repay(address token, uint256 amount) external {
+        doTransmit(token, amount);
+        doRepay(token, IERC20(token).balanceOf(address(this)));
+    }
 
-  function putCollateral(address token, uint amount) external {
-    doTransmit(token, amount);
-    doPutCollateral(token, IERC20(token).balanceOf(address(this)));
-  }
+    function putCollateral(address token, uint256 amount) external {
+        doTransmit(token, amount);
+        doPutCollateral(token, IERC20(token).balanceOf(address(this)));
+    }
 
-  function takeCollateral(address token, uint amount) external {
-    doTakeCollateral(token, amount);
-    doRefund(token);
-  }
+    function takeCollateral(address token, uint256 amount) external {
+        doTakeCollateral(token, amount);
+        doRefund(token);
+    }
 }

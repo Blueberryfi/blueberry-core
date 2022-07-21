@@ -1,5 +1,7 @@
-pragma solidity 0.6.12;
+pragma solidity ^0.8.9;
 
 interface IComptroller {
-  function enterMarkets(address[] memory cTokens) external returns (uint[] memory);
+    function enterMarkets(address[] memory cTokens)
+        external
+        returns (uint256[] memory);
 }
