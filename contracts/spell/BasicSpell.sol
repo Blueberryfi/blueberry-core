@@ -108,7 +108,11 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
         if (amount > 0) {
             ensureApprove(token, address(werc20));
             werc20.mint(token, amount);
-            bank.putCollateral(address(werc20), uint256(token), amount);
+            bank.putCollateral(
+                address(werc20),
+                uint256(uint160(token)),
+                amount
+            );
         }
     }
 
@@ -120,7 +124,11 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
             if (amount == type(uint256).max) {
                 (, , , amount) = bank.getCurrentPositionInfo();
             }
-            bank.takeCollateral(address(werc20), uint256(token), amount);
+            bank.takeCollateral(
+                address(werc20),
+                uint256(uint160(token)),
+                amount
+            );
             werc20.burn(token, amount);
         }
     }

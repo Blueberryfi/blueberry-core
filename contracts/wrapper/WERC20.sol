@@ -15,19 +15,19 @@ contract WERC20 is ERC1155('WERC20'), ReentrancyGuard, IWERC20 {
     /// @param id token id (corresponds to token address for wrapped ERC20)
     function getUnderlyingToken(uint256 id)
         external
-        view
+        pure
         override
         returns (address)
     {
-        address token = address(id);
-        require(uint256(token) == id, 'id overflow');
+        address token = address(uint160(id));
+        require(uint256(uint160(token)) == id, 'id overflow');
         return token;
     }
 
     /// @dev Return the conversion rate from ERC-1155 to ERC-20, multiplied by 2**112.
     function getUnderlyingRate(uint256)
         external
-        view
+        pure
         override
         returns (uint256)
     {
@@ -43,7 +43,7 @@ contract WERC20 is ERC1155('WERC20'), ReentrancyGuard, IWERC20 {
         override
         returns (uint256)
     {
-        return balanceOf(user, uint256(token));
+        return balanceOf(user, uint256(uint160(token)));
     }
 
     /// @dev Mint ERC1155 token for the given ERC20 token.
@@ -57,7 +57,12 @@ contract WERC20 is ERC1155('WERC20'), ReentrancyGuard, IWERC20 {
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         uint256 balanceAfter = IERC20(token).balanceOf(address(this));
-        _mint(msg.sender, uint256(token), balanceAfter.sub(balanceBefore), '');
+        _mint(
+            msg.sender,
+            uint256(uint160(token)),
+            balanceAfter - balanceBefore,
+            ''
+        );
     }
 
     /// @dev Burn ERC1155 token to redeem ERC20 token back.
@@ -68,7 +73,7 @@ contract WERC20 is ERC1155('WERC20'), ReentrancyGuard, IWERC20 {
         override
         nonReentrant
     {
-        _burn(msg.sender, uint256(token), amount);
+        _burn(msg.sender, uint256(uint160(token)), amount);
         IERC20(token).safeTransfer(msg.sender, amount);
     }
 }

@@ -90,16 +90,16 @@ contract SushiswapSpellV1 is WhitelistSpell {
         uint256 resA,
         uint256 resB
     ) internal pure returns (uint256) {
-        require(amtA.mul(resB) >= amtB.mul(resA), 'Reversed');
+        require(amtA * resB >= amtB * resA, 'Reversed');
         uint256 a = 997;
-        uint256 b = uint256(1997).mul(resA);
-        uint256 _c = (amtA.mul(resB)).sub(amtB.mul(resA));
-        uint256 c = _c.mul(1000).div(amtB.add(resB)).mul(resA);
-        uint256 d = a.mul(c).mul(4);
-        uint256 e = HomoraMath.sqrt(b.mul(b).add(d));
-        uint256 numerator = e.sub(b);
-        uint256 denominator = a.mul(2);
-        return numerator.div(denominator);
+        uint256 b = 1997 * resA;
+        uint256 _c = (amtA * resB) - (amtB * resA);
+        uint256 c = (_c * 1000 * resA) / (amtB + resB);
+        uint256 d = a * c * 4;
+        uint256 e = HomoraMath.sqrt(b * b + d);
+        uint256 numerator = e - b;
+        uint256 denominator = a * 2;
+        return numerator / denominator;
     }
 
     struct Amounts {
@@ -292,9 +292,8 @@ contract SushiswapSpellV1 is WhitelistSpell {
         }
 
         // 3. Compute amount to actually remove
-        uint256 amtLPToRemove = IERC20(lp).balanceOf(address(this)).sub(
-            amt.amtLPWithdraw
-        );
+        uint256 amtLPToRemove = IERC20(lp).balanceOf(address(this)) -
+            amt.amtLPWithdraw;
 
         // 4. Remove liquidity
         uint256 amtA;
@@ -312,15 +311,15 @@ contract SushiswapSpellV1 is WhitelistSpell {
         }
 
         // 5. MinimizeTrading
-        uint256 amtADesired = amtARepay.add(amt.amtAMin);
-        uint256 amtBDesired = amtBRepay.add(amt.amtBMin);
+        uint256 amtADesired = amtARepay + amt.amtAMin;
+        uint256 amtBDesired = amtBRepay + amt.amtBMin;
 
         if (amtA < amtADesired && amtB > amtBDesired) {
             address[] memory path = new address[](2);
             (path[0], path[1]) = (tokenB, tokenA);
             router.swapTokensForExactTokens(
-                amtADesired.sub(amtA),
-                amtB.sub(amtBDesired),
+                amtADesired - amtA,
+                amtB - amtBDesired,
                 path,
                 address(this),
                 block.timestamp
@@ -329,8 +328,8 @@ contract SushiswapSpellV1 is WhitelistSpell {
             address[] memory path = new address[](2);
             (path[0], path[1]) = (tokenA, tokenB);
             router.swapTokensForExactTokens(
-                amtBDesired.sub(amtB),
-                amtA.sub(amtADesired),
+                amtBDesired - amtB,
+                amtA - amtADesired,
                 path,
                 address(this),
                 block.timestamp

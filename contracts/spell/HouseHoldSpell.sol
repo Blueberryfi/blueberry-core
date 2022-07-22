@@ -13,7 +13,7 @@ contract HouseHoldSpell is BasicSpell {
         IBank _bank,
         address _werc20,
         address _weth
-    ) public BasicSpell(_bank, _werc20, _weth) {}
+    ) BasicSpell(_bank, _werc20, _weth) {}
 
     function borrowETH(uint256 amount) external {
         doBorrow(weth, amount);

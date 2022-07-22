@@ -13,7 +13,7 @@ contract ERC1155NaiveReceiver is IERC1155Receiver {
         uint256, /* id */
         uint256, /* value */
         bytes calldata /* data */
-    ) external override returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC1155Received.selector;
     }
 
@@ -23,7 +23,17 @@ contract ERC1155NaiveReceiver is IERC1155Receiver {
         uint256[] calldata, /* ids */
         uint256[] calldata, /* values */
         bytes calldata /* data */
-    ) external override returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return interfaceId == type(IERC1155Receiver).interfaceId;
     }
 }
