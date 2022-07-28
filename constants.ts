@@ -1,6 +1,6 @@
 export enum CONTRACT_NAMES {
 	// Token
-	MockETH = "MockETH",
+	MockWETH = "MockWETH",
 	MockERC20 = "MockERC20",
 	MockCErc20 = "MockCErc20",
 	WERC20 = "WERC20",

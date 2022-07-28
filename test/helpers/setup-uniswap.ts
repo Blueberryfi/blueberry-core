@@ -1,10 +1,10 @@
 import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
 
-export const setupSafeBox = deployments.createFixture(async () => {
+export const setupUniswap = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
 
-	const MockWETH = await ethers.getContractFactory(CONTRACT_NAMES.MockETH);
+	const MockWETH = await ethers.getContractFactory(CONTRACT_NAMES.MockWETH);
 	const mockWETH = await MockWETH.deploy();
 	await mockWETH.deployed();
 

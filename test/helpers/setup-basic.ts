@@ -1,25 +1,27 @@
+import { BigNumber } from 'ethers';
 import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
+import { CoreOracle, MockERC20, MockWETH, WERC20 } from '../../typechain';
 
 export const setupBasic = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
 
-	const MockWETH = await ethers.getContractFactory(CONTRACT_NAMES.MockETH);
-	const mockWETH = await MockWETH.deploy();
+	const MockWETH = await ethers.getContractFactory(CONTRACT_NAMES.MockWETH);
+	const mockWETH = <MockWETH>await MockWETH.deploy();
 	await mockWETH.deployed();
 
 	const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-	const werc20 = await WERC20.deploy();
+	const werc20 = <WERC20>await WERC20.deploy();
 	await werc20.deployed();
 
 	const MockERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);
-	const usdt = await MockERC20.deploy('USDT', 'USDT', 6);
+	const usdt = <MockERC20>await MockERC20.deploy('USDT', 'USDT', 6);
 	await usdt.deployed();
 
-	const usdc = await MockERC20.deploy('USDC', 'USDC', 6);
+	const usdc = <MockERC20>await MockERC20.deploy('USDC', 'USDC', 6);
 	await usdc.deployed();
 
-	const dai = await MockERC20.deploy('DAI', 'DAI', 6);
+	const dai = <MockERC20>await MockERC20.deploy('DAI', 'DAI', 6);
 	await dai.deployed();
 
 	const SimpleOracle = await ethers.getContractFactory(CONTRACT_NAMES.SimpleOracle);
@@ -33,15 +35,15 @@ export const setupBasic = deployments.createFixture(async () => {
 			dai.address,
 		],
 		[
-			2 ** 112,
-			Math.floor(2 ** 112 * 10 ** 12 / 600),
-			Math.floor(2 ** 112 * 10 ** 12 / 600),
-			Math.floor(2 ** 112 / 600)
+			BigNumber.from(2).pow(112),
+			BigNumber.from(2).pow(112).mul(BigNumber.from(10).pow(12)).div(600),
+			BigNumber.from(2).pow(112).mul(BigNumber.from(10).pow(12)).div(600),
+			BigNumber.from(2).pow(112).div(600)
 		],
 	)
 
 	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-	const coreOracle = await CoreOracle.deploy();
+	const coreOracle = <CoreOracle>await CoreOracle.deploy();
 	await coreOracle.deployed();
 
 	const ProxyOracle = await ethers.getContractFactory(CONTRACT_NAMES.ProxyOracle);
@@ -51,19 +53,20 @@ export const setupBasic = deployments.createFixture(async () => {
 
 	const HomoraBank = await ethers.getContractFactory(CONTRACT_NAMES.HomoraBank);
 	const homoraBank = await HomoraBank.deploy();
-	// await homoraBank.initialize(oracle.address, 2000);
+	// TODO: error, fix them later
+	// await homoraBank.initialize(coreOracle.address, 2000);
 
-	for (const token of [mockWETH, dai, usdt, usdc]) {
-		const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
-		const cerc20 = await CERC20.deploy(token.address);
-		if (token === mockWETH) {
-			await mockWETH.connect(signers[9]).deposit({ 'value': '100000 ether' });
-			await mockWETH.transfer(cerc20.address, ethers.utils.parseEther('100000'));
-		} else {
-			await token.mint(cerc20.address, ethers.utils.parseEther('100000'));
-		}
-		await homoraBank.addBank(token.address, cerc20.address);
-	}
+	// for (const token of [mockWETH, dai, usdt, usdc]) {
+	// 	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
+	// 	const cerc20 = await CERC20.deploy(token.address);
+	// 	if (token === mockWETH) {
+	// 		await mockWETH.connect(signers[9]).deposit({ 'value': ethers.utils.parseEther('100') });
+	// 		await mockWETH.connect(signers[9]).transfer(cerc20.address, ethers.utils.parseEther('100'));
+	// 	} else {
+	// 		await token.mint(cerc20.address, ethers.utils.parseEther('100'));
+	// 	}
+	// 	await homoraBank.addBank(token.address, cerc20.address);
+	// }
 
 	return {
 		mockWETH,

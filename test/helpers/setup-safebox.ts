@@ -14,7 +14,7 @@ export const setupSafeBox = deployments.createFixture(async () => {
 	const safeBox = await SafeBox.deploy(cToken.address, "ibToken", "ibTOKEN");
 	await safeBox.deployed();
 
-	const MockWETH = await ethers.getContractFactory(CONTRACT_NAMES.MockETH);
+	const MockWETH = await ethers.getContractFactory(CONTRACT_NAMES.MockWETH);
 	const mockWETH = await MockWETH.deploy();
 	await mockWETH.deployed();
 
