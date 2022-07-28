@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { CoreOracle, MockERC20, MockWETH, WERC20 } from '../../typechain';
+import { CoreOracle, MockERC20, MockWETH, SimpleOracle, WERC20 } from '../../typechain';
 
 export const setupBasic = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
@@ -25,7 +25,7 @@ export const setupBasic = deployments.createFixture(async () => {
 	await dai.deployed();
 
 	const SimpleOracle = await ethers.getContractFactory(CONTRACT_NAMES.SimpleOracle);
-	const simpleOracle = await SimpleOracle.deploy();
+	const simpleOracle = <SimpleOracle>await SimpleOracle.deploy();
 	await simpleOracle.deployed();
 	await simpleOracle.setETHPx(
 		[
