@@ -10,6 +10,12 @@ export enum CONTRACT_NAMES {
 	CoreOracle = "CoreOracle",
 	ProxyOracle = "ProxyOracle",
 
+	// Uniswap
+	MockUniswapV2Factory = "MockUniswapV2Factory",
+	MockUniswapV2Router02 = "MockUniswapV2Router02",
+
 	// Protocol
 	HomoraBank = "HomoraBank",
+	SafeBox = "SafeBox",
+	SafeBoxETH = "SafeBoxETH",
 }
