@@ -1,17 +1,9 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { ethers, deployments, getNamedAccounts } from 'hardhat';
+import { ethers } from 'hardhat';
 import { CONTRACT_NAMES } from "../constants"
 import { CoreOracle, MockERC20, MockWETH, SimpleOracle } from '../typechain';
 import { setupBasic } from './helpers/setup-basic';
-
-const setupOracle = deployments.createFixture(async () => {
-	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-	const coreOracle = <CoreOracle>await CoreOracle.deploy();
-	await coreOracle.deployed();
-
-	return coreOracle;
-})
 
 describe('Core Oracle', () => {
 	let admin: SignerWithAddress;

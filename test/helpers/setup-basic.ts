@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { CoreOracle, MockERC20, MockWETH, SimpleOracle, WERC20 } from '../../typechain';
+import { CoreOracle, HomoraBank, MockERC20, MockWETH, SimpleOracle, WERC20 } from '../../typechain';
 
 export const setupBasic = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
@@ -52,7 +52,7 @@ export const setupBasic = deployments.createFixture(async () => {
 	await proxyOracle.setWhitelistERC1155([werc20.address], true);
 
 	const HomoraBank = await ethers.getContractFactory(CONTRACT_NAMES.HomoraBank);
-	const homoraBank = await HomoraBank.deploy();
+	const homoraBank = <HomoraBank>await HomoraBank.deploy();
 	// TODO: error, fix them later
 	// await homoraBank.initialize(coreOracle.address, 2000);
 
@@ -77,5 +77,6 @@ export const setupBasic = deployments.createFixture(async () => {
 		simpleOracle,
 		coreOracle,
 		proxyOracle,
+		homoraBank
 	}
 })

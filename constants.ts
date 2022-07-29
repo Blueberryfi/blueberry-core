@@ -1,5 +1,6 @@
 export enum CONTRACT_NAMES {
 	// Token
+	IERC20 = "IERC20",
 	MockWETH = "MockWETH",
 	MockERC20 = "MockERC20",
 	MockCErc20 = "MockCErc20",
@@ -9,6 +10,7 @@ export enum CONTRACT_NAMES {
 	SimpleOracle = "SimpleOracle",
 	CoreOracle = "CoreOracle",
 	ProxyOracle = "ProxyOracle",
+	UniswapV2Oracle = "UniswapV2Oracle",
 
 	// Uniswap
 	MockUniswapV2Factory = "MockUniswapV2Factory",
@@ -18,4 +20,5 @@ export enum CONTRACT_NAMES {
 	HomoraBank = "HomoraBank",
 	SafeBox = "SafeBox",
 	SafeBoxETH = "SafeBoxETH",
+	UniswapV2SpellV1 = "UniswapV2SpellV1",
 }
