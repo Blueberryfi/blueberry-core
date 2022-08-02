@@ -1,5 +1,5 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { CONTRACT_NAMES } from "../constants"
@@ -7,6 +7,13 @@ import { CoreOracle, ERC20, HomoraBank, MockCErc20, MockERC20, MockUniswapV2Fact
 import { execute_uniswap_werc20, setup_uniswap } from './helpers/helper-uniswap';
 import { setupBasic } from './helpers/setup-basic';
 import { setupUniswap } from './helpers/setup-uniswap';
+import { solidity } from 'ethereum-waffle'
+import { near } from './assertions/near'
+import { roughlyNear } from './assertions/roughlyNear'
+
+chai.use(solidity)
+chai.use(near)
+chai.use(roughlyNear)
 
 describe("Homora Bank", () => {
 	let admin: SignerWithAddress;
@@ -239,8 +246,6 @@ describe("Homora Bank", () => {
 		})
 
 		it("test accure", async () => {
-
-			// create position 1
 			const spell = await setup_uniswap(
 				admin,
 				alice,
@@ -285,7 +290,71 @@ describe("Homora Bank", () => {
 		})
 
 		it("test accure all", async () => {
+			const spell = await setup_uniswap(
+				admin,
+				alice,
+				bank,
+				werc20,
+				uniV2Router02,
+				uniV2Factory,
+				usdc,
+				usdt,
+				simpleOracle,
+				coreOracle,
+				coreOracle
+			)
+			await execute_uniswap_werc20(alice, bank, usdc.address, usdt.address, spell, 0, '')
 
+			const prevUSDTBank = await bank.banks(usdt.address);
+			console.log('usdt totalDebt:', prevUSDTBank.totalDebt.toString())
+			console.log('usdt totalShare:', prevUSDTBank.totalShare.toString())
+
+			const prevUSDCBank = await bank.banks(usdc.address);
+			console.log('usdc totalDebt:', prevUSDCBank.totalDebt.toString())
+			console.log('usdc totalShare:', prevUSDCBank.totalShare.toString())
+
+			// chain.sleep(100_000)
+
+			let curUSDTBank = await bank.banks(usdt.address);
+			let curUSDCBank = await bank.banks(usdc.address);
+
+			expect(prevUSDTBank.totalDebt).to.be.equal(curUSDTBank.totalDebt)
+			expect(prevUSDTBank.totalShare).to.be.equal(curUSDTBank.totalShare)
+
+			expect(prevUSDCBank.totalDebt).to.be.equal(curUSDCBank.totalDebt)
+			expect(prevUSDCBank.totalShare).to.be.equal(curUSDCBank.totalShare)
+
+			// accure usdt, usdc
+			await bank.accrueAll([usdt.address, usdc.address]);
+
+			curUSDTBank = await bank.banks(usdt.address);
+			console.log('usdt totalDebt:', curUSDTBank.totalDebt.toString())
+			console.log('usdt totalShare:', curUSDTBank.totalShare.toString())
+
+			expect(prevUSDTBank.totalShare).to.be.equal(curUSDTBank.totalShare);
+
+			const usdtInterest = curUSDTBank.totalDebt.sub(prevUSDTBank.totalDebt);
+			const usdtFee = usdtInterest.mul(await bank.feeBps()).div(10_000);
+
+			expect(curUSDTBank.reserve.sub(prevUSDTBank.reserve)).to.be.equal(usdtFee);
+
+			expect(usdtInterest).to.be.roughlyNear(
+				BigNumber.from(200_000_000).mul(10).div(100).mul(100_000).div(365 * 86400)
+			);
+
+			curUSDCBank = await bank.banks(usdc.address);
+			console.log('usdc totalDebt:', curUSDCBank.totalDebt);
+			console.log('usdc totalShare:', curUSDCBank.totalShare);
+
+			expect(prevUSDCBank.totalShare).to.be.equal(curUSDCBank.totalShare);
+
+			const usdcInterest = curUSDCBank.totalDebt.sub(prevUSDCBank.totalDebt);
+			const usdcFee = usdcInterest.mul(await bank.feeBps()).div(10_000);
+
+			expect(curUSDCBank.reserve.sub(prevUSDCBank.reserve)).to.be.equal(usdcFee);
+			expect(usdcInterest).to.be.roughlyNear(
+				BigNumber.from(1_000_000_000).mul(10).div(100).mul(100_000).div(365 * 86400)
+			);
 		})
 	})
 })
