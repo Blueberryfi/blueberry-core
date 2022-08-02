@@ -233,5 +233,59 @@ describe("Homora Bank", () => {
 			expect(collateralSize).to.be.gt(0);
 			expect(debtMap).to.be.equal(1 << 2 + 1 << 3);
 		})
+
+		it("reinitialize", async () => {
+			await expect(bank.initialize(coreOracle.address, 2000)).to.be.reverted;
+		})
+
+		it("test accure", async () => {
+
+			// create position 1
+			const spell = await setup_uniswap(
+				admin,
+				alice,
+				bank,
+				werc20,
+				uniV2Router02,
+				uniV2Factory,
+				usdc,
+				usdt,
+				simpleOracle,
+				coreOracle,
+				coreOracle
+			)
+			await execute_uniswap_werc20(alice, bank, usdc.address, usdt.address, spell, 0, '')
+
+			const prevBank = await bank.banks(usdt.address);
+			console.log('totalDebt:', prevBank.totalDebt.toString())
+			console.log('totalShare:', prevBank.totalShare.toString())
+
+			// chain.sleep(100_000)
+
+			// not accure yet
+			const curBank = await bank.banks(usdt.address);
+			console.log('totalDebt:', curBank.totalDebt.toString())
+			console.log('totalShare:', curBank.totalShare.toString())
+
+			expect(prevBank.totalDebt).to.be.equal(curBank.totalDebt);
+			expect(prevBank.totalShare).to.be.equal(curBank.totalShare);
+
+			await bank.accrue(usdt.address);
+
+			const curBank1 = await bank.banks(usdt.address);
+			console.log('totalDebt:', curBank1.totalDebt.toString())
+			console.log('totalShare:', curBank1.totalShare.toString())
+
+			expect(prevBank.totalShare).to.be.equal(curBank1.totalShare);
+
+			const usdtInterest = curBank1.totalDebt.sub(prevBank.totalDebt);
+			const usdtFee = usdtInterest.mul(await bank.feeBps()).div(10_000);
+
+			expect(curBank1.reserve.sub(prevBank.reserve)).to.be.equal(usdtFee);
+		})
+
+		it("test accure all", async () => {
+
+		})
 	})
 })
