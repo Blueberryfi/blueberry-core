@@ -3,7 +3,7 @@ import chai, { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { CONTRACT_NAMES } from "../constants"
-import { CoreOracle, ERC20, HomoraBank, MockCErc20, MockERC20, MockUniswapV2Factory, MockUniswapV2Router02, MockWETH, SimpleOracle, WERC20 } from '../typechain';
+import { CoreOracle, ERC20, HomoraBank, MockCErc20, MockERC20, MockUniswapV2Factory, MockUniswapV2Router02, MockWETH, SimpleOracle, UniswapV2Oracle, WERC20 } from '../typechain';
 import { execute_uniswap_werc20, setup_uniswap } from './helpers/helper-uniswap';
 import { setupBasic } from './helpers/setup-basic';
 import { setupUniswap } from './helpers/setup-uniswap';
@@ -21,23 +21,23 @@ describe("Homora Bank", () => {
 	let bob: SignerWithAddress;
 	let eve: SignerWithAddress;
 
+	let bank: HomoraBank;
+	let werc20: WERC20;
+	let uniV2Router02: MockUniswapV2Router02;
+	let uniV2Factory: MockUniswapV2Factory;
+	let usdt: MockERC20;
+	let usdc: MockERC20;
+	let dai: MockERC20;
+	let weth: MockWETH;
+	let simpleOracle: SimpleOracle;
+	let coreOracle: CoreOracle;
+	let token: MockERC20;
+	let cToken: MockCErc20;
+
 	before(async () => {
 		[admin, alice, bob, eve] = await ethers.getSigners();
 	})
 	describe("Uniswap", () => {
-		let bank: HomoraBank;
-		let werc20: WERC20;
-		let uniV2Router02: MockUniswapV2Router02;
-		let uniV2Factory: MockUniswapV2Factory;
-		let usdt: MockERC20;
-		let usdc: MockERC20;
-		let dai: MockERC20;
-		let weth: MockWETH;
-		let simpleOracle: SimpleOracle;
-		let coreOracle: CoreOracle;
-		let token: MockERC20;
-		let cToken: MockCErc20;
-
 		beforeEach(async () => {
 			const uniFixture = await setupUniswap();
 			const basicFixture = await setupBasic();
@@ -355,6 +355,142 @@ describe("Homora Bank", () => {
 			expect(usdcInterest).to.be.roughlyNear(
 				BigNumber.from(1_000_000_000).mul(10).div(100).mul(100_000).div(365 * 86400)
 			);
+		})
+	})
+	describe('Liquidation', () => {
+		beforeEach(async () => {
+			const uniFixture = await setupUniswap();
+			const basicFixture = await setupBasic();
+			bank = basicFixture.homoraBank;
+			werc20 = basicFixture.werc20;
+			uniV2Router02 = uniFixture.mockUniV2Router02;
+			uniV2Factory = uniFixture.mockUniV2Factory;
+			usdt = basicFixture.usdt;
+			usdc = basicFixture.usdc;
+			dai = basicFixture.dai;
+			weth = basicFixture.mockWETH;
+			simpleOracle = basicFixture.simpleOracle;
+			coreOracle = basicFixture.coreOracle;
+
+			// Mint and approve USDT & USDT tokens
+			await usdt.mint(bob.address, BigNumber.from(10).pow(6).mul(10_000));
+			await usdt.connect(bob).approve(bank.address, ethers.constants.MaxUint256);
+			await usdc.mint(bob.address, BigNumber.from(10).pow(6).mul(10_000));
+			await usdc.connect(bob).approve(bank.address, ethers.constants.MaxUint256);
+		})
+		it("test liquidation", async () => {
+			let pos_id = 0;
+			const spell = await setup_uniswap(
+				admin,
+				alice,
+				bank,
+				werc20,
+				uniV2Router02,
+				uniV2Factory,
+				usdc,
+				usdt,
+				simpleOracle,
+				coreOracle,
+				coreOracle
+			)
+			await execute_uniswap_werc20(alice, bank, usdc.address, usdt.address, spell, pos_id, '')
+
+			pos_id = 1;
+
+			console.log('collateral value', await bank.getCollateralETHValue(pos_id));
+			console.log('borrow value', bank.getBorrowETHValue(pos_id));
+
+			// bob tries to liquidate
+			await expect(
+				bank.connect(bob).liquidate(pos_id, usdt.address, BigNumber.from(10).pow(18).mul(10))
+			).to.be.revertedWith('position still healthy');
+
+			const lp = await uniV2Factory.getPair(usdc.address, usdt.address);
+			const UniswapV2Oracle = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2Oracle);
+			const uniLpOracle = <UniswapV2Oracle>await UniswapV2Oracle.deploy(simpleOracle.address);
+			await uniLpOracle.deployed();
+
+			// TODO: Find this oracle contract
+			// await oracle.setOracles(
+			// 	[lp],
+			// 	[[10000, 9900, 10500]]
+			// )
+
+			console.log('collateral value', await bank.getCollateralETHValue(pos_id));
+			console.log('borrow value', await bank.getBorrowETHValue(pos_id));
+
+			// ready to be liquidated
+			await bank.connect(bob).liquidate(pos_id, usdt.address, BigNumber.from(10).pow(6).mul(100));
+			const calculatedBobLp = (await simpleOracle.getETHPx(usdt.address))
+				.mul(BigNumber.from(10).pow(6).mul(100))
+				.div(await uniLpOracle.getETHPx(lp))
+				.mul(105).div(100);
+			console.log('bob lp', werc20.balanceOfERC20(lp, bob.address));
+			console.log('calc bob lp', calculatedBobLp);
+
+			expect(await werc20.balanceOfERC20(lp, bob.address)).to.be.roughlyNear(calculatedBobLp);
+
+			console.log('collateral value', await bank.getCollateralETHValue(pos_id));
+			console.log('borrow value', await bank.getBorrowETHValue(pos_id));
+
+			// TODO: Find this oracle contract
+			// await oracle.setOracles(
+			// 	[usdt, usdc],
+			// 	[
+			// 		[10700, 10000, 10300],
+			// 		[10200, 10000, 10100],
+			// 	]
+			// )
+
+			console.log('collateral value', await bank.getCollateralETHValue(pos_id));
+			console.log('borrow value', await bank.getBorrowETHValue(pos_id));
+
+			// liquidate 300 USDC
+			let prevBobBal = await werc20.balanceOfERC20(lp, bob.address);
+			await bank.connect(bob).liquidate(pos_id, usdc.address, BigNumber.from(10).pow(6).mul(300));
+			let curBobBal = await werc20.balanceOfERC20(lp, bob.address);
+			const calculatedDeltaBobLp = BigNumber.from(10).pow(6).mul(300)
+				.mul(await simpleOracle.getETHPx(usdc.address))
+				.div(await uniLpOracle.getETHPx(lp))
+				.mul(105).mul(105).div(100).div(100);
+			console.log('delta bob lp', curBobBal.sub(prevBobBal));
+			console.log('calc delta bob lp', calculatedDeltaBobLp);
+
+			expect(curBobBal.sub(prevBobBal)).to.be.roughlyNear(calculatedDeltaBobLp);
+
+			// change usdc price
+			await simpleOracle.setETHPx(
+				[usdc.address],
+				[BigNumber.from(2).pow(112).mul(BigNumber.from(10).pow(12)).div(500)]
+			)
+
+			console.log('collateral value', await bank.getCollateralETHValue(pos_id));
+			console.log('borrow value', await bank.getBorrowETHValue(pos_id));
+
+			// liquidate max USDC (remaining 700)
+			prevBobBal = await werc20.balanceOfERC20(lp, bob.address);
+			const startPosInfo = await bank.getPositionInfo(pos_id);
+			await bank.liquidate(pos_id, usdc.address, ethers.constants.MaxUint256);
+			curBobBal = await werc20.balanceOfERC20(lp, bob.address);
+			const endPosInfo = await bank.getPositionInfo(pos_id);
+
+			console.log('delta bob lp', curBobBal.sub(prevBobBal));
+			console.log('calc delta bob lp', startPosInfo.collateralSize.sub(endPosInfo.collateralSize))
+			expect(curBobBal.sub(prevBobBal)).to.be.roughlyNear(
+				startPosInfo.collateralSize.sub(endPosInfo.collateralSize)
+			)
+
+			// try to liquidate more than available
+			await expect(
+				bank.connect(bob).liquidate(pos_id, usdt.address, BigNumber.from(10).pow(6).mul(101))
+			).to.be.reverted;
+
+			// liquidate 100 USDT (remaining 100)
+			prevBobBal = await werc20.balanceOfERC20(lp, bob.address);
+			await bank.connect(bob).liquidate(pos_id, usdt.address, BigNumber.from(10).pow(6).mul(100))
+			curBobBal = await werc20.balanceOfERC20(lp, bob.address);
+			console.log('delta bob lp', curBobBal.sub(prevBobBal));
+			expect(curBobBal.sub(prevBobBal)).to.be.roughlyNear(BigNumber.from(0));
 		})
 	})
 })
