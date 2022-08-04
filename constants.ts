@@ -4,6 +4,7 @@ export enum CONTRACT_NAMES {
 	MockWETH = "MockWETH",
 	MockERC20 = "MockERC20",
 	MockCErc20 = "MockCErc20",
+	MockCErc20_2 = "MockCErc20_2",
 	WERC20 = "WERC20",
 
 	// Oracles
