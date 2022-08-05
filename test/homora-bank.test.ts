@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai, { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 import { ethers } from 'hardhat';
 import { CONTRACT_NAMES } from "../constants"
 import {
@@ -13,9 +13,11 @@ import {
 	MockUniswapV2Router02,
 	MockWETH,
 	SimpleOracle,
+	UniswapV2Oracle,
+	UniswapV2SpellV1,
 	WERC20
 } from '../typechain-types';
-import { execute_uniswap_werc20, setup_uniswap } from './helpers/helper-uniswap';
+import { execute_uniswap_werc20, } from './helpers/helper-uniswap';
 import { setupBasic } from './helpers/setup-basic';
 import { setupUniswap } from './helpers/setup-uniswap';
 import { solidity } from 'ethereum-waffle'
@@ -45,23 +47,98 @@ describe("Homora Bank", () => {
 	let token: MockERC20;
 	let cToken: MockCErc20;
 
+	const setup_uniswap = async (
+		admin: SignerWithAddress,
+		alice: SignerWithAddress,
+		bank: HomoraBank,
+		werc20: WERC20,
+		urouter: MockUniswapV2Router02,
+		ufactory: MockUniswapV2Factory,
+		usdc: MockERC20,
+		usdt: MockERC20,
+		simpleOracle: SimpleOracle,
+		coreOracle: CoreOracle,
+		oracle: Contract,
+	) => {
+		const UniswapV2SpellV1 = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2SpellV1);
+		const spell = <UniswapV2SpellV1>await UniswapV2SpellV1.deploy(
+			bank.address,
+			werc20.address,
+			urouter.address
+		);
+		await spell.deployed();
+
+		await usdc.mint(admin.address, BigNumber.from(10).pow(6).mul(10_000_000))
+		await usdt.mint(admin.address, BigNumber.from(10).pow(6).mul(10_000_000))
+		await usdc.approve(urouter.address, ethers.constants.MaxUint256);
+		await usdt.approve(urouter.address, ethers.constants.MaxUint256);
+		await urouter.addLiquidity(
+			usdc.address,
+			usdt.address,
+			BigNumber.from(10).pow(6).mul(1_000_000),
+			BigNumber.from(10).pow(6).mul(1_000_000),
+			0,
+			0,
+			admin.address,
+			ethers.constants.MaxUint256
+		)
+
+		const lp = await ufactory.getPair(usdc.address, usdt.address);
+		const lpContract = <ERC20>await ethers.getContractAt(CONTRACT_NAMES.ERC20, lp);
+		console.log('admin lp bal:', await lpContract.balanceOf(admin.address));
+
+		const UniswapLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2Oracle);
+		const uniswapLpOracle = <UniswapV2Oracle>await UniswapLpOracle.deploy(coreOracle.address);
+		await uniswapLpOracle.deployed();
+
+		console.log('usdt Px:', await simpleOracle.getETHPx(usdt.address));
+		console.log('usdc Px:', await simpleOracle.getETHPx(usdc.address));
+
+		await coreOracle.setRoute(
+			[usdc.address, usdt.address, lp],
+			[simpleOracle.address, simpleOracle.address, uniswapLpOracle.address]
+		)
+
+		console.log('lp Px:', await uniswapLpOracle.getETHPx(lp));
+
+		// await oracle.setOracles(
+		// 	[usdc.address, usdt.address, lp],
+		// 	[
+		// 		[10000, 10000, 10000],
+		// 		[10000, 10000, 10000],
+		// 		[10000, 10000, 10000],
+		// 	]
+		// );
+		await usdc.mint(alice.address, BigNumber.from(10).pow(6).mul(10_000_000))
+		await usdt.mint(alice.address, BigNumber.from(10).pow(6).mul(10_000_000))
+		await usdc.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
+		await usdt.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
+
+		return spell;
+	}
+
 	before(async () => {
 		[admin, alice, bob, eve] = await ethers.getSigners();
 	})
 	describe("Uniswap", () => {
 		beforeEach(async () => {
-			const uniFixture = await setupUniswap();
 			const basicFixture = await setupBasic();
 			bank = basicFixture.homoraBank;
 			werc20 = basicFixture.werc20;
-			uniV2Router02 = uniFixture.mockUniV2Router02;
-			uniV2Factory = uniFixture.mockUniV2Factory;
 			usdt = basicFixture.usdt;
 			usdc = basicFixture.usdc;
 			dai = basicFixture.dai;
 			weth = basicFixture.mockWETH;
 			simpleOracle = basicFixture.simpleOracle;
 			coreOracle = basicFixture.coreOracle;
+
+			const MockUniV2Factory = await ethers.getContractFactory(CONTRACT_NAMES.MockUniswapV2Factory);
+			uniV2Factory = <MockUniswapV2Factory>await MockUniV2Factory.deploy(admin.address);
+			await uniV2Factory.deployed();
+
+			const MockUniV2Router02 = await ethers.getContractFactory(CONTRACT_NAMES.MockUniswapV2Router02);
+			uniV2Router02 = <MockUniswapV2Router02>await MockUniV2Router02.deploy(uniV2Factory.address, weth.address);
+			await uniV2Router02.deployed();
 
 			const MockERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);
 			const MockCERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
@@ -80,6 +157,7 @@ describe("Homora Bank", () => {
 			expect(await bank.POSITION_ID()).to.be.equal(0);
 			expect(await bank.SPELL()).to.be.equal(ethers.constants.AddressZero);
 
+			console.log('here1');
 			const spell = await setup_uniswap(
 				admin,
 				alice,

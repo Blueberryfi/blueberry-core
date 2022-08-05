@@ -407,6 +407,14 @@ contract MockUniswapV2Router02 is MockUniswapV2Router02IUniswapV2Router02 {
         WETH = _WETH;
     }
 
+    function getWeth() external view returns (address) {
+        return WETH;
+    }
+
+    function getFactory() external view returns (address) {
+        return factory;
+    }
+
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }

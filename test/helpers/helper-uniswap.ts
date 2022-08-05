@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { BigNumber, Contract } from "ethers"
-import { ethers } from "hardhat"
+import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
 import {
 	CoreOracle,
@@ -29,8 +29,6 @@ export const setup_uniswap = async (
 	oracle: Contract,
 ) => {
 	const UniswapV2SpellV1 = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2SpellV1);
-	console.log(await urouter.factory())
-	console.log(await urouter.WETH())
 	const spell = <UniswapV2SpellV1>await UniswapV2SpellV1.deploy(
 		bank.address,
 		werc20.address,

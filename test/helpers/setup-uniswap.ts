@@ -17,6 +17,8 @@ export const setupUniswap = deployments.createFixture(async () => {
 	const mockUniV2Router02 = <MockUniswapV2Router02>await MockUniV2Router02.deploy(mockUniV2Factory.address, mockWETH.address);
 	await mockUniV2Router02.deployed();
 
+	console.log(await mockUniV2Router02.factory());
+
 	return {
 		mockWETH,
 		mockUniV2Factory,
