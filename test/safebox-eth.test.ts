@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { MockCErc202, MockWETH, SafeBoxETH } from '../typechain';
+import { MockCErc20_2, MockWETH, SafeBoxETH } from '../typechain-types';
 import { setupSafeBox } from './helpers/setup-safebox';
 
 describe("SafeBoxEth", () => {
@@ -11,7 +11,7 @@ describe("SafeBoxEth", () => {
 	let bob: SignerWithAddress;
 	let eve: SignerWithAddress;
 	let safeBoxEth: SafeBoxETH;
-	let cweth: MockCErc202;
+	let cweth: MockCErc20_2;
 	let weth: MockWETH;
 
 	before(async () => {

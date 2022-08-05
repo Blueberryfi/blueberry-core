@@ -1,6 +1,6 @@
 import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { MockCErc202, MockERC20, MockWETH, SafeBox, SafeBoxETH } from '../../typechain';
+import { MockCErc20_2, MockERC20, MockWETH, SafeBox, SafeBoxETH } from '../../typechain-types';
 
 export const setupSafeBox = deployments.createFixture(async () => {
 	const MockERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);
@@ -8,7 +8,7 @@ export const setupSafeBox = deployments.createFixture(async () => {
 	await mockERC20.deployed();
 
 	const MockCERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20_2);
-	const cToken = <MockCErc202>await MockCERC20.deploy(mockERC20.address);
+	const cToken = <MockCErc20_2>await MockCERC20.deploy(mockERC20.address);
 	await cToken.deployed();
 
 	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
@@ -19,7 +19,7 @@ export const setupSafeBox = deployments.createFixture(async () => {
 	const mockWETH = <MockWETH>await MockWETH.deploy();
 	await mockWETH.deployed();
 
-	const cWeth = <MockCErc202>await MockCERC20.deploy(mockWETH.address);
+	const cWeth = <MockCErc20_2>await MockCERC20.deploy(mockWETH.address);
 	await cWeth.deployed();
 
 	const SafeBoxEth = await ethers.getContractFactory(CONTRACT_NAMES.SafeBoxETH);

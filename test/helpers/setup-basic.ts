@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { CoreOracle, HomoraBank, MockERC20, MockWETH, SimpleOracle, WERC20 } from '../../typechain';
+import { CoreOracle, HomoraBank, MockERC20, MockWETH, SimpleOracle, WERC20 } from '../../typechain-types';
 
 export const setupBasic = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
