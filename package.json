@@ -17,6 +17,8 @@
   "dependencies": {
     "@chainlink/contracts": "^0.4.1",
     "@openzeppelin/contracts": "^4.6.0",
+    "@openzeppelin/contracts-upgradeable": "^4.7.2",
+    "@openzeppelin/hardhat-upgrades": "^1.19.1",
     "chai-ethers": "0.0.1",
     "erc721a": "^3.3.0",
     "standard-version": "^9.3.0",
