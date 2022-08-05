@@ -6,3 +6,4 @@ typechain
 build
 coverage/
 coverage.json
+typechain-types

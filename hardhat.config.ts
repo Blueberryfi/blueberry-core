@@ -8,11 +8,9 @@ import 'hardhat-deploy';
 import 'hardhat-docgen'
 import '@hardhat-docgen/core'
 import '@hardhat-docgen/markdown'
+import { HardhatUserConfig } from 'hardhat/types';
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
-module.exports = {
+const config: HardhatUserConfig = {
   typechain: {
     target: 'ethers-v5',
   },
@@ -50,3 +48,5 @@ module.exports = {
     except: ['/test/*', '/mock/*', '/hardhat-proxy/*'],
   },
 };
+
+export default config;

@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2018",
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
-    "sourceMap": true
+    "resolveJsonModule": true,
   },
   "include": [
     "hardhat.config.ts",
