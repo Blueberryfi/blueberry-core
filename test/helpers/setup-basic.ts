@@ -53,13 +53,23 @@ export const setupBasic = deployments.createFixture(async () => {
 
 	const HomoraBank = await ethers.getContractFactory(CONTRACT_NAMES.HomoraBank);
 	// const homoraBank = <HomoraBank>await HomoraBank.deploy(proxyOracle.address, 2000);
-	const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank, [
-		proxyOracle.address, 2000
-	])
+
+	// const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank, [
+	// 	proxyOracle.address, 2000
+	// ])
+
+	const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank, 
+		[ proxyOracle.address, 2000 ],
+		{ 
+			initializer: "initialize",
+			unsafeAllow: ['delegatecall']
+		}
+	)
+
 	// TODO: error, fix them later
 	// await homoraBank.initialize(proxyOracle.address, 2000);
 	await homoraBank.deployed();
-	console.log(await homoraBank.oracle());
+	console.log("Oracle Address: ", await homoraBank.oracle());
 
 	// for (const token of [mockWETH, dai, usdt, usdc]) {
 	// 	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
