@@ -91,20 +91,20 @@ export const execute_uniswap_werc20 = async (
 	token0: string,
 	token1: string,
 	spell: UniswapV2SpellV1,
-	pos_id = 0,
-	lp: string
+	pos_id = 0
 ) => {
 	await spell.getAndApprovePair(token0, token1);
+	const lp = await spell.pairs(token0, token1);
+	console.log('here');
 	const tx = await bank.connect(alice).execute(
 		pos_id,
 		spell.address,
-		ethers.utils.defaultAbiCoder.encode(
-			[
-				"address",
-				"address",
-				"tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,)",
-				"address",
-			], [
+		ethers.utils.defaultAbiCoder.encode([
+			"address",
+			"address",
+			"tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256)",
+			"address",
+		], [
 			token0,
 			token1,
 			[
@@ -118,7 +118,7 @@ export const execute_uniswap_werc20 = async (
 				0,
 			],
 			lp,
-		]
-		)
+		])
 	);
+	console.log('here2');
 }

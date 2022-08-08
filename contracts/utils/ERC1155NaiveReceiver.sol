@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155ReceiverUpgradeable.sol';
 
-contract ERC1155NaiveReceiver is IERC1155Receiver {
-    bytes32[64] __gap; // reserve space for upgrade
+contract ERC1155NaiveReceiver is IERC1155ReceiverUpgradeable {
+    uint256[49] private __gap;
 
     function onERC1155Received(
         address, /* operator */
@@ -34,6 +34,6 @@ contract ERC1155NaiveReceiver is IERC1155Receiver {
         override
         returns (bool)
     {
-        return interfaceId == type(IERC1155Receiver).interfaceId;
+        return interfaceId == type(IERC1155ReceiverUpgradeable).interfaceId;
     }
 }

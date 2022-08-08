@@ -15,7 +15,8 @@ import {
 	SimpleOracle,
 	UniswapV2Oracle,
 	UniswapV2SpellV1,
-	WERC20
+	WERC20,
+	ProxyOracle,
 } from '../typechain-types';
 import { execute_uniswap_werc20, } from './helpers/helper-uniswap';
 import { setupBasic } from './helpers/setup-basic';
@@ -44,6 +45,7 @@ describe("Homora Bank", () => {
 	let weth: MockWETH;
 	let simpleOracle: SimpleOracle;
 	let coreOracle: CoreOracle;
+	let proxyOracle: ProxyOracle;
 	let token: MockERC20;
 	let cToken: MockCErc20;
 
@@ -58,7 +60,7 @@ describe("Homora Bank", () => {
 		usdt: MockERC20,
 		simpleOracle: SimpleOracle,
 		coreOracle: CoreOracle,
-		oracle: Contract,
+		oracle: ProxyOracle,
 	) => {
 		const UniswapV2SpellV1 = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2SpellV1);
 		const spell = <UniswapV2SpellV1>await UniswapV2SpellV1.deploy(
@@ -101,14 +103,24 @@ describe("Homora Bank", () => {
 
 		console.log('lp Px:', await uniswapLpOracle.getETHPx(lp));
 
-		// await oracle.setOracles(
-		// 	[usdc.address, usdt.address, lp],
-		// 	[
-		// 		[10000, 10000, 10000],
-		// 		[10000, 10000, 10000],
-		// 		[10000, 10000, 10000],
-		// 	]
-		// );
+		await oracle.setTokenFactors(
+			[usdc.address, usdt.address, lp],
+			[
+				{
+					borrowFactor: 10000,
+					collateralFactor: 10000,
+					liqIncentive: 10000
+				}, {
+					borrowFactor: 10000,
+					collateralFactor: 10000,
+					liqIncentive: 10000
+				}, {
+					borrowFactor: 10000,
+					collateralFactor: 10000,
+					liqIncentive: 10000
+				},
+			]
+		);
 		await usdc.mint(alice.address, BigNumber.from(10).pow(6).mul(10_000_000))
 		await usdt.mint(alice.address, BigNumber.from(10).pow(6).mul(10_000_000))
 		await usdc.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
@@ -131,6 +143,7 @@ describe("Homora Bank", () => {
 			weth = basicFixture.mockWETH;
 			simpleOracle = basicFixture.simpleOracle;
 			coreOracle = basicFixture.coreOracle;
+			proxyOracle = basicFixture.proxyOracle;
 
 			const MockUniV2Factory = await ethers.getContractFactory(CONTRACT_NAMES.MockUniswapV2Factory);
 			uniV2Factory = <MockUniswapV2Factory>await MockUniV2Factory.deploy(admin.address);
@@ -157,7 +170,6 @@ describe("Homora Bank", () => {
 			expect(await bank.POSITION_ID()).to.be.equal(0);
 			expect(await bank.SPELL()).to.be.equal(ethers.constants.AddressZero);
 
-			console.log('here1');
 			const spell = await setup_uniswap(
 				admin,
 				alice,
@@ -169,7 +181,7 @@ describe("Homora Bank", () => {
 				usdt,
 				simpleOracle,
 				coreOracle,
-				coreOracle
+				proxyOracle
 			)
 
 			await execute_uniswap_werc20(
@@ -178,8 +190,7 @@ describe("Homora Bank", () => {
 				usdc.address,
 				usdt.address,
 				spell,
-				0,
-				''
+				0
 			)
 
 			expect(await bank._GENERAL_LOCK()).to.be.equal(NOT_ENTERED);
