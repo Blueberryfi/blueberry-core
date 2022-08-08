@@ -56,7 +56,7 @@ contract HomoraBank is
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
     uint256 private constant _NO_ID = type(uint256).max;
-    address private constant _NO_ADDRESS = address(1);
+    address private constant _NO_ADDRESS = address(0);
 
     struct Bank {
         bool isListed; // Whether this market exists.

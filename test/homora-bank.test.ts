@@ -165,9 +165,9 @@ describe("Homora Bank", () => {
 			const ENTERED = 2;
 			const NO_ID = ethers.constants.MaxUint256;
 
-			expect(await bank._GENERAL_LOCK()).to.be.equal(0);
-			expect(await bank._IN_EXEC_LOCK()).to.be.equal(0);
-			expect(await bank.POSITION_ID()).to.be.equal(0);
+			expect(await bank._GENERAL_LOCK()).to.be.equal(NOT_ENTERED);
+			expect(await bank._IN_EXEC_LOCK()).to.be.equal(NOT_ENTERED);
+			expect(await bank.POSITION_ID()).to.be.equal(NO_ID);
 			expect(await bank.SPELL()).to.be.equal(ethers.constants.AddressZero);
 
 			const spell = await setup_uniswap(
@@ -185,6 +185,7 @@ describe("Homora Bank", () => {
 			)
 
 			await execute_uniswap_werc20(
+				admin,
 				alice,
 				bank,
 				usdc.address,

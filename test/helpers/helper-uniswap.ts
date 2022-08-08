@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { BigNumber, Contract } from "ethers"
+import { BigNumber, Contract, Signer } from "ethers"
 import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
 import {
@@ -86,6 +86,7 @@ export const setup_uniswap = async (
 }
 
 export const execute_uniswap_werc20 = async (
+	admin: SignerWithAddress,
 	alice: SignerWithAddress,
 	bank: HomoraBank,
 	token0: string,
@@ -95,7 +96,10 @@ export const execute_uniswap_werc20 = async (
 ) => {
 	await spell.getAndApprovePair(token0, token1);
 	const lp = await spell.pairs(token0, token1);
-	console.log('here');
+	await bank.connect(admin).setWhitelistSpells(
+		[spell.address],
+		[true]
+	)
 	const tx = await bank.connect(alice).execute(
 		pos_id,
 		spell.address,
@@ -120,5 +124,4 @@ export const execute_uniswap_werc20 = async (
 			lp,
 		])
 	);
-	console.log('here2');
 }
