@@ -1,14 +1,14 @@
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
-import "@openzeppelin/hardhat-upgrades";
+import '@openzeppelin/hardhat-upgrades';
 import 'solidity-coverage';
 import 'hardhat-abi-exporter';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
-import 'hardhat-docgen'
-import '@hardhat-docgen/core'
-import '@hardhat-docgen/markdown'
+import 'hardhat-docgen';
+import '@hardhat-docgen/core';
+import '@hardhat-docgen/markdown';
 import { HardhatUserConfig } from 'hardhat/types';
 
 const config: HardhatUserConfig = {

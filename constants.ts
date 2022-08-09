@@ -22,5 +22,6 @@ export enum CONTRACT_NAMES {
 	HomoraBank = "HomoraBank",
 	SafeBox = "SafeBox",
 	SafeBoxETH = "SafeBoxETH",
+	SafeBoxUniV3LP = "SafeBoxUniV3LP",
 	UniswapV2SpellV1 = "UniswapV2SpellV1",
 }
