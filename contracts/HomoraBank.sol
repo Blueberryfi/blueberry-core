@@ -8,7 +8,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol';
 
-// import './Governable.sol';
+import './Governable.sol';
 import './utils/ERC1155NaiveReceiver.sol';
 import './interfaces/IBank.sol';
 import './interfaces/ICErc20.sol';
@@ -21,31 +21,31 @@ library HomoraSafeMath {
     }
 }
 
-// contract HomoraCaster {
-//     /// @dev Call to the target using the given data.
-//     /// @param target The address target to call.
-//     /// @param data The data used in the call.
-//     function cast(address target, bytes calldata data) external payable {
-//         (bool ok, bytes memory returndata) = target.call{value: msg.value}(
-//             data
-//         );
-//         if (!ok) {
-//             if (returndata.length > 0) {
-//                 // The easiest way to bubble the revert reason is using memory via assembly
-//                 // solhint-disable-next-line no-inline-assembly
-//                 assembly {
-//                     let returndata_size := mload(returndata)
-//                     revert(add(32, returndata), returndata_size)
-//                 }
-//             } else {
-//                 revert('bad cast call');
-//             }
-//         }
-//     }
-// }
+contract HomoraCaster {
+    /// @dev Call to the target using the given data.
+    /// @param target The address target to call.
+    /// @param data The data used in the call.
+    function cast(address target, bytes calldata data) external payable {
+        (bool ok, bytes memory returndata) = target.call{value: msg.value}(
+            data
+        );
+        if (!ok) {
+            if (returndata.length > 0) {
+                // The easiest way to bubble the revert reason is using memory via assembly
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
+            } else {
+                revert('bad cast call');
+            }
+        }
+    }
+}
 
 contract HomoraBank is
-    Initializable,
+    Governable,
     OwnableUpgradeable,
     ERC1155NaiveReceiver,
     IBank
@@ -135,13 +135,13 @@ contract HomoraBank is
     /// @param _oracle The oracle smart contract address.
     /// @param _feeBps The fee collected to Homora bank.
     function initialize(IOracle _oracle, uint256 _feeBps) external initializer {
-        // __Governable__init();
+        __Governable__init();
         __Ownable_init();
         _GENERAL_LOCK = _NOT_ENTERED;
         _IN_EXEC_LOCK = _NOT_ENTERED;
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
-        // caster = address(new HomoraCaster());
+        caster = address(new HomoraCaster());
         oracle = _oracle;
         require(address(_oracle) != address(0), 'bad oracle address');
         feeBps = _feeBps;
@@ -160,7 +160,7 @@ contract HomoraBank is
 
     /// @dev Set allowContractCalls
     /// @param ok The status to set allowContractCalls to (false = onlyEOA)
-    function setAllowContractCalls(bool ok) external onlyOwner {
+    function setAllowContractCalls(bool ok) external onlyGov {
         allowContractCalls = ok;
     }
 
@@ -170,7 +170,7 @@ contract HomoraBank is
     function setWhitelistSpells(
         address[] calldata spells,
         bool[] calldata statuses
-    ) external onlyOwner {
+    ) external onlyGov {
         require(
             spells.length == statuses.length,
             'spells & statuses length mismatched'
@@ -186,7 +186,7 @@ contract HomoraBank is
     function setWhitelistTokens(
         address[] calldata tokens,
         bool[] calldata statuses
-    ) external onlyOwner {
+    ) external onlyGov {
         require(
             tokens.length == statuses.length,
             'tokens & statuses length mismatched'
@@ -206,7 +206,7 @@ contract HomoraBank is
     function setWhitelistUsers(
         address[] calldata users,
         bool[] calldata statuses
-    ) external onlyOwner {
+    ) external onlyGov {
         require(
             users.length == statuses.length,
             'users & statuses length mismatched'
@@ -224,7 +224,7 @@ contract HomoraBank is
 
     /// @dev Set bank status
     /// @param _bankStatus new bank status to change to
-    function setBankStatus(uint256 _bankStatus) external onlyOwner {
+    function setBankStatus(uint256 _bankStatus) external onlyGov {
         bankStatus = _bankStatus;
     }
 
@@ -457,7 +457,7 @@ contract HomoraBank is
     /// @dev Add a new bank to the ecosystem.
     /// @param token The underlying token for the bank.
     /// @param cToken The address of the cToken smart contract.
-    function addBank(address token, address cToken) external onlyOwner {
+    function addBank(address token, address cToken) external onlyGov {
         Bank storage bank = banks[token];
         require(!cTokenInBank[cToken], 'cToken already exists');
         require(!bank.isListed, 'bank already exists');
@@ -474,7 +474,7 @@ contract HomoraBank is
 
     /// @dev Set the oracle smart contract address.
     /// @param _oracle The new oracle smart contract address.
-    function setOracle(IOracle _oracle) external onlyOwner {
+    function setOracle(IOracle _oracle) external onlyGov {
         require(
             address(_oracle) != address(0),
             'cannot set zero address oracle'
@@ -485,7 +485,7 @@ contract HomoraBank is
 
     /// @dev Set the fee bps value that Homora bank charges.
     /// @param _feeBps The new fee bps value.
-    function setFeeBps(uint256 _feeBps) external onlyOwner {
+    function setFeeBps(uint256 _feeBps) external onlyGov {
         require(_feeBps <= 10000, 'fee too high');
         feeBps = _feeBps;
         emit SetFeeBps(_feeBps);
@@ -495,7 +495,7 @@ contract HomoraBank is
     /// @param amount The amount of tokens to withdraw.
     function withdrawReserve(address token, uint256 amount)
         external
-        onlyOwner
+        onlyGov
         lock
     {
         Bank storage bank = banks[token];
@@ -573,7 +573,7 @@ contract HomoraBank is
         }
         POSITION_ID = positionId;
         SPELL = spell;
-        // HomoraCaster(caster).cast{value: msg.value}(spell, data);
+        HomoraCaster(caster).cast{value: msg.value}(spell, data);
         uint256 collateralValue = getCollateralETHValue(positionId);
         uint256 borrowValue = getBorrowETHValue(positionId);
         require(collateralValue >= borrowValue, 'insufficient collateral');

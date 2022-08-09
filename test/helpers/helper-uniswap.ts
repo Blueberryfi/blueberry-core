@@ -14,6 +14,7 @@ import {
 	UniswapV2SpellV1,
 	WERC20
 } from "../../typechain-types"
+import SpellArtifact from '../../artifacts/contracts/spell/UniswapV2SpellV1.sol/UniswapV2SpellV1.json';
 
 export const setup_uniswap = async (
 	admin: SignerWithAddress,
@@ -96,19 +97,16 @@ export const execute_uniswap_werc20 = async (
 ) => {
 	await spell.getAndApprovePair(token0, token1);
 	const lp = await spell.pairs(token0, token1);
+	await spell.setWhitelistLPTokens()
 	await bank.connect(admin).setWhitelistSpells(
 		[spell.address],
 		[true]
 	)
-	const tx = await bank.connect(alice).execute(
+	const iface = new ethers.utils.Interface(SpellArtifact.abi);
+	await bank.connect(alice).execute(
 		pos_id,
 		spell.address,
-		ethers.utils.defaultAbiCoder.encode([
-			"address",
-			"address",
-			"tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256)",
-			"address",
-		], [
+		iface.encodeFunctionData("addLiquidityWERC20", [
 			token0,
 			token1,
 			[
@@ -120,8 +118,7 @@ export const execute_uniswap_werc20 = async (
 				0,
 				0,
 				0,
-			],
-			lp,
+			]
 		])
 	);
 }
