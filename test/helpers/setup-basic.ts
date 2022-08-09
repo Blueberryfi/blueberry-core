@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
-import { ethers, deployments } from 'hardhat';
+import { ethers, deployments, upgrades } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { CoreOracle, HomoraBank, MockERC20, MockWETH, SimpleOracle, WERC20 } from '../../typechain-types';
+import { CoreOracle, HomoraBank, MockERC20, MockWETH, ProxyOracle, SimpleOracle, WERC20 } from '../../typechain-types';
 
 export const setupBasic = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
@@ -47,14 +47,29 @@ export const setupBasic = deployments.createFixture(async () => {
 	await coreOracle.deployed();
 
 	const ProxyOracle = await ethers.getContractFactory(CONTRACT_NAMES.ProxyOracle);
-	const proxyOracle = await ProxyOracle.deploy(coreOracle.address);
+	const proxyOracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
 	await proxyOracle.deployed();
 	await proxyOracle.setWhitelistERC1155([werc20.address], true);
 
 	const HomoraBank = await ethers.getContractFactory(CONTRACT_NAMES.HomoraBank);
-	const homoraBank = <HomoraBank>await HomoraBank.deploy();
+	// const homoraBank = <HomoraBank>await HomoraBank.deploy(proxyOracle.address, 2000);
+
+	// const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank, [
+	// 	proxyOracle.address, 2000
+	// ])
+
+	const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank, 
+		[ proxyOracle.address, 2000 ],
+		{ 
+			initializer: "initialize",
+			unsafeAllow: ['delegatecall']
+		}
+	)
+
 	// TODO: error, fix them later
-	// await homoraBank.initialize(coreOracle.address, 2000);
+	// await homoraBank.initialize(proxyOracle.address, 2000);
+	await homoraBank.deployed();
+	console.log("Oracle Address: ", await homoraBank.oracle());
 
 	// for (const token of [mockWETH, dai, usdt, usdc]) {
 	// 	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);

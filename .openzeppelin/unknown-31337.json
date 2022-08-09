@@ -1,0 +1,375 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "txHash": "0xbfd947efd107f5730fd0da40bc5697ed93a2c1ff6334dc6a9eb01e1ff79195e3"
+  },
+  "proxies": [
+    {
+      "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+      "txHash": "0xca9d47b17b9e1df306a3c59861d517fb5d049749a8e7a0976d8d17e8cbfed6b0",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "7f93c2c8810de4435ef63d4325c3937f17621b433ae86dabab27dcddbdbf4b5a": {
+      "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "txHash": "0x42efd57040f916ee6278dae7c3316f0bdd0342f57ec4acffff28c8e1103589b5",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "governor",
+            "offset": 2,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "Governable",
+            "src": "contracts/Governable.sol:12"
+          },
+          {
+            "label": "pendingGovernor",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "Governable",
+            "src": "contracts/Governable.sol:13"
+          },
+          {
+            "label": "_gap",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_array(t_bytes32)64_storage",
+            "contract": "Governable",
+            "src": "contracts/Governable.sol:15"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "66",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "117",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "166",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ERC1155NaiveReceiver",
+            "src": "contracts/utils/ERC1155NaiveReceiver.sol:8"
+          },
+          {
+            "label": "_GENERAL_LOCK",
+            "offset": 0,
+            "slot": "215",
+            "type": "t_uint256",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:79"
+          },
+          {
+            "label": "_IN_EXEC_LOCK",
+            "offset": 0,
+            "slot": "216",
+            "type": "t_uint256",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:80"
+          },
+          {
+            "label": "POSITION_ID",
+            "offset": 0,
+            "slot": "217",
+            "type": "t_uint256",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:81"
+          },
+          {
+            "label": "SPELL",
+            "offset": 0,
+            "slot": "218",
+            "type": "t_address",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:82"
+          },
+          {
+            "label": "caster",
+            "offset": 0,
+            "slot": "219",
+            "type": "t_address",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:84"
+          },
+          {
+            "label": "oracle",
+            "offset": 0,
+            "slot": "220",
+            "type": "t_contract(IOracle)10886",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:85"
+          },
+          {
+            "label": "feeBps",
+            "offset": 0,
+            "slot": "221",
+            "type": "t_uint256",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:86"
+          },
+          {
+            "label": "nextPositionId",
+            "offset": 0,
+            "slot": "222",
+            "type": "t_uint256",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:87"
+          },
+          {
+            "label": "allBanks",
+            "offset": 0,
+            "slot": "223",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:89"
+          },
+          {
+            "label": "banks",
+            "offset": 0,
+            "slot": "224",
+            "type": "t_mapping(t_address,t_struct(Bank)5633_storage)",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:90"
+          },
+          {
+            "label": "cTokenInBank",
+            "offset": 0,
+            "slot": "225",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:91"
+          },
+          {
+            "label": "positions",
+            "offset": 0,
+            "slot": "226",
+            "type": "t_mapping(t_uint256,t_struct(Position)5648_storage)",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:92"
+          },
+          {
+            "label": "allowContractCalls",
+            "offset": 0,
+            "slot": "227",
+            "type": "t_bool",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:94"
+          },
+          {
+            "label": "whitelistedTokens",
+            "offset": 0,
+            "slot": "228",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:95"
+          },
+          {
+            "label": "whitelistedSpells",
+            "offset": 0,
+            "slot": "229",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:96"
+          },
+          {
+            "label": "whitelistedUsers",
+            "offset": 0,
+            "slot": "230",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:97"
+          },
+          {
+            "label": "bankStatus",
+            "offset": 0,
+            "slot": "231",
+            "type": "t_uint256",
+            "contract": "HomoraBank",
+            "src": "contracts/HomoraBank.sol:99"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes32)64_storage": {
+            "label": "bytes32[64]",
+            "numberOfBytes": "2048"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IOracle)10886": {
+            "label": "contract IOracle",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Bank)5633_storage)": {
+            "label": "mapping(address => struct HomoraBank.Bank)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Position)5648_storage)": {
+            "label": "mapping(uint256 => struct HomoraBank.Position)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Bank)5633_storage": {
+            "label": "struct HomoraBank.Bank",
+            "members": [
+              {
+                "label": "isListed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "index",
+                "type": "t_uint8",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "cToken",
+                "type": "t_address",
+                "offset": 2,
+                "slot": "0"
+              },
+              {
+                "label": "reserve",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "totalDebt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "totalShare",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_struct(Position)5648_storage": {
+            "label": "struct HomoraBank.Position",
+            "members": [
+              {
+                "label": "owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "collToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "collId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "collateralSize",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "debtMap",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "debtShareOf",
+                "type": "t_mapping(t_address,t_uint256)",
+                "offset": 0,
+                "slot": "5"
+              }
+            ],
+            "numberOfBytes": "192"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}
