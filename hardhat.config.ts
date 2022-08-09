@@ -28,6 +28,13 @@ const config: HardhatUserConfig = {
       },
     ],
   },
+  // abiExporter: {
+  //   path: "./abi",
+  //   runOnCompile: true,
+  //   clear: true,
+  //   flat: true,
+  //   spacing: 2,
+  // },
   namedAccounts: {
     deployer: {
       default: 0,
