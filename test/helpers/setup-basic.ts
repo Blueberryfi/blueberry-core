@@ -54,34 +54,28 @@ export const setupBasic = deployments.createFixture(async () => {
 	const HomoraBank = await ethers.getContractFactory(CONTRACT_NAMES.HomoraBank);
 	// const homoraBank = <HomoraBank>await HomoraBank.deploy(proxyOracle.address, 2000);
 
-	// const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank, [
-	// 	proxyOracle.address, 2000
-	// ])
-
-	const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank, 
-		[ proxyOracle.address, 2000 ],
-		{ 
+	const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank,
+		[proxyOracle.address, 2000],
+		{
 			initializer: "initialize",
 			unsafeAllow: ['delegatecall']
 		}
 	)
-
-	// TODO: error, fix them later
-	// await homoraBank.initialize(proxyOracle.address, 2000);
 	await homoraBank.deployed();
 	console.log("Oracle Address: ", await homoraBank.oracle());
 
-	// for (const token of [mockWETH, dai, usdt, usdc]) {
-	// 	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
-	// 	const cerc20 = await CERC20.deploy(token.address);
-	// 	if (token === mockWETH) {
-	// 		await mockWETH.connect(signers[9]).deposit({ 'value': ethers.utils.parseEther('100') });
-	// 		await mockWETH.connect(signers[9]).transfer(cerc20.address, ethers.utils.parseEther('100'));
-	// 	} else {
-	// 		await token.mint(cerc20.address, ethers.utils.parseEther('100'));
-	// 	}
-	// 	await homoraBank.addBank(token.address, cerc20.address);
-	// }
+	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
+	const cerc20 = await CERC20.deploy(mockWETH.address);
+	await mockWETH.connect(signers[9]).deposit({ 'value': ethers.utils.parseEther('100') });
+	await mockWETH.connect(signers[9]).transfer(cerc20.address, ethers.utils.parseEther('100'));
+	await homoraBank.addBank(mockWETH.address, cerc20.address);
+
+	for (const token of [dai, usdt, usdc]) {
+		const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
+		const cerc20 = await CERC20.deploy(token.address);
+		await token.mint(cerc20.address, ethers.utils.parseEther('100'));
+		await homoraBank.addBank(token.address, cerc20.address);
+	}
 
 	return {
 		mockWETH,

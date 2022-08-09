@@ -97,7 +97,7 @@ export const execute_uniswap_werc20 = async (
 ) => {
 	await spell.getAndApprovePair(token0, token1);
 	const lp = await spell.pairs(token0, token1);
-	await spell.setWhitelistLPTokens()
+	await spell.setWhitelistLPTokens([lp], [true]);
 	await bank.connect(admin).setWhitelistSpells(
 		[spell.address],
 		[true]
