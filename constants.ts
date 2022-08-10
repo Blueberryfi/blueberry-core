@@ -13,6 +13,7 @@ export enum CONTRACT_NAMES {
 	CoreOracle = "CoreOracle",
 	ProxyOracle = "ProxyOracle",
 	UniswapV2Oracle = "UniswapV2Oracle",
+	BalancerPairOracle = "BalancerPairOracle",
 
 	// Uniswap
 	MockUniswapV2Factory = "MockUniswapV2Factory",
