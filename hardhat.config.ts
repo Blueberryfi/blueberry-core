@@ -9,7 +9,10 @@ import 'hardhat-deploy';
 import 'hardhat-docgen'
 import '@hardhat-docgen/core'
 import '@hardhat-docgen/markdown'
-import { HardhatUserConfig } from 'hardhat/types';
+import { HardhatUserConfig } from 'hardhat/config';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const config: HardhatUserConfig = {
   typechain: {
@@ -28,6 +31,13 @@ const config: HardhatUserConfig = {
       },
     ],
   },
+  networks: {
+    hardhat: {
+      forking: {
+        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`
+      }
+    }
+  },
   // abiExporter: {
   //   path: "./abi",
   //   runOnCompile: true,
@@ -35,14 +45,6 @@ const config: HardhatUserConfig = {
   //   flat: true,
   //   spacing: 2,
   // },
-  namedAccounts: {
-    deployer: {
-      default: 0,
-    },
-    notDeployer: {
-      default: 1,
-    },
-  },
   contractSizer: {
     alphaSort: true,
     disambiguatePaths: false,
