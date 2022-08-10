@@ -39,13 +39,13 @@ const config: HardhatUserConfig = {
       }
     }
   },
-  // abiExporter: {
-  //   path: "./abi",
-  //   runOnCompile: true,
-  //   clear: true,
-  //   flat: true,
-  //   spacing: 2,
-  // },
+  abiExporter: {
+    path: "./abi",
+    runOnCompile: true,
+    clear: true,
+    flat: true,
+    spacing: 2,
+  },
   contractSizer: {
     alphaSort: true,
     disambiguatePaths: false,
