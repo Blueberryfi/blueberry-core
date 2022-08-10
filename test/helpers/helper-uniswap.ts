@@ -102,6 +102,7 @@ export const execute_uniswap_werc20 = async (
 		[spell.address],
 		[true]
 	)
+
 	const iface = new ethers.utils.Interface(SpellArtifact.abi);
 	await bank.connect(alice).execute(
 		pos_id,

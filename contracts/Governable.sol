@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 
 contract Governable is Initializable {
     event SetGovernor(address governor);

@@ -52,17 +52,9 @@ export const setupBasic = deployments.createFixture(async () => {
 	await proxyOracle.setWhitelistERC1155([werc20.address], true);
 
 	const HomoraBank = await ethers.getContractFactory(CONTRACT_NAMES.HomoraBank);
-	// const homoraBank = <HomoraBank>await HomoraBank.deploy(proxyOracle.address, 2000);
-
-	const homoraBank = <HomoraBank>await upgrades.deployProxy(HomoraBank,
-		[proxyOracle.address, 2000],
-		{
-			initializer: "initialize",
-			unsafeAllow: ['delegatecall']
-		}
-	)
+	const homoraBank = <HomoraBank>await HomoraBank.deploy();
 	await homoraBank.deployed();
-	console.log("Oracle Address: ", await homoraBank.oracle());
+	await homoraBank.initialize(proxyOracle.address, 2000);
 
 	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
 	const cerc20 = await CERC20.deploy(mockWETH.address);

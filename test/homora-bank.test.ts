@@ -164,11 +164,12 @@ describe("Homora Bank", () => {
 			const NOT_ENTERED = 1;
 			const ENTERED = 2;
 			const NO_ID = ethers.constants.MaxUint256;
+			const NO_ADDR = '0x0000000000000000000000000000000000000001'
 
 			expect(await bank._GENERAL_LOCK()).to.be.equal(NOT_ENTERED);
 			expect(await bank._IN_EXEC_LOCK()).to.be.equal(NOT_ENTERED);
 			expect(await bank.POSITION_ID()).to.be.equal(NO_ID);
-			expect(await bank.SPELL()).to.be.equal(ethers.constants.AddressZero);
+			expect(await bank.SPELL()).to.be.equal(NO_ADDR);
 
 			const spell = await setup_uniswap(
 				admin,
