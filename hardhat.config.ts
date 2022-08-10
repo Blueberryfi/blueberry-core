@@ -14,6 +14,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+let deployAccountKey: string;
+if (!process.env.DEPLOY_ACCOUNT_KEY) {
+  throw new Error("Please set your DEPLOY_ACCOUNT_KEY in a .env file");
+} else {
+  deployAccountKey = process.env.DEPLOY_ACCOUNT_KEY;
+}
+
+let alchemyapi: string;
+if (!process.env.ALCHEMY_API_KEY) {
+  throw new Error("Please set your ALCHEMY_API_KEY in a .env file");
+} else {
+  alchemyapi = process.env.ALCHEMY_API_KEY;
+}
+
 const config: HardhatUserConfig = {
   typechain: {
     target: 'ethers-v5',
@@ -34,10 +48,22 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+        url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
         blockNumber: 15284569,
       }
-    }
+    },
+    mainnet: {
+      accounts: [deployAccountKey],
+      chainId: 1,
+      url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
+      timeout: 200000,
+    },
+    rinkeby: {
+      accounts: [deployAccountKey],
+      chainId: 4,
+      url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemyapi}`,
+      timeout: 200000,
+    },
   },
   abiExporter: {
     path: "./abi",
@@ -58,6 +84,9 @@ const config: HardhatUserConfig = {
     runOnCompile: false,
     except: ['/test/*', '/mock/*', '/hardhat-proxy/*'],
   },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY
+  }
 };
 
 export default config;
