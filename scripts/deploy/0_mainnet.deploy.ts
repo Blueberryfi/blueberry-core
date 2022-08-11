@@ -23,7 +23,7 @@ async function main(): Promise<void> {
 	)
 	const wsperp = await WStakingRewards.deploy(
 		ADDRESS.PERP_BALANCER_LP_REWARDS,	// staking - Perpetual Protocol - Balancer LP Rewards
-		ADDRESS.BAL_PERP_USDC_POOL,				// underlying - Balancer PERP/USDC Pool (80/20)
+		ADDRESS.BAL_PERP_USDC_8020,				// underlying - Balancer PERP/USDC Pool (80/20)
 		ADDRESS.PERP											// reward - $PERP token
 	)
 
@@ -38,8 +38,8 @@ async function main(): Promise<void> {
 	await coreOracle.deployed();
 	// UniswapV2Oracle
 	const UniswapV2Oracle = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2Oracle);
-	const lpOracle = <UniswapV2Oracle>await UniswapV2Oracle.deploy(coreOracle.address);
-	await lpOracle.deployed();
+	const uniOracle = <UniswapV2Oracle>await UniswapV2Oracle.deploy(coreOracle.address);
+	await uniOracle.deployed();
 	// BalancerPairOracle
 	const BalancerPairOracle = await ethers.getContractFactory(CONTRACT_NAMES.BalancerPairOracle);
 	const balOracle = <BalancerPairOracle>await BalancerPairOracle.deploy(coreOracle.address);
@@ -53,6 +53,120 @@ async function main(): Promise<void> {
 	const proxyOracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
 	await proxyOracle.deployed();
 
+	// Setup Oracles
+	await coreOracle.setRoute([
+		ADDRESS.ETH, ADDRESS.WETH, ADDRESS.DAI,
+		ADDRESS.USDC, ADDRESS.USDT, ADDRESS.WBTC,
+		ADDRESS.DPI, ADDRESS.PERP, ADDRESS.SNX,
+		ADDRESS.UNI_V2_DAI_WETH, ADDRESS.UNI_V2_USDT_WETH, ADDRESS.UNI_V2_USDC_WETH,
+		ADDRESS.UNI_V2_WBTC_WETH, ADDRESS.UNI_V2_DPI_WETH, ADDRESS.SUSHI_WETH_USDT,
+		ADDRESS.BAL_WETH_DAI_8020, ADDRESS.BAL_PERP_USDC_8020, ADDRESS.CRV_3_POOL,
+	], [
+		keeperOracle.address,
+		keeperOracle.address,
+		keeperOracle.address,
+		keeperOracle.address,
+		keeperOracle.address,
+		keeperOracle.address,
+		keeperOracle.address,
+		keeperOracle.address,
+		keeperOracle.address,
+		uniOracle.address,
+		uniOracle.address,
+		uniOracle.address,
+		uniOracle.address,
+		uniOracle.address,
+		uniOracle.address,
+		uniOracle.address,
+		uniOracle.address,
+		uniOracle.address,
+	])
+	await proxyOracle.setTokenFactors([
+		ADDRESS.WETH, ADDRESS.DAI, ADDRESS.USDC, ADDRESS.USDT,
+		ADDRESS.WBTC, ADDRESS.DPI, ADDRESS.PERP, ADDRESS.SNX,
+		ADDRESS.UNI_V2_DAI_WETH, ADDRESS.UNI_V2_USDT_WETH,
+		ADDRESS.UNI_V2_USDC_WETH, ADDRESS.UNI_V2_WBTC_WETH,
+		ADDRESS.UNI_V2_DPI_WETH, ADDRESS.SUSHI_WETH_USDT,
+		ADDRESS.BAL_WETH_DAI_8020, ADDRESS.BAL_PERP_USDC_8020,
+		ADDRESS.CRV_3_POOL
+	], [
+		{
+			borrowFactor: 12500,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 10500,
+			collateralFactor: 9500,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 10500,
+			collateralFactor: 9500,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 10500,
+			collateralFactor: 9500,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 12500,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 0,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 0,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 0,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 8000,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 0,
+			liqIncentive: 10250,
+		}, {
+			borrowFactor: 50000,
+			collateralFactor: 9500,
+			liqIncentive: 10250,
+		}
+	])
+	await proxyOracle.setWhitelistERC1155([
+		werc20.address,
+		wmas.address,
+		wliq.address,
+		wsindex.address,
+		wsperp.address
+	], true);
 }
 
 main()
