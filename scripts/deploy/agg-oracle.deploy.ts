@@ -1,9 +1,9 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
-import { CoreOracle, ERC20KP3ROracle, ProxyOracle, UniswapV2Oracle } from '../../typechain-types';
+import { ERC20KP3ROracle, UniswapV2Oracle } from '../../typechain-types';
 
-const deployUniV2Oracles = async () => {
+async function main(): Promise<void> {
 	// Deploy Uniswap V2 Oracle
 	const ERC20KP3ROracle = await ethers.getContractFactory(CONTRACT_NAMES.ERC20KP3ROracle);
 	const keeperOracle = <ERC20KP3ROracle>await ERC20KP3ROracle.deploy(ADDRESS.Keep3rV1Oracle);
@@ -24,23 +24,6 @@ const deployUniV2Oracles = async () => {
 
 	price = await lpOracle.getETHPx(ADDRESS.UNI_V2_USDT_USDC);
 	console.log('USDC/USDT Uni V2 Lp Price:', price, BigNumber.from(2).pow(112).div(price));
-}
-
-const deployCoreOracles = async () => {
-	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-	const coreOracle = <CoreOracle>await CoreOracle.deploy();
-	await coreOracle.deployed();
-	console.log('CoreOracle Address', coreOracle.address);
-
-	const ProxyOracle = await ethers.getContractFactory(CONTRACT_NAMES.ProxyOracle);
-	const proxyOracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
-	await proxyOracle.deployed();
-	console.log('ProxyOracle Address', proxyOracle.address);
-}
-
-async function main(): Promise<void> {
-	await deployUniV2Oracles();
-	await deployCoreOracles();
 }
 
 main()
