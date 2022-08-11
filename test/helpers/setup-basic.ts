@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers, deployments, upgrades } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { CoreOracle, HomoraBank, MockERC20, MockWETH, ProxyOracle, SimpleOracle, WERC20 } from '../../typechain-types';
+import { CoreOracle, BlueBerryBank, MockERC20, MockWETH, ProxyOracle, SimpleOracle, WERC20 } from '../../typechain-types';
 
 export const setupBasic = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
@@ -51,22 +51,22 @@ export const setupBasic = deployments.createFixture(async () => {
 	await proxyOracle.deployed();
 	await proxyOracle.setWhitelistERC1155([werc20.address], true);
 
-	const HomoraBank = await ethers.getContractFactory(CONTRACT_NAMES.HomoraBank);
-	const homoraBank = <HomoraBank>await HomoraBank.deploy();
-	await homoraBank.deployed();
-	await homoraBank.initialize(proxyOracle.address, 2000);
+	const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
+	const blueberryBank = <BlueBerryBank>await BlueBerryBank.deploy();
+	await blueberryBank.deployed();
+	await blueberryBank.initialize(proxyOracle.address, 2000);
 
 	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
 	const cerc20 = await CERC20.deploy(mockWETH.address);
 	await mockWETH.connect(signers[9]).deposit({ 'value': ethers.utils.parseEther('100') });
 	await mockWETH.connect(signers[9]).transfer(cerc20.address, ethers.utils.parseEther('100'));
-	await homoraBank.addBank(mockWETH.address, cerc20.address);
+	await blueberryBank.addBank(mockWETH.address, cerc20.address);
 
 	for (const token of [dai, usdt, usdc]) {
 		const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
 		const cerc20 = await CERC20.deploy(token.address);
 		await token.mint(cerc20.address, ethers.utils.parseEther('100'));
-		await homoraBank.addBank(token.address, cerc20.address);
+		await blueberryBank.addBank(token.address, cerc20.address);
 	}
 
 	return {
@@ -78,6 +78,6 @@ export const setupBasic = deployments.createFixture(async () => {
 		simpleOracle,
 		coreOracle,
 		proxyOracle,
-		homoraBank
+		blueberryBank
 	}
 })

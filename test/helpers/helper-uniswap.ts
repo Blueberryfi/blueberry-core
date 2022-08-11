@@ -4,7 +4,7 @@ import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
 import {
 	CoreOracle,
-	HomoraBank,
+	BlueBerryBank,
 	IERC20,
 	MockERC20,
 	MockUniswapV2Factory,
@@ -19,7 +19,7 @@ import SpellArtifact from '../../artifacts/contracts/spell/UniswapV2SpellV1.sol/
 export const setup_uniswap = async (
 	admin: SignerWithAddress,
 	alice: SignerWithAddress,
-	bank: HomoraBank,
+	bank: BlueBerryBank,
 	werc20: WERC20,
 	urouter: MockUniswapV2Router02,
 	ufactory: MockUniswapV2Factory,
@@ -89,7 +89,7 @@ export const setup_uniswap = async (
 export const execute_uniswap_werc20 = async (
 	admin: SignerWithAddress,
 	alice: SignerWithAddress,
-	bank: HomoraBank,
+	bank: BlueBerryBank,
 	token0: string,
 	token1: string,
 	spell: UniswapV2SpellV1,
