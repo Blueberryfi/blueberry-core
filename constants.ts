@@ -30,7 +30,12 @@ export enum CONTRACT_NAMES {
 	HomoraBank = "HomoraBank",
 	SafeBox = "SafeBox",
 	SafeBoxETH = "SafeBoxETH",
+
+	// Spell
 	UniswapV2SpellV1 = "UniswapV2SpellV1",
+	SushiswapSpellV1 = "SushiswapSpellV1",
+	BalancerSpellV1 = "BalancerSpellV1",
+	CurveSpellV1 = "CurveSpellV1",
 }
 
 export const ADDRESS = {
@@ -64,13 +69,13 @@ export const ADDRESS = {
 	// StdRef
 	StdRef: '0xDA7a001b254CD22e46d3eAB04d937489c93174C3',
 
+	UNI_V2_ROUTER: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+	SUSHI_ROUTER: '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f',
+
+
 	// Wrapper
 	SUSHI_MASTERCHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
 	CRV_GAUGE: '0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c',
-
-	// Index Coop
 	IC_DPI_STAKING_REWARDS: '0xB93b505Ed567982E2b6756177ddD23ab5745f309',
-
-	// Perpectual Protocol / Balancer
 	PERP_BALANCER_LP_REWARDS: '0xb9840a4a8a671f79de3df3b812feeb38047ce552',
 }

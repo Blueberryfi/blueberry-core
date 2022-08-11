@@ -1,4 +1,4 @@
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
 import { BalancerPairOracle, CoreOracle, CurveOracle, ERC20KP3ROracle, HomoraBank, ProxyOracle, UniswapV2Oracle } from '../../typechain-types';
@@ -167,6 +167,39 @@ async function main(): Promise<void> {
 		wsindex.address,
 		wsperp.address
 	], true);
+
+	//========== Deploy Bank Contracts ==========//
+	const HomoraBank = await ethers.getContractFactory(CONTRACT_NAMES.HomoraBank);
+	const homoraBank = await upgrades.deployProxy(HomoraBank, [
+		proxyOracle.address, 2000
+	])
+
+	//========== Deploy Spell Contracts ==========//
+	// UniswapV2SpellV1
+	const UniswapV2SpellV1 = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2SpellV1);
+	const uniSpell = await UniswapV2SpellV1.deploy(
+		homoraBank.address, werc20.address, ADDRESS.UNI_V2_ROUTER
+	)
+	await uniSpell.deployed();
+	// SushiswapSpellV1
+	const SushiswapSpellV1 = await ethers.getContractFactory(CONTRACT_NAMES.SushiswapSpellV1);
+	const sushiSpell = await SushiswapSpellV1.deploy(
+		homoraBank.address, werc20.address, ADDRESS.SUSHI_ROUTER
+	);
+	await sushiSpell.deployed();
+	// BalancerSpellV1
+	const BalancerSpellV1 = await ethers.getContractFactory(CONTRACT_NAMES.BalancerSpellV1);
+	const balSpell = await BalancerSpellV1.deploy(
+		homoraBank.address, werc20.address, ADDRESS.WETH
+	);
+	await balSpell.deployed();
+	// CurveSpellV1
+	const CurveSpellV1 = await ethers.getContractFactory(CONTRACT_NAMES.CurveSpellV1);
+	const crvSpell = await CurveSpellV1.deploy(
+		homoraBank.address, werc20.address, ADDRESS.WETH
+	);
+	await crvSpell.deployed();
+	await crvOracle.registerPool(ADDRESS.CRV_3_POOL);
 }
 
 main()
