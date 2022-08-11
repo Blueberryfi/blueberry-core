@@ -9,6 +9,8 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './Governable.sol';
 import './interfaces/ICErc20.sol';
 import './interfaces/UniV3/IUniswapV3Pool.sol';
+import './interfaces/UniV3/ISwapRouter02.sol';
+import './interfaces/UniV3/IUniswapV3PositionsNFT.sol';
 import './interfaces/IWETH.sol';
 import './libraries/UniV3/PoolActions.sol';
 
@@ -17,6 +19,10 @@ contract SafeBoxUniV3LP is Governable, ERC20, ReentrancyGuard {
     using PoolVariables for IUniswapV3Pool;
 
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    IUniswapV3PositionsNFT public nftManager =
+        IUniswapV3PositionsNFT(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
+    address public constant uniV3Router =
+        0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
 
     IUniswapV3Pool public pool;
     IERC20 public token0;
@@ -24,6 +30,14 @@ contract SafeBoxUniV3LP is Governable, ERC20, ReentrancyGuard {
 
     int24 public tick_lower;
     int24 public tick_upper;
+
+    uint256 public tokenId;
+    int24 public l_tick_lower;
+    int24 public l_tick_upper;
+    int24 private tickSpacing;
+    int24 private tickRangeMultiplier;
+    uint24 public swapPoolFee;
+    uint24 private twapTime = 60;
 
     event Claim(address user, uint256 amount);
 
@@ -61,17 +75,42 @@ contract SafeBoxUniV3LP is Governable, ERC20, ReentrancyGuard {
         root = _root;
     }
 
+    function totalLiquidity() public view returns (uint256) {
+        return liquidityOfThis() + liquidityOfPool();
+    }
+
+    function liquidityOfPool() public view returns (uint256) {
+        (, , , , , , , uint128 _liquidity, , , , ) = nftManager.positions(
+            tokenId
+        );
+        return _liquidity;
+    }
+
+    function liquidityOfThis() public view returns (uint256) {
+        uint256 _balance0 = token0.balanceOf(address(this));
+        uint256 _balance1 = token1.balanceOf(address(this));
+        return
+            uint256(
+                pool.liquidityForAmounts(
+                    _balance0,
+                    _balance1,
+                    tick_lower,
+                    tick_upper
+                )
+            );
+    }
+
     function deposit(uint256 token0Amount, uint256 token1Amount)
         external
         payable
         nonReentrant
     {
         bool isEth;
-        uint256 ethAmount = address(this).balance;
-        if (ethAmount > 0) {
-            IWETH(WETH).deposit{value: ethAmount}();
+        uint256 _ethAmount = address(this).balance;
+        if (_ethAmount > 0) {
+            IWETH(WETH).deposit{value: _ethAmount}();
             isEth = true;
-            token1Amount = ethAmount;
+            token1Amount = _ethAmount;
         }
 
         uint256 amount0ForAmount1 = (getDepositAmount(
@@ -89,17 +128,15 @@ contract SafeBoxUniV3LP is Governable, ERC20, ReentrancyGuard {
             token1Amount = amount1ForAmount0;
 
             if (isEth && address(token1) == WETH) {
-                uint256 refundAmount = ethAmount - token1Amount;
-                IWETH(WETH).withdraw(refundAmount);
-                (bool sent, bytes memory data) = (msg.sender).call{
-                    value: refundAmount
-                }('');
+                uint256 _refundAmount = _ethAmount - token1Amount;
+                IWETH(WETH).withdraw(_refundAmount);
+                (bool sent, ) = (msg.sender).call{value: _refundAmount}('');
                 require(sent, 'Failed to refund Ether');
             }
         }
 
-        uint256 poolAmount = totalLiquidity();
-        uint256 liquidityAmount = uint256(
+        uint256 _poolAmount = totalLiquidity();
+        uint256 _liquidityAmount = uint256(
             pool.liquidityForAmounts(
                 token0Amount,
                 token1Amount,
@@ -115,17 +152,26 @@ contract SafeBoxUniV3LP is Governable, ERC20, ReentrancyGuard {
 
         uint256 shares;
         if (totalSupply() == 0) {
-            shares = liquidityAmount;
+            shares = _liquidityAmount;
         } else {
-            shares = (liquidityAmount * totalSupply()) / poolAmount;
+            shares = (_liquidityAmount * totalSupply()) / _poolAmount;
         }
 
         _mint(msg.sender, shares);
+        if (tokenId == 0) {
+            rebalance();
+        } else {
+            _deposit();
+        }
+    }
+
+    function withdrawAll() external {
+        withdraw(balanceOf(msg.sender));
     }
 
     function withdraw(uint256 _shares) public nonReentrant {
         uint256 r = (totalLiquidity() * _shares) / totalSupply();
-        (uint256 expectA0, uint256 expectA1) = pool.amountsForLiquidity(
+        (uint256 _expectA0, uint256 _expectA1) = pool.amountsForLiquidity(
             uint128(r),
             tick_lower,
             tick_upper
@@ -136,13 +182,213 @@ contract SafeBoxUniV3LP is Governable, ERC20, ReentrancyGuard {
             token0.balanceOf(address(this)),
             token1.balanceOf(address(this))
         ];
-        uint256 b = totalLiquidity();
+        uint256 b = liquidityOfThis();
         if (b < r) {
-            // TODO
+            uint256 _withdraw = r - b;
+            (uint256 _a0, uint256 _a1) = _withdrawLiquidity(_withdraw);
+            _expectA0 = _balances[0] + _a0;
+            _expectA1 = _balances[1] + _a1;
         }
 
-        token0.safeTransfer(msg.sender, expectA0);
-        token1.safeTransfer(msg.sender, expectA1);
+        token0.safeTransfer(msg.sender, _expectA0);
+        token1.safeTransfer(msg.sender, _expectA1);
+    }
+
+    function _withdrawLiquidity(uint256 _liquidity)
+        public
+        returns (uint256 a0, uint256 a1)
+    {
+        if (_liquidity == 0) return (0, 0);
+
+        (uint256 _a0Expect, uint256 _a1Expect) = pool.amountsForLiquidity(
+            uint128(_liquidity),
+            l_tick_lower,
+            l_tick_upper
+        );
+        (uint256 amount0, uint256 amount1) = nftManager.decreaseLiquidity(
+            IUniswapV3PositionsNFT.DecreaseLiquidityParams({
+                tokenId: tokenId,
+                liquidity: uint128(_liquidity),
+                amount0Min: _a0Expect,
+                amount1Min: _a1Expect,
+                deadline: block.timestamp + 300
+            })
+        );
+
+        nftManager.collect(
+            IUniswapV3PositionsNFT.CollectParams({
+                tokenId: tokenId,
+                recipient: address(this),
+                amount0Max: uint128(amount0),
+                amount1Max: uint128(amount1)
+            })
+        );
+
+        return (amount0, amount1);
+    }
+
+    function _deposit() internal {
+        if (liquidityOfThis() == 0) return;
+
+        uint256 _balance0 = token0.balanceOf(address(this));
+        uint256 _balance1 = token1.balanceOf(address(this));
+
+        if (_balance0 > 0 && _balance1 > 0) {
+            nftManager.increaseLiquidity(
+                IUniswapV3PositionsNFT.IncreaseLiquidityParams({
+                    tokenId: tokenId,
+                    amount0Desired: _balance0,
+                    amount1Desired: _balance1,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    deadline: block.timestamp + 300
+                })
+            );
+        }
+    }
+
+    function rebalance() public returns (uint256 _tokenId) {
+        if (tokenId != 0) {
+            uint256 _initToken0 = token0.balanceOf(address(this));
+            uint256 _initToken1 = token1.balanceOf(address(this));
+            (, , , , , , , uint256 _liquidity, , , , ) = nftManager.positions(
+                tokenId
+            );
+            (uint256 _liqAmt0, uint256 _liqAmt1) = nftManager.decreaseLiquidity(
+                IUniswapV3PositionsNFT.DecreaseLiquidityParams({
+                    tokenId: tokenId,
+                    liquidity: uint128(_liquidity),
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    deadline: block.timestamp + 300
+                })
+            );
+
+            nftManager.collect(
+                IUniswapV3PositionsNFT.CollectParams({
+                    tokenId: tokenId,
+                    recipient: address(this),
+                    amount0Max: type(uint128).max,
+                    amount1Max: type(uint128).max
+                })
+            );
+
+            nftManager.sweepToken(address(token0), 0, address(this));
+            nftManager.sweepToken(address(token1), 0, address(this));
+            nftManager.burn(tokenId);
+
+            _distributePerformanceFees(
+                token0.balanceOf(address(this)) - _liqAmt0 - _initToken0,
+                token1.balanceOf(address(this)) - _liqAmt1 - _initToken1
+            );
+        }
+
+        (int24 _tickLower, int24 _tickUpper) = determineTicks();
+        _balanceProportion(_tickLower, _tickUpper);
+
+        uint256 _amount0Desired = token0.balanceOf(address(this));
+        uint256 _amount1Desired = token1.balanceOf(address(this));
+
+        (_tokenId, , , ) = nftManager.mint(
+            IUniswapV3PositionsNFT.MintParams({
+                token0: address(token0),
+                token1: address(token1),
+                fee: pool.fee(),
+                tickLower: _tickLower,
+                tickUpper: _tickUpper,
+                amount0Desired: _amount0Desired,
+                amount1Desired: _amount1Desired,
+                amount0Min: 0,
+                amount1Min: 0,
+                recipient: address(this),
+                deadline: block.timestamp + 300
+            })
+        );
+
+        tokenId = _tokenId;
+        // tick_lower = _tickLower; // TODO: Check if this is required
+        // tick_upper = _tickUpper; // TODO: Check if this is required
+        l_tick_lower = _tickLower; // TODO: Check if this is required
+        l_tick_upper = _tickUpper; // TODO: Check if this is required
+
+        // TODO: Emit an event
+    }
+
+    function _balanceProportion(int24 _tickLower, int24 _tickUpper) internal {
+        PoolVariables.Info memory _cache;
+
+        _cache.amount0Desired = token0.balanceOf(address(this));
+        _cache.amount1Desired = token1.balanceOf(address(this));
+
+        _cache.liquidity = pool.liquidityForAmounts(
+            _cache.amount0Desired,
+            _cache.amount1Desired,
+            _tickLower,
+            _tickUpper
+        );
+
+        (_cache.amount0, _cache.amount1) = pool.amountsForLiquidity(
+            _cache.liquidity,
+            _tickLower,
+            _tickUpper
+        );
+
+        bool _zeroForOne;
+        if (_cache.amount1Desired == 0) {
+            _zeroForOne = true;
+        } else {
+            _zeroForOne = PoolVariables.amountsDirection(
+                _cache.amount0Desired,
+                _cache.amount1Desired,
+                _cache.amount0,
+                _cache.amount1
+            );
+        }
+
+        uint256 _amountSpecified = _zeroForOne
+            ? (_cache.amount0Desired - _cache.amount0) / 2
+            : (_cache.amount1Desired - _cache.amount1) / 2;
+
+        if (_amountSpecified > 0) {
+            address _inputToken = _zeroForOne
+                ? address(token0)
+                : address(token1);
+
+            IERC20(_inputToken).safeApprove(uniV3Router, 0);
+            IERC20(_inputToken).safeApprove(uniV3Router, _amountSpecified);
+
+            ISwapRouter02(uniV3Router).exactInputSingle(
+                ISwapRouter02.ExactInputSingleParams({
+                    tokenIn: _inputToken,
+                    tokenOut: _zeroForOne ? address(token1) : address(token0),
+                    fee: swapPoolFee,
+                    recipient: address(this),
+                    amountIn: _amountSpecified,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            );
+        }
+    }
+
+    function _distributePerformanceFees(uint256 _amount0, uint256 _amount1)
+        internal
+    {}
+
+    function determineTicks() public view returns (int24, int24) {
+        uint32[] memory observeTime = new uint32[](2);
+        observeTime[0] = twapTime;
+        observeTime[1] = 0;
+        (int56[] memory cumulativeTicks, ) = pool.observe(observeTime);
+        int56 averageTick = (cumulativeTicks[1] - cumulativeTicks[1]) /
+            int24(twapTime);
+        int24 baseThreshold = tickSpacing * tickRangeMultiplier;
+        return
+            PoolVariables.baseTicks(
+                int24(averageTick),
+                baseThreshold,
+                tickSpacing
+            );
     }
 
     function getDepositAmount(address tokenAddr, uint256 amount)
@@ -171,18 +417,9 @@ contract SafeBoxUniV3LP is Governable, ERC20, ReentrancyGuard {
         return (a2 * (10**18)) / a1;
     }
 
-    function totalLiquidity() public view returns (uint256) {
-        uint256 _balance0 = token0.balanceOf(address(this));
-        uint256 _balance1 = token1.balanceOf(address(this));
-        return
-            uint256(
-                pool.liquidityForAmounts(
-                    _balance0,
-                    _balance1,
-                    tick_lower,
-                    tick_upper
-                )
-            );
+    function getRatio() public view returns (uint256) {
+        if (totalSupply() == 0) return 0;
+        return (totalLiquidity() * 1e18) / totalSupply();
     }
 
     function onERC721Received(
