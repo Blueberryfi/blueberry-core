@@ -27,7 +27,7 @@ export enum CONTRACT_NAMES {
 	MockUniswapV2Router02 = "MockUniswapV2Router02",
 
 	// Protocol
-	HomoraBank = "HomoraBank",
+	BlueBerryBank = "BlueBerryBank",
 	SafeBox = "SafeBox",
 	SafeBoxETH = "SafeBoxETH",
 

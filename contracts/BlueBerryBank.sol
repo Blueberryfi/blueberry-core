@@ -12,14 +12,14 @@ import './interfaces/IBank.sol';
 import './interfaces/ICErc20.sol';
 import './interfaces/IOracle.sol';
 
-library HomoraSafeMath {
+library BlueBerrySafeMath {
     /// @dev Computes round-up division.
     function ceilDiv(uint256 a, uint256 b) internal pure returns (uint256) {
         return (a + b - 1) / b;
     }
 }
 
-contract HomoraCaster {
+contract BlueBerryCaster {
     /// @dev Call to the target using the given data.
     /// @param target The address target to call.
     /// @param data The data used in the call.
@@ -42,8 +42,8 @@ contract HomoraCaster {
     }
 }
 
-contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
-    using HomoraSafeMath for uint256;
+contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
+    using BlueBerrySafeMath for uint256;
     using SafeERC20 for IERC20;
 
     uint256 private constant _NOT_ENTERED = 1;
@@ -55,7 +55,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         bool isListed; // Whether this market exists.
         uint8 index; // Reverse look up index for this bank.
         address cToken; // The CToken to draw liquidity from.
-        uint256 reserve; // The reserve portion allocated to Homora protocol.
+        uint256 reserve; // The reserve portion allocated to BlueBerry protocol.
         uint256 totalDebt; // The last recorded total debt since last action.
         uint256 totalShare; // The total debt share count across all open positions.
     }
@@ -126,14 +126,14 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
 
     /// @dev Initialize the bank smart contract, using msg.sender as the first governor.
     /// @param _oracle The oracle smart contract address.
-    /// @param _feeBps The fee collected to Homora bank.
+    /// @param _feeBps The fee collected to BlueBerry bank.
     function initialize(IOracle _oracle, uint256 _feeBps) external {
         __Governable__init();
         _GENERAL_LOCK = _NOT_ENTERED;
         _IN_EXEC_LOCK = _NOT_ENTERED;
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
-        caster = address(new HomoraCaster());
+        caster = address(new BlueBerryCaster());
         oracle = _oracle;
         require(address(_oracle) != address(0), 'bad oracle address');
         feeBps = _feeBps;
@@ -475,7 +475,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         emit SetOracle(address(_oracle));
     }
 
-    /// @dev Set the fee bps value that Homora bank charges.
+    /// @dev Set the fee bps value that BlueBerry bank charges.
     /// @param _feeBps The new fee bps value.
     function setFeeBps(uint256 _feeBps) external onlyGov {
         require(_feeBps <= 10000, 'fee too high');
@@ -543,9 +543,9 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         );
     }
 
-    /// @dev Execute the action via HomoraCaster, calling its function with the supplied data.
+    /// @dev Execute the action via BlueBerryCaster, calling its function with the supplied data.
     /// @param positionId The position ID to execute the action, or zero for new position.
-    /// @param spell The target spell to invoke the execution via HomoraCaster.
+    /// @param spell The target spell to invoke the execution via BlueBerryCaster.
     /// @param data Extra data to pass to the target for the execution.
     function execute(
         uint256 positionId,
@@ -565,7 +565,7 @@ contract HomoraBank is Governable, ERC1155NaiveReceiver, IBank {
         }
         POSITION_ID = positionId;
         SPELL = spell;
-        HomoraCaster(caster).cast{value: msg.value}(spell, data);
+        BlueBerryCaster(caster).cast{value: msg.value}(spell, data);
         uint256 collateralValue = getCollateralETHValue(positionId);
         uint256 borrowValue = getBorrowETHValue(positionId);
         require(collateralValue >= borrowValue, 'insufficient collateral');

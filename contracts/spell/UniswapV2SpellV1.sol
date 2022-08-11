@@ -6,14 +6,14 @@ pragma experimental ABIEncoderV2;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
-import '../utils/HomoraMath.sol';
+import '../utils/BBMath.sol';
 import '../interfaces/IUniswapV2Factory.sol';
 import '../interfaces/IUniswapV2Router02.sol';
 import '../interfaces/IUniswapV2Pair.sol';
 import '../interfaces/IWStakingRewards.sol';
 
 contract UniswapV2SpellV1 is WhitelistSpell {
-    using HomoraMath for uint256;
+    using BBMath for uint256;
 
     IUniswapV2Factory public immutable factory; // Uniswap factory
     IUniswapV2Router02 public immutable router; // Uniswap router
@@ -88,7 +88,7 @@ contract UniswapV2SpellV1 is WhitelistSpell {
         uint256 _c = (amtA * resB) - (amtB * resA);
         uint256 c = ((_c * 1000) / (amtB + resB)) * resA;
         uint256 d = a * c * 4;
-        uint256 e = HomoraMath.sqrt(b * b + d);
+        uint256 e = BBMath.sqrt(b * b + d);
         uint256 numerator = e - b;
         uint256 denominator = a * 2;
         return numerator / denominator;
@@ -255,7 +255,7 @@ contract UniswapV2SpellV1 is WhitelistSpell {
     }
 
     struct RepayAmounts {
-        uint256 amtLPTake; // Take out LP token amount (from Homora)
+        uint256 amtLPTake; // Take out LP token amount (from BlueBerry)
         uint256 amtLPWithdraw; // Withdraw LP token amount (back to caller)
         uint256 amtARepay; // Repay tokenA amount
         uint256 amtBRepay; // Repay tokenB amount
