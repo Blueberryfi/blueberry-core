@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.9;
 
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+
 interface MockUniswapV2Router02IUniswapV2Factory {
     event PairCreated(
         address indexed token0,
@@ -347,40 +349,6 @@ interface MockUniswapV2Router02IUniswapV2Router02 is
         address to,
         uint256 deadline
     ) external;
-}
-
-interface IERC20 {
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    function name() external view returns (string memory);
-
-    function symbol() external view returns (string memory);
-
-    function decimals() external view returns (uint8);
-
-    function totalSupply() external view returns (uint256);
-
-    function balanceOf(address owner) external view returns (uint256);
-
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
-
-    function approve(address spender, uint256 value) external returns (bool);
-
-    function transfer(address to, uint256 value) external returns (bool);
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    ) external returns (bool);
 }
 
 interface MockUniswapV2Router02IWETH {

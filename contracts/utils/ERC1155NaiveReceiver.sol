@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
 
 contract ERC1155NaiveReceiver is IERC1155Receiver {
-    bytes32[64] __gap; // reserve space for upgrade
+    uint256[49] private __gap;
 
     function onERC1155Received(
         address, /* operator */

@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 
-library HomoraMath {
+library BBMath {
     using SafeMath for uint256;
 
     function divCeil(uint256 lhs, uint256 rhs) internal pure returns (uint256) {

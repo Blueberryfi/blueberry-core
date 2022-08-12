@@ -6,13 +6,13 @@ pragma experimental ABIEncoderV2;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
-import '../utils/HomoraMath.sol';
+import '../utils/BBMath.sol';
 import '../interfaces/ICurvePool.sol';
 import '../interfaces/ICurveRegistry.sol';
 import '../interfaces/IWLiquidityGauge.sol';
 
 contract CurveSpellV1 is WhitelistSpell {
-    using HomoraMath for uint256;
+    using BBMath for uint256;
 
     ICurveRegistry public immutable registry; // Curve registry
     IWLiquidityGauge public immutable wgauge; // Wrapped liquidity gauge
@@ -313,7 +313,7 @@ contract CurveSpellV1 is WhitelistSpell {
 
     /// @dev Remove liquidity from Curve pool with 2 underlying tokens
     /// @param lp LP token for the pool
-    /// @param amtLPTake Take out LP token amount (from Homora)
+    /// @param amtLPTake Take out LP token amount (from BlueBerry)
     /// @param amtLPWithdraw Withdraw LP token amount (back to caller)
     /// @param amtsRepay Repay underlying token amounts
     /// @param amtLPRepay Repay LP token amount
@@ -395,7 +395,7 @@ contract CurveSpellV1 is WhitelistSpell {
 
     /// @dev Remove liquidity from Curve pool with 3 underlying tokens
     /// @param lp LP token for the pool
-    /// @param amtLPTake Take out LP token amount (from Homora)
+    /// @param amtLPTake Take out LP token amount (from BlueBerry)
     /// @param amtLPWithdraw Withdraw LP token amount (back to caller)
     /// @param amtsRepay Repay underlying token amounts
     /// @param amtLPRepay Repay LP token amount
@@ -478,7 +478,7 @@ contract CurveSpellV1 is WhitelistSpell {
 
     /// @dev Remove liquidity from Curve pool with 4 underlying tokens
     /// @param lp LP token for the pool
-    /// @param amtLPTake Take out LP token amount (from Homora)
+    /// @param amtLPTake Take out LP token amount (from BlueBerry)
     /// @param amtLPWithdraw Withdraw LP token amount (back to caller)
     /// @param amtsRepay Repay underlying token amounts
     /// @param amtLPRepay Repay LP token amount
