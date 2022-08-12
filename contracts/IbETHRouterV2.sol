@@ -3,7 +3,7 @@
 pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import './utils/HomoraMath.sol';
+import './utils/BBMath.sol';
 
 interface IbETHRouterV2IbETHv2 is IERC20 {
     function deposit() external payable;
@@ -126,7 +126,7 @@ contract IbETHRouterV2 {
         uint256 _c = (amtA.mul(resB)).sub(amtB.mul(resA));
         uint256 c = _c.mul(1000).div(amtB.add(resB)).mul(resA);
         uint256 d = a.mul(c).mul(4);
-        uint256 e = HomoraMath.sqrt(b.mul(b).add(d));
+        uint256 e = BBMath.sqrt(b.mul(b).add(d));
         uint256 numerator = e.sub(b);
         uint256 denominator = a.mul(2);
         return numerator.div(denominator);

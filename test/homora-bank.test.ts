@@ -6,7 +6,7 @@ import { CONTRACT_NAMES } from "../constants"
 import {
 	CoreOracle,
 	ERC20,
-	HomoraBank,
+	BlueBerryBank,
 	MockCErc20,
 	MockERC20,
 	MockUniswapV2Factory,
@@ -29,13 +29,13 @@ chai.use(solidity)
 chai.use(near)
 chai.use(roughlyNear)
 
-describe("Homora Bank", () => {
+describe("BlueBerry Bank", () => {
 	let admin: SignerWithAddress;
 	let alice: SignerWithAddress;
 	let bob: SignerWithAddress;
 	let eve: SignerWithAddress;
 
-	let bank: HomoraBank;
+	let bank: BlueBerryBank;
 	let werc20: WERC20;
 	let uniV2Router02: MockUniswapV2Router02;
 	let uniV2Factory: MockUniswapV2Factory;
@@ -52,7 +52,7 @@ describe("Homora Bank", () => {
 	const setup_uniswap = async (
 		admin: SignerWithAddress,
 		alice: SignerWithAddress,
-		bank: HomoraBank,
+		bank: BlueBerryBank,
 		werc20: WERC20,
 		urouter: MockUniswapV2Router02,
 		ufactory: MockUniswapV2Factory,
@@ -135,7 +135,7 @@ describe("Homora Bank", () => {
 	describe("Uniswap", () => {
 		beforeEach(async () => {
 			const basicFixture = await setupBasic();
-			bank = basicFixture.homoraBank;
+			bank = basicFixture.blueberryBank;
 			werc20 = basicFixture.werc20;
 			usdt = basicFixture.usdt;
 			usdc = basicFixture.usdc;
@@ -464,7 +464,7 @@ describe("Homora Bank", () => {
 		// 	beforeEach(async () => {
 		// 		const uniFixture = await setupUniswap();
 		// 		const basicFixture = await setupBasic();
-		// 		bank = basicFixture.homoraBank;
+		// 		bank = basicFixture.blueberryBank;
 		// 		werc20 = basicFixture.werc20;
 		// 		uniV2Router02 = uniFixture.mockUniV2Router02;
 		// 		uniV2Factory = uniFixture.mockUniV2Factory;

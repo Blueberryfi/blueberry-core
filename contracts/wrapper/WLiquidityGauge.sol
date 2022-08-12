@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 import '../Governable.sol';
-import '../utils/HomoraMath.sol';
+import '../utils/BBMath.sol';
 import '../interfaces/IERC20Wrapper.sol';
 import '../interfaces/ICurveRegistry.sol';
 import '../interfaces/ILiquidityGauge.sol';
@@ -22,7 +22,7 @@ contract WLiquidityGauge is
     IERC20Wrapper,
     Governable
 {
-    using HomoraMath for uint256;
+    using BBMath for uint256;
     using SafeERC20 for IERC20;
 
     struct GaugeInfo {

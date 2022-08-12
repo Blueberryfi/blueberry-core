@@ -6,12 +6,12 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
-import '../utils/HomoraMath.sol';
+import '../utils/BBMath.sol';
 import '../interfaces/IERC20Wrapper.sol';
 import '../interfaces/IMasterChef.sol';
 
 contract WMasterChef is ERC1155('WMasterChef'), ReentrancyGuard, IERC20Wrapper {
-    using HomoraMath for uint256;
+    using BBMath for uint256;
     using SafeERC20 for IERC20;
 
     IMasterChef public immutable chef; // Sushiswap masterChef
