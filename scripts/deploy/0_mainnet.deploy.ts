@@ -61,7 +61,7 @@ async function main(): Promise<void> {
 		ADDRESS.DPI, ADDRESS.PERP, ADDRESS.SNX,
 		ADDRESS.UNI_V2_DAI_WETH, ADDRESS.UNI_V2_USDT_WETH, ADDRESS.UNI_V2_USDC_WETH,
 		ADDRESS.UNI_V2_WBTC_WETH, ADDRESS.UNI_V2_DPI_WETH, ADDRESS.SUSHI_WETH_USDT,
-		ADDRESS.BAL_WETH_DAI_8020, ADDRESS.BAL_PERP_USDC_8020, ADDRESS.CRV_3_POOL,
+		ADDRESS.BAL_WETH_DAI_8020, ADDRESS.BAL_PERP_USDC_8020, ADDRESS.CRV_3Crv,
 	], [
 		keeperOracle.address,
 		keeperOracle.address,
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
 		ADDRESS.UNI_V2_USDC_WETH, ADDRESS.UNI_V2_WBTC_WETH,
 		ADDRESS.UNI_V2_DPI_WETH, ADDRESS.SUSHI_WETH_USDT,
 		ADDRESS.BAL_WETH_DAI_8020, ADDRESS.BAL_PERP_USDC_8020,
-		ADDRESS.CRV_3_POOL
+		ADDRESS.CRV_3Crv
 	], [
 		{
 			borrowFactor: 12500,
@@ -200,7 +200,7 @@ async function main(): Promise<void> {
 		blueberryBank.address, werc20.address, ADDRESS.WETH
 	);
 	await crvSpell.deployed();
-	await crvOracle.registerPool(ADDRESS.CRV_3_POOL);
+	await crvOracle.registerPool(ADDRESS.CRV_3Crv);
 }
 
 main()

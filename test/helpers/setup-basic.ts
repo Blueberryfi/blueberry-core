@@ -56,6 +56,8 @@ export const setupBasic = deployments.createFixture(async () => {
 	await blueberryBank.deployed();
 	await blueberryBank.initialize(proxyOracle.address, 2000);
 
+	// await homoraBank.setWhitelistTokens([usdt.address, usdc.address], [true, true]);
+
 	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
 	const cerc20 = await CERC20.deploy(mockWETH.address);
 	await mockWETH.connect(signers[9]).deposit({ 'value': ethers.utils.parseEther('100') });
