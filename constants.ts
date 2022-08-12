@@ -15,7 +15,6 @@ export enum CONTRACT_NAMES {
 
 	// Oracles
 	SimpleOracle = "SimpleOracle",
-	CurveOracle = "CurveOracle",
 	CoreOracle = "CoreOracle",
 	ProxyOracle = "ProxyOracle",
 	UniswapV2Oracle = "UniswapV2Oracle",
@@ -34,6 +33,9 @@ export enum CONTRACT_NAMES {
 
 	// Spell
 	UniswapV2SpellV1 = "UniswapV2SpellV1",
+	SushiswapSpellV1 = "SushiswapSpellV1",
+	BalancerSpellV1 = "BalancerSpellV1",
+	CurveSpellV1 = "CurveSpellV1",
 
 	// Interface
 	IComptroller = "IComptroller",
@@ -43,9 +45,6 @@ export enum CONTRACT_NAMES {
 	ICurveRegistry = "ICurveRegistry",
 	IERC20Ex = "IERC20Ex",
 	IUniswapV2Pair = "IUniswapV2Pair",
-	SushiswapSpellV1 = "SushiswapSpellV1",
-	BalancerSpellV1 = "BalancerSpellV1",
-	CurveSpellV1 = "CurveSpellV1",
 }
 
 export const ADDRESS = {
@@ -60,6 +59,9 @@ export const ADDRESS = {
 	USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
 	WBTC: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
 	WETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+	crDAI: '0x92B767185fB3B04F881e3aC8e5B0662a027A1D9f',
+	crUSDC: '0x44fbebd2f576670a6c33f6fc0b00aa8c5753b322',
+	crUSDT: '0x797AAB1ce7c01eB727ab980762bA88e7133d2157',
 
 	// LP
 	UNI_V2_USDT_USDC: '0x3041cbd36888becc7bbcbc0045e3b1f144466f5f',
@@ -71,7 +73,7 @@ export const ADDRESS = {
 	SUSHI_WETH_USDT: '0x06da0fd433c1a5d7a4faa01111c044910a184553',
 	BAL_WETH_DAI_8020: '0x8b6e6e7b5b3801fed2cafd4b22b8a16c2f2db21a',
 	BAL_PERP_USDC_8020: '0xF54025aF2dc86809Be1153c1F20D77ADB7e8ecF4',
-	CRV_3_POOL: '0x6c3f90f043a72fa612cbac8115ee7e52bde6e490',
+	CRV_3Crv: '0x6c3f90f043a72fa612cbac8115ee7e52bde6e490',
 
 	// Oracle
 	Keep3rV1Oracle: '0x73353801921417F465377c8d898c6f4C0270282C',
@@ -82,10 +84,10 @@ export const ADDRESS = {
 	UNI_V2_ROUTER: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
 	SUSHI_ROUTER: '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f',
 
-
 	// Wrapper
 	SUSHI_MASTERCHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
 	CRV_GAUGE: '0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c',
+	CRV_3Crv_POOL: '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',
 	IC_DPI_STAKING_REWARDS: '0xB93b505Ed567982E2b6756177ddD23ab5745f309',
 	PERP_BALANCER_LP_REWARDS: '0xb9840a4a8a671f79de3df3b812feeb38047ce552',
 }
