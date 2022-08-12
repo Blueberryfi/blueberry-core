@@ -6,12 +6,12 @@ pragma experimental ABIEncoderV2;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
-import '../utils/HomoraMath.sol';
+import '../utils/BBMath.sol';
 import '../interfaces/IBalancerPool.sol';
 import '../interfaces/IWStakingRewards.sol';
 
 contract BalancerSpellV1 is WhitelistSpell {
-    using HomoraMath for uint256;
+    using BBMath for uint256;
 
     mapping(address => address[2]) public pairs; // Mapping from lp token to underlying token (only pairs)
 
@@ -173,7 +173,7 @@ contract BalancerSpellV1 is WhitelistSpell {
     }
 
     struct RepayAmounts {
-        uint256 amtLPTake; // Take out LP token amount (from Homora)
+        uint256 amtLPTake; // Take out LP token amount (from BlueBerry)
         uint256 amtLPWithdraw; // Withdraw LP token amount (back to caller)
         uint256 amtARepay; // Repay tokenA amount
         uint256 amtBRepay; // Repay tokenB amount
@@ -259,9 +259,11 @@ contract BalancerSpellV1 is WhitelistSpell {
         doRefund(lp);
     }
 
-    /// @dev Remove liquidity from Balancer pool (with 2 underlying tokens), without staking rewards (use WERC20 wrapper)
-    /// @param lp LP token for the pool
-    /// @param amt Amounts of tokens to take out, withdraw, repay, and get.
+    /**
+     * @dev Remove liquidity from Balancer pool (with 2 underlying tokens), without staking rewards (use WERC20 wrapper)
+     * @param lp LP token for the pool
+     * @param amt Amounts of tokens to take out, withdraw, repay, and get.
+     */
     function removeLiquidityWERC20(address lp, RepayAmounts calldata amt)
         external
     {

@@ -1,13 +1,25 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { BigNumber, Contract } from "ethers"
-import { ethers } from "hardhat"
+import { BigNumber, Contract, Signer } from "ethers"
+import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { CoreOracle, HomoraBank, IERC20, MockERC20, MockUniswapV2Factory, MockUniswapV2Router02, SimpleOracle, UniswapV2Oracle, UniswapV2SpellV1, WERC20 } from "../../typechain"
+import {
+	CoreOracle,
+	BlueBerryBank,
+	IERC20,
+	MockERC20,
+	MockUniswapV2Factory,
+	MockUniswapV2Router02,
+	SimpleOracle,
+	UniswapV2Oracle,
+	UniswapV2SpellV1,
+	WERC20
+} from "../../typechain-types"
+import SpellArtifact from '../../artifacts/contracts/spell/UniswapV2SpellV1.sol/UniswapV2SpellV1.json';
 
 export const setup_uniswap = async (
 	admin: SignerWithAddress,
 	alice: SignerWithAddress,
-	bank: HomoraBank,
+	bank: BlueBerryBank,
 	werc20: WERC20,
 	urouter: MockUniswapV2Router02,
 	ufactory: MockUniswapV2Factory,
@@ -75,25 +87,27 @@ export const setup_uniswap = async (
 }
 
 export const execute_uniswap_werc20 = async (
+	admin: SignerWithAddress,
 	alice: SignerWithAddress,
-	bank: HomoraBank,
+	bank: BlueBerryBank,
 	token0: string,
 	token1: string,
 	spell: UniswapV2SpellV1,
-	pos_id = 0,
-	lp: string
+	pos_id = 0
 ) => {
 	await spell.getAndApprovePair(token0, token1);
-	const tx = await bank.connect(alice).execute(
+	const lp = await spell.pairs(token0, token1);
+	await spell.setWhitelistLPTokens([lp], [true]);
+	await bank.connect(admin).setWhitelistSpells(
+		[spell.address],
+		[true]
+	)
+
+	const iface = new ethers.utils.Interface(SpellArtifact.abi);
+	await bank.connect(alice).execute(
 		pos_id,
 		spell.address,
-		ethers.utils.defaultAbiCoder.encode(
-			[
-				"address",
-				"address",
-				"tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,)",
-				"address",
-			], [
+		iface.encodeFunctionData("addLiquidityWERC20", [
 			token0,
 			token1,
 			[
@@ -105,9 +119,7 @@ export const execute_uniswap_werc20 = async (
 				0,
 				0,
 				0,
-			],
-			lp,
-		]
-		)
+			]
+		])
 	);
 }

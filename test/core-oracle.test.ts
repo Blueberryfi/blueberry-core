@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { CONTRACT_NAMES } from "../constants"
-import { CoreOracle, MockERC20, MockWETH, SimpleOracle } from '../typechain';
+import { CoreOracle, MockERC20, MockWETH, SimpleOracle } from '../typechain-types';
 import { setupBasic } from './helpers/setup-basic';
 
 describe('Core Oracle', () => {

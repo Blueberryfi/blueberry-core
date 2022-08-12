@@ -1,5 +1,4 @@
 import { ethers, deployments } from 'hardhat';
-import { CONTRACT_NAMES } from "../../constants"
 
 export const setupUsers = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
