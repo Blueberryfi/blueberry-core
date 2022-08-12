@@ -60,7 +60,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, Governable {
     /// @dev Set timeAgos for each token
     /// @param tokens list of tokens to set timeAgos
     /// @param times list of timeAgos to set to
-    function SetTimeAgos(address[] calldata tokens, uint32[] calldata times)
+    function setTimeAgos(address[] calldata tokens, uint32[] calldata times)
         external
         onlyGov
     {

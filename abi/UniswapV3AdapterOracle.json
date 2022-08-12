@@ -114,24 +114,6 @@
     "type": "event"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "tokens",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint32[]",
-        "name": "times",
-        "type": "uint32[]"
-      }
-    ],
-    "name": "SetTimeAgos",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "WETH",
     "outputs": [
@@ -279,6 +261,24 @@
       }
     ],
     "name": "setPoolsStable",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "tokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "times",
+        "type": "uint32[]"
+      }
+    ],
+    "name": "setTimeAgos",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
