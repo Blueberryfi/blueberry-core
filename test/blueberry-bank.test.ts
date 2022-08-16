@@ -87,21 +87,21 @@ describe("BlueBerry Bank", () => {
 
 		const lp = await ufactory.getPair(usdc.address, usdt.address);
 		const lpContract = <ERC20>await ethers.getContractAt(CONTRACT_NAMES.ERC20, lp);
-		console.log('admin lp bal:', await lpContract.balanceOf(admin.address));
+		// console.log('admin lp bal:', await lpContract.balanceOf(admin.address));
 
 		const UniswapLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2Oracle);
 		const uniswapLpOracle = <UniswapV2Oracle>await UniswapLpOracle.deploy(coreOracle.address);
 		await uniswapLpOracle.deployed();
 
-		console.log('usdt Px:', await simpleOracle.getETHPx(usdt.address));
-		console.log('usdc Px:', await simpleOracle.getETHPx(usdc.address));
+		// console.log('usdt Px:', await simpleOracle.getETHPx(usdt.address));
+		// console.log('usdc Px:', await simpleOracle.getETHPx(usdc.address));
 
 		await coreOracle.setRoute(
 			[usdc.address, usdt.address, lp],
 			[simpleOracle.address, simpleOracle.address, uniswapLpOracle.address]
 		)
 
-		console.log('lp Px:', await uniswapLpOracle.getETHPx(lp));
+		// console.log('lp Px:', await uniswapLpOracle.getETHPx(lp));
 
 		await oracle.setTokenFactors(
 			[usdc.address, usdt.address, lp],
@@ -184,6 +184,7 @@ describe("BlueBerry Bank", () => {
 				coreOracle,
 				proxyOracle
 			)
+			await bank.setWhitelistTokens([usdt.address, usdc.address], [true, true]);
 
 			await execute_uniswap_werc20(
 				admin,
@@ -198,7 +199,7 @@ describe("BlueBerry Bank", () => {
 			expect(await bank._GENERAL_LOCK()).to.be.equal(NOT_ENTERED);
 			expect(await bank._IN_EXEC_LOCK()).to.be.equal(NOT_ENTERED);
 			expect(await bank.POSITION_ID()).to.be.equal(NO_ID);
-			expect(await bank.SPELL()).to.be.equal(ethers.constants.AddressZero);
+			expect(await bank.SPELL()).to.be.equal(NO_ADDR);
 		})
 
 		// 	it("test oracle", async () => {
