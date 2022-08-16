@@ -21,6 +21,8 @@ export enum CONTRACT_NAMES {
 	BalancerPairOracle = "BalancerPairOracle",
 	ERC20KP3ROracle = "ERC20KP3ROracle",
 	CurveOracle = "CurveOracle",
+	UniswapV3AdapterOracle = "UniswapV3AdapterOracle",
+	AggregatorOracle = "AggregatorOracle",
 
 	// Uniswap
 	MockUniswapV2Factory = "MockUniswapV2Factory",
@@ -45,6 +47,7 @@ export enum CONTRACT_NAMES {
 	ICurveRegistry = "ICurveRegistry",
 	IERC20Ex = "IERC20Ex",
 	IUniswapV2Pair = "IUniswapV2Pair",
+	IUniswapV3Pool = "IUniswapV3Pool",
 }
 
 export const ADDRESS = {
@@ -62,6 +65,7 @@ export const ADDRESS = {
 	crDAI: '0x92B767185fB3B04F881e3aC8e5B0662a027A1D9f',
 	crUSDC: '0x44fbebd2f576670a6c33f6fc0b00aa8c5753b322',
 	crUSDT: '0x797AAB1ce7c01eB727ab980762bA88e7133d2157',
+	UNI: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
 
 	// LP
 	UNI_V2_USDT_USDC: '0x3041cbd36888becc7bbcbc0045e3b1f144466f5f',
@@ -74,6 +78,8 @@ export const ADDRESS = {
 	BAL_WETH_DAI_8020: '0x8b6e6e7b5b3801fed2cafd4b22b8a16c2f2db21a',
 	BAL_PERP_USDC_8020: '0xF54025aF2dc86809Be1153c1F20D77ADB7e8ecF4',
 	CRV_3Crv: '0x6c3f90f043a72fa612cbac8115ee7e52bde6e490',
+	UNI_V3_UNI_WETH: '0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801',
+	UNI_V3_UNI_USDC: '0xd0fc8ba7e267f2bc56044a7715a489d851dc6d78',
 
 	// Oracle
 	Keep3rV1Oracle: '0x73353801921417F465377c8d898c6f4C0270282C',
