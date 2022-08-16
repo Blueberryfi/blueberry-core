@@ -1,17 +1,17 @@
 export enum CONTRACT_NAMES {
 	// Token
-	ERC20 = "ERC20",
-	IERC20 = "IERC20",
-	MockWETH = "MockWETH",
-	MockERC20 = "MockERC20",
-	MockCErc20 = "MockCErc20",
-	MockCErc20_2 = "MockCErc20_2",
+	ERC20 = 'ERC20',
+	IERC20 = 'IERC20',
+	MockWETH = 'MockWETH',
+	MockERC20 = 'MockERC20',
+	MockCErc20 = 'MockCErc20',
+	MockCErc20_2 = 'MockCErc20_2',
 
 	// Wrapper
-	WERC20 = "WERC20",
-	WMasterChef = "WMasterChef",
-	WLiquidityGauge = "WLiquidityGauge",
-	WStakingRewards = "WStakingRewards",
+	WERC20 = 'WERC20',
+	WMasterChef = 'WMasterChef',
+	WLiquidityGauge = 'WLiquidityGauge',
+	WStakingRewards = 'WStakingRewards',
 
 	// Oracles
 	SimpleOracle = "SimpleOracle",
@@ -25,13 +25,14 @@ export enum CONTRACT_NAMES {
 	AggregatorOracle = "AggregatorOracle",
 
 	// Uniswap
-	MockUniswapV2Factory = "MockUniswapV2Factory",
-	MockUniswapV2Router02 = "MockUniswapV2Router02",
+	MockUniswapV2Factory = 'MockUniswapV2Factory',
+	MockUniswapV2Router02 = 'MockUniswapV2Router02',
 
 	// Protocol
-	BlueBerryBank = "BlueBerryBank",
-	SafeBox = "SafeBox",
-	SafeBoxETH = "SafeBoxETH",
+	BlueBerryBank = 'BlueBerryBank',
+	SafeBox = 'SafeBox',
+	SafeBoxETH = 'SafeBoxETH',
+	SafeBoxUniV3LP = 'SafeBoxUniV3LP',
 
 	// Spell
 	UniswapV2SpellV1 = "UniswapV2SpellV1",
