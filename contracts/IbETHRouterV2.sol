@@ -74,27 +74,27 @@ contract IbETHRouterV2 {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable alpha;
+    IERC20 public immutable blueberry;
     IbETHRouterV2IbETHv2 public immutable ibETHv2;
     IbETHRouterV2UniswapPair public immutable lpToken;
     IbETHRouterV2UniswapRouter public immutable router;
 
     constructor(
-        IERC20 _alpha,
+        IERC20 _blueberry,
         IbETHRouterV2IbETHv2 _ibETHv2,
         IbETHRouterV2UniswapRouter _router
     ) {
         IbETHRouterV2UniswapPair _lpToken = IbETHRouterV2UniswapPair(
             IbETHRouterV2UniswapFactory(_router.factory()).getPair(
-                address(_alpha),
+                address(_blueberry),
                 address(_ibETHv2)
             )
         );
-        alpha = _alpha;
+        blueberry = _blueberry;
         ibETHv2 = _ibETHv2;
         lpToken = _lpToken;
         router = _router;
-        IERC20(_alpha).safeApprove(address(_router), type(uint256).max);
+        IERC20(_blueberry).safeApprove(address(_router), type(uint256).max);
         IERC20(_ibETHv2).safeApprove(address(_router), type(uint256).max);
         IERC20(_lpToken).safeApprove(address(_router), type(uint256).max);
     }
@@ -132,7 +132,7 @@ contract IbETHRouterV2 {
         return numerator.div(denominator);
     }
 
-    function swapExactETHToAlpha(
+    function swapExactETHToBLB(
         uint256 amountOutMin,
         address to,
         uint256 deadline
@@ -140,7 +140,7 @@ contract IbETHRouterV2 {
         ibETHv2.deposit{value: msg.value}();
         address[] memory path = new address[](2);
         path[0] = address(ibETHv2);
-        path[1] = address(alpha);
+        path[1] = address(blueberry);
         router.swapExactTokensForTokens(
             ibETHv2.balanceOf(address(this)),
             amountOutMin,
@@ -150,15 +150,15 @@ contract IbETHRouterV2 {
         );
     }
 
-    function swapExactAlphaToETH(
+    function swapExactBLBToETH(
         uint256 amountIn,
         uint256 amountOutMin,
         address to,
         uint256 deadline
     ) external {
-        alpha.transferFrom(msg.sender, address(this), amountIn);
+        blueberry.transferFrom(msg.sender, address(this), amountIn);
         address[] memory path = new address[](2);
-        path[0] = address(alpha);
+        path[0] = address(blueberry);
         path[1] = address(ibETHv2);
         router.swapExactTokensForTokens(
             amountIn,
@@ -174,36 +174,36 @@ contract IbETHRouterV2 {
         require(success, '!eth');
     }
 
-    function addLiquidityETHAlphaOptimal(
-        uint256 amountAlpha,
+    function addLiquidityETHBLBOptimal(
+        uint256 amountBlb,
         uint256 minLp,
         address to,
         uint256 deadline
     ) external payable {
-        if (amountAlpha > 0)
-            alpha.transferFrom(msg.sender, address(this), amountAlpha);
+        if (amountBlb > 0)
+            blueberry.transferFrom(msg.sender, address(this), amountBlb);
         ibETHv2.deposit{value: msg.value}();
         uint256 amountIbETHv2 = ibETHv2.balanceOf(address(this));
         uint256 swapAmt;
         bool isReversed;
         {
             (uint256 r0, uint256 r1, ) = lpToken.getReserves();
-            (uint256 ibETHv2Reserve, uint256 alphaReserve) = lpToken.token0() ==
+            (uint256 ibETHv2Reserve, uint256 blbReserve) = lpToken.token0() ==
                 address(ibETHv2)
                 ? (r0, r1)
                 : (r1, r0);
             (swapAmt, isReversed) = optimalDeposit(
                 amountIbETHv2,
-                amountAlpha,
+                amountBlb,
                 ibETHv2Reserve,
-                alphaReserve
+                blbReserve
             );
         }
         if (swapAmt > 0) {
             address[] memory path = new address[](2);
             (path[0], path[1]) = isReversed
-                ? (address(alpha), address(ibETHv2))
-                : (address(ibETHv2), address(alpha));
+                ? (address(blueberry), address(ibETHv2))
+                : (address(ibETHv2), address(blueberry));
             router.swapExactTokensForTokens(
                 swapAmt,
                 0,
@@ -213,9 +213,9 @@ contract IbETHRouterV2 {
             );
         }
         (, , uint256 liquidity) = router.addLiquidity(
-            address(alpha),
+            address(blueberry),
             address(ibETHv2),
-            alpha.balanceOf(address(this)),
+            blueberry.balanceOf(address(this)),
             ibETHv2.balanceOf(address(this)),
             0,
             0,
@@ -225,37 +225,37 @@ contract IbETHRouterV2 {
         require(liquidity >= minLp, '!minLP');
     }
 
-    function addLiquidityIbETHv2AlphaOptimal(
+    function addLiquidityIbETHv2BLBOptimal(
         uint256 amountIbETHv2,
-        uint256 amountAlpha,
+        uint256 amountBlb,
         uint256 minLp,
         address to,
         uint256 deadline
     ) external {
-        if (amountAlpha > 0)
-            alpha.transferFrom(msg.sender, address(this), amountAlpha);
+        if (amountBlb > 0)
+            blueberry.transferFrom(msg.sender, address(this), amountBlb);
         if (amountIbETHv2 > 0)
             ibETHv2.transferFrom(msg.sender, address(this), amountIbETHv2);
         uint256 swapAmt;
         bool isReversed;
         {
             (uint256 r0, uint256 r1, ) = lpToken.getReserves();
-            (uint256 ibETHv2Reserve, uint256 alphaReserve) = lpToken.token0() ==
+            (uint256 ibETHv2Reserve, uint256 blbReserve) = lpToken.token0() ==
                 address(ibETHv2)
                 ? (r0, r1)
                 : (r1, r0);
             (swapAmt, isReversed) = optimalDeposit(
                 amountIbETHv2,
-                amountAlpha,
+                amountBlb,
                 ibETHv2Reserve,
-                alphaReserve
+                blbReserve
             );
         }
         if (swapAmt > 0) {
             address[] memory path = new address[](2);
             (path[0], path[1]) = isReversed
-                ? (address(alpha), address(ibETHv2))
-                : (address(ibETHv2), address(alpha));
+                ? (address(blueberry), address(ibETHv2))
+                : (address(ibETHv2), address(blueberry));
             router.swapExactTokensForTokens(
                 swapAmt,
                 0,
@@ -265,9 +265,9 @@ contract IbETHRouterV2 {
             );
         }
         (, , uint256 liquidity) = router.addLiquidity(
-            address(alpha),
+            address(blueberry),
             address(ibETHv2),
-            alpha.balanceOf(address(this)),
+            blueberry.balanceOf(address(this)),
             ibETHv2.balanceOf(address(this)),
             0,
             0,
@@ -277,24 +277,24 @@ contract IbETHRouterV2 {
         require(liquidity >= minLp, '!minLP');
     }
 
-    function removeLiquidityETHAlpha(
+    function removeLiquidityETHBLB(
         uint256 liquidity,
         uint256 minETH,
-        uint256 minAlpha,
+        uint256 minBLB,
         address to,
         uint256 deadline
     ) external {
         lpToken.transferFrom(msg.sender, address(this), liquidity);
         router.removeLiquidity(
-            address(alpha),
+            address(blueberry),
             address(ibETHv2),
             liquidity,
-            minAlpha,
+            minBLB,
             0,
             address(this),
             deadline
         );
-        alpha.transfer(msg.sender, alpha.balanceOf(address(this)));
+        blueberry.transfer(msg.sender, blueberry.balanceOf(address(this)));
         ibETHv2.withdraw(ibETHv2.balanceOf(address(this)));
         uint256 ethBalance = address(this).balance;
         require(ethBalance >= minETH, '!minETH');
@@ -302,15 +302,15 @@ contract IbETHRouterV2 {
         require(success, '!eth');
     }
 
-    function removeLiquidityAlphaOnly(
+    function removeLiquidityBLBOnly(
         uint256 liquidity,
-        uint256 minAlpha,
+        uint256 minBLB,
         address to,
         uint256 deadline
     ) external {
         lpToken.transferFrom(msg.sender, address(this), liquidity);
         router.removeLiquidity(
-            address(alpha),
+            address(blueberry),
             address(ibETHv2),
             liquidity,
             0,
@@ -320,7 +320,7 @@ contract IbETHRouterV2 {
         );
         address[] memory path = new address[](2);
         path[0] = address(ibETHv2);
-        path[1] = address(alpha);
+        path[1] = address(blueberry);
         router.swapExactTokensForTokens(
             ibETHv2.balanceOf(address(this)),
             0,
@@ -328,9 +328,9 @@ contract IbETHRouterV2 {
             address(this),
             deadline
         );
-        uint256 alphaBalance = alpha.balanceOf(address(this));
-        require(alphaBalance >= minAlpha, '!minAlpha');
-        alpha.transfer(to, alphaBalance);
+        uint256 blbBalance = blueberry.balanceOf(address(this));
+        require(blbBalance >= minBLB, '!minBLB');
+        blueberry.transfer(to, blbBalance);
     }
 
     receive() external payable {

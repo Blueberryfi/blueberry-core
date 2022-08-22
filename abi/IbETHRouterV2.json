@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "contract IERC20",
-        "name": "_alpha",
+        "name": "_blueberry",
         "type": "address"
       },
       {
@@ -24,7 +24,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "amountAlpha",
+        "name": "amountBlb",
         "type": "uint256"
       },
       {
@@ -43,7 +43,7 @@
         "type": "uint256"
       }
     ],
-    "name": "addLiquidityETHAlphaOptimal",
+    "name": "addLiquidityETHBLBOptimal",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -57,7 +57,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "amountAlpha",
+        "name": "amountBlb",
         "type": "uint256"
       },
       {
@@ -76,14 +76,14 @@
         "type": "uint256"
       }
     ],
-    "name": "addLiquidityIbETHv2AlphaOptimal",
+    "name": "addLiquidityIbETHv2BLBOptimal",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "alpha",
+    "name": "blueberry",
     "outputs": [
       {
         "internalType": "contract IERC20",
@@ -129,7 +129,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "minAlpha",
+        "name": "minBLB",
         "type": "uint256"
       },
       {
@@ -143,7 +143,7 @@
         "type": "uint256"
       }
     ],
-    "name": "removeLiquidityAlphaOnly",
+    "name": "removeLiquidityBLBOnly",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -162,7 +162,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "minAlpha",
+        "name": "minBLB",
         "type": "uint256"
       },
       {
@@ -176,7 +176,7 @@
         "type": "uint256"
       }
     ],
-    "name": "removeLiquidityETHAlpha",
+    "name": "removeLiquidityETHBLB",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -217,7 +217,7 @@
         "type": "uint256"
       }
     ],
-    "name": "swapExactAlphaToETH",
+    "name": "swapExactBLBToETH",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -240,7 +240,7 @@
         "type": "uint256"
       }
     ],
-    "name": "swapExactETHToAlpha",
+    "name": "swapExactETHToBLB",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
