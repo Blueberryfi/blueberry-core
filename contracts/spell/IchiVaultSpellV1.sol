@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
+import '../libraries/UniV3/TickMath.sol';
 import './WhitelistSpell.sol';
 import '../utils/BBMath.sol';
 import '../interfaces/ichi/IICHIVault.sol';
@@ -21,11 +22,17 @@ contract IchiVaultSpellV1 is WhitelistSpell {
         address _weth
     ) WhitelistSpell(_bank, _werc20, _weth) {}
 
-    function _isTokenA(address token) internal returns (bool) {
+    function _isTokenA(address token) internal view returns (bool) {
         IICHIVault vault = IICHIVault(vaults[token]);
         return vault.token0() == token;
     }
 
+    /**
+     * @notice External function to deposit assets on IchiVault
+     * @param token Token address to deposit (e.g USDC)
+     * @param amount Amount of user's collateral (e.g USDC)
+     * @param amtBorrow Amount to borrow on Compound
+     */
     function deposit(
         address token,
         uint256 amount,
@@ -54,54 +61,64 @@ contract IchiVaultSpellV1 is WhitelistSpell {
         );
     }
 
-    function withdrawInternal(
+    /**
+     * @notice External function to withdraw assets from ICHI Vault
+     * @param token Token address to withdraw (e.g USDC)
+     * @param lpTakeAmt Amount of ICHI Vault LP token to take out from Bank
+     * @param amountRepay Amount to repay the loan
+     * @param amountLpWithdraw Amount of ICHI Vault LP to withdraw from ICHI Vault
+     */
+    function withdraw(
         address token,
-        address lp,
+        uint256 lpTakeAmt,
         uint256 amountRepay,
-        uint256 amountLpRepay,
         uint256 amountLpWithdraw
-    ) internal {
-        require(whitelistedLpTokens[lp], 'lp token not whitelisted');
+    ) external {
+        IICHIVault vault = IICHIVault(vaults[token]);
+
+        // 1. Take out collateral
+        doTakeCollateral(address(vault), lpTakeAmt);
+
+        // 2. Remove Liquidity - Withdraw from ICHI Vault
+        require(
+            whitelistedLpTokens[address(vault)],
+            'lp token not whitelisted'
+        );
         uint256 positionId = bank.POSITION_ID();
 
         // 2. Compute repay amount if MAX_INT is supplied (max debt)
         if (amountRepay == type(uint256).max) {
             amountRepay = bank.borrowBalanceCurrent(positionId, token);
         }
-        if (amountLpRepay == type(uint256).max) {
-            amountLpRepay = bank.borrowBalanceCurrent(positionId, lp);
-        }
 
         // 3. Calculate actual amount to remove
-        uint256 amtLPToRemove = IERC20(lp).balanceOf(address(this)) -
+        uint256 amtLPToRemove = vault.balanceOf(address(this)) -
             amountLpWithdraw;
 
         // 4. Remove liquidity
-        IICHIVault(lp).withdraw(amtLPToRemove, address(this));
+        vault.withdraw(amtLPToRemove, address(this));
 
         // 5. Swap tokens to deposited token
-        IUniswapV3Pool(IICHIVault(lp).pool()).swap(
+        bool isTokenA = vault.token0() == token;
+        uint256 amountToSwap = IERC20(
+            isTokenA ? vault.token1() : vault.token0()
+        ).balanceOf(address(this));
+
+        IUniswapV3Pool(vault.pool()).swap(
             address(this),
-            swapQuantity > 0,
-            swapQuantity > 0 ? swapQuantity : -swapQuantity,
-            swapQuantity > 0
-                ? UV3Math.MIN_SQRT_RATIO + 1
-                : UV3Math.MAX_SQRT_RATIO - 1,
+            // if withdraw token is Token0, then token1 -> token0 (false)
+            !isTokenA,
+            int256(amountToSwap),
+            isTokenA
+                ? TickMath.MAX_SQRT_RATIO - 1 // Token0 -> Token1
+                : TickMath.MIN_SQRT_RATIO + 1, // Token1 -> Token0
             abi.encode(address(this))
         );
-    }
 
-    function withdraw(
-        address token,
-        uint256 lpTakeAmt,
-        uint256 amountRepay
-    ) external {
-        address vault = vaults[token];
+        // 6. Repay
+        doRepay(token, amountRepay);
 
-        // 1. Take out collateral
-        doTakeCollateral(vault, lpTakeAmt);
-
-        // 2. Remove Liquidity - Withdraw from ICHI Vault
-        withdrawInternal(vault);
+        // 7. Refund
+        doRefund(token);
     }
 }

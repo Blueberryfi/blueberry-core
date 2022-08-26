@@ -2,7 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-interface IICHIVault {
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+
+interface IICHIVault is IERC20 {
     function ichiVaultFactory() external view returns (address);
 
     function pool() external view returns (address);
