@@ -5,12 +5,13 @@ pragma solidity ^0.8.9;
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
-
+import 'hardhat/console.sol';
 import './Governable.sol';
 import './utils/ERC1155NaiveReceiver.sol';
 import './interfaces/IBank.sol';
 import './interfaces/ICErc20.sol';
 import './interfaces/IOracle.sol';
+import './interfaces/ISafeBox.sol';
 
 library BlueBerrySafeMath {
     /// @dev Computes round-up division.
@@ -55,6 +56,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         bool isListed; // Whether this market exists.
         uint8 index; // Reverse look up index for this bank.
         address cToken; // The CToken to draw liquidity from.
+        address safeBox;
         uint256 reserve; // The reserve portion allocated to BlueBerry protocol.
         uint256 totalDebt; // The last recorded total debt since last action.
         uint256 totalShare; // The total debt share count across all open positions.
@@ -446,10 +448,17 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         return value;
     }
 
-    /// @dev Add a new bank to the ecosystem.
-    /// @param token The underlying token for the bank.
-    /// @param cToken The address of the cToken smart contract.
-    function addBank(address token, address cToken) external onlyGov {
+    /**
+     * @dev Add a new bank to the ecosystem.
+     * @param token The underlying token for the bank.
+     * @param cToken The address of the cToken smart contract.
+     * @param safeBox The address of safeBox.
+     */
+    function addBank(
+        address token,
+        address cToken,
+        address safeBox
+    ) external onlyGov {
         Bank storage bank = banks[token];
         require(!cTokenInBank[cToken], 'cToken already exists');
         require(!bank.isListed, 'bank already exists');
@@ -458,6 +467,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         require(allBanks.length < 256, 'reach bank limit');
         bank.index = uint8(allBanks.length);
         bank.cToken = cToken;
+        bank.safeBox = safeBox;
         IERC20(token).safeApprove(cToken, 0);
         IERC20(token).safeApprove(cToken, type(uint256).max);
         allBanks.push(token);
@@ -720,14 +730,11 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     /// NOTE: Caller must ensure that cToken interest was already accrued up to this block.
     function doBorrow(address token, uint256 amountCall)
         internal
-        returns (uint256)
+        returns (uint256 borrowAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
-        require(ICErc20(bank.cToken).borrow(amountCall) == 0, 'bad borrow');
-        uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+        borrowAmount = ISafeBox(bank.safeBox).borrow(amountCall);
         bank.totalDebt += amountCall;
-        return balanceAfter - balanceBefore;
     }
 
     /// @dev Internal function to perform repay to the bank and return the amount actually repaid.

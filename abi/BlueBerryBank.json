@@ -421,6 +421,11 @@
         "internalType": "address",
         "name": "cToken",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "safeBox",
+        "type": "address"
       }
     ],
     "name": "addBank",
@@ -522,6 +527,11 @@
       {
         "internalType": "address",
         "name": "cToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "safeBox",
         "type": "address"
       },
       {

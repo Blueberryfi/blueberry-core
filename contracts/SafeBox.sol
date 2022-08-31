@@ -8,8 +8,9 @@ import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './Governable.sol';
 import './interfaces/ICErc20.sol';
+import './interfaces/ISafeBox.sol';
 
-contract SafeBox is Governable, ERC20, ReentrancyGuard {
+contract SafeBox is Governable, ERC20, ReentrancyGuard, ISafeBox {
     using SafeERC20 for IERC20;
     event Claim(address user, uint256 amount);
 
@@ -17,8 +18,14 @@ contract SafeBox is Governable, ERC20, ReentrancyGuard {
     IERC20 public immutable uToken;
 
     address public relayer;
+    address public bank;
     bytes32 public root;
     mapping(address => uint256) public claimed;
+
+    modifier onlyBank() {
+        require(msg.sender == bank, '!bank');
+        _;
+    }
 
     constructor(
         ICErc20 _cToken,
@@ -37,6 +44,10 @@ contract SafeBox is Governable, ERC20, ReentrancyGuard {
         return cToken.decimals();
     }
 
+    function setBank(address _bank) external onlyGov {
+        bank = _bank;
+    }
+
     function setRelayer(address _relayer) external onlyGov {
         relayer = _relayer;
     }
@@ -44,6 +55,19 @@ contract SafeBox is Governable, ERC20, ReentrancyGuard {
     function updateRoot(bytes32 _root) external {
         require(msg.sender == relayer || msg.sender == governor, '!relayer');
         root = _root;
+    }
+
+    function borrow(uint256 amount)
+        external
+        nonReentrant
+        onlyBank
+        returns (uint256 borrowAmount)
+    {
+        uint256 uBalanceBefore = uToken.balanceOf(address(this));
+        require(cToken.borrow(amount) == 0, 'bad borrow');
+        uint256 uBalanceAfter = uToken.balanceOf(address(this));
+        borrowAmount = uBalanceAfter - uBalanceBefore;
+        uToken.safeTransfer(bank, borrowAmount);
     }
 
     function deposit(uint256 amount) external nonReentrant {

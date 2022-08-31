@@ -23,6 +23,7 @@ export enum CONTRACT_NAMES {
 	CurveOracle = "CurveOracle",
 	UniswapV3AdapterOracle = "UniswapV3AdapterOracle",
 	AggregatorOracle = "AggregatorOracle",
+	IchiLpOracle = "IchiLpOracle",
 
 	// Uniswap
 	MockUniswapV2Factory = 'MockUniswapV2Factory',
@@ -39,8 +40,10 @@ export enum CONTRACT_NAMES {
 	SushiswapSpellV1 = "SushiswapSpellV1",
 	BalancerSpellV1 = "BalancerSpellV1",
 	CurveSpellV1 = "CurveSpellV1",
+	IchiVaultSpellV1 = "IchiVaultSpellV1",
 
 	// Interface
+	IWETH = "IWETH",
 	IComptroller = "IComptroller",
 	ICEtherEx = "ICEtherEx",
 	ICErc20 = "ICErc20",
@@ -48,6 +51,7 @@ export enum CONTRACT_NAMES {
 	ICurveRegistry = "ICurveRegistry",
 	IERC20Ex = "IERC20Ex",
 	IUniswapV2Pair = "IUniswapV2Pair",
+	IUniswapV2Router02 = "IUniswapV2Router02",
 	IUniswapV3Pool = "IUniswapV3Pool",
 }
 
@@ -67,6 +71,8 @@ export const ADDRESS = {
 	crDAI: '0x92B767185fB3B04F881e3aC8e5B0662a027A1D9f',
 	crUSDC: '0x44fbebd2f576670a6c33f6fc0b00aa8c5753b322',
 	crUSDT: '0x797AAB1ce7c01eB727ab980762bA88e7133d2157',
+	cUSDC: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
+	cyUSDC: '0x76Eb2FE28b36B3ee97F3Adae0C69606eeDB2A37c',
 	UNI: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
 
 	// LP
@@ -99,4 +105,9 @@ export const ADDRESS = {
 	IC_DPI_STAKING_REWARDS: '0xB93b505Ed567982E2b6756177ddD23ab5745f309',
 	PERP_BALANCER_LP_REWARDS: '0xb9840a4a8a671f79de3df3b812feeb38047ce552',
 	CREAM_COMP: '0x3d5BC3c8d13dcB8bF317092d84783c2697AE9258',
+	IRON_COMP: '0xab1c342c7bf5ec5f02adea1c2270670bca144cbb',
+	COMP: '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B',
+
+	// ICHI
+	ICHI_VAULT_USDC: '0x683F081DBC729dbD34AbaC708Fa0B390d49F1c39',
 }

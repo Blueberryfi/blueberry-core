@@ -4,14 +4,15 @@ pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 
-import '../libraries/UniV3/TickMath.sol';
 import './WhitelistSpell.sol';
+import '../libraries/UniV3/TickMath.sol';
 import '../utils/BBMath.sol';
 import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/UniV3/IUniswapV3Pool.sol';
 
-contract IchiVaultSpellV1 is WhitelistSpell {
+contract IchiVaultSpellV1 is WhitelistSpell, Ownable {
     using BBMath for uint256;
 
     mapping(address => address) vaults;
@@ -21,6 +22,10 @@ contract IchiVaultSpellV1 is WhitelistSpell {
         address _werc20,
         address _weth
     ) WhitelistSpell(_bank, _werc20, _weth) {}
+
+    function addVault(address token, address vault) external onlyOwner {
+        vaults[token] = vault;
+    }
 
     function _isTokenA(address token) internal view returns (bool) {
         IICHIVault vault = IICHIVault(vaults[token]);
@@ -46,8 +51,9 @@ contract IchiVaultSpellV1 is WhitelistSpell {
 
         // 3. Add liquidity - Deposit on ICHI Vault
         IICHIVault vault = IICHIVault(vaults[token]);
-        bool isTokenA = _isTokenA(token);
+        bool isTokenA = vault.token0() == token;
         uint256 balance = IERC20(token).balanceOf(address(this));
+        ensureApprove(token, address(vault));
         if (isTokenA) {
             vault.deposit(balance, 0, address(this));
         } else {
