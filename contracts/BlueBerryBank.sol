@@ -576,11 +576,14 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         POSITION_ID = positionId;
         SPELL = spell;
         BlueBerryCaster(caster).cast{value: msg.value}(spell, data);
+
         uint256 collateralValue = getCollateralETHValue(positionId);
         uint256 borrowValue = getBorrowETHValue(positionId);
         require(collateralValue >= borrowValue, 'insufficient collateral');
+
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
+
         return positionId;
     }
 
@@ -743,15 +746,12 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     /// NOTE: Caller must ensure that cToken interest was already accrued up to this block.
     function doRepay(address token, uint256 amountCall)
         internal
-        returns (uint256)
+        returns (uint256 repaidAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        ICErc20 cToken = ICErc20(bank.cToken);
-        uint256 oldDebt = bank.totalDebt;
-        require(cToken.repayBorrow(amountCall) == 0, 'bad repay');
-        uint256 newDebt = cToken.borrowBalanceStored(address(this));
+        uint256 newDebt = ISafeBox(bank.safeBox).repay(amountCall);
+        repaidAmount = bank.totalDebt - newDebt;
         bank.totalDebt = newDebt;
-        return oldDebt - newDebt;
     }
 
     /// @dev Internal function to perform ERC20 transfer in and return amount actually received.

@@ -70,6 +70,16 @@ contract SafeBox is Governable, ERC20, ReentrancyGuard, ISafeBox {
         uToken.safeTransfer(bank, borrowAmount);
     }
 
+    function repay(uint256 amount)
+        external
+        nonReentrant
+        onlyBank
+        returns (uint256 newDebt)
+    {
+        require(cToken.repayBorrow(amount) == 0, 'bad repay');
+        newDebt = cToken.borrowBalanceStored(address(this));
+    }
+
     function deposit(uint256 amount) external nonReentrant {
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         uToken.safeTransferFrom(msg.sender, address(this), amount);
