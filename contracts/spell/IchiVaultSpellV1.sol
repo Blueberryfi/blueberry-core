@@ -3,7 +3,7 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
 import './WhitelistSpell.sol';
@@ -11,10 +11,13 @@ import '../libraries/UniV3/TickMath.sol';
 import '../utils/BBMath.sol';
 import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/UniV3/IUniswapV3Pool.sol';
+import '../interfaces/UniV3/IUniswapV3SwapCallback.sol';
 
-contract IchiVaultSpellV1 is WhitelistSpell, Ownable {
+contract IchiVaultSpellV1 is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
     using BBMath for uint256;
+    using SafeERC20 for IERC20;
 
+    address swapPool;
     mapping(address => address) vaults;
 
     constructor(
@@ -60,7 +63,7 @@ contract IchiVaultSpellV1 is WhitelistSpell, Ownable {
             vault.deposit(0, balance, address(this));
         }
 
-        // 4. Put collateral
+        // 4. Put collateral - ICHI Vault Lp Token
         doPutCollateral(
             address(vault),
             IERC20(address(vault)).balanceOf(address(this))
@@ -110,9 +113,10 @@ contract IchiVaultSpellV1 is WhitelistSpell, Ownable {
             isTokenA ? vault.token1() : vault.token0()
         ).balanceOf(address(this));
 
-        IUniswapV3Pool(vault.pool()).swap(
+        swapPool = vault.pool();
+        IUniswapV3Pool(swapPool).swap(
             address(this),
-            // if withdraw token is Token0, then token1 -> token0 (false)
+            // if withdraw token is Token0, then swap token1 -> token0 (false)
             !isTokenA,
             int256(amountToSwap),
             isTokenA
@@ -126,5 +130,42 @@ contract IchiVaultSpellV1 is WhitelistSpell, Ownable {
 
         // 7. Refund
         doRefund(token);
+    }
+
+    function uniswapV3SwapCallback(
+        int256 amount0Delta,
+        int256 amount1Delta,
+        bytes calldata data
+    ) external override {
+        require(msg.sender == address(swapPool), 'cb2');
+        address payer = abi.decode(data, (address));
+
+        if (amount0Delta > 0) {
+            if (payer == address(this)) {
+                IERC20(IUniswapV3Pool(swapPool).token0()).safeTransfer(
+                    msg.sender,
+                    uint256(amount0Delta)
+                );
+            } else {
+                IERC20(IUniswapV3Pool(swapPool).token0()).safeTransferFrom(
+                    payer,
+                    msg.sender,
+                    uint256(amount0Delta)
+                );
+            }
+        } else if (amount1Delta > 0) {
+            if (payer == address(this)) {
+                IERC20(IUniswapV3Pool(swapPool).token1()).safeTransfer(
+                    msg.sender,
+                    uint256(amount1Delta)
+                );
+            } else {
+                IERC20(IUniswapV3Pool(swapPool).token1()).safeTransferFrom(
+                    payer,
+                    msg.sender,
+                    uint256(amount1Delta)
+                );
+            }
+        }
     }
 }

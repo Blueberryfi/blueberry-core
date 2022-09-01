@@ -749,6 +749,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         returns (uint256 repaidAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
+        IERC20(token).safeTransfer(bank.safeBox, amountCall);
         uint256 newDebt = ISafeBox(bank.safeBox).repay(amountCall);
         repaidAmount = bank.totalDebt - newDebt;
         bank.totalDebt = newDebt;

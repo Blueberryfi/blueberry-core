@@ -8,8 +8,8 @@ import {
 	ERC20,
 	ICErc20,
 	IchiVaultSpellV1,
-	IUniswapV2Pair,
 	IUniswapV2Router02,
+	IUniswapV3Pool,
 	IWETH,
 	ProxyOracle,
 	SafeBox,
@@ -19,14 +19,13 @@ import {
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
 import ERC20ABI from '../../abi/ERC20.json'
-import UniswapPairABI from '../../abi/IUniswapV2Pair.json'
 import ICrc20ABI from '../../abi/ICErc20.json'
 import SpellABI from '../../abi/IchiVaultSpellV1.json';
+import UniV3Pool from '../../abi/IUniswapV3Pool.json';
 
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
-import { setupBasic } from '../helpers/setup-basic';
 
 chai.use(solidity)
 chai.use(near)
@@ -45,8 +44,6 @@ describe('ICHI Angel Vaults Spell', () => {
 
 	let usdc: ERC20;
 	let weth: IWETH;
-	let uniLP: ERC20;
-	let uniPool: IUniswapV2Pair;
 	let cUSDC: ICErc20;
 	let werc20: WERC20;
 	let simpleOracle: SimpleOracle;
@@ -61,8 +58,6 @@ describe('ICHI Angel Vaults Spell', () => {
 		[admin, alice] = await ethers.getSigners();
 		usdc = <ERC20>await ethers.getContractAt(ERC20ABI, USDC, admin);
 		weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-		uniLP = <ERC20>await ethers.getContractAt(ERC20ABI, UNISWAP_LP);
-		uniPool = <IUniswapV2Pair>await ethers.getContractAt(UniswapPairABI, UNISWAP_LP)
 		cUSDC = <ICErc20>await ethers.getContractAt(ICrc20ABI, CUSDC);
 
 		const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
@@ -129,6 +124,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		)
 		await spell.deployed();
 		await spell.addVault(USDC, ICHI_VAULT);
+		await spell.setWhitelistLPTokens([ICHI_VAULT], [true]);
 
 		// Setup Bank
 		await bank.setWhitelistSpells(
@@ -166,20 +162,17 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.addBank(USDC, CUSDC, safeBox.address);
 
 		await usdc.approve(safeBox.address, ethers.constants.MaxUint256);
+		console.log(await usdc.balanceOf(admin.address));
 		await safeBox.deposit(utils.parseUnits("10000", 6));
-		console.log(await safeBox.balanceOf(admin.address));
-		console.log(await cUSDC.balanceOf(safeBox.address));
+		console.log(await usdc.balanceOf(admin.address));
 	})
 
 	beforeEach(async () => {
 	})
 
-	it("test", async () => {
-		// await 	
+	it("should be able to deposit USDC on ICHI angel vault", async () => {
 		const iface = new ethers.utils.Interface(SpellABI);
-
 		await usdc.approve(bank.address, ethers.constants.MaxUint256);
-		console.log(await usdc.balanceOf(admin.address));
 		await bank.execute(
 			0,
 			spell.address,
@@ -189,5 +182,35 @@ describe('ICHI Angel Vaults Spell', () => {
 				utils.parseUnits('10', 6)
 			])
 		)
+
+		expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(2));
+		const pos = await bank.getPositionInfo(1);
+		expect(pos.owner).to.be.equal(admin.address);
+		expect(pos.collToken).to.be.equal(werc20.address);
+		expect(pos.collId).to.be.equal(BigNumber.from(ICHI_VAULT));
+		expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+		expect(
+			await werc20.balanceOf(bank.address, BigNumber.from(ICHI_VAULT))
+		).to.be.equal(pos.collateralSize);
+	})
+	it("should be able to withdraw USDC", async () => {
+		console.log(await usdc.balanceOf(admin.address));
+		const iface = new ethers.utils.Interface(SpellABI);
+		await bank.execute(
+			1,
+			spell.address,
+			iface.encodeFunctionData("withdraw", [
+				USDC, // ICHI vault lp token is collateral
+				ethers.constants.MaxUint256,	// Amount of werc20
+				utils.parseUnits('10', 6),	// repay amount
+				0,
+			])
+		)
+		console.log(await usdc.balanceOf(admin.address));
+
+		const pos = await bank.getPositionInfo(1);
+		console.log(pos);
+		await safeBox.withdraw(utils.parseUnits("10000", 6));
+		console.log(await usdc.balanceOf(admin.address));
 	})
 })
