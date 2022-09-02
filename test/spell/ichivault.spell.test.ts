@@ -15,7 +15,8 @@ import {
 	SafeBox,
 	SimpleOracle,
 	IchiLpOracle,
-	WERC20
+	WERC20,
+	WIchiFarm
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
 import ERC20ABI from '../../abi/ERC20.json'
@@ -51,6 +52,7 @@ describe('ICHI Angel Vaults Spell', () => {
 	let coreOracle: CoreOracle;
 	let oracle: ProxyOracle;
 	let spell: IchiVaultSpellV1;
+	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
 	let safeBox: SafeBox;
 
@@ -115,12 +117,16 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.deployed();
 		await bank.initialize(oracle.address, 2000);
 
-		// Deploy ICHI spell
+		// Deploy ICHI wrapper and spell
+		const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
+		wichi = <WIchiFarm>await WIchiFarm.deploy(ADDRESS.ICHI, ADDRESS.ICHI_FARMING);
+		await wichi.deployed();
 		const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpellV1);
 		spell = <IchiVaultSpellV1>await ICHISpell.deploy(
 			bank.address,
 			werc20.address,
 			weth.address,
+			wichi.address
 		)
 		await spell.deployed();
 		await spell.addVault(USDC, ICHI_VAULT);
