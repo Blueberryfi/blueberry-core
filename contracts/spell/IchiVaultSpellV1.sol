@@ -9,6 +9,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import './WhitelistSpell.sol';
 import '../libraries/UniV3/TickMath.sol';
 import '../utils/BBMath.sol';
+import '../interfaces/IWIchiFarm.sol';
 import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/UniV3/IUniswapV3Pool.sol';
 import '../interfaces/UniV3/IUniswapV3SwapCallback.sol';
@@ -17,14 +18,23 @@ contract IchiVaultSpellV1 is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
     using BBMath for uint256;
     using SafeERC20 for IERC20;
 
+    /// @dev temperory state used to store uni v3 pool when swapping on uni v3
     address swapPool;
     mapping(address => address) vaults;
+
+    IWIchiFarm public immutable wIchiFarm;
+    address public immutable ICHI;
 
     constructor(
         IBank _bank,
         address _werc20,
-        address _weth
-    ) WhitelistSpell(_bank, _werc20, _weth) {}
+        address _weth,
+        address _wichiFarm
+    ) WhitelistSpell(_bank, _werc20, _weth) {
+        wIchiFarm = IWIchiFarm(_wichiFarm);
+        ICHI = address(wIchiFarm.ICHI());
+        IWIchiFarm(_wichiFarm).setApprovalForAll(address(_bank), true);
+    }
 
     function addVault(address token, address vault) external onlyOwner {
         vaults[token] = vault;
@@ -35,17 +45,11 @@ contract IchiVaultSpellV1 is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         return vault.token0() == token;
     }
 
-    /**
-     * @notice External function to deposit assets on IchiVault
-     * @param token Token address to deposit (e.g USDC)
-     * @param amount Amount of user's collateral (e.g USDC)
-     * @param amtBorrow Amount to borrow on Compound
-     */
-    function deposit(
+    function depositInternal(
         address token,
         uint256 amount,
         uint256 amtBorrow
-    ) external {
+    ) internal {
         // 1. Get user input amounts
         doTransmit(token, amount);
 
@@ -62,32 +66,67 @@ contract IchiVaultSpellV1 is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         } else {
             vault.deposit(0, balance, address(this));
         }
-
-        // 4. Put collateral - ICHI Vault Lp Token
-        doPutCollateral(
-            address(vault),
-            IERC20(address(vault)).balanceOf(address(this))
-        );
     }
 
     /**
-     * @notice External function to withdraw assets from ICHI Vault
-     * @param token Token address to withdraw (e.g USDC)
-     * @param lpTakeAmt Amount of ICHI Vault LP token to take out from Bank
-     * @param amountRepay Amount to repay the loan
-     * @param amountLpWithdraw Amount of ICHI Vault LP to withdraw from ICHI Vault
+     * @notice External function to deposit assets on IchiVault
+     * @param token Token address to deposit (e.g USDC)
+     * @param amount Amount of user's collateral (e.g USDC)
+     * @param amtBorrow Amount to borrow on Compound
      */
-    function withdraw(
+    function deposit(
         address token,
-        uint256 lpTakeAmt,
+        uint256 amount,
+        uint256 amtBorrow
+    ) external {
+        address vault = vaults[token];
+        // 1-3 Deposit on ichi vault
+        depositInternal(token, amount, amtBorrow);
+
+        // 4. Put collateral - ICHI Vault Lp Token
+        doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
+    }
+
+    function depositFarm(
+        address token,
+        uint256 amount,
+        uint256 amtBorrow,
+        uint256 pid
+    ) external {
+        address vaultAddr = vaults[token];
+        address lpToken = wIchiFarm.ichiFarm().lpToken(pid);
+        require(vaultAddr == lpToken, 'incorrect lp token');
+
+        // 1-3 Deposit on ichi vault
+        depositInternal(token, amount, amtBorrow);
+
+        // 4. Take out collateral
+        (, address collToken, uint256 collId, uint256 collSize) = bank
+            .getCurrentPositionInfo();
+        if (collSize > 0) {
+            (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
+            require(pid == decodedPid, 'incorrect pid');
+            require(
+                collToken == address(wIchiFarm),
+                'collateral token & wmasterchef mismatched'
+            );
+            bank.takeCollateral(address(wIchiFarm), collId, collSize);
+            wIchiFarm.burn(collId, collSize);
+        }
+
+        // 5. Deposit on farming pool, put collateral
+        ensureApprove(vaultAddr, address(wIchiFarm));
+        uint256 lpAmount = IERC20(vaultAddr).balanceOf(address(this));
+        uint256 id = wIchiFarm.mint(pid, lpAmount);
+        bank.putCollateral(address(wIchiFarm), id, lpAmount);
+    }
+
+    function withdrawInternal(
+        address token,
         uint256 amountRepay,
         uint256 amountLpWithdraw
-    ) external {
+    ) internal {
         IICHIVault vault = IICHIVault(vaults[token]);
-
-        // 1. Take out collateral
-        doTakeCollateral(address(vault), lpTakeAmt);
-
         // 2. Remove Liquidity - Withdraw from ICHI Vault
         require(
             whitelistedLpTokens[address(vault)],
@@ -130,6 +169,55 @@ contract IchiVaultSpellV1 is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
 
         // 7. Refund
         doRefund(token);
+    }
+
+    /**
+     * @notice External function to withdraw assets from ICHI Vault
+     * @param token Token address to withdraw (e.g USDC)
+     * @param lpTakeAmt Amount of ICHI Vault LP token to take out from Bank
+     * @param amountRepay Amount to repay the loan
+     * @param amountLpWithdraw Amount of ICHI Vault LP to withdraw from ICHI Vault
+     */
+    function withdraw(
+        address token,
+        uint256 lpTakeAmt,
+        uint256 amountRepay,
+        uint256 amountLpWithdraw
+    ) external {
+        IICHIVault vault = IICHIVault(vaults[token]);
+
+        // 1. Take out collateral
+        doTakeCollateral(address(vault), lpTakeAmt);
+
+        withdrawInternal(token, amountRepay, amountLpWithdraw);
+    }
+
+    function withdrawFarm(
+        address token,
+        uint256 lpTakeAmt,
+        uint256 amountRepay,
+        uint256 amountLpWithdraw
+    ) external {
+        address vault = vaults[token];
+        (, address collToken, uint256 collId, ) = bank.getCurrentPositionInfo();
+        require(
+            IWIchiFarm(collToken).getUnderlyingToken(collId) == vault,
+            'incorrect underlying'
+        );
+        require(
+            collToken == address(wIchiFarm),
+            'collateral token & wmasterchef mismatched'
+        );
+
+        // 1. Take out collateral
+        bank.takeCollateral(address(wIchiFarm), collId, lpTakeAmt);
+        wIchiFarm.burn(collId, lpTakeAmt);
+
+        // 2-8. remove liquidity
+        withdrawInternal(token, amountRepay, amountLpWithdraw);
+
+        // 9. Refund sushi
+        doRefund(ICHI);
     }
 
     function uniswapV3SwapCallback(

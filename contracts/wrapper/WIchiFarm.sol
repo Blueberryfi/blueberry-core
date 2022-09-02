@@ -7,15 +7,21 @@ import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 import '../utils/BBMath.sol';
+import '../interfaces/IWIchiFarm.sol';
 import '../interfaces/IERC20Wrapper.sol';
-import '../interfaces/IIchiFarm.sol';
+import '../interfaces/ichi/IIchiFarm.sol';
 
-contract WIchiFarm is ERC1155('WIchiFarm'), ReentrancyGuard, IERC20Wrapper {
+contract WIchiFarm is
+    ERC1155('WIchiFarm'),
+    ReentrancyGuard,
+    IERC20Wrapper,
+    IWIchiFarm
+{
     using BBMath for uint256;
     using SafeERC20 for IERC20;
 
     IERC20 public immutable ICHI;
-    IIchiFarm ichiFarm;
+    IIchiFarm public immutable ichiFarm;
 
     constructor(address _ichi, address _ichiFarm) {
         ICHI = IERC20(_ichi);
