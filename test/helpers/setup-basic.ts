@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers, deployments, upgrades } from 'hardhat';
-import { CONTRACT_NAMES } from "../../constants"
-import { CoreOracle, BlueBerryBank, MockERC20, MockWETH, ProxyOracle, SimpleOracle, WERC20 } from '../../typechain-types';
+import { CONTRACT_NAMES } from "../../constants";
+import { CoreOracle, BlueBerryBank, MockERC20, MockCErc20, MockWETH, SafeBox, ProxyOracle, SimpleOracle, WERC20 } from '../../typechain-types';
 
 export const setupBasic = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
@@ -58,25 +58,41 @@ export const setupBasic = deployments.createFixture(async () => {
 
 	// await homoraBank.setWhitelistTokens([usdt.address, usdc.address], [true, true]);
 
+	const mockERC20 = <MockERC20>await MockERC20.deploy('token', "TOKEN", 18);
+	await mockERC20.deployed();
+
+	const MockCERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
+	const cToken = <MockCErc20>await MockCERC20.deploy(mockERC20.address);
+	await cToken.deployed();
+
+	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
+	const safeBox = <SafeBox>await SafeBox.deploy(cToken.address, "ibToken", "ibTOKEN");
+	await safeBox.deployed();
+
+	await safeBox.setBank(blueberryBank.address);
+
 	const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
 	const cerc20 = await CERC20.deploy(mockWETH.address);
 	await mockWETH.connect(signers[9]).deposit({ 'value': ethers.utils.parseEther('100') });
 	await mockWETH.connect(signers[9]).transfer(cerc20.address, ethers.utils.parseEther('100'));
-	await blueberryBank.addBank(mockWETH.address, cerc20.address);
+	await blueberryBank.addBank(mockWETH.address, cerc20.address, safeBox.address);
 
 	for (const token of [dai, usdt, usdc]) {
 		const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
 		const cerc20 = await CERC20.deploy(token.address);
 		await token.mint(cerc20.address, ethers.utils.parseEther('100'));
-		await blueberryBank.addBank(token.address, cerc20.address);
+		await blueberryBank.addBank(token.address, cerc20.address, safeBox.address);
 	}
 
 	return {
+		cToken,
+		mockERC20,
 		mockWETH,
 		werc20,
 		usdt,
 		usdc,
 		dai,
+		safeBox,
 		simpleOracle,
 		coreOracle,
 		proxyOracle,

@@ -1,6 +1,7 @@
+import { BigNumber } from 'ethers';
 import { ethers, deployments } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { MockCErc20_2, MockERC20, MockWETH, SafeBox, SafeBoxETH } from '../../typechain-types';
+import { MockCErc20_2, MockERC20, MockCErc20, MockWETH, SafeBox, SafeBoxETH } from '../../typechain-types';
 
 export const setupSafeBox = deployments.createFixture(async () => {
 	const MockERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);

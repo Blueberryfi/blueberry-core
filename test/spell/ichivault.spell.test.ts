@@ -162,9 +162,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.addBank(USDC, CUSDC, safeBox.address);
 
 		await usdc.approve(safeBox.address, ethers.constants.MaxUint256);
-		console.log(await usdc.balanceOf(admin.address));
 		await safeBox.deposit(utils.parseUnits("10000", 6));
-		console.log(await usdc.balanceOf(admin.address));
 	})
 
 	beforeEach(async () => {
@@ -194,7 +192,6 @@ describe('ICHI Angel Vaults Spell', () => {
 		).to.be.equal(pos.collateralSize);
 	})
 	it("should be able to withdraw USDC", async () => {
-		console.log(await usdc.balanceOf(admin.address));
 		const iface = new ethers.utils.Interface(SpellABI);
 		await bank.execute(
 			1,
@@ -206,11 +203,8 @@ describe('ICHI Angel Vaults Spell', () => {
 				0,
 			])
 		)
-		console.log(await usdc.balanceOf(admin.address));
 
 		const pos = await bank.getPositionInfo(1);
-		console.log(pos);
 		await safeBox.withdraw(utils.parseUnits("10000", 6));
-		console.log(await usdc.balanceOf(admin.address));
 	})
 })

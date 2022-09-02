@@ -12,6 +12,7 @@ import {
 	MockUniswapV2Factory,
 	MockUniswapV2Router02,
 	MockWETH,
+	SafeBox,
 	SimpleOracle,
 	UniswapV2Oracle,
 	UniswapV2SpellV1,
@@ -43,6 +44,7 @@ describe("BlueBerry Bank", () => {
 	let usdc: MockERC20;
 	let dai: MockERC20;
 	let weth: MockWETH;
+	let safeBox: SafeBox;
 	let simpleOracle: SimpleOracle;
 	let coreOracle: CoreOracle;
 	let proxyOracle: ProxyOracle;
@@ -121,8 +123,10 @@ describe("BlueBerry Bank", () => {
 				},
 			]
 		);
-		await usdc.mint(alice.address, BigNumber.from(10).pow(6).mul(10_000_000))
-		await usdt.mint(alice.address, BigNumber.from(10).pow(6).mul(10_000_000))
+		await usdc.mint(alice.address, BigNumber.from(10).pow(6).mul(10_000_000));
+		await usdt.mint(alice.address, BigNumber.from(10).pow(6).mul(10_000_000));
+		await usdc.connect(alice).transfer(bank.address, BigNumber.from(10).pow(6).mul(5_000_000));
+		await usdt.connect(alice).transfer(bank.address, BigNumber.from(10).pow(6).mul(5_000_000));
 		await usdc.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
 		await usdt.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
 
@@ -144,6 +148,9 @@ describe("BlueBerry Bank", () => {
 			simpleOracle = basicFixture.simpleOracle;
 			coreOracle = basicFixture.coreOracle;
 			proxyOracle = basicFixture.proxyOracle;
+			token = basicFixture.mockERC20;
+			cToken = basicFixture.cToken;
+			safeBox = basicFixture.safeBox;
 
 			const MockUniV2Factory = await ethers.getContractFactory(CONTRACT_NAMES.MockUniswapV2Factory);
 			uniV2Factory = <MockUniswapV2Factory>await MockUniV2Factory.deploy(admin.address);
@@ -153,12 +160,17 @@ describe("BlueBerry Bank", () => {
 			uniV2Router02 = <MockUniswapV2Router02>await MockUniV2Router02.deploy(uniV2Factory.address, weth.address);
 			await uniV2Router02.deployed();
 
-			const MockERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);
-			const MockCERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
-			token = <MockERC20>await MockERC20.deploy("Test", "TEST", 18);
-			await token.deployed();
-			cToken = <MockCErc20>await MockCERC20.deploy(token.address);
-			await cToken.deployed();
+			await token.mint(cToken.address, BigNumber.from(10).pow(18).mul(BigNumber.from(10).pow(12)));
+			// const MockERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);
+			// const MockCERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
+			// token = <MockERC20>await MockERC20.deploy("Test", "TEST", 18);
+			// await token.deployed();
+			// cToken = <MockCErc20>await MockCERC20.deploy(token.address);
+			// await cToken.deployed();
+
+			// const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
+			// safeBox = <SafeBox>await SafeBox.deploy(cToken.address, "ibToken", "ibTOKEN");
+			// await safeBox.deployed();
 		})
 		it('temporary state', async () => {
 			const NOT_ENTERED = 1;
@@ -194,7 +206,7 @@ describe("BlueBerry Bank", () => {
 				usdt.address,
 				spell,
 				0
-			)
+			);
 
 			expect(await bank._GENERAL_LOCK()).to.be.equal(NOT_ENTERED);
 			expect(await bank._IN_EXEC_LOCK()).to.be.equal(NOT_ENTERED);
