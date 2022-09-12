@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai, { expect } from 'chai';
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import {
 	BlueBerryBank,
@@ -9,7 +9,6 @@ import {
 	ICErc20,
 	IchiVaultSpellV1,
 	IUniswapV2Router02,
-	IUniswapV3Pool,
 	IWETH,
 	ProxyOracle,
 	SafeBox,
@@ -24,7 +23,6 @@ import ERC20ABI from '../../abi/ERC20.json'
 import ICrc20ABI from '../../abi/ICErc20.json'
 import SpellABI from '../../abi/IchiVaultSpellV1.json';
 import IchiFarmABI from '../../abi/IIchiFarm.json';
-import UniV3Pool from '../../abi/IUniswapV3Pool.json';
 
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
@@ -34,11 +32,9 @@ chai.use(solidity)
 chai.use(near)
 chai.use(roughlyNear)
 
-const COMPTROLLER = ADDRESS.COMP;	// Cream Finance / Comptroller
 const CUSDC = ADDRESS.cyUSDC;			// Cream Finance / crDAI
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
-const UNISWAP_LP = ADDRESS.UNI_V2_USDC_WETH;
 const ICHI_VAULT = ADDRESS.ICHI_VAULT_USDC;
 const ICHI_VAULT_PID = 27; // ICHI/USDC Vault PoolId
 
