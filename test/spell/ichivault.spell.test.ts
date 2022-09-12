@@ -244,4 +244,20 @@ describe('ICHI Angel Vaults Spell', () => {
 			await wichi.balanceOf(bank.address, collId)
 		).to.be.equal(pos.collateralSize);
 	})
+	it("should be able to harvest on ICHI farming", async () => {
+		console.log(await usdc.balanceOf(admin.address));
+		const iface = new ethers.utils.Interface(SpellABI);
+		await bank.execute(
+			2,
+			spell.address,
+			iface.encodeFunctionData("withdrawFarm", [
+				USDC, // ICHI vault lp token is collateral
+				ethers.constants.MaxUint256,	// Amount of werc20
+				utils.parseUnits('10', 6),	// repay amount
+				0,
+			])
+		)
+		await safeBox.withdraw(utils.parseUnits("10000", 6));
+		console.log(await usdc.balanceOf(admin.address));
+	})
 })
