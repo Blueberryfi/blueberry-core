@@ -15,6 +15,7 @@ export enum CONTRACT_NAMES {
 	WStakingRewards = 'WStakingRewards',
 
 	// Oracles
+	BandAdapterOracle = "BandAdapterOracle",
 	SimpleOracle = "SimpleOracle",
 	CoreOracle = "CoreOracle",
 	ProxyOracle = "ProxyOracle",
@@ -94,9 +95,8 @@ export const ADDRESS = {
 
 	// Oracle
 	Keep3rV1Oracle: '0x73353801921417F465377c8d898c6f4C0270282C',
-
-	// StdRef
-	StdRef: '0xDA7a001b254CD22e46d3eAB04d937489c93174C3',
+	BandStdRef: '0xDA7a001b254CD22e46d3eAB04d937489c93174C3',
+	ChainlinkRegistry: '0x47fb2585d2c56fe188d0e6ec628a38b74fceeedf',
 
 	UNI_V2_ROUTER: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
 	SUSHI_ROUTER: '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f',

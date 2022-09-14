@@ -5,27 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import '../Governable.sol';
 import '../interfaces/IBaseOracle.sol';
-
-interface IStdReference {
-    /// A structure returned whenever someone requests for standard reference data.
-    struct ReferenceData {
-        uint256 rate; // base/quote exchange rate, multiplied by 1e18.
-        uint256 lastUpdatedBase; // UNIX epoch of the last time when base price gets updated.
-        uint256 lastUpdatedQuote; // UNIX epoch of the last time when quote price gets updated.
-    }
-
-    /// @dev Returns the price data for the given base/quote pair. Revert if not available.
-    function getReferenceData(string memory _base, string memory _quote)
-        external
-        view
-        returns (ReferenceData memory);
-
-    /// @dev Similar to getReferenceData, but with multiple base/quote pairs at once.
-    function getReferenceDataBulk(
-        string[] memory _bases,
-        string[] memory _quotes
-    ) external view returns (ReferenceData[] memory);
-}
+import '../interfaces/band/IStdReference.sol';
 
 contract BandAdapterOracle is IBaseOracle, Governable {
     event SetSymbol(address token, string symbol);
@@ -52,7 +32,7 @@ contract BandAdapterOracle is IBaseOracle, Governable {
         external
         onlyGov
     {
-        require(syms.length == tokens.length, 'inconsistent length');
+        require(syms.length == tokens.length, 'length mismatch');
         for (uint256 idx = 0; idx < syms.length; idx++) {
             symbols[tokens[idx]] = syms[idx];
             emit SetSymbol(tokens[idx], syms[idx]);
@@ -73,10 +53,7 @@ contract BandAdapterOracle is IBaseOracle, Governable {
         address[] calldata tokens,
         uint256[] calldata maxDelays
     ) external onlyGov {
-        require(
-            tokens.length == maxDelays.length,
-            'tokens & maxDelays length mismatched'
-        );
+        require(tokens.length == maxDelays.length, 'length mismatch');
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             maxDelayTimes[tokens[idx]] = maxDelays[idx];
             emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);

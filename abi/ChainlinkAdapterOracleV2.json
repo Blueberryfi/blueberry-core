@@ -47,7 +47,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "token",
         "type": "address"
@@ -79,56 +79,69 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "token",
         "type": "address"
       },
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "ref",
-        "type": "address"
+        "internalType": "uint8",
+        "name": "decimal",
+        "type": "uint8"
       }
     ],
-    "name": "SetRefETH",
+    "name": "SetRemappedTokenDecimal",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "address",
-        "name": "ref",
-        "type": "address"
-      }
-    ],
-    "name": "SetRefETHUSD",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "token",
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
-        "name": "ref",
+        "name": "remappedToken",
         "type": "address"
       }
     ],
-    "name": "SetRefUSD",
+    "name": "SetTokenRemapping",
     "type": "event"
   },
   {
     "inputs": [],
-    "name": "WETH",
+    "name": "BTC",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "USD",
     "outputs": [
       {
         "internalType": "address",
@@ -150,7 +163,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "token",
+        "name": "_token",
         "type": "address"
       }
     ],
@@ -212,10 +225,10 @@
   },
   {
     "inputs": [],
-    "name": "refETHUSD",
+    "name": "registry",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IFeedRegistry",
         "name": "",
         "type": "address"
       }
@@ -231,26 +244,7 @@
         "type": "address"
       }
     ],
-    "name": "refsETH",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "refsUSD",
+    "name": "remappedTokens",
     "outputs": [
       {
         "internalType": "address",
@@ -265,12 +259,12 @@
     "inputs": [
       {
         "internalType": "address[]",
-        "name": "tokens",
+        "name": "_remappedTokens",
         "type": "address[]"
       },
       {
         "internalType": "uint256[]",
-        "name": "maxDelays",
+        "name": "_maxDelayTimes",
         "type": "uint256[]"
       }
     ],
@@ -295,48 +289,17 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_refETHUSD",
-        "type": "address"
-      }
-    ],
-    "name": "setRefETHUSD",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address[]",
-        "name": "tokens",
+        "name": "_tokens",
         "type": "address[]"
       },
       {
         "internalType": "address[]",
-        "name": "refs",
+        "name": "_remappedTokens",
         "type": "address[]"
       }
     ],
-    "name": "setRefsETH",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "tokens",
-        "type": "address[]"
-      },
-      {
-        "internalType": "address[]",
-        "name": "refs",
-        "type": "address[]"
-      }
-    ],
-    "name": "setRefsUSD",
+    "name": "setTokenRemappings",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
