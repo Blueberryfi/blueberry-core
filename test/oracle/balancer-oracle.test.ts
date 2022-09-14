@@ -6,7 +6,6 @@ import { ADDRESS, CONTRACT_NAMES } from "../../constants"
 import {
   BalancerPairOracle,
   CoreOracle,
-  BlueBerryBank,
   SimpleOracle,
   WERC20,
   ProxyOracle,
@@ -15,7 +14,6 @@ import {
   ICEtherEx,
   ERC20,
 } from '../../typechain-types';
-import { setupBasic } from '../helpers/setup-basic';
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'

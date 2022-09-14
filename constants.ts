@@ -54,6 +54,7 @@ export enum CONTRACT_NAMES {
 	IUniswapV2Pair = "IUniswapV2Pair",
 	IUniswapV2Router02 = "IUniswapV2Router02",
 	IUniswapV3Pool = "IUniswapV3Pool",
+	IICHIVault = 'IICHIVault',
 }
 
 export const ADDRESS = {
@@ -61,7 +62,7 @@ export const ADDRESS = {
 	DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
 	DPI: '0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b',
 	ETH: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-	ICHI: '0x903bEF1736CDdf2A537176cf3C64579C3867A881',
+	ICHI: '0x111111517e4929d3dcbdfa7cce55d30d4b6bc4d6',
 	INDEX: '0x0954906da0Bf32d5479e25f46056d22f08464cab',
 	PERP: '0xbC396689893D065F41bc2C6EcbeE5e0085233447',
 	SNX: '0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f',

@@ -18,16 +18,9 @@ chai.use(near)
 chai.use(roughlyNear)
 
 describe('Uniswap LP Oracle', () => {
-  let admin: SignerWithAddress;
-  let alice: SignerWithAddress;
-  let bob: SignerWithAddress;
-  let eve: SignerWithAddress;
-
   let simpleOracle: SimpleOracle;
   let uniswapOracle: UniswapV2Oracle;
   before(async () => {
-    [admin, alice, bob, eve] = await ethers.getSigners();
-
     const SimpleOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.SimpleOracle);
     simpleOracle = <SimpleOracle>await SimpleOracleFactory.deploy();
     await simpleOracle.deployed();
