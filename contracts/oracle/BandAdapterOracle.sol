@@ -27,10 +27,6 @@ interface IStdReference {
     ) external view returns (ReferenceData[] memory);
 }
 
-interface BandDetailedERC20 {
-    function decimals() external view returns (uint8);
-}
-
 contract BandAdapterOracle is IBaseOracle, Governable {
     event SetSymbol(address token, string symbol);
     event SetRef(address ref);
@@ -98,7 +94,6 @@ contract BandAdapterOracle is IBaseOracle, Governable {
         uint256 maxDelayTime = maxDelayTimes[token];
         require(bytes(sym).length != 0, 'no mapping');
         require(maxDelayTime != 0, 'max delay time not set');
-        uint256 decimals = uint256(BandDetailedERC20(token).decimals());
         IStdReference.ReferenceData memory data = ref.getReferenceData(
             sym,
             ETH
@@ -111,6 +106,6 @@ contract BandAdapterOracle is IBaseOracle, Governable {
             data.lastUpdatedQuote >= block.timestamp - maxDelayTime,
             'delayed quote data'
         );
-        return (data.rate * 2**112) / 10**decimals;
+        return (data.rate * 2**112) / 10**18;
     }
 }

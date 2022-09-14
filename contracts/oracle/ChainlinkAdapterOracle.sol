@@ -2,166 +2,124 @@
 
 pragma solidity ^0.8.9;
 
+import '@openzeppelin/contracts/utils/math/SafeCast.sol';
+
 import '../Governable.sol';
 import '../interfaces/IBaseOracle.sol';
+import '../interfaces/chainlink/IFeedRegistry.sol';
 
-interface IAggregatorV3Interface {
-    function decimals() external view returns (uint8);
+contract ChainlinkAdapterOracleV2 is IBaseOracle, Governable {
+    using SafeCast for int256;
 
-    function description() external view returns (string memory);
+    event SetMaxDelayTime(address indexed token, uint256 maxDelayTime);
+    event SetTokenRemapping(
+        address indexed token,
+        address indexed remappedToken
+    );
+    event SetRemappedTokenDecimal(address indexed token, uint8 decimal);
 
-    function version() external view returns (uint256);
+    // Chainlink denominations
+    // (source: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/Denominations.sol)
+    IFeedRegistry public constant registry =
+        IFeedRegistry(0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf);
+    address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address public constant BTC = 0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB;
+    address public constant USD = address(840);
 
-    // getRoundData and latestRoundData should both raise "No data present"
-    // if they do not have data to report, instead of returning unset values
-    // which could be misinterpreted as actual reported values.
-    function getRoundData(uint80 _roundId)
-        external
-        view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
-
-    function latestRoundData()
-        external
-        view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
-}
-
-interface ChainlinkDetailedERC20 {
-    function decimals() external view returns (uint8);
-}
-
-contract ChainlinkAdapterOracle is IBaseOracle, Governable {
-    event SetRefETH(address token, address ref);
-    event SetRefUSD(address token, address ref);
-    event SetMaxDelayTime(address token, uint256 maxDelayTime);
-    event SetRefETHUSD(address ref);
-
-    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address public refETHUSD = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419; // ETH-USD price reference
-    mapping(address => address) public refsETH; // Mapping from token address to ETH price reference
-    mapping(address => address) public refsUSD; // Mapping from token address to USD price reference
-    mapping(address => uint256) public maxDelayTimes; // Mapping from token address to max delay time
+    /// @dev Mapping from original token to remapped token for price querying (e.g. WBTC -> BTC, renBTC -> BTC)
+    mapping(address => address) public remappedTokens;
+    /// @dev Mapping from token address to max delay time
+    mapping(address => uint256) public maxDelayTimes;
 
     constructor() {
         __Governable__init();
     }
 
-    /// @dev Set price reference for ETH pair
-    /// @param tokens list of tokens to set reference
-    /// @param refs list of reference contract addresses
-    function setRefsETH(address[] calldata tokens, address[] calldata refs)
-        external
-        onlyGov
-    {
-        require(
-            tokens.length == refs.length,
-            'tokens & refs length mismatched'
-        );
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            refsETH[tokens[idx]] = refs[idx];
-            emit SetRefETH(tokens[idx], refs[idx]);
-        }
-    }
-
-    /// @dev Set price reference for USD pair
-    /// @param tokens list of tokens to set reference
-    /// @param refs list of reference contract addresses
-    function setRefsUSD(address[] calldata tokens, address[] calldata refs)
-        external
-        onlyGov
-    {
-        require(
-            tokens.length == refs.length,
-            'tokens & refs length mismatched'
-        );
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            refsUSD[tokens[idx]] = refs[idx];
-            emit SetRefUSD(tokens[idx], refs[idx]);
-        }
-    }
-
     /// @dev Set max delay time for each token
-    /// @param tokens list of tokens to set max delay
-    /// @param maxDelays list of max delay times to set to
+    /// @param _remappedTokens List of remapped tokens to set max delay
+    /// @param _maxDelayTimes List of max delay times to set to
     function setMaxDelayTimes(
-        address[] calldata tokens,
-        uint256[] calldata maxDelays
+        address[] calldata _remappedTokens,
+        uint256[] calldata _maxDelayTimes
     ) external onlyGov {
         require(
-            tokens.length == maxDelays.length,
-            'tokens & maxDelays length mismatched'
+            _remappedTokens.length == _maxDelayTimes.length,
+            '_remappedTokens & _maxDelayTimes length mismatched'
         );
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            maxDelayTimes[tokens[idx]] = maxDelays[idx];
-            emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
+        for (uint256 idx = 0; idx < _remappedTokens.length; idx++) {
+            maxDelayTimes[_remappedTokens[idx]] = _maxDelayTimes[idx];
+            emit SetMaxDelayTime(_remappedTokens[idx], _maxDelayTimes[idx]);
         }
     }
 
-    /// @dev Set ETH-USD to the new reference
-    /// @param _refETHUSD The new ETH-USD reference address to set to
-    function setRefETHUSD(address _refETHUSD) external onlyGov {
-        refETHUSD = _refETHUSD;
-        emit SetRefETHUSD(_refETHUSD);
+    /// @dev Set token remapping
+    /// @param _tokens List of tokens to set remapping
+    /// @param _remappedTokens List of tokens to set remapping to
+    /// @notice Token decimals of the original and remapped tokens should be the same
+    function setTokenRemappings(
+        address[] calldata _tokens,
+        address[] calldata _remappedTokens
+    ) external onlyGov {
+        require(
+            _tokens.length == _remappedTokens.length,
+            '_tokens & _remappedTokens length mismatched'
+        );
+        for (uint256 idx = 0; idx < _tokens.length; idx++) {
+            remappedTokens[_tokens[idx]] = _remappedTokens[idx];
+            emit SetTokenRemapping(_tokens[idx], _remappedTokens[idx]);
+        }
     }
 
     /// @dev Return token price in ETH, multiplied by 2**112
-    /// @param token Token address to get price
-    function getETHPx(address token) external view override returns (uint256) {
-        if (
-            token == WETH || token == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
-        ) return uint256(2**112);
-        uint256 decimals = uint256(ChainlinkDetailedERC20(token).decimals());
+    /// @param _token Token address to get price of
+    function getETHPx(address _token) external view override returns (uint256) {
+        // remap token if possible
+        address token = remappedTokens[_token];
+        if (token == address(0)) token = _token;
+
+        if (token == ETH) return uint256(2**112);
+
         uint256 maxDelayTime = maxDelayTimes[token];
         require(maxDelayTime != 0, 'max delay time not set');
 
-        // 1. Check token-ETH price ref
-        address refETH = refsETH[token];
-        if (refETH != address(0)) {
-            (, int256 answer, , uint256 updatedAt, ) = IAggregatorV3Interface(
-                refETH
-            ).latestRoundData();
+        // try to get token-ETH price
+        // if feed not available, use token-USD price with ETH-USD
+        try registry.decimals(token, ETH) returns (uint8 decimals) {
+            (, int256 answer, , uint256 updatedAt, ) = registry.latestRoundData(
+                token,
+                ETH
+            );
             require(
                 updatedAt >= block.timestamp - maxDelayTime,
-                'delayed update time'
+                'delayed token-eth update time'
             );
-            return (uint256(answer) * 2**112) / 10**decimals;
-        }
-
-        // 2. Check token-USD price ref
-        address refUSD = refsUSD[token];
-        if (refUSD != address(0)) {
-            (, int256 answer, , uint256 updatedAt, ) = IAggregatorV3Interface(
-                refUSD
-            ).latestRoundData();
+            return (answer.toUint256() * 2**112) / 10**decimals;
+        } catch {
+            uint8 decimals = registry.decimals(token, USD);
+            (, int256 answer, , uint256 updatedAt, ) = registry.latestRoundData(
+                token,
+                USD
+            );
             require(
                 updatedAt >= block.timestamp - maxDelayTime,
-                'delayed update time'
+                'delayed token-usd update time'
             );
-            (
-                ,
-                int256 ethAnswer,
-                ,
-                uint256 ethUpdatedAt,
-
-            ) = IAggregatorV3Interface(refETHUSD).latestRoundData();
+            (, int256 ethAnswer, , uint256 ethUpdatedAt, ) = registry
+                .latestRoundData(ETH, USD);
             require(
-                ethUpdatedAt >= block.timestamp - maxDelayTime,
+                ethUpdatedAt >= block.timestamp - maxDelayTimes[ETH],
                 'delayed eth-usd update time'
             );
-            return
-                (uint256(answer) * 2**112) / uint256(ethAnswer) / 10**decimals;
+
+            if (decimals > 18) {
+                return
+                    (answer.toUint256() * 2**112) /
+                    (ethAnswer.toUint256() * 10**(decimals - 18));
+            } else {
+                return
+                    (answer.toUint256() * 2**112 * 10**(18 - decimals)) /
+                    ethAnswer.toUint256();
+            }
         }
 
         revert('no valid price reference for token');
