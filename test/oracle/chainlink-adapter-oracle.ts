@@ -87,5 +87,11 @@ describe('Base Oracle / Chainlink Adapter Oracle', () => {
 				price.mul(ethData.answer).div(BigNumber.from(10).pow(ethDecimal)).div(BigNumber.from(2).pow(112))
 			).to.be.roughlyNear(uniData.answer.div(BigNumber.from(10).pow(uniDecimal)));
 		})
+		it('should revert for invalid feeds', async () => {
+			await chainlinkAdapterOracle.setMaxDelayTimes([ADDRESS.ICHI], [OneDay]);
+			await expect(
+				chainlinkAdapterOracle.getETHPx(ADDRESS.ICHI)
+			).to.be.revertedWith('Feed not found');
+		})
 	})
 });

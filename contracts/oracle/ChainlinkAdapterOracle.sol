@@ -121,7 +121,5 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
                     ethAnswer.toUint256();
             }
         }
-
-        revert('no valid price reference for token');
     }
 }
