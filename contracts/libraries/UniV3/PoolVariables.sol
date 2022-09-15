@@ -2,7 +2,7 @@
 pragma solidity >=0.5.0;
 
 import './LiquidityAmounts.sol';
-import '../../interfaces/UniV3/IUniswapV3Pool.sol';
+import '../../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import './TickMath.sol';
 import './PositionKey.sol';
 import './LowGasSafeMath.sol';

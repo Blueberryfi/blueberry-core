@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './IERC20Wrapper.sol';
-import './IMasterChef.sol';
+import './sushi/IMasterChef.sol';
 
 interface IWMasterChef is IERC1155, IERC20Wrapper {
     /// @dev Mint ERC1155 token for the given ERC20 token.

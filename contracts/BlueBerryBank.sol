@@ -9,9 +9,9 @@ import 'hardhat/console.sol';
 import './Governable.sol';
 import './utils/ERC1155NaiveReceiver.sol';
 import './interfaces/IBank.sol';
-import './interfaces/ICErc20.sol';
 import './interfaces/IOracle.sol';
 import './interfaces/ISafeBox.sol';
+import './interfaces/compound/ICErc20.sol';
 
 library BlueBerrySafeMath {
     /// @dev Computes round-up division.

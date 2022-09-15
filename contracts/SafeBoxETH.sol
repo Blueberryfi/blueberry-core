@@ -5,8 +5,9 @@ pragma solidity ^0.8.9;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+
 import './Governable.sol';
-import './interfaces/ICErc20.sol';
+import './interfaces/compound/ICErc20.sol';
 import './interfaces/IWETH.sol';
 
 contract SafeBoxETH is Governable, ERC20, ReentrancyGuard {

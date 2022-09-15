@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import './UsingBaseOracle.sol';
 import '../utils/BNum.sol';
 import '../interfaces/IBaseOracle.sol';
-import '../interfaces/IBalancerPool.sol';
+import '../interfaces/balancer/IBalancerPool.sol';
 
 contract BalancerPairOracle is UsingBaseOracle, IBaseOracle, BNum {
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}

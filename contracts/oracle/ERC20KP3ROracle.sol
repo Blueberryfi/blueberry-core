@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import './BaseKP3ROracle.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/IKeep3rV1Oracle.sol';
-import '../interfaces/IUniswapV2Factory.sol';
+import '../interfaces/uniswap/v2/IUniswapV2Factory.sol';
 
 contract ERC20KP3ROracle is IBaseOracle, BaseKP3ROracle {
     constructor(IKeep3rV1Oracle _kp3r) BaseKP3ROracle(_kp3r) {}

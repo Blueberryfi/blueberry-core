@@ -7,8 +7,8 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
 import '../utils/BBMath.sol';
-import '../interfaces/ICurvePool.sol';
-import '../interfaces/ICurveRegistry.sol';
+import '../interfaces/curve/ICurvePool.sol';
+import '../interfaces/curve/ICurveRegistry.sol';
 import '../interfaces/IWLiquidityGauge.sol';
 
 contract CurveSpellV1 is WhitelistSpell {

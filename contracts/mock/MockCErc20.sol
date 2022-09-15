@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-import '../interfaces/ICErc20.sol';
+import '../interfaces/compound/ICErc20.sol';
 
 contract MockCErc20 is ICErc20 {
     IERC20 public token;

@@ -6,9 +6,10 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+
 import './Governable.sol';
-import './interfaces/ICErc20.sol';
 import './interfaces/ISafeBox.sol';
+import './interfaces/compound/ICErc20.sol';
 
 contract SafeBox is Governable, ERC20, ReentrancyGuard, ISafeBox {
     using SafeERC20 for IERC20;

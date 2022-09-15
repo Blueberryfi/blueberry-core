@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import '../Governable.sol';
 import '../interfaces/IERC20Ex.sol';
 import '../interfaces/IBaseOracle.sol';
-import '../interfaces/UniV3/IUniswapV3Pool.sol';
+import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import '../libraries/UniV3/OracleLibrary.sol';
 
 contract UniswapV3AdapterOracle is IBaseOracle, Governable {

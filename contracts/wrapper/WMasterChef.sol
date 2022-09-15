@@ -8,7 +8,7 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 import '../utils/BBMath.sol';
 import '../interfaces/IERC20Wrapper.sol';
-import '../interfaces/IMasterChef.sol';
+import '../interfaces/sushi/IMasterChef.sol';
 
 contract WMasterChef is ERC1155('WMasterChef'), ReentrancyGuard, IERC20Wrapper {
     using BBMath for uint256;

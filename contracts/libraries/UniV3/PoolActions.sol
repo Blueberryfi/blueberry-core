@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import '../../interfaces/UniV3/IUniswapV3Pool.sol';
+import '../../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import './PoolVariables.sol';
 import './SafeCast.sol';
 

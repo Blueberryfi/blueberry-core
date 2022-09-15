@@ -6,11 +6,12 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+
 import './Governable.sol';
-import './interfaces/ICErc20.sol';
-import './interfaces/UniV3/IUniswapV3Pool.sol';
-import './interfaces/UniV3/ISwapRouter02.sol';
-import './interfaces/UniV3/IUniswapV3PositionsNFT.sol';
+import './interfaces/compound/ICErc20.sol';
+import './interfaces/uniswap/v3/IUniswapV3Pool.sol';
+import './interfaces/uniswap/v3/ISwapRouter02.sol';
+import './interfaces/uniswap/v3/IUniswapV3PositionsNFT.sol';
 import './interfaces/IWETH.sol';
 import './libraries/UniV3/PoolActions.sol';
 

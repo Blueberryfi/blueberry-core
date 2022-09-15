@@ -4,8 +4,8 @@ pragma solidity ^0.8.9;
 
 import './UsingBaseOracle.sol';
 import '../interfaces/IBaseOracle.sol';
-import '../interfaces/ICurvePool.sol';
-import '../interfaces/ICurveRegistry.sol';
+import '../interfaces/curve/ICurvePool.sol';
+import '../interfaces/curve/ICurveRegistry.sol';
 
 interface IERC20Decimal {
     function decimals() external view returns (uint8);

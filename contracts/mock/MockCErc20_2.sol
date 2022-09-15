@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '../interfaces/ICErc20_2.sol';
+import '../interfaces/compound/ICErc20_2.sol';
 
 contract MockCErc20_2 is ICErc20_2 {
     using SafeERC20 for IERC20;

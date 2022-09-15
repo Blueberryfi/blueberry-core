@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import './UsingBaseOracle.sol';
 import '../utils/BBMath.sol';
 import '../interfaces/IBaseOracle.sol';
-import '../interfaces/IUniswapV2Pair.sol';
+import '../interfaces/uniswap/v2/IUniswapV2Pair.sol';
 
 contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
     using BBMath for uint256;

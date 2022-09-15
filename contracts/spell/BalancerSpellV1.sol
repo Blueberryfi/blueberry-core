@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
 import '../utils/BBMath.sol';
-import '../interfaces/IBalancerPool.sol';
+import '../interfaces/balancer/IBalancerPool.sol';
 import '../interfaces/IWStakingRewards.sol';
 
 contract BalancerSpellV1 is WhitelistSpell {

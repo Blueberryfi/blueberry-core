@@ -7,9 +7,9 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import './WhitelistSpell.sol';
 import '../utils/BBMath.sol';
-import '../interfaces/IUniswapV2Factory.sol';
-import '../interfaces/IUniswapV2Router02.sol';
-import '../interfaces/IUniswapV2Pair.sol';
+import '../interfaces/uniswap/v2/IUniswapV2Factory.sol';
+import '../interfaces/uniswap/v2/IUniswapV2Router02.sol';
+import '../interfaces/uniswap/v2/IUniswapV2Pair.sol';
 import '../interfaces/IWMasterChef.sol';
 
 contract SushiswapSpellV1 is WhitelistSpell {

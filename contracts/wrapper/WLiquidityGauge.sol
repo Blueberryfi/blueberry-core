@@ -9,8 +9,8 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '../Governable.sol';
 import '../utils/BBMath.sol';
 import '../interfaces/IERC20Wrapper.sol';
-import '../interfaces/ICurveRegistry.sol';
-import '../interfaces/ILiquidityGauge.sol';
+import '../interfaces/curve/ICurveRegistry.sol';
+import '../interfaces/curve/ILiquidityGauge.sol';
 
 interface ILiquidityGaugeMinter {
     function mint(address gauge) external;

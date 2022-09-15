@@ -11,8 +11,8 @@ import '../libraries/UniV3/TickMath.sol';
 import '../utils/BBMath.sol';
 import '../interfaces/IWIchiFarm.sol';
 import '../interfaces/ichi/IICHIVault.sol';
-import '../interfaces/UniV3/IUniswapV3Pool.sol';
-import '../interfaces/UniV3/IUniswapV3SwapCallback.sol';
+import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
+import '../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol';
 
 contract IchiVaultSpellV1 is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
     using BBMath for uint256;
