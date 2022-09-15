@@ -16,6 +16,7 @@ export enum CONTRACT_NAMES {
 
 	// Oracles
 	BandAdapterOracle = "BandAdapterOracle",
+	ChainlinkAdapterOracle = "ChainlinkAdapterOracle",
 	SimpleOracle = "SimpleOracle",
 	CoreOracle = "CoreOracle",
 	ProxyOracle = "ProxyOracle",
@@ -60,6 +61,7 @@ export enum CONTRACT_NAMES {
 
 export const ADDRESS = {
 	// Tokens
+	USD: '0x0000000000000000000000000000000000000348',
 	DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
 	DPI: '0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b',
 	ETH: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',

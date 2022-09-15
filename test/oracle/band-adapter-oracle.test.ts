@@ -1,5 +1,5 @@
 import chai, { expect } from 'chai';
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';

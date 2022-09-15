@@ -8,7 +8,7 @@ import '../Governable.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/chainlink/IFeedRegistry.sol';
 
-contract ChainlinkAdapterOracleV2 is IBaseOracle, Governable {
+contract ChainlinkAdapterOracle is IBaseOracle, Governable {
     using SafeCast for int256;
 
     event SetMaxDelayTime(address indexed token, uint256 maxDelayTime);
