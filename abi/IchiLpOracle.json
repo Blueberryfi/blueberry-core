@@ -27,7 +27,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "pair",
+        "name": "underlying",
         "type": "address"
       }
     ],

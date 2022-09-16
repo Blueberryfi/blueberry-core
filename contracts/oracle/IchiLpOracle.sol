@@ -32,17 +32,20 @@ contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
      */
     function _price(address token) internal view returns (uint256) {
         IICHIVault vault = IICHIVault(token);
-        IERC20Metadata token0 = IERC20Metadata(vault.token0());
-        IERC20Metadata token1 = IERC20Metadata(vault.token1());
-        (uint256 amount0, uint256 amount1) = vault.getTotalAmounts();
-        uint256 token0EthPrice = base.getETHPx(address(token0));
-        uint256 token1EthPrice = base.getETHPx(address(token1));
+        address token0 = vault.token0();
+        address token1 = vault.token1();
 
-        // (amount0 * price0 + amount1 * price1) / totalSupply
-        return
-            (((amount0 * token0EthPrice) /
-                10**uint256(token0.decimals()) +
-                (amount1 * token1EthPrice) /
-                10**uint256(token1.decimals())) * 1e18) / vault.totalSupply();
+        (uint256 r0, uint256 r1) = vault.getTotalAmounts();
+        uint256 px0 = base.getETHPx(address(token0));
+        uint256 px1 = base.getETHPx(address(token1));
+        uint256 t0Decimal = IERC20Metadata(token0).decimals();
+        uint256 t1Decimal = IERC20Metadata(token1).decimals();
+
+        uint256 totalReserve = (r0 * px0) /
+            10**t0Decimal +
+            (r1 * px1) /
+            10**t1Decimal;
+
+        return (totalReserve * 1e18) / vault.totalSupply();
     }
 }
