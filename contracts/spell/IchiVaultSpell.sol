@@ -14,7 +14,7 @@ import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import '../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol';
 
-contract IchiVaultSpellV1 is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
+contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
     using BBMath for uint256;
     using SafeERC20 for IERC20;
 

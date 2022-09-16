@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers, deployments, upgrades } from 'hardhat';
 import { CONTRACT_NAMES } from "../../constants"
-import { CoreOracle, BlueBerryBank, MockERC20, MockWETH, ProxyOracle, SimpleOracle, WERC20 } from '../../typechain-types';
+import { CoreOracle, BlueBerryBank, MockERC20, MockWETH, ProxyOracle, SimpleOracle, WERC20, SafeBox } from '../../typechain-types';
 
 export const setupBasic = deployments.createFixture(async () => {
 	const signers = await ethers.getSigners();
@@ -62,13 +62,29 @@ export const setupBasic = deployments.createFixture(async () => {
 	const cerc20 = await CERC20.deploy(mockWETH.address);
 	await mockWETH.connect(signers[9]).deposit({ 'value': ethers.utils.parseEther('100') });
 	await mockWETH.connect(signers[9]).transfer(cerc20.address, ethers.utils.parseEther('100'));
-	await blueberryBank.addBank(mockWETH.address, cerc20.address);
+	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
+	const safeBox = <SafeBox>await SafeBox.deploy(
+		cerc20.address,
+		"Interest Bearing Token",
+		"ibToken"
+	)
+	await safeBox.deployed();
+	await blueberryBank.addBank(mockWETH.address, cerc20.address, safeBox.address);
 
 	for (const token of [dai, usdt, usdc]) {
 		const CERC20 = await ethers.getContractFactory(CONTRACT_NAMES.MockCErc20);
 		const cerc20 = await CERC20.deploy(token.address);
 		await token.mint(cerc20.address, ethers.utils.parseEther('100'));
-		await blueberryBank.addBank(token.address, cerc20.address);
+
+		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
+		const safeBox = <SafeBox>await SafeBox.deploy(
+			cerc20.address,
+			"Interest Bearing Token",
+			"ibToken"
+		)
+		await safeBox.deployed();
+
+		await blueberryBank.addBank(token.address, cerc20.address, safeBox.address);
 	}
 
 	return {

@@ -7,7 +7,7 @@ import {
 	CoreOracle,
 	ERC20,
 	ICErc20,
-	IchiVaultSpellV1,
+	IchiVaultSpell,
 	IUniswapV2Router02,
 	IWETH,
 	ProxyOracle,
@@ -21,7 +21,7 @@ import {
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
 import ERC20ABI from '../../abi/ERC20.json'
 import ICrc20ABI from '../../abi/ICErc20.json'
-import SpellABI from '../../abi/IchiVaultSpellV1.json';
+import SpellABI from '../../abi/IchiVaultSpell.json';
 import IchiFarmABI from '../../abi/IIchiFarm.json';
 
 import { solidity } from 'ethereum-waffle'
@@ -35,8 +35,10 @@ chai.use(roughlyNear)
 const CUSDC = ADDRESS.cyUSDC;			// Cream Finance / crDAI
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
+const ICHI = ADDRESS.ICHI;
 const ICHI_VAULT = ADDRESS.ICHI_VAULT_USDC;
 const ICHI_VAULT_PID = 27; // ICHI/USDC Vault PoolId
+const ETH_PRICE = 1600;
 
 describe('ICHI Angel Vaults Spell', () => {
 	let admin: SignerWithAddress;
@@ -50,7 +52,7 @@ describe('ICHI Angel Vaults Spell', () => {
 	let ichiOracle: IchiLpOracle;
 	let coreOracle: CoreOracle;
 	let oracle: ProxyOracle;
-	let spell: IchiVaultSpellV1;
+	let spell: IchiVaultSpell;
 	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
 	let safeBox: SafeBox;
@@ -70,10 +72,11 @@ describe('ICHI Angel Vaults Spell', () => {
 		simpleOracle = <SimpleOracle>await SimpleOracle.deploy();
 		await simpleOracle.deployed();
 		await simpleOracle.setETHPx(
-			[WETH, USDC],
+			[WETH, USDC, ICHI],
 			[
 				BigNumber.from(2).pow(112),
-				BigNumber.from(2).pow(112).mul(BigNumber.from(10).pow(12)).div(600),
+				BigNumber.from(2).pow(112).mul(BigNumber.from(10).pow(6)).div(ETH_PRICE), // $1
+				BigNumber.from(2).pow(112).mul(BigNumber.from(10).pow(18)).mul(5).div(ETH_PRICE), // $5
 			],
 		)
 
@@ -89,14 +92,18 @@ describe('ICHI Angel Vaults Spell', () => {
 		oracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
 		await oracle.deployed();
 
-		await oracle.setWhitelistERC1155([werc20.address], true);
+		await oracle.setWhitelistERC1155([werc20.address, ICHI_VAULT], true);
 		await coreOracle.setRoute(
-			[WETH, USDC, ICHI_VAULT],
-			[simpleOracle.address, simpleOracle.address, ichiOracle.address]
+			[WETH, USDC, ICHI, ICHI_VAULT],
+			[simpleOracle.address, simpleOracle.address, simpleOracle.address, ichiOracle.address]
 		)
 		await oracle.setTokenFactors(
-			[WETH, USDC, ICHI_VAULT],
+			[WETH, USDC, ICHI, ICHI_VAULT],
 			[{
+				borrowFactor: 10000,
+				collateralFactor: 10000,
+				liqIncentive: 10000
+			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
 				liqIncentive: 10000
@@ -122,8 +129,8 @@ describe('ICHI Angel Vaults Spell', () => {
 		const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
 		wichi = <WIchiFarm>await WIchiFarm.deploy(ADDRESS.ICHI, ADDRESS.ICHI_FARMING);
 		await wichi.deployed();
-		const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpellV1);
-		spell = <IchiVaultSpellV1>await ICHISpell.deploy(
+		const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
+		spell = <IchiVaultSpell>await ICHISpell.deploy(
 			bank.address,
 			werc20.address,
 			weth.address,

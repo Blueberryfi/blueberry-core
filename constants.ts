@@ -43,7 +43,7 @@ export enum CONTRACT_NAMES {
 	SushiswapSpellV1 = "SushiswapSpellV1",
 	BalancerSpellV1 = "BalancerSpellV1",
 	CurveSpellV1 = "CurveSpellV1",
-	IchiVaultSpellV1 = "IchiVaultSpellV1",
+	IchiVaultSpell = "IchiVaultSpell",
 
 	// Interface
 	IWETH = "IWETH",
