@@ -1,5 +1,5 @@
 import chai, { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from "../../constants"
 import {
@@ -15,7 +15,7 @@ chai.use(roughlyNear)
 
 const OneDay = 86400;
 
-describe('Uniswap LP Oracle', () => {
+describe('Oracle / Uniswap LP Oracle', () => {
   let uniswapOracle: UniswapV2Oracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
   before(async () => {
@@ -35,15 +35,15 @@ describe('Uniswap LP Oracle', () => {
 
   it("USDC/CRV LP Price", async () => {
     const pair = <IUniswapV2Pair>await ethers.getContractAt(UniPairABI, ADDRESS.UNI_V2_USDC_CRV);
-    const oraclePrice = await uniswapOracle.getETHPx(ADDRESS.UNI_V2_USDC_CRV);
+    const oraclePrice = await uniswapOracle.getPrice(ADDRESS.UNI_V2_USDC_CRV);
 
     // Calculate real lp price manually
     const { reserve0, reserve1 } = await pair.getReserves();
     const totalSupply = await pair.totalSupply();
     const token0 = await pair.token0();
     const token1 = await pair.token1();
-    const token0Price = await chainlinkAdapterOracle.getETHPx(token0);
-    const token1Price = await chainlinkAdapterOracle.getETHPx(token1);
+    const token0Price = await chainlinkAdapterOracle.getPrice(token0);
+    const token1Price = await chainlinkAdapterOracle.getPrice(token1);
     const token0Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token0);
     const token1Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token1);
     const token0Decimal = await token0Contract.decimals();
@@ -56,5 +56,6 @@ describe('Uniswap LP Oracle', () => {
     const price = token0Amount.add(token1Amount).mul(BigNumber.from(10).pow(18)).div(totalSupply);
 
     expect(price).to.be.equal(oraclePrice);
+    console.log('USDC/CRV LP Price:', utils.formatUnits(oraclePrice, 18));
   })
 });

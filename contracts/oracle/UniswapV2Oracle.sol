@@ -22,8 +22,8 @@ contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
         address token1 = pool.token1();
 
         (uint256 r0, uint256 r1, ) = pool.getReserves();
-        uint256 px0 = base.getPrice(token0); // in 2**112
-        uint256 px1 = base.getPrice(token1); // in 2**112
+        uint256 px0 = base.getPrice(token0);
+        uint256 px1 = base.getPrice(token1);
         uint256 t0Decimal = IERC20Metadata(token0).decimals();
         uint256 t1Decimal = IERC20Metadata(token1).decimals();
 
