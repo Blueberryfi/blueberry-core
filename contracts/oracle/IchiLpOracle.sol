@@ -14,9 +14,9 @@ contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
     /**
      * @notice Fetches the token/ETH price, with 18 decimals of precision.
      * @param underlying The underlying token address for which to get the price.
-     * @return Price denominated in ETH (scaled by 1e18)
+     * @return Price in USD
      */
-    function getETHPx(address underlying)
+    function getPrice(address underlying)
         external
         view
         override
@@ -28,7 +28,7 @@ contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
     /**
      * @notice Fetches the token/ETH price, with 18 decimals of precision.
      * @param token an ICHI oneToken
-     * @return uint price in ETH
+     * @return uint price in USD
      */
     function _price(address token) internal view returns (uint256) {
         IICHIVault vault = IICHIVault(token);
@@ -36,8 +36,8 @@ contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
         address token1 = vault.token1();
 
         (uint256 r0, uint256 r1) = vault.getTotalAmounts();
-        uint256 px0 = base.getETHPx(address(token0));
-        uint256 px1 = base.getETHPx(address(token1));
+        uint256 px0 = base.getPrice(address(token0));
+        uint256 px1 = base.getPrice(address(token1));
         uint256 t0Decimal = IERC20Metadata(token0).decimals();
         uint256 t1Decimal = IERC20Metadata(token1).decimals();
 

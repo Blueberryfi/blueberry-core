@@ -1,5 +1,5 @@
 import chai, { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
@@ -39,7 +39,7 @@ describe('Base Oracle / Chainlink Adapter Oracle', () => {
 		await expect(chainlinkAdapterOracle.connect(user2).setMaxDelayTimes(
 			[ADDRESS.USDC, ADDRESS.UNI],
 			[OneDay, OneDay]
-		)).to.be.revertedWith('not the governor');
+		)).to.be.revertedWith('Ownable: caller is not the owner');
 
 		await expect(chainlinkAdapterOracle.setMaxDelayTimes(
 			[ADDRESS.USDC, ADDRESS.UNI],
@@ -55,42 +55,33 @@ describe('Base Oracle / Chainlink Adapter Oracle', () => {
 	})
 
 	describe('price feeds', () => {
-		it('USDC price feeds / based 2^112', async () => {
-			const decimals = await chainlinkFeedOracle.decimals(ADDRESS.USDC, ADDRESS.ETH);
-			const { answer } = await chainlinkFeedOracle.latestRoundData(ADDRESS.USDC, ADDRESS.ETH);
-			const ethData = await chainlinkFeedOracle.latestRoundData(ADDRESS.ETH, ADDRESS.USD);
-			const ethDecimal = await chainlinkFeedOracle.decimals(ADDRESS.ETH, ADDRESS.USD);
-			const price = await chainlinkAdapterOracle.getETHPx(ADDRESS.USDC);
+		it('USDC price feeds / based 10^18', async () => {
+			const decimals = await chainlinkFeedOracle.decimals(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);
+			const { answer } = await chainlinkFeedOracle.latestRoundData(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);
+			const price = await chainlinkAdapterOracle.getPrice(ADDRESS.USDC);
 
 			expect(
-				price.mul(BigNumber.from(10).pow(decimals)).div(BigNumber.from(2).pow(112))
-			).to.be.roughlyNear(answer);
+				answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(decimals))
+			).to.be.roughlyNear(price);
 
 			// real usdc price should be closed to $1
-			expect(
-				price.mul(ethData.answer).div(BigNumber.from(10).pow(ethDecimal)).div(BigNumber.from(2).pow(112))
-			).to.be.roughlyNear(BigNumber.from(1));
+			expect(price).to.be.roughlyNear(BigNumber.from(10).pow(18));
+			console.log('USDC Price:', utils.formatUnits(price, 18));
 		})
-		it('UNI price feeds / based 2^112', async () => {
-			const { answer } = await chainlinkFeedOracle.latestRoundData(ADDRESS.UNI, ADDRESS.ETH);
-			const ethData = await chainlinkFeedOracle.latestRoundData(ADDRESS.ETH, ADDRESS.USD);
-			const ethDecimal = await chainlinkFeedOracle.decimals(ADDRESS.ETH, ADDRESS.USD);
-			const uniData = await chainlinkFeedOracle.latestRoundData(ADDRESS.UNI, ADDRESS.USD);
-			const uniDecimal = await chainlinkFeedOracle.decimals(ADDRESS.UNI, ADDRESS.USD);
-			const price = await chainlinkAdapterOracle.getETHPx(ADDRESS.UNI);
+		it('UNI price feeds / based 10^18', async () => {
+			const decimals = await chainlinkFeedOracle.decimals(ADDRESS.UNI, ADDRESS.CHAINLINK_USD);
+			const uniData = await chainlinkFeedOracle.latestRoundData(ADDRESS.UNI, ADDRESS.CHAINLINK_USD);
+			const price = await chainlinkAdapterOracle.getPrice(ADDRESS.UNI);
 
 			expect(
-				price.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(2).pow(112))
-			).to.be.roughlyNear(answer);
-
-			expect(
-				price.mul(ethData.answer).div(BigNumber.from(10).pow(ethDecimal)).div(BigNumber.from(2).pow(112))
-			).to.be.roughlyNear(uniData.answer.div(BigNumber.from(10).pow(uniDecimal)));
+				uniData.answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(decimals))
+			).to.be.roughlyNear(price);
+			console.log('UNI Price:', utils.formatUnits(price, 18));
 		})
 		it('should revert for invalid feeds', async () => {
 			await chainlinkAdapterOracle.setMaxDelayTimes([ADDRESS.ICHI], [OneDay]);
 			await expect(
-				chainlinkAdapterOracle.getETHPx(ADDRESS.ICHI)
+				chainlinkAdapterOracle.getPrice(ADDRESS.ICHI)
 			).to.be.revertedWith('Feed not found');
 		})
 	})

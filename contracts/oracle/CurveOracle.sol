@@ -48,9 +48,9 @@ contract CurveOracle is UsingBaseOracle, IBaseOracle {
         }
     }
 
-    /// @dev Return the value of the given input as ETH per unit, multiplied by 2**112.
+    /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param lp The ERC-20 LP token to check the value.
-    function getETHPx(address lp) external view override returns (uint256) {
+    function getPrice(address lp) external view override returns (uint256) {
         address pool = poolOf[lp];
         require(pool != address(0), 'lp is not registered');
         UnderlyingToken[] memory tokens = ulTokens[lp];
@@ -58,7 +58,7 @@ contract CurveOracle is UsingBaseOracle, IBaseOracle {
         uint256 n = tokens.length;
         for (uint256 idx = 0; idx < n; idx++) {
             UnderlyingToken memory ulToken = tokens[idx];
-            uint256 tokenPx = base.getETHPx(ulToken.token);
+            uint256 tokenPx = base.getPrice(ulToken.token);
             if (ulToken.decimals < 18)
                 tokenPx = tokenPx / 10**(18 - uint256(ulToken.decimals));
             if (ulToken.decimals > 18)

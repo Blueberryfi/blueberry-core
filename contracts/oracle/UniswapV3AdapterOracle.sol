@@ -74,9 +74,9 @@ contract UniswapV3AdapterOracle is IBaseOracle, Governable {
         }
     }
 
-    /// @dev Return the value of the given input as ETH per unit, multiplied by 2**112.
+    /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param token The ERC-20 token to check the value.
-    function getETHPx(address token) external view override returns (uint256) {
+    function getPrice(address token) external view override returns (uint256) {
         if (
             token == WETH || token == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
         ) return uint256(2**112);

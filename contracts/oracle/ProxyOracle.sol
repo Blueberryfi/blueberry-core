@@ -120,8 +120,8 @@ contract ProxyOracle is IOracle, Governable {
         TokenFactors memory tokenFactorOut = tokenFactors[tokenOutUnderlying];
         require(tokenFactorIn.liqIncentive != 0, 'bad underlying in');
         require(tokenFactorOut.liqIncentive != 0, 'bad underlying out');
-        uint256 pxIn = source.getETHPx(tokenIn);
-        uint256 pxOut = source.getETHPx(tokenOutUnderlying);
+        uint256 pxIn = source.getPrice(tokenIn);
+        uint256 pxOut = source.getPrice(tokenOutUnderlying);
         uint256 amountOut = (amountIn * pxIn) / pxOut;
         amountOut = (amountOut * 2**112) / rateUnderlying;
         return
@@ -129,16 +129,14 @@ contract ProxyOracle is IOracle, Governable {
                 tokenFactorOut.liqIncentive) / (10000 * 10000);
     }
 
-    /// @dev Return the value of the given input as ETH for collateral purpose.
+    /// @dev Return the USD value of the given input for collateral purpose.
     /// @param token ERC1155 token address to get collateral value
     /// @param id ERC1155 token id to get collateral value
     /// @param amount Token amount to get collateral value
-    /// @param owner Token owner address (currently unused by this implementation)
     function asETHCollateral(
         address token,
         uint256 id,
-        uint256 amount,
-        address owner
+        uint256 amount
     ) external view override returns (uint256) {
         require(whitelistERC1155[token], 'bad token');
         address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(id);
@@ -146,30 +144,30 @@ contract ProxyOracle is IOracle, Governable {
         uint256 amountUnderlying = (amount * rateUnderlying) / 2**112;
         TokenFactors memory tokenFactor = tokenFactors[tokenUnderlying];
         require(tokenFactor.liqIncentive != 0, 'bad underlying collateral');
-        uint256 ethValue = (source.getETHPx(tokenUnderlying) *
+        uint256 ethValue = (source.getPrice(tokenUnderlying) *
             amountUnderlying) / 2**112;
         return (ethValue * tokenFactor.collateralFactor) / 10000;
     }
 
-    /// @dev Return the value of the given input as ETH for borrow purpose.
+    /// @dev Return the USD value of the given input for borrow purpose.
     /// @param token ERC20 token address to get borrow value
     /// @param amount ERC20 token amount to get borrow value
-    /// @param owner Token owner address (currently unused by this implementation)
-    function asETHBorrow(
-        address token,
-        uint256 amount,
-        address owner
-    ) external view override returns (uint256) {
+    function asETHBorrow(address token, uint256 amount)
+        external
+        view
+        override
+        returns (uint256)
+    {
         TokenFactors memory tokenFactor = tokenFactors[token];
         require(tokenFactor.liqIncentive != 0, 'bad underlying borrow');
-        uint256 ethValue = (source.getETHPx(token) * amount) / 2**112;
+        uint256 ethValue = (source.getPrice(token) * amount) / 2**112;
         return (ethValue * tokenFactor.borrowFactor) / 10000;
     }
 
     /// @dev Return whether the ERC20 token is supported
     /// @param token The ERC20 token to check for support
     function support(address token) external view override returns (bool) {
-        try source.getETHPx(token) returns (uint256 px) {
+        try source.getPrice(token) returns (uint256 px) {
             return px != 0 && tokenFactors[token].liqIncentive != 0;
         } catch {
             return false;

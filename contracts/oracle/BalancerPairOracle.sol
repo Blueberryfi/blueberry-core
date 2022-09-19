@@ -50,16 +50,16 @@ contract BalancerPairOracle is UsingBaseOracle, IBaseOracle, BNum {
         }
     }
 
-    /// @dev Return the value of the given input as ETH per unit, multiplied by 2**112.
+    /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param token The ERC-20 token to check the value.
-    function getETHPx(address token) external view override returns (uint256) {
+    function getPrice(address token) external view override returns (uint256) {
         IBalancerPool pool = IBalancerPool(token);
         require(pool.getNumTokens() == 2, 'num tokens must be 2');
         address[] memory tokens = pool.getFinalTokens();
         address tokenA = tokens[0];
         address tokenB = tokens[1];
-        uint256 pxA = base.getETHPx(tokenA);
-        uint256 pxB = base.getETHPx(tokenB);
+        uint256 pxA = base.getPrice(tokenA);
+        uint256 pxB = base.getPrice(tokenB);
         (uint256 fairResA, uint256 fairResB) = computeFairReserves(
             pool.getBalance(tokenA),
             pool.getBalance(tokenB),

@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
-import { BigNumber } from 'ethers';
-import { ethers } from 'hardhat';
+import { BigNumber, utils } from 'ethers';
+import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
 import {
@@ -43,7 +43,7 @@ describe('Base Oracle / Band Adapter Oracle', () => {
 		await expect(bandAdapterOracle.connect(user2).setSymbols(
 			[ADDRESS.USDC, ADDRESS.UNI],
 			['USDC', 'UNI']
-		)).to.be.revertedWith('not the governor');
+		)).to.be.revertedWith('Ownable: caller is not the owner');
 
 		await expect(bandAdapterOracle.setSymbols(
 			[ADDRESS.USDC, ADDRESS.UNI],
@@ -62,7 +62,7 @@ describe('Base Oracle / Band Adapter Oracle', () => {
 		await expect(bandAdapterOracle.connect(user2).setMaxDelayTimes(
 			[ADDRESS.USDC, ADDRESS.UNI],
 			[OneDay, OneDay]
-		)).to.be.revertedWith('not the governor');
+		)).to.be.revertedWith('Ownable: caller is not the owner');
 
 		await expect(bandAdapterOracle.setMaxDelayTimes(
 			[ADDRESS.USDC, ADDRESS.UNI],
@@ -78,33 +78,21 @@ describe('Base Oracle / Band Adapter Oracle', () => {
 	})
 
 	describe('price feeds', () => {
-		it('USDC price feeds / based 2^112', async () => {
-			const { rate } = await bandBaseOracle.getReferenceData('USDC', 'ETH');
-			const ethData = await bandBaseOracle.getReferenceData('ETH', 'USD');
-			const price = await bandAdapterOracle.getETHPx(ADDRESS.USDC);
+		it('USDC price feeds / based 10^18', async () => {
+			const { rate } = await bandBaseOracle.getReferenceData('USDC', 'USD');
+			const price = await bandAdapterOracle.getPrice(ADDRESS.USDC);
 
-			expect(
-				price.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(2).pow(112))
-			).to.be.roughlyNear(rate);
-
+			expect(rate).to.be.equal(price);
 			// real usdc price should be closed to $1
-			expect(
-				price.mul(ethData.rate).div(BigNumber.from(2).pow(112))
-			).to.be.roughlyNear(BigNumber.from(10).pow(18));
+			expect(price).to.be.roughlyNear(BigNumber.from(10).pow(18));
+			console.log('USDC Price:', utils.formatUnits(price, 18));
 		})
-		it('UNI price feeds / based 2^112', async () => {
-			const { rate } = await bandBaseOracle.getReferenceData('UNI', 'ETH');
-			const ethData = await bandBaseOracle.getReferenceData('ETH', 'USD');
-			const uniData = await bandBaseOracle.getReferenceData('UNI', 'USD');
-			const price = await bandAdapterOracle.getETHPx(ADDRESS.UNI);
+		it('UNI price feeds / based 10^18', async () => {
+			const { rate } = await bandBaseOracle.getReferenceData('UNI', 'USD');
+			const price = await bandAdapterOracle.getPrice(ADDRESS.UNI);
 
-			expect(
-				price.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(2).pow(112))
-			).to.be.roughlyNear(rate);
-
-			expect(
-				price.mul(ethData.rate).div(BigNumber.from(2).pow(112))
-			).to.be.roughlyNear(uniData.rate);
+			expect(rate).to.be.equal(price);
+			console.log('UNI Price:', utils.formatUnits(price, 18));
 		})
 	})
 });

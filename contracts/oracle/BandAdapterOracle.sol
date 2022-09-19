@@ -3,17 +3,15 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import '../Governable.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
+
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/band/IStdReference.sol';
 
-contract BandAdapterOracle is IBaseOracle, Governable {
+contract BandAdapterOracle is IBaseOracle, Ownable {
     event SetSymbol(address token, string symbol);
     event SetRef(address ref);
     event SetMaxDelayTime(address token, uint256 maxDelayTime);
-
-    string public constant ETH = 'ETH';
-    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     IStdReference public ref; // Standard reference
 
@@ -21,8 +19,14 @@ contract BandAdapterOracle is IBaseOracle, Governable {
     mapping(address => uint256) public maxDelayTimes; // Mapping from token address to max delay time
 
     constructor(IStdReference _ref) {
-        __Governable__init();
         ref = _ref;
+    }
+
+    /// @dev Set standard reference source
+    /// @param _ref Standard reference source
+    function setRef(IStdReference _ref) external onlyOwner {
+        ref = _ref;
+        emit SetRef(address(_ref));
     }
 
     /// @dev Set token symbols
@@ -30,7 +34,7 @@ contract BandAdapterOracle is IBaseOracle, Governable {
     /// @param syms List of string symbols
     function setSymbols(address[] memory tokens, string[] memory syms)
         external
-        onlyGov
+        onlyOwner
     {
         require(syms.length == tokens.length, 'length mismatch');
         for (uint256 idx = 0; idx < syms.length; idx++) {
@@ -39,20 +43,13 @@ contract BandAdapterOracle is IBaseOracle, Governable {
         }
     }
 
-    /// @dev Set standard reference source
-    /// @param _ref Standard reference source
-    function setRef(IStdReference _ref) external onlyGov {
-        ref = _ref;
-        emit SetRef(address(_ref));
-    }
-
     /// @dev Set max delay time for each token
     /// @param tokens list of tokens to set max delay
     /// @param maxDelays list of max delay times to set to
     function setMaxDelayTimes(
         address[] calldata tokens,
         uint256[] calldata maxDelays
-    ) external onlyGov {
+    ) external onlyOwner {
         require(tokens.length == maxDelays.length, 'length mismatch');
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             maxDelayTimes[tokens[idx]] = maxDelays[idx];
@@ -60,20 +57,16 @@ contract BandAdapterOracle is IBaseOracle, Governable {
         }
     }
 
-    /// @dev Return the value of the given input as ETH per unit, multiplied by 2**112.
+    /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param token The ERC-20 token to check the value.
-    function getETHPx(address token) external view override returns (uint256) {
-        if (
-            token == WETH || token == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
-        ) return uint256(2**112);
-
+    function getPrice(address token) external view override returns (uint256) {
         string memory sym = symbols[token];
         uint256 maxDelayTime = maxDelayTimes[token];
         require(bytes(sym).length != 0, 'no mapping');
         require(maxDelayTime != 0, 'max delay time not set');
         IStdReference.ReferenceData memory data = ref.getReferenceData(
             sym,
-            ETH
+            'USD'
         );
         require(
             data.lastUpdatedBase >= block.timestamp - maxDelayTime,
@@ -83,6 +76,6 @@ contract BandAdapterOracle is IBaseOracle, Governable {
             data.lastUpdatedQuote >= block.timestamp - maxDelayTime,
             'delayed quote data'
         );
-        return (data.rate * 2**112) / 10**18;
+        return data.rate;
     }
 }

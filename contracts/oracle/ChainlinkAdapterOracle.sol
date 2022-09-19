@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.9;
 
+import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/math/SafeCast.sol';
 
-import '../Governable.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/chainlink/IFeedRegistry.sol';
 
-contract ChainlinkAdapterOracle is IBaseOracle, Governable {
+contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
     using SafeCast for int256;
 
     event SetMaxDelayTime(address indexed token, uint256 maxDelayTime);
@@ -22,8 +22,6 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
     // (source: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/Denominations.sol)
     IFeedRegistry public constant registry =
         IFeedRegistry(0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf);
-    address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    address public constant BTC = 0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB;
     address public constant USD = address(840);
 
     /// @dev Mapping from original token to remapped token for price querying (e.g. WBTC -> BTC, renBTC -> BTC)
@@ -31,9 +29,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
     /// @dev Mapping from token address to max delay time
     mapping(address => uint256) public maxDelayTimes;
 
-    constructor() {
-        __Governable__init();
-    }
+    constructor() {}
 
     /// @dev Set max delay time for each token
     /// @param _remappedTokens List of remapped tokens to set max delay
@@ -41,7 +37,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
     function setMaxDelayTimes(
         address[] calldata _remappedTokens,
         uint256[] calldata _maxDelayTimes
-    ) external onlyGov {
+    ) external onlyOwner {
         require(
             _remappedTokens.length == _maxDelayTimes.length,
             '_remappedTokens & _maxDelayTimes length mismatched'
@@ -59,7 +55,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
     function setTokenRemappings(
         address[] calldata _tokens,
         address[] calldata _remappedTokens
-    ) external onlyGov {
+    ) external onlyOwner {
         require(
             _tokens.length == _remappedTokens.length,
             '_tokens & _remappedTokens length mismatched'
@@ -70,56 +66,26 @@ contract ChainlinkAdapterOracle is IBaseOracle, Governable {
         }
     }
 
-    /// @dev Return token price in ETH, multiplied by 2**112
+    /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param _token Token address to get price of
-    function getETHPx(address _token) external view override returns (uint256) {
+    function getPrice(address _token) external view override returns (uint256) {
         // remap token if possible
         address token = remappedTokens[_token];
         if (token == address(0)) token = _token;
 
-        if (token == ETH) return uint256(2**112);
-
         uint256 maxDelayTime = maxDelayTimes[token];
         require(maxDelayTime != 0, 'max delay time not set');
 
-        // try to get token-ETH price
-        // if feed not available, use token-USD price with ETH-USD
-        try registry.decimals(token, ETH) returns (uint8 decimals) {
-            (, int256 answer, , uint256 updatedAt, ) = registry.latestRoundData(
-                token,
-                ETH
-            );
-            require(
-                updatedAt >= block.timestamp - maxDelayTime,
-                'delayed token-eth update time'
-            );
-            return (answer.toUint256() * 2**112) / 10**decimals;
-        } catch {
-            uint8 decimals = registry.decimals(token, USD);
-            (, int256 answer, , uint256 updatedAt, ) = registry.latestRoundData(
-                token,
-                USD
-            );
-            require(
-                updatedAt >= block.timestamp - maxDelayTime,
-                'delayed token-usd update time'
-            );
-            (, int256 ethAnswer, , uint256 ethUpdatedAt, ) = registry
-                .latestRoundData(ETH, USD);
-            require(
-                ethUpdatedAt >= block.timestamp - maxDelayTimes[ETH],
-                'delayed eth-usd update time'
-            );
-
-            if (decimals > 18) {
-                return
-                    (answer.toUint256() * 2**112) /
-                    (ethAnswer.toUint256() * 10**(decimals - 18));
-            } else {
-                return
-                    (answer.toUint256() * 2**112 * 10**(18 - decimals)) /
-                    ethAnswer.toUint256();
-            }
-        }
+        // try to get token-USD price
+        uint256 decimals = registry.decimals(token, USD);
+        (, int256 answer, , uint256 updatedAt, ) = registry.latestRoundData(
+            token,
+            USD
+        );
+        require(
+            updatedAt >= block.timestamp - maxDelayTime,
+            'delayed token-eth update time'
+        );
+        return (answer.toUint256() * 1e18) / 10**decimals;
     }
 }

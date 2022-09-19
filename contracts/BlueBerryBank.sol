@@ -409,13 +409,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             return 0;
         } else {
             require(pos.collToken != address(0), 'bad collateral token');
-            return
-                oracle.asETHCollateral(
-                    pos.collToken,
-                    pos.collId,
-                    size,
-                    pos.owner
-                );
+            return oracle.asETHCollateral(pos.collToken, pos.collId, size);
         }
     }
 
@@ -429,7 +423,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     {
         uint256 value = 0;
         Position storage pos = positions[positionId];
-        address owner = pos.owner;
         uint256 bitMap = pos.debtMap;
         uint256 idx = 0;
         while (bitMap > 0) {
@@ -440,7 +433,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
                 uint256 debt = (share * bank.totalDebt).ceilDiv(
                     bank.totalShare
                 );
-                value += oracle.asETHBorrow(token, debt, owner);
+                value += oracle.asETHBorrow(token, debt);
             }
             idx++;
             bitMap >>= 1;

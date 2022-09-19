@@ -85,10 +85,10 @@ contract AggregatorOracle is IBaseOracle, Governable {
         emit SetPrimarySources(token, maxPriceDeviation, sources);
     }
 
-    /// @dev Return token price relative to ETH, multiplied by 2**112
+    /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param token Token to get price of
     /// NOTE: Support at most 3 oracle sources per token
-    function getETHPx(address token) public view override returns (uint256) {
+    function getPrice(address token) public view override returns (uint256) {
         uint256 candidateSourceCount = primarySourceCount[token];
         require(candidateSourceCount > 0, 'no primary source');
         uint256[] memory prices = new uint256[](candidateSourceCount);
@@ -96,7 +96,7 @@ contract AggregatorOracle is IBaseOracle, Governable {
         // Get valid oracle sources
         uint256 validSourceCount = 0;
         for (uint256 idx = 0; idx < candidateSourceCount; idx++) {
-            try primarySources[token][idx].getETHPx(token) returns (
+            try primarySources[token][idx].getPrice(token) returns (
                 uint256 px
             ) {
                 prices[validSourceCount++] = px;
@@ -144,27 +144,6 @@ contract AggregatorOracle is IBaseOracle, Governable {
             }
         } else {
             revert('more than 3 valid sources not supported');
-        }
-    }
-
-    /// @dev Return the price of token0/token1, multiplied by 1e18
-    /// @notice One of the input tokens must be WETH
-    function getPrice(address token0, address token1)
-        external
-        view
-        returns (uint256, uint256)
-    {
-        require(
-            token0 == WETH || token1 == WETH,
-            'one of the requested tokens must be ETH or WETH'
-        );
-        if (token0 == WETH) {
-            return (
-                (uint256(2**112) * 1e18) / getETHPx(token1),
-                block.timestamp
-            );
-        } else {
-            return ((getETHPx(token0) * 1e18) / 2**112, block.timestamp);
         }
     }
 }

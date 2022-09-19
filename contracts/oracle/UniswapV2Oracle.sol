@@ -14,16 +14,16 @@ contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
 
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
-    /// @dev Return the value of the given input as ETH per unit, multiplied by 2**112.
+    /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param pair The Uniswap pair to check the value.
-    function getETHPx(address pair) external view override returns (uint256) {
+    function getPrice(address pair) external view override returns (uint256) {
         IUniswapV2Pair pool = IUniswapV2Pair(pair);
         address token0 = pool.token0();
         address token1 = pool.token1();
 
         (uint256 r0, uint256 r1, ) = pool.getReserves();
-        uint256 px0 = base.getETHPx(token0); // in 2**112
-        uint256 px1 = base.getETHPx(token1); // in 2**112
+        uint256 px0 = base.getPrice(token0); // in 2**112
+        uint256 px1 = base.getPrice(token1); // in 2**112
         uint256 t0Decimal = IERC20Metadata(token0).decimals();
         uint256 t1Decimal = IERC20Metadata(token1).decimals();
 

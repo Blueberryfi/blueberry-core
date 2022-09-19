@@ -108,7 +108,7 @@
         "type": "address"
       }
     ],
-    "name": "getETHPx",
+    "name": "getPrice",
     "outputs": [
       {
         "internalType": "uint256",
