@@ -126,7 +126,9 @@ interface IBank {
         uint256 amountCall
     ) external;
 
-    function getBorrowETHValue(uint256 positionId)
+    function getDebtValue(uint256 positionId) external view returns (uint256);
+
+    function getCollateralValue(uint256 positionId)
         external
         view
         returns (uint256);

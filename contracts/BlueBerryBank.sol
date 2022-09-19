@@ -396,11 +396,12 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         }
     }
 
-    /// @dev Return the total collateral value of the given position in ETH.
+    /// @dev Return the total collateral value of the given position.
     /// @param positionId The position ID to query for the collateral value.
-    function getCollateralETHValue(uint256 positionId)
+    function getCollateralValue(uint256 positionId)
         public
         view
+        override
         returns (uint256)
     {
         Position storage pos = positions[positionId];
@@ -409,13 +410,13 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             return 0;
         } else {
             require(pos.collToken != address(0), 'bad collateral token');
-            return oracle.asETHCollateral(pos.collToken, pos.collId, size);
+            return oracle.getCollateralValue(pos.collToken, pos.collId, size);
         }
     }
 
-    /// @dev Return the total borrow value of the given position in ETH.
-    /// @param positionId The position ID to query for the borrow value.
-    function getBorrowETHValue(uint256 positionId)
+    /// @dev Return the total debt value of the given position
+    /// @param positionId The position ID to query for the debt value.
+    function getDebtValue(uint256 positionId)
         public
         view
         override
@@ -433,7 +434,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
                 uint256 debt = (share * bank.totalDebt).ceilDiv(
                     bank.totalShare
                 );
-                value += oracle.asETHBorrow(token, debt);
+                value += oracle.getDebtValue(token, debt);
             }
             idx++;
             bitMap >>= 1;
@@ -509,8 +510,8 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         address debtToken,
         uint256 amountCall
     ) external override lock poke(debtToken) {
-        uint256 collateralValue = getCollateralETHValue(positionId);
-        uint256 borrowValue = getBorrowETHValue(positionId);
+        uint256 collateralValue = getCollateralValue(positionId);
+        uint256 borrowValue = getDebtValue(positionId);
         require(collateralValue < borrowValue, 'position still healthy');
         Position storage pos = positions[positionId];
         (uint256 amountPaid, uint256 share) = repayInternal(
@@ -570,9 +571,9 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         SPELL = spell;
         BlueBerryCaster(caster).cast{value: msg.value}(spell, data);
 
-        uint256 collateralValue = getCollateralETHValue(positionId);
-        uint256 borrowValue = getBorrowETHValue(positionId);
-        require(collateralValue >= borrowValue, 'insufficient collateral');
+        uint256 collateralValue = getCollateralValue(positionId);
+        uint256 debtValue = getDebtValue(positionId);
+        require(collateralValue >= debtValue, 'insufficient collateral');
 
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;

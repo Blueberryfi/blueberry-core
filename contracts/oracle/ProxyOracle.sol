@@ -3,12 +3,13 @@
 pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import '../Governable.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
+
 import '../interfaces/IOracle.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/IERC20Wrapper.sol';
 
-contract ProxyOracle is IOracle, Governable {
+contract ProxyOracle is IOracle, Ownable {
     /// The governor sets oracle token factor for a token.
     event SetTokenFactor(address indexed token, TokenFactors tokenFactor);
     /// The governor unsets oracle token factor for a token.
@@ -29,7 +30,6 @@ contract ProxyOracle is IOracle, Governable {
     /// @dev Create the contract and initialize the first governor.
     constructor(IBaseOracle _source) {
         source = _source;
-        __Governable__init();
     }
 
     /// @dev Set oracle token factors for the given list of token addresses.
@@ -38,7 +38,7 @@ contract ProxyOracle is IOracle, Governable {
     function setTokenFactors(
         address[] memory tokens,
         TokenFactors[] memory _tokenFactors
-    ) external onlyGov {
+    ) external onlyOwner {
         require(tokens.length == _tokenFactors.length, 'inconsistent length');
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             require(
@@ -64,7 +64,7 @@ contract ProxyOracle is IOracle, Governable {
 
     /// @dev Unset token factors for the given list of token addresses
     /// @param tokens List of tokens to unset info
-    function unsetTokenFactors(address[] memory tokens) external onlyGov {
+    function unsetTokenFactors(address[] memory tokens) external onlyOwner {
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             delete tokenFactors[tokens[idx]];
             emit UnsetTokenFactor(tokens[idx]);
@@ -76,7 +76,7 @@ contract ProxyOracle is IOracle, Governable {
     /// @param ok Whitelist status
     function setWhitelistERC1155(address[] memory tokens, bool ok)
         external
-        onlyGov
+        onlyOwner
     {
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             whitelistERC1155[tokens[idx]] = ok;
@@ -96,6 +96,16 @@ contract ProxyOracle is IOracle, Governable {
         if (!whitelistERC1155[token]) return false;
         address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(id);
         return tokenFactors[tokenUnderlying].liqIncentive != 0;
+    }
+
+    /// @dev Return whether the ERC20 token is supported
+    /// @param token The ERC20 token to check for support
+    function support(address token) external view override returns (bool) {
+        try source.getPrice(token) returns (uint256 px) {
+            return px != 0 && tokenFactors[token].liqIncentive != 0;
+        } catch {
+            return false;
+        }
     }
 
     /// @dev Return the amount of token out as liquidation reward for liquidating token in.
@@ -123,17 +133,18 @@ contract ProxyOracle is IOracle, Governable {
         uint256 pxIn = source.getPrice(tokenIn);
         uint256 pxOut = source.getPrice(tokenOutUnderlying);
         uint256 amountOut = (amountIn * pxIn) / pxOut;
-        amountOut = (amountOut * 2**112) / rateUnderlying;
+        amountOut = (amountOut * 1e18) / rateUnderlying;
         return
-            ((amountOut * tokenFactorIn.liqIncentive) *
+            (amountOut *
+                tokenFactorIn.liqIncentive *
                 tokenFactorOut.liqIncentive) / (10000 * 10000);
     }
 
     /// @dev Return the USD value of the given input for collateral purpose.
     /// @param token ERC1155 token address to get collateral value
     /// @param id ERC1155 token id to get collateral value
-    /// @param amount Token amount to get collateral value
-    function asETHCollateral(
+    /// @param amount Token amount to get collateral value, based 1e18
+    function getCollateralValue(
         address token,
         uint256 id,
         uint256 amount
@@ -141,18 +152,18 @@ contract ProxyOracle is IOracle, Governable {
         require(whitelistERC1155[token], 'bad token');
         address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(id);
         uint256 rateUnderlying = IERC20Wrapper(token).getUnderlyingRate(id);
-        uint256 amountUnderlying = (amount * rateUnderlying) / 2**112;
+        uint256 amountUnderlying = (amount * rateUnderlying) / 1e18;
         TokenFactors memory tokenFactor = tokenFactors[tokenUnderlying];
         require(tokenFactor.liqIncentive != 0, 'bad underlying collateral');
-        uint256 ethValue = (source.getPrice(tokenUnderlying) *
-            amountUnderlying) / 2**112;
-        return (ethValue * tokenFactor.collateralFactor) / 10000;
+        uint256 underlyingValue = (source.getPrice(tokenUnderlying) *
+            amountUnderlying) / 1e18;
+        return (underlyingValue * tokenFactor.collateralFactor) / 10000;
     }
 
     /// @dev Return the USD value of the given input for borrow purpose.
     /// @param token ERC20 token address to get borrow value
-    /// @param amount ERC20 token amount to get borrow value
-    function asETHBorrow(address token, uint256 amount)
+    /// @param amount ERC20 token amount to get borrow value, based 1e18
+    function getDebtValue(address token, uint256 amount)
         external
         view
         override
@@ -160,17 +171,7 @@ contract ProxyOracle is IOracle, Governable {
     {
         TokenFactors memory tokenFactor = tokenFactors[token];
         require(tokenFactor.liqIncentive != 0, 'bad underlying borrow');
-        uint256 ethValue = (source.getPrice(token) * amount) / 2**112;
-        return (ethValue * tokenFactor.borrowFactor) / 10000;
-    }
-
-    /// @dev Return whether the ERC20 token is supported
-    /// @param token The ERC20 token to check for support
-    function support(address token) external view override returns (bool) {
-        try source.getPrice(token) returns (uint256 px) {
-            return px != 0 && tokenFactors[token].liqIncentive != 0;
-        } catch {
-            return false;
-        }
+        uint256 debtVaule = (source.getPrice(token) * amount) / 1e18;
+        return (debtVaule * tokenFactor.borrowFactor) / 10000;
     }
 }

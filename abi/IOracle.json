@@ -3,16 +3,26 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "token",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "tokenOutId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountIn",
         "type": "uint256"
       }
     ],
-    "name": "asETHBorrow",
+    "name": "convertForLiquidation",
     "outputs": [
       {
         "internalType": "uint256",
@@ -41,7 +51,7 @@
         "type": "uint256"
       }
     ],
-    "name": "asETHCollateral",
+    "name": "getCollateralValue",
     "outputs": [
       {
         "internalType": "uint256",
@@ -56,26 +66,16 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "tokenIn",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "tokenOut",
+        "name": "token",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "tokenOutId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountIn",
+        "name": "amount",
         "type": "uint256"
       }
     ],
-    "name": "convertForLiquidation",
+    "name": "getDebtValue",
     "outputs": [
       {
         "internalType": "uint256",

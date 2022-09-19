@@ -2,23 +2,19 @@
 
 pragma solidity ^0.8.9;
 
+import '@openzeppelin/contracts/access/Ownable.sol';
 import '../interfaces/IBaseOracle.sol';
-import '../Governable.sol';
 
-contract CoreOracle is IBaseOracle, Governable {
+contract CoreOracle is IBaseOracle, Ownable {
     event SetRoute(address indexed token, address route);
     mapping(address => address) public routes; // Mapping from token to oracle source
-
-    constructor() {
-        __Governable__init();
-    }
 
     /// @dev Set oracle source routes for tokens
     /// @param tokens List of tokens
     /// @param targets List of oracle source routes
     function setRoute(address[] calldata tokens, address[] calldata targets)
         external
-        onlyGov
+        onlyOwner
     {
         require(tokens.length == targets.length, 'inconsistent length');
         for (uint256 idx = 0; idx < tokens.length; idx++) {

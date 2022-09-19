@@ -20,8 +20,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
 
     // Chainlink denominations
     // (source: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/Denominations.sol)
-    IFeedRegistry public constant registry =
-        IFeedRegistry(0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf);
+    IFeedRegistry public registry;
     address public constant USD = address(840);
 
     /// @dev Mapping from original token to remapped token for price querying (e.g. WBTC -> BTC, renBTC -> BTC)
@@ -29,7 +28,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
     /// @dev Mapping from token address to max delay time
     mapping(address => uint256) public maxDelayTimes;
 
-    constructor() {}
+    constructor(IFeedRegistry registry_) {
+        registry = registry_;
+    }
 
     /// @dev Set max delay time for each token
     /// @param _remappedTokens List of remapped tokens to set max delay

@@ -27,7 +27,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "underlying",
+        "name": "token",
         "type": "address"
       }
     ],

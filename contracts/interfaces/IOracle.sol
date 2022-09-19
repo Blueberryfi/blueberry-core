@@ -23,20 +23,20 @@ interface IOracle {
         uint256 amountIn
     ) external view returns (uint256);
 
-    /// @dev Return the value of the given input as ETH for collateral purpose.
+    /// @dev Return the value of the given input for collateral purpose.
     /// @param token The ERC-1155 token to check the value.
     /// @param id The id of the token to check the value.
     /// @param amount The amount of tokens to check the value
-    function asETHCollateral(
+    function getCollateralValue(
         address token,
         uint256 id,
         uint256 amount
     ) external view returns (uint256);
 
-    /// @dev Return the value of the given input as ETH for borrow purpose.
+    /// @dev Return the value of the given input for borrow purpose.
     /// @param token The ERC-20 token to check the value.
     /// @param amount The amount of tokens to check the value.
-    function asETHBorrow(address token, uint256 amount)
+    function getDebtValue(address token, uint256 amount)
         external
         view
         returns (uint256);

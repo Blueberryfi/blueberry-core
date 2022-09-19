@@ -1,5 +1,5 @@
 import chai, { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
 import {
@@ -52,10 +52,9 @@ describe('Ichi Vault Lp Oracle', () => {
 	});
 
 	it('USDC/ICHI Angel Vault Lp Price', async () => {
-		const EthPrice = 1600;
-		const ichiPrice = BigNumber.from(2).pow(112).mul(543).div(100).div(EthPrice); // $5.43
+		const ichiPrice = BigNumber.from(10).pow(18).mul(543).div(100); // $5.43
 
-		await simpleOracle.setETHPx(
+		await simpleOracle.setPrice(
 			[ADDRESS.ICHI], [ichiPrice]
 		);
 
@@ -63,14 +62,14 @@ describe('Ichi Vault Lp Oracle', () => {
 		ichiOracle = <IchiLpOracle>(await IchiLpOracle.deploy(coreOracle.address));
 		await ichiOracle.deployed();
 
-		const lpPriceEth = await ichiOracle.getETHPx(ADDRESS.ICHI_VAULT_USDC);
+		const lpPrice = await ichiOracle.getPrice(ADDRESS.ICHI_VAULT_USDC);
 
 		// calculate lp price manually.
 		const reserveData = await ichiVault.getTotalAmounts();
 		const token0 = await ichiVault.token0();
 		const token1 = await ichiVault.token1();
 		const totalSupply = await ichiVault.totalSupply();
-		const usdcPrice = await chainlinkAdapterOracle.getETHPx(ADDRESS.USDC);
+		const usdcPrice = await chainlinkAdapterOracle.getPrice(ADDRESS.USDC);
 		const token0Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token0);
 		const token1Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token1);
 		const token0Decimal = await token0Contract.decimals();
@@ -78,12 +77,13 @@ describe('Ichi Vault Lp Oracle', () => {
 
 		const reserve1 = BigNumber.from(reserveData[0].mul(ichiPrice).div(BigNumber.from(10).pow(token0Decimal)));
 		const reserve2 = BigNumber.from(reserveData[1].mul(usdcPrice).div(BigNumber.from(10).pow(token1Decimal)));
-		const lpPriceM = reserve1.add(reserve2).mul(BigNumber.from(10).pow(18)).div(totalSupply).div(BigNumber.from(2).pow(112));
-		const tvl = lpPriceM.mul(totalSupply).mul(EthPrice).div(BigNumber.from(10).pow(18));
+		const lpPriceM = reserve1.add(reserve2).mul(BigNumber.from(10).pow(18)).div(totalSupply);
+		const tvl = lpPriceM.mul(totalSupply).div(BigNumber.from(10).pow(18));
 
 		expect(
-			lpPriceEth.mul(EthPrice).mul(totalSupply)
-				.div(BigNumber.from(10).pow(18)).div(BigNumber.from(2).pow(112))
+			lpPrice.mul(totalSupply).div(BigNumber.from(10).pow(18))
 		).to.be.equal(tvl);
+		console.log('USDC/ICHI Lp Price:', utils.formatUnits(lpPrice, 18));
+		console.log('TVL:', utils.formatUnits(tvl, 18));
 	});
 });

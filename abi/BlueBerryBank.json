@@ -740,26 +740,7 @@
         "type": "uint256"
       }
     ],
-    "name": "getBorrowETHValue",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "positionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getCollateralETHValue",
+    "name": "getCollateralValue",
     "outputs": [
       {
         "internalType": "uint256",
@@ -792,6 +773,25 @@
       {
         "internalType": "uint256",
         "name": "collateralSize",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "positionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getDebtValue",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
         "type": "uint256"
       }
     ],

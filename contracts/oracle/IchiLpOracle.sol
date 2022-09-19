@@ -12,25 +12,11 @@ contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /**
-     * @notice Fetches the token/ETH price, with 18 decimals of precision.
-     * @param underlying The underlying token address for which to get the price.
+     * @notice Return lp token price in USD, with 18 decimals of precision.
+     * @param token The underlying token address for which to get the price.
      * @return Price in USD
      */
-    function getPrice(address underlying)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return _price(underlying);
-    }
-
-    /**
-     * @notice Fetches the token/ETH price, with 18 decimals of precision.
-     * @param token an ICHI oneToken
-     * @return uint price in USD
-     */
-    function _price(address token) internal view returns (uint256) {
+    function getPrice(address token) external view override returns (uint256) {
         IICHIVault vault = IICHIVault(token);
         address token0 = vault.token0();
         address token1 = vault.token1();
