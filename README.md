@@ -61,8 +61,8 @@ Blueberry Core v1 is an upgrade and fork from Alpha Homora v2, a leveraged yield
 
 ## Oracle 
 
-Prices are determined in ETH.
+Prices are determined in USD.
 
 - For regular assets, asset prices can be derived from Uniswap pool (with WETH), or Keep3r.
-- For LP tokens, asset prices will determine the optimal reserve proportion of the underlying assets, which are then used to compoute the value of LP tokens. See `Uniswapv3Oracle.sol` for example implementation.
+- For LP tokens, asset prices will determine the optimal reserve proportion of the underlying assets, which are then used to compoute the value of LP tokens. See `Uniswapv3AdpaterOracle.sol` for example implementation.
    
