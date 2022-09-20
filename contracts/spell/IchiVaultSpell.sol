@@ -14,6 +14,8 @@ import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import '../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol';
 
+import 'hardhat/console.sol';
+
 contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
     using BBMath for uint256;
     using SafeERC20 for IERC20;
@@ -51,6 +53,7 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         uint256 amtBorrow
     ) internal {
         // 1. Get user input amounts
+        // doLend(token, amount);
         doTransmit(token, amount);
 
         // 2. Borrow specific amounts
@@ -60,6 +63,7 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         IICHIVault vault = IICHIVault(vaults[token]);
         bool isTokenA = vault.token0() == token;
         uint256 balance = IERC20(token).balanceOf(address(this));
+        console.log(balance);
         ensureApprove(token, address(vault));
         if (isTokenA) {
             vault.deposit(balance, 0, address(this));

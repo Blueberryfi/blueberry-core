@@ -81,10 +81,18 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
         }
     }
 
-    /// @dev Internal call to borrow tokens from the bank on behalf of the current executor.
-    /// @param token The token to borrow from the bank.
-    /// @param amount The amount to borrow.
-    /// @notice Do not use `amount` input argument to handle the received amount.
+    function doLend(address token, uint256 amount) internal {
+        if (amount > 0) {
+            bank.lend(token, amount);
+        }
+    }
+
+    /**
+     * @dev Internal call to borrow tokens from the bank on behalf of the current executor.
+     * @param token The token to borrow from the bank.
+     * @param amount The amount to borrow.
+     * @notice Do not use `amount` input argument to handle the received amount.
+     */
     function doBorrow(address token, uint256 amount) internal {
         if (amount > 0) {
             bank.borrow(token, amount);

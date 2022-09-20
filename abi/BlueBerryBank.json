@@ -454,33 +454,7 @@
   },
   {
     "inputs": [],
-    "name": "allowBorrowStatus",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "allowContractCalls",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "allowRepayStatus",
     "outputs": [
       {
         "internalType": "bool",
@@ -547,6 +521,11 @@
       {
         "internalType": "uint256",
         "name": "totalShare",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalLend",
         "type": "uint256"
       }
     ],
@@ -899,14 +878,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "positionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "liquidatable",
+    "inputs": [],
+    "name": "isBorrowAllowed",
     "outputs": [
       {
         "internalType": "bool",
@@ -915,6 +888,50 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isLendAllowed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isRepayAllowed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "lend",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

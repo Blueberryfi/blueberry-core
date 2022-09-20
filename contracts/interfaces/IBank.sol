@@ -96,6 +96,9 @@ interface IBank {
         external
         returns (uint256);
 
+    /// @dev Lend tokens from the bank.
+    function lend(address token, uint256 amount) external;
+
     /// @dev Borrow tokens from the bank.
     function borrow(address token, uint256 amount) external;
 
