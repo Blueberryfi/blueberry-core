@@ -27,7 +27,7 @@ export const setupBasic = deployments.createFixture(async () => {
 	const SimpleOracle = await ethers.getContractFactory(CONTRACT_NAMES.SimpleOracle);
 	const simpleOracle = <SimpleOracle>await SimpleOracle.deploy();
 	await simpleOracle.deployed();
-	await simpleOracle.setETHPx(
+	await simpleOracle.setPrice(
 		[
 			mockWETH.address,
 			usdt.address,

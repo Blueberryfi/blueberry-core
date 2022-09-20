@@ -94,71 +94,71 @@ async function main(): Promise<void> {
 		{
 			borrowFactor: 12500,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 10500,
 			collateralFactor: 9500,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 10500,
 			collateralFactor: 9500,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 10500,
 			collateralFactor: 9500,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 12500,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 0,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 0,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 0,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 8000,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 0,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}, {
 			borrowFactor: 50000,
 			collateralFactor: 9500,
-			liqIncentive: 10250,
+			liqThreshold: 10250,
 		}
 	])
 	await proxyOracle.setWhitelistERC1155([

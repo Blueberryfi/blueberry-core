@@ -71,12 +71,12 @@ describe('ICHI Angel Vaults Spell', () => {
 		const SimpleOracle = await ethers.getContractFactory(CONTRACT_NAMES.SimpleOracle);
 		simpleOracle = <SimpleOracle>await SimpleOracle.deploy();
 		await simpleOracle.deployed();
-		await simpleOracle.setETHPx(
+		await simpleOracle.setPrice(
 			[WETH, USDC, ICHI],
 			[
-				BigNumber.from(2).pow(112),
-				BigNumber.from(2).pow(112).mul(BigNumber.from(10).pow(6)).div(ETH_PRICE), // $1
-				BigNumber.from(2).pow(112).mul(BigNumber.from(10).pow(18)).mul(5).div(ETH_PRICE), // $5
+				BigNumber.from(10).pow(18).mul(ETH_PRICE),
+				BigNumber.from(10).pow(18), // $1
+				BigNumber.from(10).pow(18).mul(5), // $5
 			],
 		)
 
@@ -102,19 +102,19 @@ describe('ICHI Angel Vaults Spell', () => {
 			[{
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqIncentive: 10000
+				liqThreshold: 10000
 			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqIncentive: 10000
+				liqThreshold: 10000
 			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqIncentive: 10000
+				liqThreshold: 10000
 			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqIncentive: 10000
+				liqThreshold: 10000
 			}]
 		)
 

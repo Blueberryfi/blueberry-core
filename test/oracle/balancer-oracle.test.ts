@@ -100,7 +100,7 @@ describe('Balancer Oracle', () => {
         wethDaiPrice = BigNumber.from(10).pow(18).mul(reserves.reserve0).div(reserves.reserve1);
       }
 
-      await simpleOracle.setETHPx(
+      await simpleOracle.setPrice(
         [ADDRESS.WETH, ADDRESS.DAI],
         [
           BigNumber.from(2).pow(112),
@@ -115,15 +115,15 @@ describe('Balancer Oracle', () => {
           {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000,
+            liqThreshold: 10000,
           }, {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000,
+            liqThreshold: 10000,
           }, {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000,
+            liqThreshold: 10000,
           },
         ]
       );
@@ -133,7 +133,7 @@ describe('Balancer Oracle', () => {
         [simpleOracle.address, simpleOracle.address, balancerOracle.address]
       );
 
-      const lpPrice = await balancerOracle.getETHPx(lpAddr);
+      const lpPrice = await balancerOracle.getPrice(lpAddr);
 
       const lpWethBalance = await weth.balanceOf(lpAddr)
 

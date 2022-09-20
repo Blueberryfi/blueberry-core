@@ -60,15 +60,15 @@ export const setup_uniswap = async (
 	const uniswapLpOracle = <UniswapV2Oracle>await UniswapLpOracle.deploy(coreOracle.address);
 	await uniswapLpOracle.deployed();
 
-	console.log('usdt Px:', simpleOracle.getETHPx(usdt.address));
-	console.log('usdc Px:', simpleOracle.getETHPx(usdc.address));
+	console.log('usdt Px:', simpleOracle.getPrice(usdt.address));
+	console.log('usdc Px:', simpleOracle.getPrice(usdc.address));
 
 	await coreOracle.setRoute(
 		[usdc.address, usdt.address, lp],
 		[simpleOracle.address, simpleOracle.address, uniswapLpOracle.address]
 	)
 
-	console.log('lp Px:', await uniswapLpOracle.getETHPx(lp));
+	console.log('lp Px:', await uniswapLpOracle.getPrice(lp));
 
 	await oracle.setOracles(
 		[usdc.address, usdt.address, lp],

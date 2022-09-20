@@ -25,6 +25,8 @@ interface IAny {
 
     function setWhitelistTokens(address[] memory, bool[] memory) external;
 
+    function getPrice(address) external view returns (uint256);
+
     function getPrice(address, address)
         external
         view
@@ -45,8 +47,6 @@ interface IAny {
         address[] memory,
         uint256[] memory
     ) external;
-
-    function getETHPx(address) external view returns (uint256);
 
     function balanceOf(address) external view returns (uint256);
 

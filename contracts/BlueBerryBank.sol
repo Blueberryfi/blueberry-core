@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
-import 'hardhat/console.sol';
+
 import './Governable.sol';
 import './utils/ERC1155NaiveReceiver.sol';
 import './interfaces/IBank.sol';
@@ -17,29 +17,6 @@ library BlueBerrySafeMath {
     /// @dev Computes round-up division.
     function ceilDiv(uint256 a, uint256 b) internal pure returns (uint256) {
         return (a + b - 1) / b;
-    }
-}
-
-contract BlueBerryCaster {
-    /// @dev Call to the target using the given data.
-    /// @param target The address target to call.
-    /// @param data The data used in the call.
-    function cast(address target, bytes calldata data) external payable {
-        (bool ok, bytes memory returndata) = target.call{value: msg.value}(
-            data
-        );
-        if (!ok) {
-            if (returndata.length > 0) {
-                // The easiest way to bubble the revert reason is using memory via assembly
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    let returndata_size := mload(returndata)
-                    revert(add(32, returndata), returndata_size)
-                }
-            } else {
-                revert('bad cast call');
-            }
-        }
     }
 }
 
@@ -76,7 +53,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     uint256 public override POSITION_ID; // TEMPORARY: position ID currently under execution.
     address public override SPELL; // TEMPORARY: spell currently under execution.
 
-    address public caster; // The caster address for untrusted execution.
     IOracle public oracle; // The oracle address for determining prices.
     uint256 public feeBps; // The fee collected as protocol reserve in basis points from interest.
     uint256 public override nextPositionId; // Next available position ID, starting from 1 (see initialize).
@@ -89,14 +65,14 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     bool public allowContractCalls; // The boolean status whether to allow call from contract (false = onlyEOA)
     mapping(address => bool) public whitelistedTokens; // Mapping from token to whitelist status
     mapping(address => bool) public whitelistedSpells; // Mapping from spell to whitelist status
-    mapping(address => bool) public whitelistedUsers; // Mapping from user to whitelist status
+    mapping(address => bool) public whitelistedContracts; // Mapping from user to whitelist status
 
     uint256 public bankStatus; // Each bit stores certain bank status, e.g. borrow allowed, repay allowed
 
     /// @dev Ensure that the function is called from EOA
     /// when allowContractCalls is set to false and caller is not whitelisted
     modifier onlyEOAEx() {
-        if (!allowContractCalls && !whitelistedUsers[msg.sender]) {
+        if (!allowContractCalls && !whitelistedContracts[msg.sender]) {
             require(msg.sender == tx.origin, 'not eoa');
         }
         _;
@@ -135,7 +111,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         _IN_EXEC_LOCK = _NOT_ENTERED;
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
-        caster = address(new BlueBerryCaster());
         oracle = _oracle;
         require(address(_oracle) != address(0), 'bad oracle address');
         feeBps = _feeBps;
@@ -197,7 +172,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     /// @dev Set whitelist user status
     /// @param users list of users to change status
     /// @param statuses list of statuses to change to
-    function setWhitelistUsers(
+    function whitelistContracts(
         address[] calldata users,
         bool[] calldata statuses
     ) external onlyGov {
@@ -206,7 +181,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             'users & statuses length mismatched'
         );
         for (uint256 idx = 0; idx < users.length; idx++) {
-            whitelistedUsers[users[idx]] = statuses[idx];
+            whitelistedContracts[users[idx]] = statuses[idx];
         }
     }
 
@@ -501,6 +476,11 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         emit WithdrawReserve(msg.sender, token, amount);
     }
 
+    function liquidatable(uint256 positionId) external view returns (bool) {
+        uint256 collateralValue = getCollateralValue(positionId);
+        uint256 borrowValue = getDebtValue(positionId);
+    }
+
     /// @dev Liquidate a position. Pay debt for its owner and take the collateral.
     /// @param positionId The position ID to liquidate.
     /// @param debtToken The debt token to repay.
@@ -520,31 +500,14 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             amountCall
         );
         require(pos.collToken != address(0), 'bad collateral token');
-        uint256 bounty = Math.min(
-            oracle.convertForLiquidation(
-                debtToken,
-                pos.collToken,
-                pos.collId,
-                amountPaid
-            ),
-            pos.collateralSize
-        );
-        pos.collateralSize -= bounty;
         IERC1155(pos.collToken).safeTransferFrom(
             address(this),
             msg.sender,
             pos.collId,
-            bounty,
+            0,
             ''
         );
-        emit Liquidate(
-            positionId,
-            msg.sender,
-            debtToken,
-            amountPaid,
-            share,
-            bounty
-        );
+        emit Liquidate(positionId, msg.sender, debtToken, amountPaid, share, 0);
     }
 
     /// @dev Execute the action via BlueBerryCaster, calling its function with the supplied data.
@@ -569,7 +532,18 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         }
         POSITION_ID = positionId;
         SPELL = spell;
-        BlueBerryCaster(caster).cast{value: msg.value}(spell, data);
+
+        (bool ok, bytes memory returndata) = SPELL.call{value: msg.value}(data);
+        if (!ok) {
+            if (returndata.length > 0) {
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
+            } else {
+                revert('bad cast call');
+            }
+        }
 
         uint256 collateralValue = getCollateralValue(positionId);
         uint256 debtValue = getDebtValue(positionId);

@@ -61,7 +61,7 @@ describe('Balancer Spell', () => {
 		const SimpleOracle = await ethers.getContractFactory(CONTRACT_NAMES.SimpleOracle);
 		simpleOracle = <SimpleOracle>await SimpleOracle.deploy();
 		await simpleOracle.deployed();
-		await simpleOracle.setETHPx(
+		await simpleOracle.setPrice(
 			[WETH, DAI],
 			[5192296858534827628530496329220096, 8887571220661441971398610676149]
 		)
@@ -88,15 +88,15 @@ describe('Balancer Spell', () => {
 			[{
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqIncentive: 10000
+				liqThreshold: 10000
 			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqIncentive: 10000
+				liqThreshold: 10000
 			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqIncentive: 10000
+				liqThreshold: 10000
 			}]
 		)
 

@@ -93,15 +93,15 @@ describe("BlueBerry Bank", () => {
 		const uniswapLpOracle = <UniswapV2Oracle>await UniswapLpOracle.deploy(coreOracle.address);
 		await uniswapLpOracle.deployed();
 
-		// console.log('usdt Px:', await simpleOracle.getETHPx(usdt.address));
-		// console.log('usdc Px:', await simpleOracle.getETHPx(usdc.address));
+		// console.log('usdt Px:', await simpleOracle.getPrice(usdt.address));
+		// console.log('usdc Px:', await simpleOracle.getPrice(usdc.address));
 
 		await coreOracle.setRoute(
 			[usdc.address, usdt.address, lp],
 			[simpleOracle.address, simpleOracle.address, uniswapLpOracle.address]
 		)
 
-		// console.log('lp Px:', await uniswapLpOracle.getETHPx(lp));
+		// console.log('lp Px:', await uniswapLpOracle.getPrice(lp));
 
 		await oracle.setTokenFactors(
 			[usdc.address, usdt.address, lp],
@@ -109,15 +109,15 @@ describe("BlueBerry Bank", () => {
 				{
 					borrowFactor: 10000,
 					collateralFactor: 10000,
-					liqIncentive: 10000
+					liqThreshold: 10000
 				}, {
 					borrowFactor: 10000,
 					collateralFactor: 10000,
-					liqIncentive: 10000
+					liqThreshold: 10000
 				}, {
 					borrowFactor: 10000,
 					collateralFactor: 10000,
-					liqIncentive: 10000
+					liqThreshold: 10000
 				},
 			]
 		);
@@ -524,9 +524,9 @@ describe("BlueBerry Bank", () => {
 
 		// 		// ready to be liquidated
 		// 		await bank.connect(bob).liquidate(pos_id, usdt.address, BigNumber.from(10).pow(6).mul(100));
-		// 		const calculatedBobLp = (await simpleOracle.getETHPx(usdt.address))
+		// 		const calculatedBobLp = (await simpleOracle.getPrice(usdt.address))
 		// 			.mul(BigNumber.from(10).pow(6).mul(100))
-		// 			.div(await uniLpOracle.getETHPx(lp))
+		// 			.div(await uniLpOracle.getPrice(lp))
 		// 			.mul(105).div(100);
 		// 		console.log('bob lp', werc20.balanceOfERC20(lp, bob.address));
 		// 		console.log('calc bob lp', calculatedBobLp);
@@ -553,8 +553,8 @@ describe("BlueBerry Bank", () => {
 		// 		await bank.connect(bob).liquidate(pos_id, usdc.address, BigNumber.from(10).pow(6).mul(300));
 		// 		let curBobBal = await werc20.balanceOfERC20(lp, bob.address);
 		// 		const calculatedDeltaBobLp = BigNumber.from(10).pow(6).mul(300)
-		// 			.mul(await simpleOracle.getETHPx(usdc.address))
-		// 			.div(await uniLpOracle.getETHPx(lp))
+		// 			.mul(await simpleOracle.getPrice(usdc.address))
+		// 			.div(await uniLpOracle.getPrice(lp))
 		// 			.mul(105).mul(105).div(100).div(100);
 		// 		console.log('delta bob lp', curBobBal.sub(prevBobBal));
 		// 		console.log('calc delta bob lp', calculatedDeltaBobLp);

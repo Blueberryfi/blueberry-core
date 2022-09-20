@@ -16,13 +16,13 @@ async function main(): Promise<void> {
 	console.log(`ERC20KP3ROracle: ${keeperOracle.address}`);
 	console.log(`UniswapV2Oracle: ${lpOracle.address}`);
 
-	let price = await keeperOracle.getETHPx(ADDRESS.USDT);
+	let price = await keeperOracle.getPrice(ADDRESS.USDT);
 	console.log('USDT Price:', price, BigNumber.from(2).pow(112).div(price));
 
-	price = await keeperOracle.getETHPx(ADDRESS.USDC);
+	price = await keeperOracle.getPrice(ADDRESS.USDC);
 	console.log('USDC Price:', price, BigNumber.from(2).pow(112).div(price));
 
-	price = await lpOracle.getETHPx(ADDRESS.UNI_V2_USDT_USDC);
+	price = await lpOracle.getPrice(ADDRESS.UNI_V2_USDT_USDC);
 	console.log('USDC/USDT Uni V2 Lp Price:', price, BigNumber.from(2).pow(112).div(price));
 }
 

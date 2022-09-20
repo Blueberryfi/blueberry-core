@@ -73,7 +73,7 @@ describe('Curve Oracle', () => {
 
       const curvepool = <ICurvePool>await ethers.getContractAt(CONTRACT_NAMES.ICurvePool, curvepoolAddr);
 
-      await simpleOracle.setETHPx(
+      await simpleOracle.setPrice(
         [
           daiAddr,
           usdtAddr,
@@ -120,26 +120,26 @@ describe('Curve Oracle', () => {
           {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000
+            liqThreshold: 10000
           }, {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000
+            liqThreshold: 10000
           }, {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000
+            liqThreshold: 10000
           }, {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000
+            liqThreshold: 10000
           },
         ]
       );
-      const lpPrice = await curveOracle.getETHPx(lpAddr)
-      const daiPrice = await simpleOracle.getETHPx(daiAddr)
-      const usdtPrice = await simpleOracle.getETHPx(usdtAddr)
-      const usdcPrice = await simpleOracle.getETHPx(usdcAddr)
+      const lpPrice = await curveOracle.getPrice(lpAddr)
+      const daiPrice = await simpleOracle.getPrice(daiAddr)
+      const usdtPrice = await simpleOracle.getPrice(usdtAddr)
+      const usdcPrice = await simpleOracle.getPrice(usdcAddr)
 
       const virtualPrice = await curvepool.get_virtual_price();
 

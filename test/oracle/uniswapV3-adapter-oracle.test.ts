@@ -69,7 +69,7 @@ describe('UniswapV3 Adapter Oracle', () => {
         )
       );
 
-      await simpleOracle.setETHPx(
+      await simpleOracle.setPrice(
         [daiAddr, usdtAddr, usdcAddr, uniAddr],
         [
           BigNumber.from(2).pow(112).div(600),
@@ -124,27 +124,27 @@ describe('UniswapV3 Adapter Oracle', () => {
           {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000,
+            liqThreshold: 10000,
           },
           {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000,
+            liqThreshold: 10000,
           },
           {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000,
+            liqThreshold: 10000,
           },
           {
             borrowFactor: 10000,
             collateralFactor: 10000,
-            liqIncentive: 10000,
+            liqThreshold: 10000,
           },
         ]
       );
 
-      const uniPriceETHPx = await uniswapV3AdapterOracle.getETHPx(uniAddr);
+      const uniPriceETHPx = await uniswapV3AdapterOracle.getPrice(uniAddr);
       const uniPrice = uniPriceETHPx
         .mul(BigNumber.from(10).pow(18))
         .div(BigNumber.from(2).pow(112));

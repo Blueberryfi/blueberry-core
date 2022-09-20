@@ -52,12 +52,12 @@
           },
           {
             "internalType": "uint16",
-            "name": "liqIncentive",
+            "name": "liqThreshold",
             "type": "uint16"
           }
         ],
         "indexed": false,
-        "internalType": "struct ProxyOracle.TokenFactors",
+        "internalType": "struct ProxyOracle.TokenFactor",
         "name": "tokenFactor",
         "type": "tuple"
       }
@@ -96,40 +96,6 @@
     ],
     "name": "UnsetTokenFactor",
     "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "tokenIn",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "tokenOut",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenOutId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountIn",
-        "type": "uint256"
-      }
-    ],
-    "name": "convertForLiquidation",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
@@ -225,11 +191,11 @@
           },
           {
             "internalType": "uint16",
-            "name": "liqIncentive",
+            "name": "liqThreshold",
             "type": "uint16"
           }
         ],
-        "internalType": "struct ProxyOracle.TokenFactors[]",
+        "internalType": "struct ProxyOracle.TokenFactor[]",
         "name": "_tokenFactors",
         "type": "tuple[]"
       }
@@ -335,7 +301,7 @@
       },
       {
         "internalType": "uint16",
-        "name": "liqIncentive",
+        "name": "liqThreshold",
         "type": "uint16"
       }
     ],
@@ -376,7 +342,7 @@
         "type": "address"
       }
     ],
-    "name": "whitelistERC1155",
+    "name": "whitelistedERC1155",
     "outputs": [
       {
         "internalType": "bool",
