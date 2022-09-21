@@ -45,9 +45,12 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     struct Position {
         address owner; // The owner of this position.
         address collToken; // The ERC1155 token used as collateral for this position.
+        address underlyingToken;
+        uint256 underlyingAmount;
         uint256 collId; // The token id used as collateral.
         uint256 collateralSize; // The size of collateral token for this position.
         uint256 debtMap; // Bitmap of nonzero debt. i^th bit is set iff debt share of i^th bank is nonzero.
+        uint256 ov; // Opening value of position
         mapping(address => uint256) debtShareOf; // The debt share for each token.
     }
 
@@ -311,11 +314,18 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             address owner,
             address collToken,
             uint256 collId,
-            uint256 collateralSize
+            uint256 collateralSize,
+            uint256 risk
         )
     {
         Position storage pos = positions[positionId];
-        return (pos.owner, pos.collToken, pos.collId, pos.collateralSize);
+        return (
+            pos.owner,
+            pos.collToken,
+            pos.collId,
+            pos.collateralSize,
+            getPositionRisk(positionId)
+        );
     }
 
     /// @dev Return current position information
@@ -327,7 +337,8 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             address owner,
             address collToken,
             uint256 collId,
-            uint256 collateralSize
+            uint256 collateralSize,
+            uint256 risk
         )
     {
         require(POSITION_ID != _NO_ID, 'no id');
@@ -380,8 +391,10 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         }
     }
 
-    /// @dev Return the total collateral value of the given position.
-    /// @param positionId The position ID to query for the collateral value.
+    /**
+     * @dev Return the USD value of total collateral of the given position.
+     * @param positionId The position ID to query for the collateral value.
+     */
     function getCollateralValue(uint256 positionId)
         public
         view
@@ -398,7 +411,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         }
     }
 
-    /// @dev Return the total debt value of the given position
+    /// @dev Return the USD value total debt of the given position
     /// @param positionId The position ID to query for the debt value.
     function getDebtValue(uint256 positionId)
         public
@@ -485,6 +498,36 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         emit WithdrawReserve(msg.sender, token, amount);
     }
 
+    function getPositionRisk(uint256 positionId)
+        public
+        view
+        returns (uint256 risk)
+    {
+        Position storage pos = positions[positionId];
+        uint256 pv = getCollateralValue(positionId);
+        uint256 ov = getDebtValue(positionId);
+        uint256 cv = oracle.getUnderlyingValue(
+            pos.underlyingToken,
+            pos.underlyingAmount
+        );
+
+        if (pv >= ov) risk = 0;
+        else {
+            risk = ((ov - pv) * 10000) / cv;
+        }
+        console.log(pv, ov, cv);
+    }
+
+    function isLiquidatable(uint256 positionId)
+        public
+        view
+        returns (bool liquidatable)
+    {
+        Position storage pos = positions[positionId];
+        uint256 risk = getPositionRisk(positionId);
+        liquidatable = risk >= oracle.getLiqThreshold(pos.underlyingToken);
+    }
+
     /// @dev Liquidate a position. Pay debt for its owner and take the collateral.
     /// @param positionId The position ID to liquidate.
     /// @param debtToken The debt token to repay.
@@ -494,9 +537,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         address debtToken,
         uint256 amountCall
     ) external override lock poke(debtToken) {
-        uint256 collateralValue = getCollateralValue(positionId);
-        uint256 borrowValue = getDebtValue(positionId);
-        require(collateralValue < borrowValue, 'position still healthy');
+        require(isLiquidatable(positionId), 'position still healthy');
         Position storage pos = positions[positionId];
         (uint256 amountPaid, uint256 share) = repayInternal(
             positionId,
@@ -549,10 +590,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             }
         }
 
-        uint256 collateralValue = getCollateralValue(positionId);
-        uint256 debtValue = getDebtValue(positionId);
-        console.log(collateralValue, debtValue);
-        require(collateralValue >= debtValue, 'insufficient collateral');
+        require(!isLiquidatable(positionId), 'insufficient collateral');
 
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
@@ -562,8 +600,8 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
 
     /**
      * @dev Lend tokens to bank. Must only be called while under execution.
-     * @param token The token to borrow from the bank.
-     * @param amount The amount of tokens to borrow.
+     * @param token The token to deposit on bank as isolated collateral
+     * @param amount The amount of tokens to lend.
      */
     function lend(address token, uint256 amount)
         external
@@ -571,23 +609,20 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         inExec
         poke(token)
     {
-        // require(isLendAllowed(), 'lending not allowed');
-        // require(whitelistedTokens[token], 'token not whitelisted');
-        // Bank storage bank = banks[token];
-        // Position storage pos = positions[POSITION_ID];
-        // uint256 totalShare = bank.totalShare;
-        // uint256 totalDebt = bank.totalDebt;
-        // uint256 share = totalShare == 0
-        //     ? amount
-        //     : (amount * totalShare).ceilDiv(totalDebt);
-        // bank.totalShare += share;
-        // uint256 newShare = pos.debtShareOf[token] + share;
-        // pos.debtShareOf[token] = newShare;
-        // if (newShare > 0) {
-        //     pos.debtMap |= (1 << uint256(bank.index));
-        // }
-        // IERC20(token).safeTransfer(msg.sender, doBorrow(token, amount));
-        // emit Borrow(POSITION_ID, msg.sender, token, amount, share);
+        require(isLendAllowed(), 'lending not allowed');
+        require(whitelistedTokens[token], 'token not whitelisted');
+
+        Position storage pos = positions[POSITION_ID];
+        Bank storage bank = banks[token];
+        pos.underlyingToken = token;
+        pos.underlyingAmount = amount;
+
+        IERC20(token).safeTransferFrom(pos.owner, address(this), amount);
+        IERC20(token).approve(bank.safeBox, amount);
+        ISafeBox(bank.safeBox).lend(amount);
+        bank.totalLend += amount;
+
+        emit Lend(POSITION_ID, msg.sender, token, amount);
     }
 
     /// @dev Borrow tokens from that bank. Must only be called while under execution.
@@ -655,7 +690,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         if (amountCall == type(uint256).max) {
             amountCall = oldDebt;
         }
-        console.log(bank.totalDebt, amountCall);
         uint256 paid = doRepay(token, doERC20TransferIn(token, amountCall));
         require(paid <= oldDebt, 'paid exceeds debt'); // prevent share overflow attack
         uint256 lessShare = paid == oldDebt
@@ -679,7 +713,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     }
 
     /// @dev Put more collateral for users. Must only be called during execution.
-    /// @param collToken The ERC1155 token to collateral.
+    /// @param collToken The ERC1155 token to collateral. (spell address)
     /// @param collId The token id to collateral.
     /// @param amountCall The amount of tokens to put via transferFrom.
     function putCollateral(
@@ -734,24 +768,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     /**
      * @dev Internal function to perform borrow from the bank and return the amount received.
      * @param token The token to perform borrow action.
-     * @param amount The amount use in the transferFrom call.
-     * NOTE: Caller must ensure that cToken interest was already accrued up to this block.
-     */
-    function doLend(address token, uint256 amount)
-        internal
-        returns (uint256 lendAmount)
-    {
-        Position storage pos = positions[POSITION_ID];
-        Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        IERC20(token).safeTransferFrom(pos.owner, address(this), amount);
-        IERC20(token).approve(bank.safeBox, amount);
-        lendAmount = ISafeBox(bank.safeBox).lend(amount);
-        bank.totalLend += amount;
-    }
-
-    /**
-     * @dev Internal function to perform borrow from the bank and return the amount received.
-     * @param token The token to perform borrow action.
      * @param amountCall The amount use in the transferFrom call.
      * NOTE: Caller must ensure that cToken interest was already accrued up to this block.
      */
@@ -777,7 +793,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
         IERC20(token).safeTransfer(bank.safeBox, amountCall);
         uint256 newDebt = ISafeBox(bank.safeBox).repay(amountCall);
-        console.log(newDebt, bank.totalDebt);
         repaidAmount = bank.totalDebt - newDebt;
         bank.totalDebt = newDebt;
     }

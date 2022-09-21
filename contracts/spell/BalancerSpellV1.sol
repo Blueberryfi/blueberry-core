@@ -133,7 +133,7 @@ contract BalancerSpellV1 is WhitelistSpell {
         addLiquidityInternal(lp, amt);
 
         // 5. Take out collateral
-        (, address collToken, uint256 collId, uint256 collSize) = bank
+        (, address collToken, uint256 collId, uint256 collSize, ) = bank
             .getCurrentPositionInfo();
         if (collSize > 0) {
             require(
@@ -282,7 +282,8 @@ contract BalancerSpellV1 is WhitelistSpell {
         RepayAmounts calldata amt,
         address wstaking
     ) external {
-        (, address collToken, uint256 collId, ) = bank.getCurrentPositionInfo();
+        (, address collToken, uint256 collId, , ) = bank
+            .getCurrentPositionInfo();
 
         // 1. Take out collateral
         require(
@@ -306,7 +307,8 @@ contract BalancerSpellV1 is WhitelistSpell {
     /// @dev Harvest staking reward tokens to in-exec position's owner
     /// @param wstaking Wrapped staking rewards
     function harvestWStakingRewards(address wstaking) external {
-        (, address collToken, uint256 collId, ) = bank.getCurrentPositionInfo();
+        (, address collToken, uint256 collId, , ) = bank
+            .getCurrentPositionInfo();
         address lp = IWStakingRewards(wstaking).getUnderlyingToken(collId);
         require(whitelistedLpTokens[lp], 'lp token not whitelisted');
         require(

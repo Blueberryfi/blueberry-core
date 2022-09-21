@@ -11,6 +11,13 @@ interface IBank {
     event SetFeeBps(uint256 feeBps);
     /// The governor withdraw tokens from the reserve of a bank.
     event WithdrawReserve(address user, address token, uint256 amount);
+    /// Someone repays tokens to a bank via a spell caller.
+    event Lend(
+        uint256 positionId,
+        address caller,
+        address token,
+        uint256 amount
+    );
     /// Someone borrows tokens from a bank via a spell caller.
     event Borrow(
         uint256 positionId,
@@ -82,7 +89,8 @@ interface IBank {
             address owner,
             address collToken,
             uint256 collId,
-            uint256 collateralSize
+            uint256 collateralSize,
+            uint256 risk
         );
 
     /// @dev Return the borrow balance for given positon and token without trigger interest accrual.
@@ -148,7 +156,8 @@ interface IBank {
             address owner,
             address collToken,
             uint256 collId,
-            uint256 collateralSize
+            uint256 collateralSize,
+            uint256 risk
         );
 
     function support(address token) external view returns (bool);

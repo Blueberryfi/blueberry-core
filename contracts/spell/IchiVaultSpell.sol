@@ -14,14 +14,12 @@ import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import '../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol';
 
-import 'hardhat/console.sol';
-
 contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
     using BBMath for uint256;
     using SafeERC20 for IERC20;
 
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
-    address swapPool;
+    IUniswapV3Pool swapPool;
     mapping(address => address) vaults;
 
     IWIchiFarm public immutable wIchiFarm;
@@ -53,8 +51,8 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         uint256 amtBorrow
     ) internal {
         // 1. Get user input amounts
-        // doLend(token, amount);
-        doTransmit(token, amount);
+        doLend(token, amount);
+        // doTransmit(token, amount);
 
         // 2. Borrow specific amounts
         doBorrow(token, amtBorrow);
@@ -63,7 +61,6 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         IICHIVault vault = IICHIVault(vaults[token]);
         bool isTokenA = vault.token0() == token;
         uint256 balance = IERC20(token).balanceOf(address(this));
-        console.log(balance);
         ensureApprove(token, address(vault));
         if (isTokenA) {
             vault.deposit(balance, 0, address(this));
@@ -105,7 +102,7 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         depositInternal(token, amount, amtBorrow);
 
         // 4. Take out collateral
-        (, address collToken, uint256 collId, uint256 collSize) = bank
+        (, address collToken, uint256 collId, uint256 collSize, ) = bank
             .getCurrentPositionInfo();
         if (collSize > 0) {
             (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
@@ -156,8 +153,8 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
             isTokenA ? vault.token1() : vault.token0()
         ).balanceOf(address(this));
 
-        swapPool = vault.pool();
-        IUniswapV3Pool(swapPool).swap(
+        swapPool = IUniswapV3Pool(vault.pool());
+        swapPool.swap(
             address(this),
             // if withdraw token is Token0, then swap token1 -> token0 (false)
             !isTokenA,
@@ -203,7 +200,8 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         uint256 amountLpWithdraw
     ) external {
         address vault = vaults[token];
-        (, address collToken, uint256 collId, ) = bank.getCurrentPositionInfo();
+        (, address collToken, uint256 collId, , ) = bank
+            .getCurrentPositionInfo();
         require(
             IWIchiFarm(collToken).getUnderlyingToken(collId) == vault,
             'incorrect underlying'
@@ -234,12 +232,12 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
 
         if (amount0Delta > 0) {
             if (payer == address(this)) {
-                IERC20(IUniswapV3Pool(swapPool).token0()).safeTransfer(
+                IERC20(swapPool.token0()).safeTransfer(
                     msg.sender,
                     uint256(amount0Delta)
                 );
             } else {
-                IERC20(IUniswapV3Pool(swapPool).token0()).safeTransferFrom(
+                IERC20(swapPool.token0()).safeTransferFrom(
                     payer,
                     msg.sender,
                     uint256(amount0Delta)
@@ -247,12 +245,12 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
             }
         } else if (amount1Delta > 0) {
             if (payer == address(this)) {
-                IERC20(IUniswapV3Pool(swapPool).token1()).safeTransfer(
+                IERC20(swapPool.token1()).safeTransfer(
                     msg.sender,
                     uint256(amount1Delta)
                 );
             } else {
-                IERC20(IUniswapV3Pool(swapPool).token1()).safeTransferFrom(
+                IERC20(swapPool.token1()).safeTransferFrom(
                     payer,
                     msg.sender,
                     uint256(amount1Delta)

@@ -67,6 +67,37 @@
       {
         "indexed": false,
         "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Lend",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "positionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
         "name": "liquidator",
         "type": "address"
       },
@@ -459,6 +490,11 @@
         "internalType": "uint256",
         "name": "collateralSize",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "risk",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -511,6 +547,11 @@
       {
         "internalType": "uint256",
         "name": "collateralSize",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "risk",
         "type": "uint256"
       }
     ],

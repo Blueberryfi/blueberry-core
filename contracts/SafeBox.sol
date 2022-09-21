@@ -97,7 +97,7 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
     }
 
     function deposit(uint256 amount)
-        public
+        external
         nonReentrant
         returns (uint256 ctokenAmount)
     {

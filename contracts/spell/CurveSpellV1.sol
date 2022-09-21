@@ -92,7 +92,7 @@ contract CurveSpellV1 is WhitelistSpell {
         address[] memory tokens = ulTokens[lp];
 
         // 0. Take out collateral
-        (, address collToken, uint256 collId, uint256 collSize) = bank
+        (, address collToken, uint256 collId, uint256 collSize, ) = bank
             .getCurrentPositionInfo();
         if (collSize > 0) {
             (uint256 decodedPid, uint256 decodedGid, ) = wgauge.decodeId(
@@ -171,7 +171,7 @@ contract CurveSpellV1 is WhitelistSpell {
         address[] memory tokens = ulTokens[lp];
 
         // 0. take out collateral
-        (, address collToken, uint256 collId, uint256 collSize) = bank
+        (, address collToken, uint256 collId, uint256 collSize, ) = bank
             .getCurrentPositionInfo();
         if (collSize > 0) {
             (uint256 decodedPid, uint256 decodedGid, ) = wgauge.decodeId(
@@ -253,7 +253,7 @@ contract CurveSpellV1 is WhitelistSpell {
         address[] memory tokens = ulTokens[lp];
 
         // 0. Take out collateral
-        (, address collToken, uint256 collId, uint256 collSize) = bank
+        (, address collToken, uint256 collId, uint256 collSize, ) = bank
             .getCurrentPositionInfo();
         if (collSize > 0) {
             (uint256 decodedPid, uint256 decodedGid, ) = wgauge.decodeId(
@@ -329,7 +329,7 @@ contract CurveSpellV1 is WhitelistSpell {
         require(whitelistedLpTokens[lp], 'lp token not whitelisted');
         address pool = getPool(lp);
         uint256 positionId = bank.POSITION_ID();
-        (, address collToken, uint256 collId, ) = bank.getPositionInfo(
+        (, address collToken, uint256 collId, , ) = bank.getPositionInfo(
             positionId
         );
         require(
@@ -411,7 +411,7 @@ contract CurveSpellV1 is WhitelistSpell {
         require(whitelistedLpTokens[lp], 'lp token not whitelisted');
         address pool = getPool(lp);
         uint256 positionId = bank.POSITION_ID();
-        (, address collToken, uint256 collId, ) = bank.getPositionInfo(
+        (, address collToken, uint256 collId, , ) = bank.getPositionInfo(
             positionId
         );
         require(
@@ -494,7 +494,7 @@ contract CurveSpellV1 is WhitelistSpell {
         require(whitelistedLpTokens[lp], 'lp token not whitelisted');
         address pool = getPool(lp);
         uint256 positionId = bank.POSITION_ID();
-        (, address collToken, uint256 collId, ) = bank.getPositionInfo(
+        (, address collToken, uint256 collId, , ) = bank.getPositionInfo(
             positionId
         );
         require(
@@ -566,7 +566,7 @@ contract CurveSpellV1 is WhitelistSpell {
 
     /// @dev Harvest CRV reward tokens to in-exec position's owner
     function harvest() external {
-        (, address collToken, uint256 collId, uint256 collSize) = bank
+        (, address collToken, uint256 collId, uint256 collSize, ) = bank
             .getCurrentPositionInfo();
         (uint256 pid, uint256 gid, ) = wgauge.decodeId(collId);
         address lp = wgauge.getUnderlyingToken(collId);

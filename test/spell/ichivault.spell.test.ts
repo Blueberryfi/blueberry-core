@@ -102,15 +102,15 @@ describe('ICHI Angel Vaults Spell', () => {
 			[{
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqThreshold: 10000
+				liqThreshold: 9000
 			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqThreshold: 10000
+				liqThreshold: 8000
 			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
-				liqThreshold: 10000
+				liqThreshold: 9000
 			}, {
 				borrowFactor: 10000,
 				collateralFactor: 10000,
@@ -192,7 +192,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			iface.encodeFunctionData("deposit", [
 				USDC,
 				utils.parseUnits('100', 6),
-				utils.parseUnits('50', 6)
+				utils.parseUnits('300', 6)
 			])
 		)
 
@@ -207,6 +207,19 @@ describe('ICHI Angel Vaults Spell', () => {
 		).to.be.equal(pos.collateralSize);
 		const bankInfo = await bank.banks(USDC);
 		console.log('Bank Info', bankInfo);
+		console.log('Position Info', pos);
+	})
+	it("should be able to return position risk ratio", async () => {
+		await bank.getPositionRisk(1);
+		await simpleOracle.setPrice(
+			[USDC, ICHI],
+			[
+				BigNumber.from(10).pow(18), // $1
+				BigNumber.from(10).pow(17).mul(40), // $4
+			]
+		);
+		const risk = await bank.getPositionRisk(1);
+		console.log('Position Risk', utils.formatUnits(risk, 2), '%');
 	})
 	it("should be able to withdraw USDC", async () => {
 		const iface = new ethers.utils.Interface(SpellABI);

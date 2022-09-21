@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import '../interfaces/IOracle.sol';
 import '../interfaces/IBaseOracle.sol';
@@ -100,10 +101,12 @@ contract ProxyOracle is IOracle, Ownable {
         }
     }
 
-    /// @dev Return the USD value of the given input for collateral purpose.
-    /// @param token ERC1155 token address to get collateral value
-    /// @param id ERC1155 token id to get collateral value
-    /// @param amount Token amount to get collateral value, based 1e18
+    /**
+     * @dev Return the USD value of the given input for collateral purpose.
+     * @param token ERC1155 token address to get collateral value
+     * @param id ERC1155 token id to get collateral value
+     * @param amount Token amount to get collateral value, based 1e18
+     */
     function getCollateralValue(
         address token,
         uint256 id,
@@ -120,9 +123,11 @@ contract ProxyOracle is IOracle, Ownable {
         return (underlyingValue * tokenFactor.collateralFactor) / 10000;
     }
 
-    /// @dev Return the USD value of the given input for borrow purpose.
-    /// @param token ERC20 token address to get borrow value
-    /// @param amount ERC20 token amount to get borrow value, based 1e18
+    /**
+     * @dev Return the USD value of the given input for borrow purpose.
+     * @param token ERC20 token address to get borrow value
+     * @param amount ERC20 token amount to get borrow value
+     */
     function getDebtValue(address token, uint256 amount)
         external
         view
@@ -131,7 +136,26 @@ contract ProxyOracle is IOracle, Ownable {
     {
         TokenFactor memory tokenFactor = tokenFactors[token];
         require(tokenFactor.borrowFactor != 0, 'bad underlying borrow');
-        uint256 debtVaule = (source.getPrice(token) * amount) / 1e18;
-        return (debtVaule * tokenFactor.borrowFactor) / 10000;
+        uint256 decimals = IERC20Metadata(token).decimals();
+        uint256 debtValue = (source.getPrice(token) * amount) / 10**decimals;
+        return (debtValue * tokenFactor.borrowFactor) / 10000;
+    }
+
+    /**
+     * @dev Return the USD value of isolated collateral.
+     * @param token ERC20 token address to get collateral value
+     * @param amount ERC20 token amount to get collateral value
+     */
+    function getUnderlyingValue(address token, uint256 amount)
+        external
+        view
+        returns (uint256 collateralValue)
+    {
+        uint256 decimals = IERC20Metadata(token).decimals();
+        collateralValue = (source.getPrice(token) * amount) / 10**decimals;
+    }
+
+    function getLiqThreshold(address token) external view returns (uint256) {
+        return tokenFactors[token].liqThreshold;
     }
 }

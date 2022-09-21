@@ -216,7 +216,7 @@ contract UniswapV2SpellV1 is WhitelistSpell {
         addLiquidityInternal(tokenA, tokenB, amt, lp);
 
         // 6. Take out collateral
-        (, address collToken, uint256 collId, uint256 collSize) = bank
+        (, address collToken, uint256 collId, uint256 collSize, ) = bank
             .getCurrentPositionInfo();
         if (collSize > 0) {
             require(
@@ -383,7 +383,8 @@ contract UniswapV2SpellV1 is WhitelistSpell {
         address wstaking
     ) external {
         address lp = getAndApprovePair(tokenA, tokenB);
-        (, address collToken, uint256 collId, ) = bank.getCurrentPositionInfo();
+        (, address collToken, uint256 collId, , ) = bank
+            .getCurrentPositionInfo();
         address reward = IWStakingRewards(wstaking).reward();
 
         // 1. Take out collateral
@@ -409,7 +410,8 @@ contract UniswapV2SpellV1 is WhitelistSpell {
     /// @param wstaking Wrapped staking rewards address
     function harvestWStakingRewards(address wstaking) external {
         address reward = IWStakingRewards(wstaking).reward();
-        (, address collToken, uint256 collId, ) = bank.getCurrentPositionInfo();
+        (, address collToken, uint256 collId, , ) = bank
+            .getCurrentPositionInfo();
         address lp = IWStakingRewards(wstaking).getUnderlyingToken(collId);
         require(whitelistedLpTokens[lp], 'lp token not whitelisted');
         require(
