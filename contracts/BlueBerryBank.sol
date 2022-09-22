@@ -13,8 +13,6 @@ import './interfaces/IOracle.sol';
 import './interfaces/ISafeBox.sol';
 import './interfaces/compound/ICErc20.sol';
 
-import 'hardhat/console.sol';
-
 library BlueBerrySafeMath {
     /// @dev Computes round-up division.
     function ceilDiv(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -47,6 +45,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         address collToken; // The ERC1155 token used as collateral for this position.
         address underlyingToken;
         uint256 underlyingAmount;
+        uint256 underlyingcTokenAmount;
         uint256 collId; // The token id used as collateral.
         uint256 collateralSize; // The size of collateral token for this position.
         uint256 debtMap; // Bitmap of nonzero debt. i^th bit is set iff debt share of i^th bank is nonzero.
@@ -515,7 +514,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         else {
             risk = ((ov - pv) * 10000) / cv;
         }
-        console.log(pv, ov, cv);
     }
 
     function isLiquidatable(uint256 positionId)
@@ -615,14 +613,41 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         Position storage pos = positions[POSITION_ID];
         Bank storage bank = banks[token];
         pos.underlyingToken = token;
-        pos.underlyingAmount = amount;
+        pos.underlyingAmount += amount;
 
         IERC20(token).safeTransferFrom(pos.owner, address(this), amount);
         IERC20(token).approve(bank.safeBox, amount);
-        ISafeBox(bank.safeBox).lend(amount);
+
+        pos.underlyingcTokenAmount += ISafeBox(bank.safeBox).lend(amount);
         bank.totalLend += amount;
 
         emit Lend(POSITION_ID, msg.sender, token, amount);
+    }
+
+    function withdrawLend(address token, uint256 amount)
+        external
+        override
+        inExec
+        poke(token)
+    {
+        Position storage pos = positions[POSITION_ID];
+        Bank storage bank = banks[token];
+        if (amount == type(uint256).max) {
+            amount = pos.underlyingcTokenAmount;
+        }
+
+        ISafeBox(bank.safeBox).approve(bank.safeBox, type(uint256).max);
+        uint256 wAmount = ISafeBox(bank.safeBox).withdraw(amount);
+        // TODO: Fix lending reward distribution
+        wAmount = wAmount > pos.underlyingAmount
+            ? pos.underlyingAmount
+            : wAmount;
+
+        pos.underlyingcTokenAmount -= amount;
+        pos.underlyingAmount -= wAmount;
+        bank.totalLend -= wAmount;
+
+        IERC20(token).safeTransfer(msg.sender, wAmount);
     }
 
     /// @dev Borrow tokens from that bank. Must only be called while under execution.

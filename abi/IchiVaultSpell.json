@@ -511,6 +511,11 @@
         "internalType": "uint256",
         "name": "amountLpWithdraw",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountUWithdraw",
+        "type": "uint256"
       }
     ],
     "name": "withdraw",
@@ -538,6 +543,11 @@
       {
         "internalType": "uint256",
         "name": "amountLpWithdraw",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountUWithdraw",
         "type": "uint256"
       }
     ],

@@ -87,6 +87,12 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
         }
     }
 
+    function doWithdraw(address token, uint256 amount) internal {
+        if (amount > 0) {
+            bank.withdrawLend(token, amount);
+        }
+    }
+
     /**
      * @dev Internal call to borrow tokens from the bank on behalf of the current executor.
      * @param token The token to borrow from the bank.

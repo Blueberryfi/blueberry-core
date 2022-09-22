@@ -1185,6 +1185,11 @@
       },
       {
         "internalType": "uint256",
+        "name": "underlyingcTokenAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "collId",
         "type": "uint256"
       },
@@ -1501,6 +1506,24 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawLend",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

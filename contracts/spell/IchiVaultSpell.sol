@@ -125,7 +125,8 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
     function withdrawInternal(
         address token,
         uint256 amountRepay,
-        uint256 amountLpWithdraw
+        uint256 amountLpWithdraw,
+        uint256 amountUWithdraw
     ) internal {
         IICHIVault vault = IICHIVault(vaults[token]);
         // 2. Remove Liquidity - Withdraw from ICHI Vault
@@ -165,10 +166,13 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
             abi.encode(address(this))
         );
 
-        // 6. Repay
+        // 6. Withdraw isolated collateral from Bank
+        doWithdraw(token, amountUWithdraw);
+
+        // 7. Repay
         doRepay(token, amountRepay);
 
-        // 7. Refund
+        // 8. Refund
         doRefund(token);
     }
 
@@ -178,26 +182,29 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
      * @param lpTakeAmt Amount of ICHI Vault LP token to take out from Bank
      * @param amountRepay Amount to repay the loan
      * @param amountLpWithdraw Amount of ICHI Vault LP to withdraw from ICHI Vault
+     * @param amountUWithdraw Amount of Isolated collateral to withdraw from Compound
      */
     function withdraw(
         address token,
         uint256 lpTakeAmt,
         uint256 amountRepay,
-        uint256 amountLpWithdraw
+        uint256 amountLpWithdraw,
+        uint256 amountUWithdraw
     ) external {
         IICHIVault vault = IICHIVault(vaults[token]);
 
         // 1. Take out collateral
         doTakeCollateral(address(vault), lpTakeAmt);
 
-        withdrawInternal(token, amountRepay, amountLpWithdraw);
+        withdrawInternal(token, amountRepay, amountLpWithdraw, amountUWithdraw);
     }
 
     function withdrawFarm(
         address token,
         uint256 lpTakeAmt,
         uint256 amountRepay,
-        uint256 amountLpWithdraw
+        uint256 amountLpWithdraw,
+        uint256 amountUWithdraw
     ) external {
         address vault = vaults[token];
         (, address collToken, uint256 collId, , ) = bank
@@ -216,7 +223,7 @@ contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
         wIchiFarm.burn(collId, lpTakeAmt);
 
         // 2-8. remove liquidity
-        withdrawInternal(token, amountRepay, amountLpWithdraw);
+        withdrawInternal(token, amountRepay, amountLpWithdraw, amountUWithdraw);
 
         // 9. Refund sushi
         doRefund(ICHI);

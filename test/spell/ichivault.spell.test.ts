@@ -223,17 +223,20 @@ describe('ICHI Angel Vaults Spell', () => {
 	})
 	it("should be able to withdraw USDC", async () => {
 		const iface = new ethers.utils.Interface(SpellABI);
+		const beforeBalance = await usdc.balanceOf(admin.address);
 		await bank.execute(
 			1,
 			spell.address,
 			iface.encodeFunctionData("withdraw", [
 				USDC, // ICHI vault lp token is collateral
 				ethers.constants.MaxUint256,	// Amount of werc20
-				// utils.parseUnits('50', 6),	// repay amount
-				BigNumber.from('50000001'),
+				ethers.constants.MaxUint256,  // Amount of 
+				0,
 				ethers.constants.MaxUint256,
 			])
 		)
+		const afterBalance = await usdc.balanceOf(admin.address);
+		console.log('Balance Change:', afterBalance.sub(beforeBalance));
 		await safeBox.withdraw(utils.parseUnits("10000", 6));
 	})
 
@@ -274,6 +277,7 @@ describe('ICHI Angel Vaults Spell', () => {
 				ethers.constants.MaxUint256,	// Amount of werc20
 				utils.parseUnits('10', 6),	// repay amount
 				0,
+				utils.parseUnits('100', 6)
 			])
 		)
 		await safeBox.withdraw(utils.parseUnits("10000", 6));

@@ -104,12 +104,18 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
         ctokenAmount = _deposit(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public nonReentrant {
+    function withdraw(uint256 amount)
+        public
+        override
+        nonReentrant
+        returns (uint256 withdrawAmount)
+    {
         _burn(msg.sender, amount);
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         require(cToken.redeem(amount) == 0, '!redeem');
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
-        uToken.safeTransfer(msg.sender, uBalanceAfter - uBalanceBefore);
+        withdrawAmount = uBalanceAfter - uBalanceBefore;
+        uToken.safeTransfer(msg.sender, withdrawAmount);
     }
 
     function claim(uint256 totalAmount, bytes32[] memory proof)
