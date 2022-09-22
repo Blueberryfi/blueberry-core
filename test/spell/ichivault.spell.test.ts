@@ -249,7 +249,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			iface.encodeFunctionData("depositFarm", [
 				USDC,
 				utils.parseUnits('100', 6),
-				utils.parseUnits('10', 6),
+				utils.parseUnits('200', 6),
 				ICHI_VAULT_PID // ICHI/USDC Vault Pool Id
 			])
 		)
@@ -275,9 +275,9 @@ describe('ICHI Angel Vaults Spell', () => {
 			iface.encodeFunctionData("withdrawFarm", [
 				USDC, // ICHI vault lp token is collateral
 				ethers.constants.MaxUint256,	// Amount of werc20
-				utils.parseUnits('10', 6),	// repay amount
+				ethers.constants.MaxUint256,  // Amount of 
 				0,
-				utils.parseUnits('100', 6)
+				ethers.constants.MaxUint256,
 			])
 		)
 		await safeBox.withdraw(utils.parseUnits("10000", 6));
