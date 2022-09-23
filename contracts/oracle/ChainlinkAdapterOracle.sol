@@ -16,7 +16,6 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
         address indexed token,
         address indexed remappedToken
     );
-    event SetRemappedTokenDecimal(address indexed token, uint8 decimal);
 
     // Chainlink denominations
     // (source: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/Denominations.sol)
