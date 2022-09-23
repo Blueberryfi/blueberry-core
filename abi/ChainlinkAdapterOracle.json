@@ -58,25 +58,6 @@
         "type": "address"
       },
       {
-        "indexed": false,
-        "internalType": "uint8",
-        "name": "decimal",
-        "type": "uint8"
-      }
-    ],
-    "name": "SetRemappedTokenDecimal",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
         "indexed": true,
         "internalType": "address",
         "name": "remappedToken",
