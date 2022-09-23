@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
-import { AggregatorOracle, BandAdapterOracle, ChainlinkAdapterOracle } from '../../typechain-types';
+import { AggregatorOracle, BandAdapterOracle, ChainlinkAdapterOracle, CoreOracle, UniswapV3AdapterOracle } from '../../typechain-types';
 
 async function main(): Promise<void> {
 	// Band Adapter Oracle
@@ -34,7 +34,25 @@ async function main(): Promise<void> {
 		[bandOracle.address, chainlinkOracle.address]
 	);
 
+	// Uni V3 Adapter Oracle
+	const UniswapV3AdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV3AdapterOracle);
+	const uniV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(aggregatorOracle.address);
+	await uniV3Oracle.deployed();
+	console.log('Uni V3 Oracle Address:', uniV3Oracle.address);
 
+	await uniV3Oracle.setPoolsStable([ADDRESS.ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
+	await uniV3Oracle.setTimeAgos([ADDRESS.ICHI], [10]); // 10s ago
+
+	// Core Oracle
+	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
+	const coreOracle = <CoreOracle>await CoreOracle.deploy();
+	await coreOracle.deployed();
+	console.log('Core Oracle Address:', coreOracle.address);
+
+	await coreOracle.setRoute(
+		[ADDRESS.USDC, ADDRESS.ICHI],
+		[aggregatorOracle.address, uniV3Oracle.address]
+	);
 }
 
 main()

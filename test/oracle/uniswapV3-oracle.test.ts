@@ -42,8 +42,8 @@ describe('Uniswap V3 Oracle', () => {
     );
     await uniswapV3Oracle.setTimeAgos(
       [ADDRESS.UNI, ADDRESS.ICHI],
-      [600, 600]
-    ); // timeAgo - 10 mins
+      [10, 10] // timeAgo - 10 s
+    );
   });
 
   it('$UNI Price', async () => {
