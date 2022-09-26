@@ -638,7 +638,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
 
         ISafeBox(bank.safeBox).approve(bank.safeBox, type(uint256).max);
         uint256 wAmount = ISafeBox(bank.safeBox).withdraw(amount);
-        // TODO: Fix lending reward distribution
+
         wAmount = wAmount > pos.underlyingAmount
             ? pos.underlyingAmount
             : wAmount;

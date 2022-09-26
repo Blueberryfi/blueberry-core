@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
-import { AggregatorOracle, BandAdapterOracle, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, UniswapV3AdapterOracle } from '../../typechain-types';
+import { AggregatorOracle, BandAdapterOracle, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, ProxyOracle, UniswapV3AdapterOracle } from '../../typechain-types';
 
 async function main(): Promise<void> {
 	// Band Adapter Oracle
@@ -64,6 +64,12 @@ async function main(): Promise<void> {
 		[ADDRESS.ICHI_VAULT_USDC],
 		[ichiLpOracle.address]
 	);
+
+	// Proxy Oracle
+	const ProxyOracle = await ethers.getContractFactory(CONTRACT_NAMES.ProxyOracle);
+	const proxyOracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
+	await proxyOracle.deployed();
+	console.log('Proxy Oracle Address:', proxyOracle.address);
 }
 
 main()
