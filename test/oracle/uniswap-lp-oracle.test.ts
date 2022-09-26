@@ -20,7 +20,7 @@ describe('Oracle / Uniswap LP Oracle', () => {
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
   before(async () => {
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy();
+    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setMaxDelayTimes(

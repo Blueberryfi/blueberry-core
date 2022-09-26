@@ -32,7 +32,7 @@ describe('Ichi Vault Lp Oracle', () => {
 		await coreOracle.deployed();
 
 		const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-		chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy();
+		chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
 		await chainlinkAdapterOracle.deployed();
 		await chainlinkAdapterOracle.setMaxDelayTimes([ADDRESS.USDC], [86400]);
 

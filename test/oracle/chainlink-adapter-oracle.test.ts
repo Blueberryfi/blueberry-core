@@ -14,7 +14,7 @@ chai.use(roughlyNear);
 
 const OneDay = 86400;
 
-describe('Base Oracle / Chainlink Adapter Oracle', () => {
+describe('Chainlink Adapter Oracle', () => {
 	let admin: SignerWithAddress;
 	let user2: SignerWithAddress;
 	let chainlinkAdapterOracle: ChainlinkAdapterOracle;
@@ -26,7 +26,7 @@ describe('Base Oracle / Chainlink Adapter Oracle', () => {
 
 	beforeEach(async () => {
 		const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-		chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy();
+		chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
 		await chainlinkAdapterOracle.deployed();
 
 		await chainlinkAdapterOracle.setMaxDelayTimes(
