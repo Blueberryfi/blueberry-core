@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
-import { AggregatorOracle, BandAdapterOracle, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, ProxyOracle, UniswapV3AdapterOracle } from '../../typechain-types';
+import { AggregatorOracle, BandAdapterOracle, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, ProxyOracle, SafeBox, UniswapV3AdapterOracle } from '../../typechain-types';
 
 async function main(): Promise<void> {
 	// Band Adapter Oracle

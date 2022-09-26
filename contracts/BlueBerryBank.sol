@@ -49,7 +49,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         uint256 collId; // The token id used as collateral.
         uint256 collateralSize; // The size of collateral token for this position.
         uint256 debtMap; // Bitmap of nonzero debt. i^th bit is set iff debt share of i^th bank is nonzero.
-        uint256 ov; // Opening value of position
         mapping(address => uint256) debtShareOf; // The debt share for each token.
     }
 

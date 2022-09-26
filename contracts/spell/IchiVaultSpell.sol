@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
 
 import './WhitelistSpell.sol';
 import '../libraries/UniV3/TickMath.sol';
@@ -14,7 +13,7 @@ import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import '../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol';
 
-contract IchiVaultSpell is WhitelistSpell, Ownable, IUniswapV3SwapCallback {
+contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
     using BBMath for uint256;
     using SafeERC20 for IERC20;
 

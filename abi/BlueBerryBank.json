@@ -1202,11 +1202,6 @@
         "internalType": "uint256",
         "name": "debtMap",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "ov",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",

@@ -3,18 +3,16 @@
 pragma solidity ^0.8.9;
 
 import './BasicSpell.sol';
-import '../Governable.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 
-contract WhitelistSpell is BasicSpell, Governable {
+contract WhitelistSpell is BasicSpell, Ownable {
     mapping(address => bool) public whitelistedLpTokens; // mapping from lp token to whitelist status
 
     constructor(
         IBank _bank,
         address _werc20,
         address _weth
-    ) BasicSpell(_bank, _werc20, _weth) {
-        __Governable__init();
-    }
+    ) BasicSpell(_bank, _werc20, _weth) {}
 
     /// @dev Set whitelist LP token statuses for spell
     /// @param lpTokens LP tokens to set whitelist statuses
@@ -22,7 +20,7 @@ contract WhitelistSpell is BasicSpell, Governable {
     function setWhitelistLPTokens(
         address[] calldata lpTokens,
         bool[] calldata statuses
-    ) external onlyGov {
+    ) external onlyOwner {
         require(
             lpTokens.length == statuses.length,
             'lpTokens & statuses length mismatched'
