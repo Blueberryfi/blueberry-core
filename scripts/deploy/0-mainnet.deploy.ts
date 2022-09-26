@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constants';
-import { AggregatorOracle, BandAdapterOracle, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, ProxyOracle, SafeBox, UniswapV3AdapterOracle } from '../../typechain-types';
+import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, ProxyOracle, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
 
 async function main(): Promise<void> {
 	// Band Adapter Oracle
@@ -70,6 +70,32 @@ async function main(): Promise<void> {
 	const proxyOracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
 	await proxyOracle.deployed();
 	console.log('Proxy Oracle Address:', proxyOracle.address);
+
+	// Bank
+	const Bank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
+	const bank = <BlueBerryBank>await Bank.deploy();
+	await bank.deployed();
+	await bank.initialize(proxyOracle.address, 2000);
+
+	// WERC20 of Ichi Vault Lp
+	const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
+	const werc20 = <WERC20>await WERC20.deploy();
+	await werc20.deployed();
+
+	// WIchiFarm
+	const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
+	const wichiFarm = <WIchiFarm>await WIchiFarm.deploy(ADDRESS.ICHI, ADDRESS.ICHI_FARMING);
+	await wichiFarm.deployed();
+
+	// Ichi Vault Spell
+	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
+	const ichiSpell = <IchiVaultSpell>await IchiVaultSpell.deploy(
+		bank.address,
+		werc20.address,
+		ADDRESS.WETH,
+		wichiFarm.address
+	)
+	await ichiSpell.deployed();
 }
 
 main()
