@@ -58,10 +58,10 @@ const config: HardhatUserConfig = {
       url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
       timeout: 200000,
     },
-    rinkeby: {
+    goerli: {
       accounts: [deployAccountKey],
-      chainId: 4,
-      url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemyapi}`,
+      chainId: 5,
+      url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
       timeout: 200000,
     },
   },
