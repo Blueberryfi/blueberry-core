@@ -1,33 +1,27 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { ADDRESS, ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constants';
-import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, ProxyOracle, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constants';
+import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, ProxyOracle, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 
 async function main(): Promise<void> {
-
-	const ichiVault = <IICHIVault>await ethers.getContractAt("IICHIVault", ADDRESS_GOERLI.ICHI_VAULT_USDC);
-	console.log(await ichiVault.token0(), await ichiVault.token1());
-	console.log(await ichiVault.allowToken0(), await ichiVault.allowToken1());
-	return;
-
-	// Band Adapter Oracle
-	const BandAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.BandAdapterOracle);
-	const bandOracle = <BandAdapterOracle>await BandAdapterOracle.deploy(ADDRESS.BandStdRef);
-	await bandOracle.deployed();
-	console.log("Band Oracle Address:", bandOracle.address);
-
-	console.log('Setting up USDC config on Band Oracle\nMax Delay Times: 11100s, Symbol: USDC');
-	await bandOracle.setMaxDelayTimes([ADDRESS.USDC], [11100]);
-	await bandOracle.setSymbols([ADDRESS.USDC], ['USDC']);
-
 	// Chainlink Adapter Oracle
+	const MockFeedRegistry = await ethers.getContractFactory(CONTRACT_NAMES.MockFeedRegistry);
+	const feedRegistry = <MockFeedRegistry>await MockFeedRegistry.deploy();
+	await feedRegistry.deployed();
+	console.log('Chainlink Feed Registry:', feedRegistry.address);
+	await feedRegistry.setFeed(
+		ADDRESS_GOERLI.SupplyToken,
+		ADDRESS_GOERLI.CHAINLINK_USD,
+		'0xAb5c49580294Aff77670F839ea425f5b78ab3Ae7' // USDC/USD Data Feed
+	);
+
 	const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-	const chainlinkOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
+	const chainlinkOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(feedRegistry.address);
 	await chainlinkOracle.deployed();
 	console.log('Chainlink Oracle Address:', chainlinkOracle.address);
 
 	console.log('Setting up USDC config on Chainlink Oracle\nMax Delay Times: 129900s');
-	await chainlinkOracle.setMaxDelayTimes([ADDRESS.USDC], [129900]);
+	await chainlinkOracle.setMaxDelayTimes([ADDRESS_GOERLI.SupplyToken], [129900]);
 
 	// Aggregator Oracle
 	const AggregatorOracle = await ethers.getContractFactory(CONTRACT_NAMES.AggregatorOracle);
@@ -35,9 +29,9 @@ async function main(): Promise<void> {
 	await aggregatorOracle.deployed();
 
 	await aggregatorOracle.setPrimarySources(
-		ADDRESS.USDC,
+		ADDRESS_GOERLI.SupplyToken,
 		BigNumber.from(10).pow(16).mul(105), // 5%
-		[bandOracle.address, chainlinkOracle.address]
+		[chainlinkOracle.address]
 	);
 
 	// Uni V3 Adapter Oracle
@@ -46,8 +40,8 @@ async function main(): Promise<void> {
 	await uniV3Oracle.deployed();
 	console.log('Uni V3 Oracle Address:', uniV3Oracle.address);
 
-	await uniV3Oracle.setPoolsStable([ADDRESS.ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
-	await uniV3Oracle.setTimeAgos([ADDRESS.ICHI], [10]); // 10s ago
+	await uniV3Oracle.setPoolsStable([ADDRESS_GOERLI.BaseToken], [ADDRESS_GOERLI.UNI_V3_ICHI_USDC]);
+	await uniV3Oracle.setTimeAgos([ADDRESS_GOERLI.BaseToken], [10]); // 10s ago
 
 	// Core Oracle
 	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -56,7 +50,7 @@ async function main(): Promise<void> {
 	console.log('Core Oracle Address:', coreOracle.address);
 
 	await coreOracle.setRoute(
-		[ADDRESS.USDC, ADDRESS.ICHI],
+		[ADDRESS_GOERLI.SupplyToken, ADDRESS_GOERLI.BaseToken],
 		[aggregatorOracle.address, uniV3Oracle.address]
 	);
 
@@ -67,7 +61,7 @@ async function main(): Promise<void> {
 	console.log('Ichi Lp Oracle Address:', coreOracle.address);
 
 	await coreOracle.setRoute(
-		[ADDRESS.ICHI_VAULT_USDC],
+		[ADDRESS_GOERLI.ICHI_VAULT_USDC],
 		[ichiLpOracle.address]
 	);
 
@@ -82,26 +76,47 @@ async function main(): Promise<void> {
 	const bank = <BlueBerryBank>await Bank.deploy();
 	await bank.deployed();
 	await bank.initialize(proxyOracle.address, 2000);
+	console.log('Bank:', bank.address);
 
 	// WERC20 of Ichi Vault Lp
 	const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
 	const werc20 = <WERC20>await WERC20.deploy();
 	await werc20.deployed();
+	console.log('WERC20:', werc20.address);
 
 	// WIchiFarm
 	const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-	const wichiFarm = <WIchiFarm>await WIchiFarm.deploy(ADDRESS.ICHI, ADDRESS.ICHI_FARMING);
+	const wichiFarm = <WIchiFarm>await WIchiFarm.deploy(ADDRESS_GOERLI.BaseToken, ethers.constants.AddressZero);
 	await wichiFarm.deployed();
+	console.log('WIchiFarm:', wichiFarm.address);
 
 	// Ichi Vault Spell
 	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
 	const ichiSpell = <IchiVaultSpell>await IchiVaultSpell.deploy(
 		bank.address,
 		werc20.address,
-		ADDRESS.WETH,
+		ADDRESS_GOERLI.WETH,
 		wichiFarm.address
 	)
 	await ichiSpell.deployed();
+	console.log('Ichi Spell:', ichiSpell.address);
+
+	// SafeBox
+	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
+	const safeBox = <SafeBox>await SafeBox.deploy(
+		ADDRESS_GOERLI.SupplyToken,
+		"Interest Bearing USDC",
+		"ibUSDC"
+	)
+	await safeBox.deployed();
+	console.log('SafeBox:', safeBox.address);
+
+	// Add Bank
+	await bank.addBank(
+		ADDRESS_GOERLI.SupplyToken,
+		ADDRESS_GOERLI.bSupplyToken,
+		safeBox.address
+	)
 }
 
 main()
