@@ -1,14 +1,9 @@
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-waffle';
-import '@openzeppelin/hardhat-upgrades';
+import '@nomiclabs/hardhat-etherscan';
 import 'solidity-coverage';
 import 'hardhat-abi-exporter';
 import 'hardhat-contract-sizer';
-import 'hardhat-deploy';
-import 'hardhat-docgen'
-import '@hardhat-docgen/core'
-import '@hardhat-docgen/markdown'
 import { HardhatUserConfig } from 'hardhat/config';
 import dotenv from 'dotenv';
 
@@ -56,13 +51,10 @@ const config: HardhatUserConfig = {
       accounts: [deployAccountKey],
       chainId: 1,
       url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
-      timeout: 200000,
     },
     goerli: {
       accounts: [deployAccountKey],
-      chainId: 5,
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
-      timeout: 200000,
     },
   },
   abiExporter: {
@@ -77,12 +69,6 @@ const config: HardhatUserConfig = {
     disambiguatePaths: false,
     runOnCompile: true,
     strict: false,
-  },
-  docgen: {
-    path: './docs',
-    clear: true,
-    runOnCompile: false,
-    except: ['/test/*', '/mock/*', '/hardhat-proxy/*'],
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY
