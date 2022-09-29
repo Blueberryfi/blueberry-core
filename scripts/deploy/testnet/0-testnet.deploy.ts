@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constants';
 import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, ProxyOracle, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 
@@ -27,6 +27,7 @@ async function main(): Promise<void> {
 	const AggregatorOracle = await ethers.getContractFactory(CONTRACT_NAMES.AggregatorOracle);
 	const aggregatorOracle = <AggregatorOracle>await AggregatorOracle.deploy();
 	await aggregatorOracle.deployed();
+	console.log('Aggregator Oracle Address:', aggregatorOracle.address);
 
 	await aggregatorOracle.setPrimarySources(
 		ADDRESS_GOERLI.SupplyToken,
@@ -58,7 +59,7 @@ async function main(): Promise<void> {
 	const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
 	const ichiLpOracle = <IchiLpOracle>await IchiLpOracle.deploy(coreOracle.address);
 	await ichiLpOracle.deployed();
-	console.log('Ichi Lp Oracle Address:', coreOracle.address);
+	console.log('Ichi Lp Oracle Address:', ichiLpOracle.address);
 
 	await coreOracle.setRoute(
 		[ADDRESS_GOERLI.ICHI_VAULT_USDC],
@@ -73,9 +74,11 @@ async function main(): Promise<void> {
 
 	// Bank
 	const Bank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-	const bank = <BlueBerryBank>await Bank.deploy();
-	await bank.deployed();
-	await bank.initialize(proxyOracle.address, 2000);
+	const bank = <BlueBerryBank>await upgrades.deployProxy(Bank, [
+		proxyOracle.address, 2000
+	], {
+		unsafeAllow: ["delegatecall"]
+	})
 	console.log('Bank:', bank.address);
 
 	// WERC20 of Ichi Vault Lp
@@ -86,7 +89,7 @@ async function main(): Promise<void> {
 
 	// WIchiFarm
 	const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-	const wichiFarm = <WIchiFarm>await WIchiFarm.deploy(ADDRESS_GOERLI.BaseToken, ethers.constants.AddressZero);
+	const wichiFarm = <WIchiFarm>await WIchiFarm.deploy(ADDRESS_GOERLI.BaseToken, ADDRESS_GOERLI.ICHI_FARMING);
 	await wichiFarm.deployed();
 	console.log('WIchiFarm:', wichiFarm.address);
 
@@ -100,11 +103,12 @@ async function main(): Promise<void> {
 	)
 	await ichiSpell.deployed();
 	console.log('Ichi Spell:', ichiSpell.address);
+	await bank.setWhitelistSpells([ichiSpell.address], [true]);
 
 	// SafeBox
 	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 	const safeBox = <SafeBox>await SafeBox.deploy(
-		ADDRESS_GOERLI.SupplyToken,
+		ADDRESS_GOERLI.bSupplyToken,
 		"Interest Bearing USDC",
 		"ibUSDC"
 	)

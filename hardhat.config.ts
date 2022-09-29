@@ -4,6 +4,7 @@ import '@nomiclabs/hardhat-etherscan';
 import 'solidity-coverage';
 import 'hardhat-abi-exporter';
 import 'hardhat-contract-sizer';
+import '@openzeppelin/hardhat-upgrades'
 import { HardhatUserConfig } from 'hardhat/config';
 import dotenv from 'dotenv';
 
