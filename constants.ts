@@ -29,10 +29,6 @@ export enum CONTRACT_NAMES {
 	AggregatorOracle = "AggregatorOracle",
 	IchiLpOracle = "IchiLpOracle",
 
-	// Uniswap
-	MockUniswapV2Factory = 'MockUniswapV2Factory',
-	MockUniswapV2Router02 = 'MockUniswapV2Router02',
-
 	// Protocol
 	BlueBerryBank = 'BlueBerryBank',
 	SafeBox = 'SafeBox',
