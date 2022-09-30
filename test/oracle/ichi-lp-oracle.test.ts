@@ -5,7 +5,6 @@ import { ADDRESS, CONTRACT_NAMES } from '../../constants';
 import {
 	SimpleOracle,
 	CoreOracle,
-	ProxyOracle,
 	IchiLpOracle,
 	IICHIVault,
 	ChainlinkAdapterOracle,

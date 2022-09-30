@@ -20,7 +20,6 @@ export enum CONTRACT_NAMES {
 	ChainlinkAdapterOracle = "ChainlinkAdapterOracle",
 	SimpleOracle = "SimpleOracle",
 	CoreOracle = "CoreOracle",
-	ProxyOracle = "ProxyOracle",
 	UniswapV2Oracle = "UniswapV2Oracle",
 	BalancerPairOracle = "BalancerPairOracle",
 	ERC20KP3ROracle = "ERC20KP3ROracle",

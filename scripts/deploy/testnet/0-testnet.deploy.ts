@@ -2,7 +2,7 @@ import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constants';
 import SpellABI from '../../../abi/IchiVaultSpell.json';
-import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, ProxyOracle, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
+import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 
 async function main(): Promise<void> {
 	// const iface = new ethers.utils.Interface(SpellABI);
@@ -71,32 +71,16 @@ async function main(): Promise<void> {
 	await coreOracle.deployed();
 	console.log('Core Oracle Address:', coreOracle.address);
 
-	await coreOracle.setRoute(
-		[ADDRESS_GOERLI.SupplyToken, ADDRESS_GOERLI.BaseToken],
-		[aggregatorOracle.address, uniV3Oracle.address]
-	);
-
 	// Ichi Lp Oracle
 	const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
 	const ichiLpOracle = <IchiLpOracle>await IchiLpOracle.deploy(coreOracle.address);
 	await ichiLpOracle.deployed();
 	console.log('Ichi Lp Oracle Address:', ichiLpOracle.address);
 
-	await coreOracle.setRoute(
-		[ADDRESS_GOERLI.ICHI_VAULT_USDC],
-		[ichiLpOracle.address]
-	);
-
-	// Proxy Oracle
-	const ProxyOracle = await ethers.getContractFactory(CONTRACT_NAMES.ProxyOracle);
-	const proxyOracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
-	await proxyOracle.deployed();
-	console.log('Proxy Oracle Address:', proxyOracle.address);
-
 	// Bank
 	const Bank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
 	const bank = <BlueBerryBank>await upgrades.deployProxy(Bank, [
-		proxyOracle.address, 2000
+		coreOracle.address, 2000
 	], {
 		unsafeAllow: ["delegatecall"]
 	})
@@ -114,23 +98,25 @@ async function main(): Promise<void> {
 	await wichiFarm.deployed();
 	console.log('WIchiFarm:', wichiFarm.address);
 
-	await proxyOracle.setWhitelistERC1155([werc20.address, ADDRESS_GOERLI.ICHI_VAULT_USDC], true);
-	await proxyOracle.setTokenFactors(
+	await coreOracle.setWhitelistERC1155([werc20.address, ADDRESS_GOERLI.ICHI_VAULT_USDC], true);
+	await coreOracle.setTokenSettings(
 		[ADDRESS_GOERLI.SupplyToken, ADDRESS_GOERLI.BaseToken, ADDRESS_GOERLI.ICHI_VAULT_USDC],
 		[{
-			borrowFactor: 10000,
-			collateralFactor: 10000,
-			liqThreshold: 8000
+			liqThreshold: 8000,
+			route: aggregatorOracle.address
 		}, {
-			borrowFactor: 10000,
-			collateralFactor: 10000,
-			liqThreshold: 9000
+			liqThreshold: 9000,
+			route: uniV3Oracle.address,
 		}, {
-			borrowFactor: 10000,
-			collateralFactor: 10000,
-			liqThreshold: 10000
+			liqThreshold: 10000,
+			route: ichiLpOracle.address
 		}]
 	)
+	await coreOracle.setRoute(
+		[ADDRESS_GOERLI.SupplyToken, ADDRESS_GOERLI.BaseToken],
+		[aggregatorOracle.address, uniV3Oracle.address]
+	);
+
 	// Ichi Vault Spell
 	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
 	const ichiSpell = <IchiVaultSpell>await IchiVaultSpell.deploy(

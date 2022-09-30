@@ -10,7 +10,6 @@ import {
 	IchiVaultSpell,
 	IUniswapV2Router02,
 	IWETH,
-	ProxyOracle,
 	SafeBox,
 	SimpleOracle,
 	IchiLpOracle,
@@ -32,7 +31,7 @@ chai.use(solidity)
 chai.use(near)
 chai.use(roughlyNear)
 
-const CUSDC = ADDRESS.cyUSDC;			// Cream Finance / crDAI
+const CUSDC = ADDRESS.cyUSDC;			// IronBank cyUSDC
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const ICHI = ADDRESS.ICHI;
@@ -50,8 +49,7 @@ describe('ICHI Angel Vaults Spell', () => {
 	let werc20: WERC20;
 	let simpleOracle: SimpleOracle;
 	let ichiOracle: IchiLpOracle;
-	let coreOracle: CoreOracle;
-	let oracle: ProxyOracle;
+	let oracle: CoreOracle;
 	let spell: IchiVaultSpell;
 	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
@@ -85,36 +83,24 @@ describe('ICHI Angel Vaults Spell', () => {
 		await ichiOracle.deployed();
 
 		const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-		coreOracle = <CoreOracle>await CoreOracle.deploy();
-		await coreOracle.deployed();
-
-		const ProxyOracle = await ethers.getContractFactory(CONTRACT_NAMES.ProxyOracle);
-		oracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
+		oracle = <CoreOracle>await CoreOracle.deploy();
 		await oracle.deployed();
 
 		await oracle.setWhitelistERC1155([werc20.address, ICHI_VAULT], true);
-		await coreOracle.setRoute(
-			[WETH, USDC, ICHI, ICHI_VAULT],
-			[simpleOracle.address, simpleOracle.address, simpleOracle.address, ichiOracle.address]
-		)
-		await oracle.setTokenFactors(
+		await oracle.setTokenSettings(
 			[WETH, USDC, ICHI, ICHI_VAULT],
 			[{
-				borrowFactor: 10000,
-				collateralFactor: 10000,
-				liqThreshold: 9000
+				liqThreshold: 9000,
+				route: simpleOracle.address,
 			}, {
-				borrowFactor: 10000,
-				collateralFactor: 10000,
-				liqThreshold: 8000
+				liqThreshold: 8000,
+				route: simpleOracle.address,
 			}, {
-				borrowFactor: 10000,
-				collateralFactor: 10000,
-				liqThreshold: 9000
+				liqThreshold: 9000,
+				route: simpleOracle.address,
 			}, {
-				borrowFactor: 10000,
-				collateralFactor: 10000,
-				liqThreshold: 10000
+				liqThreshold: 10000,
+				route: ichiOracle.address,
 			}]
 		)
 
