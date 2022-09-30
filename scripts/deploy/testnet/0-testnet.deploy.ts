@@ -1,9 +1,30 @@
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constants';
+import SpellABI from '../../../abi/IchiVaultSpell.json';
 import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, ProxyOracle, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 
 async function main(): Promise<void> {
+	// const iface = new ethers.utils.Interface(SpellABI);
+	// const banka = await ethers.getContractAt(CONTRACT_NAMES.BlueBerryBank, '0x466F1FD0662aae5e3ec7f706A54E623381fC2D2d')
+	// const usdc = await ethers.getContractAt(CONTRACT_NAMES.IERC20, ADDRESS_GOERLI.SupplyToken)
+	// console.log(iface.encodeFunctionData("deposit", [
+	// 	ADDRESS_GOERLI.SupplyToken,
+	// 	utils.parseUnits('100', 18),
+	// 	utils.parseUnits('300', 18)
+	// ]));
+	// // await usdc.approve(banka.address, ethers.constants.MaxUint256);
+	// await banka.execute(
+	// 	0,
+	// 	'0x579a39219CF6258a043Af80d09ddcfA6ae9160E2',
+	// 	iface.encodeFunctionData("deposit", [
+	// 		ADDRESS_GOERLI.SupplyToken,
+	// 		utils.parseUnits('100', 18),
+	// 		utils.parseUnits('300', 18)
+	// 	])
+	// )
+	// return;
+
 	// Chainlink Adapter Oracle
 	const MockFeedRegistry = await ethers.getContractFactory(CONTRACT_NAMES.MockFeedRegistry);
 	const feedRegistry = <MockFeedRegistry>await MockFeedRegistry.deploy();
@@ -93,6 +114,23 @@ async function main(): Promise<void> {
 	await wichiFarm.deployed();
 	console.log('WIchiFarm:', wichiFarm.address);
 
+	await proxyOracle.setWhitelistERC1155([werc20.address, ADDRESS_GOERLI.ICHI_VAULT_USDC], true);
+	await proxyOracle.setTokenFactors(
+		[ADDRESS_GOERLI.SupplyToken, ADDRESS_GOERLI.BaseToken, ADDRESS_GOERLI.ICHI_VAULT_USDC],
+		[{
+			borrowFactor: 10000,
+			collateralFactor: 10000,
+			liqThreshold: 8000
+		}, {
+			borrowFactor: 10000,
+			collateralFactor: 10000,
+			liqThreshold: 9000
+		}, {
+			borrowFactor: 10000,
+			collateralFactor: 10000,
+			liqThreshold: 10000
+		}]
+	)
 	// Ichi Vault Spell
 	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
 	const ichiSpell = <IchiVaultSpell>await IchiVaultSpell.deploy(
@@ -103,6 +141,7 @@ async function main(): Promise<void> {
 	)
 	await ichiSpell.deployed();
 	console.log('Ichi Spell:', ichiSpell.address);
+	await ichiSpell.addVault(ADDRESS_GOERLI.SupplyToken, ADDRESS_GOERLI.ICHI_VAULT_USDC);
 	await bank.setWhitelistSpells([ichiSpell.address], [true]);
 
 	// SafeBox
@@ -114,8 +153,10 @@ async function main(): Promise<void> {
 	)
 	await safeBox.deployed();
 	console.log('SafeBox:', safeBox.address);
+	await safeBox.setBank(bank.address);
 
 	// Add Bank
+	await bank.setWhitelistTokens([ADDRESS_GOERLI.SupplyToken], [true])
 	await bank.addBank(
 		ADDRESS_GOERLI.SupplyToken,
 		ADDRESS_GOERLI.bSupplyToken,

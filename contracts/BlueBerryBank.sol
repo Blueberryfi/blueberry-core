@@ -231,10 +231,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             bank.totalDebt = debt;
             bank.reserve += doBorrow(token, fee);
         } else if (totalDebt != debt) {
-            // We should never reach here because CREAMv2 does not support *repayBorrowBehalf*
-            // functionality. We set bank.totalDebt = debt nonetheless to ensure consistency. But do
-            // note that if *repayBorrowBehalf* exists, an attacker can maliciously deflate debt
-            // share value and potentially make this contract stop working due to math overflow.
             bank.totalDebt = debt;
         }
     }
@@ -614,8 +610,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         pos.underlyingToken = token;
         pos.underlyingAmount += amount;
 
-        IERC20(token).safeTransferFrom(pos.owner, address(this), amount);
-        IERC20(token).approve(bank.safeBox, amount);
+        IERC20(token).safeTransferFrom(pos.owner, bank.safeBox, amount);
 
         pos.underlyingcTokenAmount += ISafeBox(bank.safeBox).lend(amount);
         bank.totalLend += amount;
@@ -800,8 +795,11 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         returns (uint256 borrowAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        borrowAmount = ISafeBox(bank.safeBox).borrow(amountCall);
+        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+        require(ICErc20(bank.cToken).borrow(amountCall) == 0, 'bad borrow');
+        uint256 balanceAfter = IERC20(token).balanceOf(address(this));
         bank.totalDebt += amountCall;
+        borrowAmount = balanceAfter - balanceBefore;
     }
 
     /**
@@ -815,8 +813,9 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         returns (uint256 repaidAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        IERC20(token).safeTransfer(bank.safeBox, amountCall);
-        uint256 newDebt = ISafeBox(bank.safeBox).repay(amountCall);
+        ICErc20 cToken = ICErc20(bank.cToken);
+        require(cToken.repayBorrow(amountCall) == 0, 'bad repay');
+        uint256 newDebt = cToken.borrowBalanceStored(address(this));
         repaidAmount = bank.totalDebt - newDebt;
         bank.totalDebt = newDebt;
     }

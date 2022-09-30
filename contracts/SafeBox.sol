@@ -50,6 +50,17 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
         root = _root;
     }
 
+    function _deposit(address account, uint256 amount)
+        internal
+        returns (uint256 ctokenAmount)
+    {
+        uint256 cBalanceBefore = cToken.balanceOf(address(this));
+        require(cToken.mint(amount) == 0, '!mint');
+        uint256 cBalanceAfter = cToken.balanceOf(address(this));
+        ctokenAmount = cBalanceAfter - cBalanceBefore;
+        _mint(account, ctokenAmount);
+    }
+
     function lend(uint256 amount)
         external
         nonReentrant
@@ -59,48 +70,12 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
         lendAmount = _deposit(msg.sender, amount);
     }
 
-    function borrow(uint256 amount)
-        external
-        nonReentrant
-        onlyBank
-        returns (uint256 borrowAmount)
-    {
-        uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        require(cToken.borrow(amount) == 0, 'bad borrow');
-        uint256 uBalanceAfter = uToken.balanceOf(address(this));
-        borrowAmount = uBalanceAfter - uBalanceBefore;
-        uToken.safeTransfer(bank, borrowAmount);
-    }
-
-    function repay(uint256 amount)
-        external
-        nonReentrant
-        onlyBank
-        returns (uint256 newDebt)
-    {
-        require(cToken.repayBorrow(amount) == 0, 'bad repay');
-        newDebt = cToken.borrowBalanceStored(address(this));
-    }
-
-    function _deposit(address account, uint256 amount)
-        internal
-        returns (uint256 ctokenAmount)
-    {
-        uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        uToken.safeTransferFrom(account, address(this), amount);
-        uint256 uBalanceAfter = uToken.balanceOf(address(this));
-        uint256 cBalanceBefore = cToken.balanceOf(address(this));
-        require(cToken.mint(uBalanceAfter - uBalanceBefore) == 0, '!mint');
-        uint256 cBalanceAfter = cToken.balanceOf(address(this));
-        ctokenAmount = cBalanceAfter - cBalanceBefore;
-        _mint(account, ctokenAmount);
-    }
-
     function deposit(uint256 amount)
         external
         nonReentrant
         returns (uint256 ctokenAmount)
     {
+        uToken.safeTransferFrom(msg.sender, address(this), amount);
         ctokenAmount = _deposit(msg.sender, amount);
     }
 
