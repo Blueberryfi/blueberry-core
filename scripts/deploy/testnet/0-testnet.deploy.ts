@@ -5,26 +5,6 @@ import SpellABI from '../../../abi/IchiVaultSpell.json';
 import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 
 async function main(): Promise<void> {
-	// const iface = new ethers.utils.Interface(SpellABI);
-	// const banka = await ethers.getContractAt(CONTRACT_NAMES.BlueBerryBank, '0x466F1FD0662aae5e3ec7f706A54E623381fC2D2d')
-	// const usdc = await ethers.getContractAt(CONTRACT_NAMES.IERC20, ADDRESS_GOERLI.SupplyToken)
-	// console.log(iface.encodeFunctionData("deposit", [
-	// 	ADDRESS_GOERLI.SupplyToken,
-	// 	utils.parseUnits('100', 18),
-	// 	utils.parseUnits('300', 18)
-	// ]));
-	// // await usdc.approve(banka.address, ethers.constants.MaxUint256);
-	// await banka.execute(
-	// 	0,
-	// 	'0x579a39219CF6258a043Af80d09ddcfA6ae9160E2',
-	// 	iface.encodeFunctionData("deposit", [
-	// 		ADDRESS_GOERLI.SupplyToken,
-	// 		utils.parseUnits('100', 18),
-	// 		utils.parseUnits('300', 18)
-	// 	])
-	// )
-	// return;
-
 	// Chainlink Adapter Oracle
 	const MockFeedRegistry = await ethers.getContractFactory(CONTRACT_NAMES.MockFeedRegistry);
 	const feedRegistry = <MockFeedRegistry>await MockFeedRegistry.deploy();
@@ -112,10 +92,6 @@ async function main(): Promise<void> {
 			route: ichiLpOracle.address
 		}]
 	)
-	await coreOracle.setRoute(
-		[ADDRESS_GOERLI.SupplyToken, ADDRESS_GOERLI.BaseToken],
-		[aggregatorOracle.address, uniV3Oracle.address]
-	);
 
 	// Ichi Vault Spell
 	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);

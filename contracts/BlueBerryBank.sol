@@ -225,7 +225,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         Bank storage bank = banks[token];
         require(bank.isListed, 'bank not exist');
         uint256 totalDebt = bank.totalDebt;
-        uint256 debt = ICErc20(bank.cToken).borrowBalanceCurrent(bank.safeBox);
+        uint256 debt = ICErc20(bank.cToken).borrowBalanceCurrent(address(this));
         if (debt > totalDebt) {
             uint256 fee = ((debt - totalDebt) * feeBps) / 10000;
             bank.totalDebt = debt;
@@ -457,6 +457,17 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         IERC20(token).safeApprove(cToken, type(uint256).max);
         allBanks.push(token);
         emit AddBank(token, cToken);
+    }
+
+    /**
+     * @dev Update safeBox address of listed bank
+     * @param token The underlying token of the bank
+     * @param safeBox The address of new SafeBox
+     */
+    function updateSafeBox(address token, address safeBox) external onlyGov {
+        Bank storage bank = banks[token];
+        require(bank.isListed, 'bank is not listed');
+        bank.safeBox = safeBox;
     }
 
     /// @dev Set the oracle smart contract address.
