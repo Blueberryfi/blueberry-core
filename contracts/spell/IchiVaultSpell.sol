@@ -74,7 +74,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
      * @param amount Amount of user's collateral (e.g USDC)
      * @param amtBorrow Amount to borrow on Compound
      */
-    function deposit(
+    function openPosition(
         address token,
         uint256 amount,
         uint256 amtBorrow
@@ -87,7 +87,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
     }
 
-    function depositFarm(
+    function openPositionFarm(
         address token,
         uint256 amount,
         uint256 amtBorrow,
@@ -121,6 +121,26 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }
 
+    /**
+     * @dev Increase isolated collateral of position
+     * @param token Isolated collateral token address
+     * @param amount Amount of token to increase position
+     */
+    function increasePosition(address token, uint256 amount) external {
+        // 1. Get user input amounts
+        doLend(token, amount);
+    }
+
+    /**
+     * @dev Reduce isolated collateral of position
+     * @param token Isolated collateral token address
+     * @param amount Amount of token to reduce position
+     */
+    function reducePosition(address token, uint256 amount) external {
+        doWithdraw(token, amount);
+        doRefund(token);
+    }
+
     function withdrawInternal(
         address token,
         uint256 amountRepay,
@@ -129,10 +149,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
     ) internal {
         IICHIVault vault = IICHIVault(vaults[token]);
         // 2. Remove Liquidity - Withdraw from ICHI Vault
-        require(
-            whitelistedLpTokens[address(vault)],
-            'lp token not whitelisted'
-        );
+        require(address(vault) != address(0), 'lp token not whitelisted');
         uint256 positionId = bank.POSITION_ID();
 
         // 2. Compute repay amount if MAX_INT is supplied (max debt)
@@ -183,7 +200,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
      * @param amountLpWithdraw Amount of ICHI Vault LP to withdraw from ICHI Vault
      * @param amountUWithdraw Amount of Isolated collateral to withdraw from Compound
      */
-    function withdraw(
+    function closePosition(
         address token,
         uint256 lpTakeAmt,
         uint256 amountRepay,
@@ -198,7 +215,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         withdrawInternal(token, amountRepay, amountLpWithdraw, amountUWithdraw);
     }
 
-    function withdrawFarm(
+    function closePositionFarm(
         address token,
         uint256 lpTakeAmt,
         uint256 amountRepay,

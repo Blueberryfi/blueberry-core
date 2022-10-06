@@ -121,16 +121,59 @@
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "lpTakeAmt",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "amtBorrow",
+        "name": "amountRepay",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountLpWithdraw",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountUWithdraw",
         "type": "uint256"
       }
     ],
-    "name": "deposit",
+    "name": "closePosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lpTakeAmt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountRepay",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountLpWithdraw",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountUWithdraw",
+        "type": "uint256"
+      }
+    ],
+    "name": "closePositionFarm",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -146,19 +189,9 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amtBorrow",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
       }
     ],
-    "name": "depositFarm",
+    "name": "increasePosition",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -242,6 +275,57 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amtBorrow",
+        "type": "uint256"
+      }
+    ],
+    "name": "openPosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amtBorrow",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      }
+    ],
+    "name": "openPositionFarm",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -252,6 +336,24 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "reducePosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -390,72 +492,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "lpTakeAmt",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountRepay",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountLpWithdraw",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountUWithdraw",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "lpTakeAmt",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountRepay",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountLpWithdraw",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountUWithdraw",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawFarm",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

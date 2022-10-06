@@ -8,6 +8,11 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 contract WhitelistSpell is BasicSpell, Ownable {
     mapping(address => bool) public whitelistedLpTokens; // mapping from lp token to whitelist status
 
+    modifier onlyWhitelistedLp(address lpToken) {
+        require(whitelistedLpTokens[lpToken], 'lp token not whitelisted');
+        _;
+    }
+
     constructor(
         IBank _bank,
         address _werc20,
