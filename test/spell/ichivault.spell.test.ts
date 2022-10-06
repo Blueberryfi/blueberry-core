@@ -175,7 +175,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.execute(
 			0,
 			spell.address,
-			iface.encodeFunctionData("deposit", [
+			iface.encodeFunctionData("openPosition", [
 				USDC,
 				utils.parseUnits('100', 6),
 				utils.parseUnits('300', 6)
@@ -213,7 +213,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.execute(
 			1,
 			spell.address,
-			iface.encodeFunctionData("withdraw", [
+			iface.encodeFunctionData("closePosition", [
 				USDC, // ICHI vault lp token is collateral
 				ethers.constants.MaxUint256,	// Amount of werc20
 				ethers.constants.MaxUint256,  // Amount of 
@@ -232,7 +232,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.execute(
 			0,
 			spell.address,
-			iface.encodeFunctionData("depositFarm", [
+			iface.encodeFunctionData("openPositionFarm", [
 				USDC,
 				utils.parseUnits('100', 6),
 				utils.parseUnits('200', 6),
@@ -258,7 +258,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.execute(
 			2,
 			spell.address,
-			iface.encodeFunctionData("withdrawFarm", [
+			iface.encodeFunctionData("closePositionFarm", [
 				USDC, // ICHI vault lp token is collateral
 				ethers.constants.MaxUint256,	// Amount of werc20
 				ethers.constants.MaxUint256,  // Amount of 
