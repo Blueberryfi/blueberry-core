@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../../constants';
-import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, ProxyOracle, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
+import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 
 async function main(): Promise<void> {
 	// Band Adapter Oracle
@@ -27,6 +27,7 @@ async function main(): Promise<void> {
 	const AggregatorOracle = await ethers.getContractFactory(CONTRACT_NAMES.AggregatorOracle);
 	const aggregatorOracle = <AggregatorOracle>await AggregatorOracle.deploy();
 	await aggregatorOracle.deployed();
+	console.log('Aggregator Oracle Address:', aggregatorOracle.address);
 
 	await aggregatorOracle.setPrimarySources(
 		ADDRESS.USDC,
@@ -58,24 +59,18 @@ async function main(): Promise<void> {
 	const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
 	const ichiLpOracle = <IchiLpOracle>await IchiLpOracle.deploy(coreOracle.address);
 	await ichiLpOracle.deployed();
-	console.log('Ichi Lp Oracle Address:', coreOracle.address);
+	console.log('Ichi Lp Oracle Address:', ichiLpOracle.address);
 
 	await coreOracle.setRoute(
 		[ADDRESS.ICHI_VAULT_USDC],
 		[ichiLpOracle.address]
 	);
 
-	// Proxy Oracle
-	const ProxyOracle = await ethers.getContractFactory(CONTRACT_NAMES.ProxyOracle);
-	const proxyOracle = <ProxyOracle>await ProxyOracle.deploy(coreOracle.address);
-	await proxyOracle.deployed();
-	console.log('Proxy Oracle Address:', proxyOracle.address);
-
 	// Bank
 	const Bank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
 	const bank = <BlueBerryBank>await Bank.deploy();
 	await bank.deployed();
-	await bank.initialize(proxyOracle.address, 2000);
+	await bank.initialize(coreOracle.address, 2000);
 
 	// WERC20 of Ichi Vault Lp
 	const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
