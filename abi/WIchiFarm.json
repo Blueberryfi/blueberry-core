@@ -138,7 +138,7 @@
     "name": "ICHI",
     "outputs": [
       {
-        "internalType": "contract IERC20",
+        "internalType": "contract IIchiV2",
         "name": "",
         "type": "address"
       }

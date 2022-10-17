@@ -5,6 +5,11 @@ pragma solidity ^0.8.9;
 interface IIchiFarm {
     function lpToken(uint256 pid) external view returns (address);
 
+    function pendingIchi(uint256 pid, address user)
+        external
+        view
+        returns (uint256);
+
     function poolInfo(uint256 pid)
         external
         view
@@ -25,4 +30,6 @@ interface IIchiFarm {
         uint256 amount,
         address to
     ) external;
+
+    function harvest(uint256 pid, address to) external;
 }

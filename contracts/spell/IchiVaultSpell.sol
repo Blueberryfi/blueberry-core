@@ -241,7 +241,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         // 2-8. remove liquidity
         withdrawInternal(token, amountRepay, amountLpWithdraw, amountUWithdraw);
 
-        // 9. Refund sushi
+        // 9. Refund ichi token
         doRefund(ICHI);
     }
 

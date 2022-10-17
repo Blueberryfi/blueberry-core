@@ -9,6 +9,7 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '../utils/BBMath.sol';
 import '../interfaces/IWIchiFarm.sol';
 import '../interfaces/IERC20Wrapper.sol';
+import '../interfaces/ichi/IIchiV2.sol';
 import '../interfaces/ichi/IIchiFarm.sol';
 
 contract WIchiFarm is
@@ -19,12 +20,13 @@ contract WIchiFarm is
 {
     using BBMath for uint256;
     using SafeERC20 for IERC20;
+    using SafeERC20 for IIchiV2;
 
-    IERC20 public immutable ICHI;
+    IIchiV2 public immutable ICHI;
     IIchiFarm public immutable ichiFarm;
 
     constructor(address _ichi, address _ichiFarm) {
-        ICHI = IERC20(_ichi);
+        ICHI = IIchiV2(_ichi);
         ichiFarm = IIchiFarm(_ichiFarm);
     }
 
@@ -113,7 +115,14 @@ contract WIchiFarm is
         }
         (uint256 pid, uint256 stIchiPerShare) = decodeId(id);
         _burn(msg.sender, id, amount);
+
+        uint256 ichiRewards = ichiFarm.pendingIchi(pid, address(this));
+        ichiFarm.harvest(pid, address(this));
         ichiFarm.withdraw(pid, amount, address(this));
+
+        // Convert Legacy ICHI to ICHI v2
+        ICHI.convertToV2(ichiRewards);
+
         address lpToken = ichiFarm.lpToken(pid);
         (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
         IERC20(lpToken).safeTransfer(msg.sender, amount);
