@@ -29,6 +29,7 @@ contract Governable is Initializable {
     /// @dev Set the pending governor, which will be the governor once accepted.
     /// @param _pendingGovernor The address to become the pending governor.
     function setPendingGovernor(address _pendingGovernor) external onlyGov {
+        require(_pendingGovernor != address(0), 'zero address');
         pendingGovernor = _pendingGovernor;
         emit SetPendingGovernor(_pendingGovernor);
     }

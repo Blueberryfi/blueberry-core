@@ -43,6 +43,7 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
     }
 
     function setBank(address _bank) external onlyOwner {
+        require(_bank != address(0), 'zero address');
         bank = _bank;
     }
 
