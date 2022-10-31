@@ -66,8 +66,11 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
         }
     }
 
-    /// @dev Return the USD based price of the given input, multiplied by 10**18.
-    /// @param _token Token address to get price of
+    /**
+     * @notice Returns the USD based price of given token, price value has 18 decimals
+     * @param _token Token address to get price of
+     * @return price USD price of token in 18 decimal
+     */
     function getPrice(address _token) external view override returns (uint256) {
         // remap token if possible
         address token = remappedTokens[_token];

@@ -129,12 +129,12 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
     ) external view override returns (uint256) {
         require(whitelistedERC1155[token], 'bad token');
         address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(id);
-        uint256 rateUnderlying = IERC20Wrapper(token).getUnderlyingRate(id);
-        uint256 amountUnderlying = (amount * rateUnderlying) / 1e18;
         TokenSetting memory tokenSetting = tokenSettings[tokenUnderlying];
         require(tokenSetting.route != address(0), 'bad underlying collateral');
-        uint256 underlyingValue = (_getPrice(tokenUnderlying) *
-            amountUnderlying) / 1e18;
+
+        // Underlying token is LP token, and it always has 18 decimals
+        // so skipped getting LP decimals
+        uint256 underlyingValue = (_getPrice(tokenUnderlying) * amount) / 1e18;
         return underlyingValue;
     }
 
@@ -170,6 +170,12 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
         collateralValue = (_getPrice(token) * amount) / 10**decimals;
     }
 
+    /**
+     * @notice Returns the Liquidation Threshold setting of collateral token.
+     * @notice 80% for volatile tokens, 90% for stablecoins
+     * @param token Underlying token address
+     * @return liqThreshold of given token
+     */
     function getLiqThreshold(address token) external view returns (uint256) {
         return tokenSettings[token].liqThreshold;
     }

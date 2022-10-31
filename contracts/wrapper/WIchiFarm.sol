@@ -66,16 +66,6 @@ contract WIchiFarm is
         return ichiFarm.lpToken(pid);
     }
 
-    /// @dev Return the conversion rate from ERC-1155 to ERC-20, multiplied by 2**112.
-    function getUnderlyingRate(uint256)
-        external
-        pure
-        override
-        returns (uint256)
-    {
-        return 2**112;
-    }
-
     /// @dev Mint ERC1155 token for the given pool id.
     /// @param pid Pool id
     /// @param amount Token amount to wrap

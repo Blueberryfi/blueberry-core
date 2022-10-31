@@ -24,16 +24,6 @@ contract WERC20 is ERC1155('WERC20'), ReentrancyGuard, IWERC20 {
         return token;
     }
 
-    /// @dev Return the conversion rate from ERC-1155 to ERC-20, multiplied by 10**18.
-    function getUnderlyingRate(uint256)
-        external
-        pure
-        override
-        returns (uint256)
-    {
-        return 1e18;
-    }
-
     /// @dev Return the underlying ERC20 balance for the user.
     /// @param token token address to get balance of
     /// @param user user address to get balance of
