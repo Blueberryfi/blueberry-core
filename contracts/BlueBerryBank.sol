@@ -453,8 +453,6 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         bank.index = uint8(allBanks.length);
         bank.cToken = cToken;
         bank.safeBox = safeBox;
-        IERC20(token).safeApprove(cToken, 0);
-        IERC20(token).safeApprove(cToken, type(uint256).max);
         allBanks.push(token);
         emit AddBank(token, cToken);
     }
@@ -542,6 +540,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         uint256 amountCall
     ) external override lock poke(debtToken) {
         require(isLiquidatable(positionId), 'position still healthy');
+        require(amountCall > 0, 'zero amount');
         Position storage pos = positions[positionId];
         (uint256 amountPaid, uint256 share) = repayInternal(
             positionId,

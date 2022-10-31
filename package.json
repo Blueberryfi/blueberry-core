@@ -19,6 +19,8 @@
     "@openzeppelin/contracts": "^4.6.0",
     "@openzeppelin/contracts-upgradeable": "^4.7.3",
     "@openzeppelin/hardhat-upgrades": "^1.19.1",
+    "@uniswap/v3-core": "^1.0.1",
+    "@uniswap/v3-periphery": "^1.4.3",
     "chai-ethers": "0.0.1",
     "standard-version": "^9.3.0",
     "ts-generator": "^0.1.1",
