@@ -43,6 +43,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
             '_remappedTokens & _maxDelayTimes length mismatched'
         );
         for (uint256 idx = 0; idx < _remappedTokens.length; idx++) {
+            require(_maxDelayTimes[idx] <= 2 days, 'too long delay time');
             maxDelayTimes[_remappedTokens[idx]] = _maxDelayTimes[idx];
             emit SetMaxDelayTime(_remappedTokens[idx], _maxDelayTimes[idx]);
         }

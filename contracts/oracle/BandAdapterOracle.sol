@@ -52,6 +52,7 @@ contract BandAdapterOracle is IBaseOracle, Ownable {
     ) external onlyOwner {
         require(tokens.length == maxDelays.length, 'length mismatch');
         for (uint256 idx = 0; idx < tokens.length; idx++) {
+            require(maxDelays[idx] <= 2 days, 'too long delay time');
             maxDelayTimes[tokens[idx]] = maxDelays[idx];
             emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
         }
