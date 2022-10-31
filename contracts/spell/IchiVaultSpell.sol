@@ -110,7 +110,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
                 collToken == address(wIchiFarm),
                 'collateral token & wmasterchef mismatched'
             );
-            bank.takeCollateral(address(wIchiFarm), collId, collSize);
+            bank.takeCollateral(collSize);
             wIchiFarm.burn(collId, collSize);
         }
 
@@ -235,7 +235,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         );
 
         // 1. Take out collateral
-        bank.takeCollateral(address(wIchiFarm), collId, lpTakeAmt);
+        bank.takeCollateral(lpTakeAmt);
         wIchiFarm.burn(collId, lpTakeAmt);
 
         // 2-8. remove liquidity

@@ -772,29 +772,27 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     }
 
     /// @dev Take some collateral back. Must only be called during execution.
-    /// @param collToken The ERC1155 token to take back.
-    /// @param collId The token id to take back.
     /// @param amount The amount of tokens to take back via transfer.
-    function takeCollateral(
-        address collToken,
-        uint256 collId,
-        uint256 amount
-    ) external override inExec {
+    function takeCollateral(uint256 amount) external override inExec {
         Position storage pos = positions[POSITION_ID];
-        require(collToken == pos.collToken, 'invalid collateral token');
-        require(collId == pos.collId, 'invalid collateral token');
         if (amount == type(uint256).max) {
             amount = pos.collateralSize;
         }
         pos.collateralSize -= amount;
-        IERC1155(collToken).safeTransferFrom(
+        IERC1155(pos.collToken).safeTransferFrom(
             address(this),
             msg.sender,
-            collId,
+            pos.collId,
             amount,
             ''
         );
-        emit TakeCollateral(POSITION_ID, msg.sender, collToken, collId, amount);
+        emit TakeCollateral(
+            POSITION_ID,
+            msg.sender,
+            pos.collToken,
+            pos.collId,
+            amount
+        );
     }
 
     /**

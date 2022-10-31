@@ -127,11 +127,7 @@ interface IBank {
     ) external;
 
     /// @dev Take some collateral back.
-    function takeCollateral(
-        address collToken,
-        uint256 collId,
-        uint256 amount
-    ) external;
+    function takeCollateral(uint256 amount) external;
 
     /// @dev Liquidate a position.
     function liquidate(

@@ -1390,16 +1390,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "collId",
-        "type": "uint256"
-      },
-      {
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
