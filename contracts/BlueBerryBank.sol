@@ -111,12 +111,14 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     /// @param _feeBps The fee collected to BlueBerry bank.
     function initialize(IOracle _oracle, uint256 _feeBps) external {
         __Governable__init();
+        require(address(_oracle) != address(0), 'bad oracle address');
+        require(_feeBps <= 10000, 'fee too high');
+
         _GENERAL_LOCK = _NOT_ENTERED;
         _IN_EXEC_LOCK = _NOT_ENTERED;
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
         oracle = _oracle;
-        require(address(_oracle) != address(0), 'bad oracle address');
         feeBps = _feeBps;
         nextPositionId = 1;
         bankStatus = 7; // allow borrow, lend, repay
