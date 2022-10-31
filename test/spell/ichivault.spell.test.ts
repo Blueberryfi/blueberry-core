@@ -26,6 +26,7 @@ import IchiFarmABI from '../../abi/IIchiFarm.json';
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
+import { evm_mine_blocks } from '../helpers';
 
 chai.use(solidity)
 chai.use(near)
@@ -254,6 +255,8 @@ describe('ICHI Angel Vaults Spell', () => {
 	})
 	it("should be able to harvest on ICHI farming", async () => {
 		console.log(await usdc.balanceOf(admin.address));
+		evm_mine_blocks(1000);
+		console.log(await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address));
 		const iface = new ethers.utils.Interface(SpellABI);
 		await bank.execute(
 			2,

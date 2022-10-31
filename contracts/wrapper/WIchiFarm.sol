@@ -121,7 +121,9 @@ contract WIchiFarm is
         ichiFarm.withdraw(pid, amount, address(this));
 
         // Convert Legacy ICHI to ICHI v2
-        ICHI.convertToV2(ichiRewards);
+        if (ichiRewards > 0) {
+            ICHI.convertToV2(ichiRewards);
+        }
 
         address lpToken = ichiFarm.lpToken(pid);
         (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
