@@ -18,7 +18,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
     using SafeERC20 for IERC20;
 
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
-    IUniswapV3Pool swapPool;
+    IUniswapV3Pool private swapPool;
     mapping(address => address) vaults;
 
     IWIchiFarm public immutable wIchiFarm;
