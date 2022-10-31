@@ -225,7 +225,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         Bank storage bank = banks[token];
         require(bank.isListed, 'bank not exist');
         uint256 totalDebt = bank.totalDebt;
-        uint256 debt = ICErc20(bank.cToken).borrowBalanceCurrent(address(this));
+        uint256 debt = ICErc20(bank.cToken).borrowBalanceCurrent(bank.safeBox);
         if (debt > totalDebt) {
             uint256 fee = ((debt - totalDebt) * feeBps) / 10000;
             bank.totalDebt = debt;
@@ -621,7 +621,8 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         pos.underlyingToken = token;
         pos.underlyingAmount += amount;
 
-        IERC20(token).safeTransferFrom(pos.owner, bank.safeBox, amount);
+        IERC20(token).safeTransferFrom(pos.owner, address(this), amount);
+        IERC20(token).approve(bank.safeBox, amount);
 
         pos.underlyingcTokenAmount += ISafeBox(bank.safeBox).lend(amount);
         bank.totalLend += amount;
@@ -806,11 +807,8 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         returns (uint256 borrowAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
-        require(ICErc20(bank.cToken).borrow(amountCall) == 0, 'bad borrow');
-        uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+        borrowAmount = ISafeBox(bank.safeBox).borrow(amountCall);
         bank.totalDebt += amountCall;
-        borrowAmount = balanceAfter - balanceBefore;
     }
 
     /**
@@ -824,9 +822,8 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         returns (uint256 repaidAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        ICErc20 cToken = ICErc20(bank.cToken);
-        require(cToken.repayBorrow(amountCall) == 0, 'bad repay');
-        uint256 newDebt = cToken.borrowBalanceStored(address(this));
+        IERC20(token).safeTransfer(bank.safeBox, amountCall);
+        uint256 newDebt = ISafeBox(bank.safeBox).repay(amountCall);
         repaidAmount = bank.totalDebt - newDebt;
         bank.totalDebt = newDebt;
     }

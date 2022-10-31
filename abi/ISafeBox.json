@@ -124,11 +124,49 @@
         "type": "uint256"
       }
     ],
+    "name": "borrow",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "borrowAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "lend",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "lendAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "repay",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "newDebt",
         "type": "uint256"
       }
     ],
