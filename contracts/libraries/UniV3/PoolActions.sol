@@ -9,7 +9,6 @@ import './SafeCast.sol';
 /// @title This library is created to conduct a variety of burn liquidity methods
 library PoolActions {
     using PoolVariables for IUniswapV3Pool;
-    using LowGasSafeMath for uint256;
     using SafeCast for uint256;
 
     /**
@@ -33,7 +32,7 @@ library PoolActions {
     ) internal returns (uint256 amount0, uint256 amount1) {
         require(totalSupply > 0, 'TS');
         uint128 liquidityInPool = pool.positionLiquidity(tickLower, tickUpper);
-        uint256 liquidity = uint256(liquidityInPool).mul(share) / totalSupply;
+        uint256 liquidity = (liquidityInPool * share) / totalSupply;
 
         if (liquidity > 0) {
             (amount0, amount1) = pool.burn(

@@ -5,15 +5,11 @@ import './LiquidityAmounts.sol';
 import '../../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import './TickMath.sol';
 import './PositionKey.sol';
-import './LowGasSafeMath.sol';
 import './SqrtPriceMath.sol';
 
 /// @title Liquidity and ticks functions
 /// @notice Provides functions for computing liquidity and ticks for token amounts and prices
 library PoolVariables {
-    using LowGasSafeMath for uint256;
-    using LowGasSafeMath for uint128;
-
     // Cache struct for calculations
     struct Info {
         uint256 amount0Desired;
@@ -115,18 +111,18 @@ library PoolVariables {
         // Calc amounts of token0 and token1 including fees
         (amount0, amount1) = amountsForLiquidity(
             pool,
-            liquidity.sub128(protocolLiquidity),
+            liquidity - protocolLiquidity,
             _tickLower,
             _tickUpper
         );
-        uint256 usersFee0 = tokensOwed0.sub128(
-            tokensOwed0.mul128(protocolFee) / divisioner
-        );
-        uint256 usersFee1 = tokensOwed1.sub128(
-            tokensOwed1.mul128(protocolFee) / divisioner
-        );
-        amount0 = amount0.add(usersFee0);
-        amount1 = amount1.add(usersFee1);
+        uint256 usersFee0 = tokensOwed0 -
+            (tokensOwed0 * protocolFee) /
+            divisioner;
+        uint256 usersFee1 = tokensOwed1 -
+            (tokensOwed1 * protocolFee) /
+            divisioner;
+        amount0 += usersFee0;
+        amount1 += usersFee1;
     }
 
     /// @dev Amount of liquidity in contract position.
@@ -304,8 +300,8 @@ library PoolVariables {
         uint256 amount0,
         uint256 amount1
     ) internal pure returns (bool zeroGreaterOne) {
-        zeroGreaterOne = amount0Desired.sub(amount0).mul(amount1Desired) >
-            amount1Desired.sub(amount1).mul(amount0Desired)
+        zeroGreaterOne = (amount0Desired - amount0) * amount1Desired >
+            (amount1Desired - amount1) * amount0Desired
             ? true
             : false;
     }
