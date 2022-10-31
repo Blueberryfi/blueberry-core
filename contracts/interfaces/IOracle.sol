@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 
 interface IOracle {
     /// @dev Return whether the ERC-20 token is supported

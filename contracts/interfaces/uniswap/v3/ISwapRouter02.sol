@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
 /// @title Router token swapping functionality

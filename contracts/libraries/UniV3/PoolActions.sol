@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
 import '../../interfaces/uniswap/v3/IUniswapV3Pool.sol';

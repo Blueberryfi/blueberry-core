@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 
 interface ICurvePool {
     function add_liquidity(uint256[2] calldata, uint256) external;

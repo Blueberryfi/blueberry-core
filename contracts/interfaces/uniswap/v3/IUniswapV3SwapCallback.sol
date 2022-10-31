@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 
 interface IUniswapV3SwapCallback {
     /// @notice Called to `msg.sender` after executing a swap via IUniswapV3Pool#swap.

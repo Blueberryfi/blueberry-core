@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 
 interface IIchiFarm {
     function lpToken(uint256 pid) external view returns (address);

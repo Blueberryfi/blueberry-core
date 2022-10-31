@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 
 interface IWETH {
     function balanceOf(address user) external returns (uint256);
