@@ -270,9 +270,9 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     function borrowBalanceCurrent(uint256 positionId, address token)
         external
         override
+        poke(token)
         returns (uint256)
     {
-        accrue(token);
         return borrowBalanceStored(positionId, token);
     }
 
@@ -625,7 +625,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         IERC20(token).safeTransferFrom(pos.owner, address(this), amount);
         IERC20(token).approve(bank.safeBox, amount);
 
-        pos.underlyingcTokenAmount += ISafeBox(bank.safeBox).lend(amount);
+        pos.underlyingcTokenAmount += ISafeBox(bank.safeBox).deposit(amount);
         bank.totalLend += amount;
 
         emit Lend(POSITION_ID, msg.sender, token, amount);
@@ -645,6 +645,8 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
 
         ISafeBox(bank.safeBox).approve(bank.safeBox, type(uint256).max);
         uint256 wAmount = ISafeBox(bank.safeBox).withdraw(amount);
+        // wAmount should be greater than amount, amount + interest fee
+        require(wAmount > amount, 'invalid withdraw');
 
         wAmount = wAmount > pos.underlyingAmount
             ? pos.underlyingAmount

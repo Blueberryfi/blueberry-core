@@ -143,11 +143,11 @@
         "type": "uint256"
       }
     ],
-    "name": "lend",
+    "name": "deposit",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "lendAmount",
+        "name": "ctokenAmount",
         "type": "uint256"
       }
     ],
