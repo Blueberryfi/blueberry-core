@@ -2,7 +2,7 @@ import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { ADDRESS, CONTRACT_NAMES } from '../../constants';
+import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import {
 	ChainlinkAdapterOracle,
 	IFeedRegistry,

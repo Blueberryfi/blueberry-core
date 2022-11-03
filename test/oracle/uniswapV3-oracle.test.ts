@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
-import { ADDRESS, CONTRACT_NAMES } from '../../constants';
+import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import {
   SimpleOracle,
   UniswapV3AdapterOracle,

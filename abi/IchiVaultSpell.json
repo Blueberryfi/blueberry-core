@@ -288,7 +288,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "amtBorrow",
+        "name": "amountBorrow",
         "type": "uint256"
       }
     ],
@@ -311,7 +311,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "amtBorrow",
+        "name": "amountBorrow",
         "type": "uint256"
       },
       {

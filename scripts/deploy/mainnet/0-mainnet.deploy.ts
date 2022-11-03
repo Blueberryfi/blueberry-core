@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { ADDRESS, CONTRACT_NAMES } from '../../../constants';
+import { ADDRESS, CONTRACT_NAMES } from '../../../constant';
 import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 
 async function main(): Promise<void> {

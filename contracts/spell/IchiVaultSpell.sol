@@ -7,21 +7,22 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import './WhitelistSpell.sol';
 import '../libraries/UniV3/TickMath.sol';
-import '../utils/BBMath.sol';
 import '../interfaces/IWIchiFarm.sol';
 import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import '../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol';
 
 contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
-    using BBMath for uint256;
     using SafeERC20 for IERC20;
 
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
     IUniswapV3Pool private swapPool;
+    /// @dev underlying token => ichi vault
     mapping(address => address) vaults;
 
+    /// @dev address of ICHI farm wrapper
     IWIchiFarm public immutable wIchiFarm;
+    /// @dev address of ICHI token
     address public immutable ICHI;
 
     constructor(
@@ -35,26 +36,32 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         IWIchiFarm(_wichiFarm).setApprovalForAll(address(_bank), true);
     }
 
+    /**
+     * @notice Owner privileged function to add vault
+     * @param token Underlying asset address of vault
+     * @param vault Address of ICHI angel vault
+     */
     function addVault(address token, address vault) external onlyOwner {
+        require(token != address(0) && vault != address(0), 'zero address');
         vaults[token] = vault;
     }
 
-    function _isTokenA(address token) internal view returns (bool) {
-        IICHIVault vault = IICHIVault(vaults[token]);
-        return vault.token0() == token;
-    }
-
+    /**
+     * @notice Internal function to deposit assets on ICHI Vault
+     * @param token underlying token of isolated collateral
+     * @param amount amount of underlying tokens
+     * @param amountBorrow amount to borrow from SafeBox
+     */
     function depositInternal(
         address token,
         uint256 amount,
-        uint256 amtBorrow
+        uint256 amountBorrow
     ) internal {
         // 1. Get user input amounts
         doLend(token, amount);
-        // doTransmit(token, amount);
 
         // 2. Borrow specific amounts
-        doBorrow(token, amtBorrow);
+        doBorrow(token, amountBorrow);
 
         // 3. Add liquidity - Deposit on ICHI Vault
         IICHIVault vault = IICHIVault(vaults[token]);
@@ -72,25 +79,32 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
      * @notice External function to deposit assets on IchiVault
      * @param token Token address to deposit (e.g USDC)
      * @param amount Amount of user's collateral (e.g USDC)
-     * @param amtBorrow Amount to borrow on Compound
+     * @param amountBorrow Amount to borrow on Compound
      */
     function openPosition(
         address token,
         uint256 amount,
-        uint256 amtBorrow
+        uint256 amountBorrow
     ) external {
         address vault = vaults[token];
         // 1-3 Deposit on ichi vault
-        depositInternal(token, amount, amtBorrow);
+        depositInternal(token, amount, amountBorrow);
 
         // 4. Put collateral - ICHI Vault Lp Token
         doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
     }
 
+    /**
+     * @notice External function to deposit assets on IchiVault and farm in Ichi Farm
+     * @param token Token address to deposit (e.g USDC)
+     * @param amount Amount of user's collateral (e.g USDC)
+     * @param amountBorrow Amount to borrow on Compound
+     * @param pid Pool Id of vault lp on ICHI Farm
+     */
     function openPositionFarm(
         address token,
         uint256 amount,
-        uint256 amtBorrow,
+        uint256 amountBorrow,
         uint256 pid
     ) external {
         address vaultAddr = vaults[token];
@@ -98,7 +112,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         require(vaultAddr == lpToken, 'incorrect lp token');
 
         // 1-3 Deposit on ichi vault
-        depositInternal(token, amount, amtBorrow);
+        depositInternal(token, amount, amountBorrow);
 
         // 4. Take out collateral
         (, address collToken, uint256 collId, uint256 collSize, ) = bank

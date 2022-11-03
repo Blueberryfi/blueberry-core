@@ -1,6 +1,6 @@
 import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
-import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constants';
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constant';
 import SpellABI from '../../../abi/IchiVaultSpell.json';
 import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 

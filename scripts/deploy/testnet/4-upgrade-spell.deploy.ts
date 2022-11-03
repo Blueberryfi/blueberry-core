@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../../constants";
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../../constant";
 import { BlueBerryBank, IchiVaultSpell } from "../../../typechain-types";
 import SpellABI from '../../../abi/IchiVaultSpell.json';
 import { utils } from "ethers";

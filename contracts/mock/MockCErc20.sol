@@ -40,6 +40,10 @@ contract MockCErc20 is ICErc20 {
         return 0;
     }
 
+    function exchangeRateStored() external pure override returns (uint256) {
+        return 10**8;
+    }
+
     function borrowBalanceCurrent(address account)
         public
         override

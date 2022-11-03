@@ -1,6 +1,6 @@
 import { utils } from 'ethers';
 import { ethers } from 'hardhat';
-import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constants';
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constant';
 import SpellABI from '../../../abi/IchiVaultSpell.json';
 
 async function main(): Promise<void> {

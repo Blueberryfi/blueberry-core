@@ -1,5 +1,5 @@
 import { ethers, upgrades } from "hardhat";
-import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../../constants";
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../../constant";
 import { BlueBerryBank, SafeBox } from "../../../typechain-types";
 
 async function main(): Promise<void> {

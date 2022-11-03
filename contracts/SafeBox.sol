@@ -37,6 +37,7 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
         string memory _name,
         string memory _symbol
     ) ERC20(_name, _symbol) {
+        require(address(_cToken) != address(0), 'zero address');
         IERC20 _uToken = IERC20(_cToken.underlying());
         cToken = _cToken;
         uToken = _uToken;
@@ -48,7 +49,7 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
     }
 
     /**
-     * @notice Owner priviledged function to set bank address
+     * @notice Owner privileged function to set bank address
      * @param _bank New bank address
      */
     function setBank(address _bank) external onlyOwner {
@@ -57,10 +58,10 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
     }
 
     /**
-     * @notice Owner priviledged function to claim fees
+     * @notice Owner privileged function to claim fees
      */
     function adminClaim() external onlyOwner {
-        uToken.safeTransfer(msg.sender, uToken.balanceOf(address(this)));
+        uToken.safeTransfer(owner(), uToken.balanceOf(address(this)));
     }
 
     /**

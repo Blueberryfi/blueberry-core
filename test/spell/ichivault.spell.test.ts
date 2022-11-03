@@ -17,7 +17,7 @@ import {
 	WERC20,
 	WIchiFarm
 } from '../../typechain-types';
-import { ADDRESS, CONTRACT_NAMES } from '../../constants';
+import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import ERC20ABI from '../../abi/ERC20.json'
 import ICrc20ABI from '../../abi/ICErc20.json'
 import SpellABI from '../../abi/IchiVaultSpell.json';
