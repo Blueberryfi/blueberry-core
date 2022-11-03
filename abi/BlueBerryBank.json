@@ -5,19 +5,6 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "governor",
-        "type": "address"
-      }
-    ],
-    "name": "AcceptGovernor",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
         "name": "token",
         "type": "address"
       },
@@ -159,6 +146,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "positionId",
@@ -248,37 +254,11 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "governor",
-        "type": "address"
-      }
-    ],
-    "name": "SetGovernor",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
         "name": "oracle",
         "type": "address"
       }
     ],
     "name": "SetOracle",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "pendingGovernor",
-        "type": "address"
-      }
-    ],
-    "name": "SetPendingGovernor",
     "type": "event"
   },
   {
@@ -406,13 +386,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "acceptGovernor",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -907,19 +880,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "governor",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "contract IOracle",
@@ -1142,7 +1102,7 @@
   },
   {
     "inputs": [],
-    "name": "pendingGovernor",
+    "name": "owner",
     "outputs": [
       {
         "internalType": "address",
@@ -1231,6 +1191,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -1296,19 +1263,6 @@
       }
     ],
     "name": "setOracle",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_pendingGovernor",
-        "type": "address"
-      }
-    ],
-    "name": "setPendingGovernor",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1396,6 +1350,19 @@
       }
     ],
     "name": "takeCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

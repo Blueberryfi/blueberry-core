@@ -21,7 +21,7 @@ const ICHI = ADDRESS.ICHI;
 
 describe("SafeBox", () => {
 	let admin: SignerWithAddress;
-	let alice: SignerWithAddress;
+	let bank: SignerWithAddress;
 
 	let usdc: ERC20;
 	let weth: IWETH;
@@ -29,7 +29,7 @@ describe("SafeBox", () => {
 	let safeBox: SafeBox;
 
 	before(async () => {
-		[admin, alice] = await ethers.getSigners();
+		[admin, bank] = await ethers.getSigners();
 		usdc = <ERC20>await ethers.getContractAt(ERC20ABI, USDC, admin);
 		weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 		cUSDC = <ICErc20>await ethers.getContractAt(ICrc20ABI, CUSDC);
@@ -144,6 +144,10 @@ describe("SafeBox", () => {
 	// TODO: set bank address and cover borrow and repay functions
 	describe("Borrow", () => {
 		const borrowAmount = utils.parseUnits("100", 8);
+
+		before(async () => {
+			await safeBox.setBank(bank.address);
+		})
 		it("should revert borrow function from non-bank address", async () => {
 			await expect(safeBox.borrow(borrowAmount)).to.be.revertedWith("!bank");
 		})
@@ -152,6 +156,9 @@ describe("SafeBox", () => {
 	describe("Utils", () => {
 		it("should be able to set valid address for bank", async () => {
 			await expect(safeBox.setBank(ethers.constants.AddressZero)).to.be.revertedWith("zero address");
+
+			await safeBox.setBank(bank.address);
+			expect(await safeBox.bank()).to.be.equal(bank.address);
 		})
 		it("should have same decimal as cToken", async () => {
 			expect(await safeBox.decimals()).to.be.equal(8);

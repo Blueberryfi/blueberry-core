@@ -2,11 +2,10 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
-import '@openzeppelin/contracts/utils/math/Math.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 
-import './Governable.sol';
 import './utils/ERC1155NaiveReceiver.sol';
 import './interfaces/IBank.sol';
 import './interfaces/IOracle.sol';
@@ -20,9 +19,9 @@ library BlueBerrySafeMath {
     }
 }
 
-contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
+contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     using BlueBerrySafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
@@ -109,8 +108,8 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     /// @dev Initialize the bank smart contract, using msg.sender as the first governor.
     /// @param _oracle The oracle smart contract address.
     /// @param _feeBps The fee collected to BlueBerry bank.
-    function initialize(IOracle _oracle, uint256 _feeBps) external {
-        __Governable__init();
+    function initialize(IOracle _oracle, uint256 _feeBps) external initializer {
+        __Ownable_init();
         require(address(_oracle) != address(0), 'bad oracle address');
         require(_feeBps <= 10000, 'fee too high');
 
@@ -135,7 +134,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
 
     /// @dev Set allowContractCalls
     /// @param ok The status to set allowContractCalls to (false = onlyEOA)
-    function setAllowContractCalls(bool ok) external onlyGov {
+    function setAllowContractCalls(bool ok) external onlyOwner {
         allowContractCalls = ok;
     }
 
@@ -145,7 +144,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     function setWhitelistSpells(
         address[] calldata spells,
         bool[] calldata statuses
-    ) external onlyGov {
+    ) external onlyOwner {
         require(
             spells.length == statuses.length,
             'spells & statuses length mismatched'
@@ -161,7 +160,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     function setWhitelistTokens(
         address[] calldata tokens,
         bool[] calldata statuses
-    ) external onlyGov {
+    ) external onlyOwner {
         require(
             tokens.length == statuses.length,
             'tokens & statuses length mismatched'
@@ -181,7 +180,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     function whitelistContracts(
         address[] calldata users,
         bool[] calldata statuses
-    ) external onlyGov {
+    ) external onlyOwner {
         require(
             users.length == statuses.length,
             'users & statuses length mismatched'
@@ -199,7 +198,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
 
     /// @dev Set bank status
     /// @param _bankStatus new bank status to change to
-    function setBankStatus(uint256 _bankStatus) external onlyGov {
+    function setBankStatus(uint256 _bankStatus) external onlyOwner {
         bankStatus = _bankStatus;
     }
 
@@ -445,7 +444,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         address token,
         address cToken,
         address safeBox
-    ) external onlyGov {
+    ) external onlyOwner {
         Bank storage bank = banks[token];
         require(!cTokenInBank[cToken], 'cToken already exists');
         require(!bank.isListed, 'bank already exists');
@@ -464,7 +463,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
      * @param token The underlying token of the bank
      * @param safeBox The address of new SafeBox
      */
-    function updateSafeBox(address token, address safeBox) external onlyGov {
+    function updateSafeBox(address token, address safeBox) external onlyOwner {
         Bank storage bank = banks[token];
         require(bank.isListed, 'bank is not listed');
         bank.safeBox = safeBox;
@@ -472,7 +471,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
 
     /// @dev Set the oracle smart contract address.
     /// @param _oracle The new oracle smart contract address.
-    function setOracle(IOracle _oracle) external onlyGov {
+    function setOracle(IOracle _oracle) external onlyOwner {
         require(
             address(_oracle) != address(0),
             'cannot set zero address oracle'
@@ -483,7 +482,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
 
     /// @dev Set the fee bps value that BlueBerry bank charges.
     /// @param _feeBps The new fee bps value.
-    function setFeeBps(uint256 _feeBps) external onlyGov {
+    function setFeeBps(uint256 _feeBps) external onlyOwner {
         require(_feeBps <= 10000, 'fee too high');
         feeBps = _feeBps;
         emit SetFeeBps(_feeBps);
@@ -493,13 +492,13 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     /// @param amount The amount of tokens to withdraw.
     function withdrawReserve(address token, uint256 amount)
         external
-        onlyGov
+        onlyOwner
         lock
     {
         Bank storage bank = banks[token];
         require(bank.isListed, 'bank not exist');
         bank.reserve -= amount;
-        IERC20(token).safeTransfer(msg.sender, amount);
+        IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
         emit WithdrawReserve(msg.sender, token, amount);
     }
 
@@ -550,7 +549,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             amountCall
         );
         require(pos.collToken != address(0), 'bad collateral token');
-        IERC1155(pos.collToken).safeTransferFrom(
+        IERC1155Upgradeable(pos.collToken).safeTransferFrom(
             address(this),
             msg.sender,
             pos.collId,
@@ -622,8 +621,12 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         pos.underlyingToken = token;
         pos.underlyingAmount += amount;
 
-        IERC20(token).safeTransferFrom(pos.owner, address(this), amount);
-        IERC20(token).approve(bank.safeBox, amount);
+        IERC20Upgradeable(token).safeTransferFrom(
+            pos.owner,
+            address(this),
+            amount
+        );
+        IERC20Upgradeable(token).approve(bank.safeBox, amount);
 
         pos.underlyingcTokenAmount += ISafeBox(bank.safeBox).deposit(amount);
         bank.totalLend += amount;
@@ -654,7 +657,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         pos.underlyingAmount -= wAmount;
         bank.totalLend -= wAmount;
 
-        IERC20(token).safeTransfer(msg.sender, wAmount);
+        IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
     }
 
     /// @dev Borrow tokens from that bank. Must only be called while under execution.
@@ -681,7 +684,10 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         if (newShare > 0) {
             pos.debtMap |= (1 << uint256(bank.index));
         }
-        IERC20(token).safeTransfer(msg.sender, doBorrow(token, amount));
+        IERC20Upgradeable(token).safeTransfer(
+            msg.sender,
+            doBorrow(token, amount)
+        );
         emit Borrow(POSITION_ID, msg.sender, token, amount, share);
     }
 
@@ -741,7 +747,11 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
     /// @param amount The amount to transfer.
     function transmit(address token, uint256 amount) external override inExec {
         Position storage pos = positions[POSITION_ID];
-        IERC20(token).safeTransferFrom(pos.owner, msg.sender, amount);
+        IERC20Upgradeable(token).safeTransferFrom(
+            pos.owner,
+            msg.sender,
+            amount
+        );
     }
 
     /// @dev Put more collateral for users. Must only be called during execution.
@@ -779,7 +789,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
             amount = pos.collateralSize;
         }
         pos.collateralSize -= amount;
-        IERC1155(pos.collToken).safeTransferFrom(
+        IERC1155Upgradeable(pos.collToken).safeTransferFrom(
             address(this),
             msg.sender,
             pos.collId,
@@ -821,7 +831,7 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         returns (uint256 repaidAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        IERC20(token).safeTransfer(bank.safeBox, amountCall);
+        IERC20Upgradeable(token).safeTransfer(bank.safeBox, amountCall);
         uint256 newDebt = ISafeBox(bank.safeBox).repay(amountCall);
         repaidAmount = bank.totalDebt - newDebt;
         bank.totalDebt = newDebt;
@@ -834,9 +844,17 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         internal
         returns (uint256)
     {
-        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amountCall);
-        uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+        uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(
+            address(this)
+        );
+        IERC20Upgradeable(token).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amountCall
+        );
+        uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(
+            address(this)
+        );
         return balanceAfter - balanceBefore;
     }
 
@@ -849,15 +867,21 @@ contract BlueBerryBank is Governable, ERC1155NaiveReceiver, IBank {
         uint256 id,
         uint256 amountCall
     ) internal returns (uint256) {
-        uint256 balanceBefore = IERC1155(token).balanceOf(address(this), id);
-        IERC1155(token).safeTransferFrom(
+        uint256 balanceBefore = IERC1155Upgradeable(token).balanceOf(
+            address(this),
+            id
+        );
+        IERC1155Upgradeable(token).safeTransferFrom(
             msg.sender,
             address(this),
             id,
             amountCall,
             ''
         );
-        uint256 balanceAfter = IERC1155(token).balanceOf(address(this), id);
+        uint256 balanceAfter = IERC1155Upgradeable(token).balanceOf(
+            address(this),
+            id
+        );
         return balanceAfter - balanceBefore;
     }
 }

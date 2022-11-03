@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import {
 	BlueBerryBank,
 	CoreOracle,
@@ -107,9 +107,9 @@ describe('ICHI Angel Vaults Spell', () => {
 
 		// Deploy Bank
 		const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-		bank = <BlueBerryBank>await BlueBerryBank.deploy();
+		bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, 2000]);
 		await bank.deployed();
-		await bank.initialize(oracle.address, 2000);
+		console.log('here');
 
 		// Deploy ICHI wrapper and spell
 		ichiFarm = <IIchiFarm>await ethers.getContractAt(IchiFarmABI, ADDRESS.ICHI_FARMING);
