@@ -6,21 +6,16 @@ import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 
+import './BlueBerryErrors.sol';
 import './utils/ERC1155NaiveReceiver.sol';
 import './interfaces/IBank.sol';
 import './interfaces/IOracle.sol';
 import './interfaces/ISafeBox.sol';
 import './interfaces/compound/ICErc20.sol';
-
-library BlueBerrySafeMath {
-    /// @dev Computes round-up division.
-    function ceilDiv(uint256 a, uint256 b) internal pure returns (uint256) {
-        return (a + b - 1) / b;
-    }
-}
+import './libraries/BBMath.sol';
 
 contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
-    using BlueBerrySafeMath for uint256;
+    using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     uint256 private constant _NOT_ENTERED = 1;
@@ -110,8 +105,12 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param _feeBps The fee collected to BlueBerry bank.
     function initialize(IOracle _oracle, uint256 _feeBps) external initializer {
         __Ownable_init();
-        require(address(_oracle) != address(0), 'bad oracle address');
-        require(_feeBps <= 10000, 'fee too high');
+        if (address(_oracle) == address(0)) {
+            revert ZERO_ADDRESS();
+        }
+        if (_feeBps > 10000) {
+            revert FEE_TOO_HIGH(_feeBps);
+        }
 
         _GENERAL_LOCK = _NOT_ENTERED;
         _IN_EXEC_LOCK = _NOT_ENTERED;
@@ -128,7 +127,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Return the current executor (the owner of the current position).
     function EXECUTOR() external view override returns (address) {
         uint256 positionId = POSITION_ID;
-        require(positionId != _NO_ID, 'not under execution');
+        if (positionId == _NO_ID) {
+            revert NOT_UNDER_EXECUTION();
+        }
         return positions[positionId].owner;
     }
 
@@ -138,18 +139,38 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         allowContractCalls = ok;
     }
 
+    /// @notice Set whitelist user status
+    /// @param contracts list of users to change status
+    /// @param statuses list of statuses to change to
+    function whitelistContracts(
+        address[] calldata contracts,
+        bool[] calldata statuses
+    ) external onlyOwner {
+        if (contracts.length != statuses.length) {
+            revert INPUT_ARRAY_MISMATCH();
+        }
+        for (uint256 idx = 0; idx < contracts.length; idx++) {
+            if (contracts[idx] == address(0)) {
+                revert ZERO_ADDRESS();
+            }
+            whitelistedContracts[contracts[idx]] = statuses[idx];
+        }
+    }
+
     /// @dev Set whitelist spell status
     /// @param spells list of spells to change status
     /// @param statuses list of statuses to change to
-    function setWhitelistSpells(
+    function whitelistSpells(
         address[] calldata spells,
         bool[] calldata statuses
     ) external onlyOwner {
-        require(
-            spells.length == statuses.length,
-            'spells & statuses length mismatched'
-        );
+        if (spells.length != statuses.length) {
+            revert INPUT_ARRAY_MISMATCH();
+        }
         for (uint256 idx = 0; idx < spells.length; idx++) {
+            if (spells[idx] == address(0)) {
+                revert ZERO_ADDRESS();
+            }
             whitelistedSpells[spells[idx]] = statuses[idx];
         }
     }
@@ -157,43 +178,96 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Set whitelist token status
     /// @param tokens list of tokens to change status
     /// @param statuses list of statuses to change to
-    function setWhitelistTokens(
+    function whitelistTokens(
         address[] calldata tokens,
         bool[] calldata statuses
     ) external onlyOwner {
-        require(
-            tokens.length == statuses.length,
-            'tokens & statuses length mismatched'
-        );
+        if (tokens.length != statuses.length) {
+            revert INPUT_ARRAY_MISMATCH();
+        }
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             if (statuses[idx]) {
-                // check oracle suppport
-                require(support(tokens[idx]), 'oracle not support token');
+                require(
+                    oracle.support(tokens[idx]),
+                    'oracle not support token'
+                );
             }
             whitelistedTokens[tokens[idx]] = statuses[idx];
         }
     }
 
-    /// @dev Set whitelist user status
-    /// @param users list of users to change status
-    /// @param statuses list of statuses to change to
-    function whitelistContracts(
-        address[] calldata users,
-        bool[] calldata statuses
+    /**
+     * @dev Add a new bank to the ecosystem.
+     * @param token The underlying token for the bank.
+     * @param cToken The address of the cToken smart contract.
+     * @param safeBox The address of safeBox.
+     */
+    function addBank(
+        address token,
+        address cToken,
+        address safeBox
     ) external onlyOwner {
-        require(
-            users.length == statuses.length,
-            'users & statuses length mismatched'
-        );
-        for (uint256 idx = 0; idx < users.length; idx++) {
-            whitelistedContracts[users[idx]] = statuses[idx];
-        }
+        Bank storage bank = banks[token];
+        require(!cTokenInBank[cToken], 'cToken already exists');
+        require(!bank.isListed, 'bank already exists');
+        cTokenInBank[cToken] = true;
+        bank.isListed = true;
+        require(allBanks.length < 256, 'reach bank limit');
+        bank.index = uint8(allBanks.length);
+        bank.cToken = cToken;
+        bank.safeBox = safeBox;
+        allBanks.push(token);
+        emit AddBank(token, cToken);
     }
 
-    /// @dev Check whether the oracle supports the token
-    /// @param token ERC-20 token to check for support
-    function support(address token) public view override returns (bool) {
-        return oracle.support(token);
+    /**
+     * @dev Update safeBox address of listed bank
+     * @param token The underlying token of the bank
+     * @param safeBox The address of new SafeBox
+     */
+    function updateSafeBox(address token, address safeBox) external onlyOwner {
+        if (safeBox == address(0)) {
+            revert ZERO_ADDRESS();
+        }
+        Bank storage bank = banks[token];
+        if (!bank.isListed) {
+            revert BANK_NOT_LISTED();
+        }
+        bank.safeBox = safeBox;
+    }
+
+    /// @dev Set the oracle smart contract address.
+    /// @param _oracle The new oracle smart contract address.
+    function setOracle(IOracle _oracle) external onlyOwner {
+        if (address(_oracle) == address(0)) {
+            revert ZERO_ADDRESS();
+        }
+        oracle = _oracle;
+        emit SetOracle(address(_oracle));
+    }
+
+    /// @dev Set the fee bps value that BlueBerry bank charges.
+    /// @param _feeBps The new fee bps value.
+    function setFeeBps(uint256 _feeBps) external onlyOwner {
+        if (_feeBps > 10000) {
+            revert FEE_TOO_HIGH(_feeBps);
+        }
+        feeBps = _feeBps;
+        emit SetFeeBps(_feeBps);
+    }
+
+    /// @dev Withdraw the reserve portion of the bank.
+    /// @param amount The amount of tokens to withdraw.
+    function withdrawReserve(address token, uint256 amount)
+        external
+        onlyOwner
+        lock
+    {
+        Bank storage bank = banks[token];
+        require(bank.isListed, 'bank not exist');
+        bank.reserve -= amount;
+        IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
+        emit WithdrawReserve(msg.sender, token, amount);
     }
 
     /// @dev Set bank status
@@ -218,6 +292,12 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @notice check last bit of bankStatus
     function isLendAllowed() public view returns (bool) {
         return (bankStatus & 0x04) > 0;
+    }
+
+    /// @dev Check whether the oracle supports the token
+    /// @param token ERC-20 token to check for support
+    function support(address token) external view override returns (bool) {
+        return oracle.support(token);
     }
 
     /// @dev Trigger interest accrual for the given bank.
@@ -259,7 +339,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         if (share == 0 || totalDebt == 0) {
             return 0;
         } else {
-            return (share * totalDebt).ceilDiv(totalShare);
+            return (share * totalDebt).divCeil(totalShare);
         }
     }
 
@@ -378,7 +458,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
                 Bank storage bank = banks[token];
                 tokens[count] = token;
                 debts[count] = (pos.debtShareOf[token] * bank.totalDebt)
-                    .ceilDiv(bank.totalShare);
+                    .divCeil(bank.totalShare);
                 count++;
             }
             idx++;
@@ -423,7 +503,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
                 address token = allBanks[idx];
                 uint256 share = pos.debtShareOf[token];
                 Bank storage bank = banks[token];
-                uint256 debt = (share * bank.totalDebt).ceilDiv(
+                uint256 debt = (share * bank.totalDebt).divCeil(
                     bank.totalShare
                 );
                 value += oracle.getDebtValue(token, debt);
@@ -432,74 +512,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             bitMap >>= 1;
         }
         return value;
-    }
-
-    /**
-     * @dev Add a new bank to the ecosystem.
-     * @param token The underlying token for the bank.
-     * @param cToken The address of the cToken smart contract.
-     * @param safeBox The address of safeBox.
-     */
-    function addBank(
-        address token,
-        address cToken,
-        address safeBox
-    ) external onlyOwner {
-        Bank storage bank = banks[token];
-        require(!cTokenInBank[cToken], 'cToken already exists');
-        require(!bank.isListed, 'bank already exists');
-        cTokenInBank[cToken] = true;
-        bank.isListed = true;
-        require(allBanks.length < 256, 'reach bank limit');
-        bank.index = uint8(allBanks.length);
-        bank.cToken = cToken;
-        bank.safeBox = safeBox;
-        allBanks.push(token);
-        emit AddBank(token, cToken);
-    }
-
-    /**
-     * @dev Update safeBox address of listed bank
-     * @param token The underlying token of the bank
-     * @param safeBox The address of new SafeBox
-     */
-    function updateSafeBox(address token, address safeBox) external onlyOwner {
-        Bank storage bank = banks[token];
-        require(bank.isListed, 'bank is not listed');
-        bank.safeBox = safeBox;
-    }
-
-    /// @dev Set the oracle smart contract address.
-    /// @param _oracle The new oracle smart contract address.
-    function setOracle(IOracle _oracle) external onlyOwner {
-        require(
-            address(_oracle) != address(0),
-            'cannot set zero address oracle'
-        );
-        oracle = _oracle;
-        emit SetOracle(address(_oracle));
-    }
-
-    /// @dev Set the fee bps value that BlueBerry bank charges.
-    /// @param _feeBps The new fee bps value.
-    function setFeeBps(uint256 _feeBps) external onlyOwner {
-        require(_feeBps <= 10000, 'fee too high');
-        feeBps = _feeBps;
-        emit SetFeeBps(_feeBps);
-    }
-
-    /// @dev Withdraw the reserve portion of the bank.
-    /// @param amount The amount of tokens to withdraw.
-    function withdrawReserve(address token, uint256 amount)
-        external
-        onlyOwner
-        lock
-    {
-        Bank storage bank = banks[token];
-        require(bank.isListed, 'bank not exist');
-        bank.reserve -= amount;
-        IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
-        emit WithdrawReserve(msg.sender, token, amount);
     }
 
     function getPositionRisk(uint256 positionId)
@@ -677,7 +689,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 totalDebt = bank.totalDebt;
         uint256 share = totalShare == 0
             ? amount
-            : (amount * totalShare).ceilDiv(totalDebt);
+            : (amount * totalShare).divCeil(totalDebt);
         bank.totalShare += share;
         uint256 newShare = pos.debtShareOf[token] + share;
         pos.debtShareOf[token] = newShare;
@@ -724,7 +736,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 totalShare = bank.totalShare;
         uint256 totalDebt = bank.totalDebt;
         uint256 oldShare = pos.debtShareOf[token];
-        uint256 oldDebt = (oldShare * totalDebt).ceilDiv(totalShare);
+        uint256 oldDebt = (oldShare * totalDebt).divCeil(totalShare);
         if (amountCall == type(uint256).max) {
             amountCall = oldDebt;
         }

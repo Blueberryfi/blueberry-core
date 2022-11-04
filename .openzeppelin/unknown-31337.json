@@ -2,7 +2,7 @@
   "manifestVersion": "3.2",
   "admin": {
     "address": "0x33E45b187da34826aBCEDA1039231Be46f1b05Af",
-    "txHash": "0xf6de30ec86b7c9788e7e7d60cd6e53062f8fe2b2a8185daf85c629224587cb58"
+    "txHash": "0x612b5ba4e63615884ffa28d05226121c87197dc587513996ef0a62f55fd3a805"
   },
   "proxies": [
     {
@@ -31,8 +31,48 @@
       "kind": "transparent"
     },
     {
+      "address": "0xB468647B04bF657C9ee2de65252037d781eABafD",
+      "txHash": "0xc7775b78a02b8da66e10decadff0bd65181c2e70f0ffff1970af9359b14fce7d",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x21915b79E1d334499272521a3508061354D13FF0",
+      "txHash": "0x3ed506db63d489585d2b7ba6f4b8bce1f680df81f3e7c849eb0ae233b826b867",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5E5713a0d915701F464DEbb66015adD62B2e6AE9",
+      "txHash": "0xd767e536bb58338107de7184d3d2fc31da2059a78c5e1e9f34399f7d0a9ba4a9",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xC0BF43A4Ca27e0976195E6661b099742f10507e5",
+      "txHash": "0xa147735d003d8cb9caea2e5233874dedef4ee4c022b24c6cbcecf83699cf80dd",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x840748F7Fd3EA956E5f4c88001da5CC1ABCBc038",
+      "txHash": "0xc29705662433eba017d4ffaa775a6bc956a4f48d8efa94ff90a7c348cbadde31",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xce830DA8667097BB491A70da268b76a081211814",
+      "txHash": "0x7f3c03b8f9b54f2559af9d5adf89898beb1d1c4acfb9e5b025d76e71974c5c90",
+      "kind": "transparent"
+    },
+    {
       "address": "0x0c626FC4A447b01554518550e30600136864640B",
-      "txHash": "0xb3cd24bfde6a2a8b080b98c41373ae71123d6b1f4920a956ce10b09ac17209c5",
+      "txHash": "0xc278dc7b858f073c6d562c70b28d1e4f46b00a9befa3e5ddd8d1bbb3ae42d0f5",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xC32609C91d6B6b51D48f2611308FEf121B02041f",
+      "txHash": "0xa8300c3ddcb7c89e325039792e84c838b21ceb1024fd8d54c4c0d9f8a9acaaef",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x746a48E39dC57Ff14B872B8979E20efE5E5100B1",
+      "txHash": "0xfc8d563ed20f554e67767e08bdb5c019397380e5f85e577592336c20e06a4556",
       "kind": "transparent"
     }
   ],
@@ -745,9 +785,9 @@
         }
       }
     },
-    "4d0f09933b4e843156d2beba3f281b31a22774995f431b4f058418c36676c912": {
-      "address": "0x7Cf4be31f546c04787886358b9486ca3d62B9acf",
-      "txHash": "0xe2b9385c05324e4660ab8e21aeb74a4425899c88e8edd37b0187dba1a9957e21",
+    "95479372e71f1039471c98692871431451922dff99326ddd161603ab29507281": {
+      "address": "0x0b27a79cb9C0B38eE06Ca3d94DAA68e0Ed17F953",
+      "txHash": "0x5e5d53d92e8ff75311cfeed00ca9f4f8bdcc4ebdd0ac4906827b23b159fb006d",
       "layout": {
         "storage": [
           {
@@ -797,7 +837,7 @@
             "slot": "101",
             "type": "t_array(t_uint256)49_storage",
             "contract": "ERC1155NaiveReceiver",
-            "src": "contracts/utils/ERC1155NaiveReceiver.sol:8"
+            "src": "contracts/utils/ERC1155NaiveReceiver.sol:12"
           },
           {
             "label": "_GENERAL_LOCK",
@@ -805,7 +845,7 @@
             "slot": "150",
             "type": "t_uint256",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:54"
+            "src": "contracts/BlueBerryBank.sol:63"
           },
           {
             "label": "_IN_EXEC_LOCK",
@@ -813,7 +853,7 @@
             "slot": "151",
             "type": "t_uint256",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:55"
+            "src": "contracts/BlueBerryBank.sol:64"
           },
           {
             "label": "POSITION_ID",
@@ -821,7 +861,7 @@
             "slot": "152",
             "type": "t_uint256",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:56"
+            "src": "contracts/BlueBerryBank.sol:65"
           },
           {
             "label": "SPELL",
@@ -829,15 +869,15 @@
             "slot": "153",
             "type": "t_address",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:57"
+            "src": "contracts/BlueBerryBank.sol:66"
           },
           {
             "label": "oracle",
             "offset": 0,
             "slot": "154",
-            "type": "t_contract(IOracle)10565",
+            "type": "t_contract(IOracle)13986",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:59"
+            "src": "contracts/BlueBerryBank.sol:68"
           },
           {
             "label": "feeBps",
@@ -845,7 +885,7 @@
             "slot": "155",
             "type": "t_uint256",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:60"
+            "src": "contracts/BlueBerryBank.sol:69"
           },
           {
             "label": "nextPositionId",
@@ -853,7 +893,7 @@
             "slot": "156",
             "type": "t_uint256",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:61"
+            "src": "contracts/BlueBerryBank.sol:70"
           },
           {
             "label": "allBanks",
@@ -861,15 +901,15 @@
             "slot": "157",
             "type": "t_array(t_address)dyn_storage",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:63"
+            "src": "contracts/BlueBerryBank.sol:72"
           },
           {
             "label": "banks",
             "offset": 0,
             "slot": "158",
-            "type": "t_mapping(t_address,t_struct(Bank)6973_storage)",
+            "type": "t_mapping(t_address,t_struct(Bank)7003_storage)",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:64"
+            "src": "contracts/BlueBerryBank.sol:73"
           },
           {
             "label": "cTokenInBank",
@@ -877,15 +917,15 @@
             "slot": "159",
             "type": "t_mapping(t_address,t_bool)",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:65"
+            "src": "contracts/BlueBerryBank.sol:74"
           },
           {
             "label": "positions",
             "offset": 0,
             "slot": "160",
-            "type": "t_mapping(t_uint256,t_struct(Position)6994_storage)",
+            "type": "t_mapping(t_uint256,t_struct(Position)7024_storage)",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:66"
+            "src": "contracts/BlueBerryBank.sol:75"
           },
           {
             "label": "allowContractCalls",
@@ -893,7 +933,7 @@
             "slot": "161",
             "type": "t_bool",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:68"
+            "src": "contracts/BlueBerryBank.sol:77"
           },
           {
             "label": "whitelistedTokens",
@@ -901,7 +941,7 @@
             "slot": "162",
             "type": "t_mapping(t_address,t_bool)",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:69"
+            "src": "contracts/BlueBerryBank.sol:78"
           },
           {
             "label": "whitelistedSpells",
@@ -909,7 +949,7 @@
             "slot": "163",
             "type": "t_mapping(t_address,t_bool)",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:70"
+            "src": "contracts/BlueBerryBank.sol:79"
           },
           {
             "label": "whitelistedContracts",
@@ -917,7 +957,7 @@
             "slot": "164",
             "type": "t_mapping(t_address,t_bool)",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:71"
+            "src": "contracts/BlueBerryBank.sol:80"
           },
           {
             "label": "bankStatus",
@@ -925,7 +965,7 @@
             "slot": "165",
             "type": "t_uint256",
             "contract": "BlueBerryBank",
-            "src": "contracts/BlueBerryBank.sol:73"
+            "src": "contracts/BlueBerryBank.sol:82"
           }
         ],
         "types": {
@@ -949,7 +989,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IOracle)10565": {
+          "t_contract(IOracle)13986": {
             "label": "contract IOracle",
             "numberOfBytes": "20"
           },
@@ -957,7 +997,7 @@
             "label": "mapping(address => bool)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(Bank)6973_storage)": {
+          "t_mapping(t_address,t_struct(Bank)7003_storage)": {
             "label": "mapping(address => struct BlueBerryBank.Bank)",
             "numberOfBytes": "32"
           },
@@ -965,11 +1005,11 @@
             "label": "mapping(address => uint256)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(Position)6994_storage)": {
+          "t_mapping(t_uint256,t_struct(Position)7024_storage)": {
             "label": "mapping(uint256 => struct BlueBerryBank.Position)",
             "numberOfBytes": "32"
           },
-          "t_struct(Bank)6973_storage": {
+          "t_struct(Bank)7003_storage": {
             "label": "struct BlueBerryBank.Bank",
             "members": [
               {
@@ -1023,7 +1063,356 @@
             ],
             "numberOfBytes": "192"
           },
-          "t_struct(Position)6994_storage": {
+          "t_struct(Position)7024_storage": {
+            "label": "struct BlueBerryBank.Position",
+            "members": [
+              {
+                "label": "owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "collToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "underlyingToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "underlyingAmount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "underlyingcTokenAmount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "collId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "collateralSize",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "debtMap",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "debtShareOf",
+                "type": "t_mapping(t_address,t_uint256)",
+                "offset": 0,
+                "slot": "8"
+              }
+            ],
+            "numberOfBytes": "288"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "a4ddebbf0b9ee9a00ab3afc047c209ff88919065d41351161da2d4abe3d55c28": {
+      "address": "0x7Cf4be31f546c04787886358b9486ca3d62B9acf",
+      "txHash": "0x66d36ebb333006a39379f556c798933759ce8381ccf9bdaf96faa8079e2017c4",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ERC1155NaiveReceiver",
+            "src": "contracts/utils/ERC1155NaiveReceiver.sol:16"
+          },
+          {
+            "label": "_GENERAL_LOCK",
+            "offset": 0,
+            "slot": "150",
+            "type": "t_uint256",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:169"
+          },
+          {
+            "label": "_IN_EXEC_LOCK",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_uint256",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:170"
+          },
+          {
+            "label": "POSITION_ID",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_uint256",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:171"
+          },
+          {
+            "label": "SPELL",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_address",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:172"
+          },
+          {
+            "label": "oracle",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_contract(IOracle)14395",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:174"
+          },
+          {
+            "label": "feeBps",
+            "offset": 0,
+            "slot": "155",
+            "type": "t_uint256",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:175"
+          },
+          {
+            "label": "nextPositionId",
+            "offset": 0,
+            "slot": "156",
+            "type": "t_uint256",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:176"
+          },
+          {
+            "label": "allBanks",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:178"
+          },
+          {
+            "label": "banks",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_mapping(t_address,t_struct(Bank)7142_storage)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:179"
+          },
+          {
+            "label": "cTokenInBank",
+            "offset": 0,
+            "slot": "159",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:180"
+          },
+          {
+            "label": "positions",
+            "offset": 0,
+            "slot": "160",
+            "type": "t_mapping(t_uint256,t_struct(Position)7163_storage)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:181"
+          },
+          {
+            "label": "allowContractCalls",
+            "offset": 0,
+            "slot": "161",
+            "type": "t_bool",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:183"
+          },
+          {
+            "label": "whitelistedTokens",
+            "offset": 0,
+            "slot": "162",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:184"
+          },
+          {
+            "label": "whitelistedSpells",
+            "offset": 0,
+            "slot": "163",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:185"
+          },
+          {
+            "label": "whitelistedContracts",
+            "offset": 0,
+            "slot": "164",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:186"
+          },
+          {
+            "label": "bankStatus",
+            "offset": 0,
+            "slot": "165",
+            "type": "t_uint256",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:188"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IOracle)14395": {
+            "label": "contract IOracle",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Bank)7142_storage)": {
+            "label": "mapping(address => struct BlueBerryBank.Bank)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Position)7163_storage)": {
+            "label": "mapping(uint256 => struct BlueBerryBank.Position)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Bank)7142_storage": {
+            "label": "struct BlueBerryBank.Bank",
+            "members": [
+              {
+                "label": "isListed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "index",
+                "type": "t_uint8",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "cToken",
+                "type": "t_address",
+                "offset": 2,
+                "slot": "0"
+              },
+              {
+                "label": "safeBox",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "reserve",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "totalDebt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "totalShare",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "totalLend",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              }
+            ],
+            "numberOfBytes": "192"
+          },
+          "t_struct(Position)7163_storage": {
             "label": "struct BlueBerryBank.Position",
             "members": [
               {

@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
-import '../utils/BBMath.sol';
+import '../libraries/BBMath.sol';
 import '../interfaces/IWIchiFarm.sol';
 import '../interfaces/IERC20Wrapper.sol';
 import '../interfaces/ichi/IIchiV2.sol';

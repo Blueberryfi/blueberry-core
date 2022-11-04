@@ -5,18 +5,19 @@ pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 
+import '../BlueBerryErrors.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/band/IStdReference.sol';
 
 contract BandAdapterOracle is IBaseOracle, Ownable {
-    event SetSymbol(address token, string symbol);
-    event SetRef(address ref);
-    event SetMaxDelayTime(address token, uint256 maxDelayTime);
-
     IStdReference public ref; // Standard reference
 
     mapping(address => string) public symbols; // Mapping from token to symbol string
     mapping(address => uint256) public maxDelayTimes; // Mapping from token address to max delay time
+
+    event SetSymbol(address token, string symbol);
+    event SetRef(address ref);
+    event SetMaxDelayTime(address token, uint256 maxDelayTime);
 
     constructor(IStdReference _ref) {
         ref = _ref;

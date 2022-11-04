@@ -5,7 +5,7 @@ pragma solidity 0.8.16;
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 import './UsingBaseOracle.sol';
-import '../utils/BBMath.sol';
+import '../libraries/BBMath.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/uniswap/v2/IUniswapV2Pair.sol';
 

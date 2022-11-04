@@ -8,9 +8,14 @@ import {
 	IStdReference,
 } from '../../typechain-types';
 import BandOracleABI from '../../abi/IStdReference.json';
-import { roughlyNear } from '../assertions/roughlyNear';
 
-chai.use(roughlyNear);
+import { solidity } from 'ethereum-waffle'
+import { near } from '../assertions/near'
+import { roughlyNear } from '../assertions/roughlyNear'
+
+chai.use(solidity)
+chai.use(near)
+chai.use(roughlyNear)
 
 const OneDay = 86400;
 

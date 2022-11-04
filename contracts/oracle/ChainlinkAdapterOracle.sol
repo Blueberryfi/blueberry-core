@@ -5,17 +5,12 @@ pragma solidity 0.8.16;
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/math/SafeCast.sol';
 
+import '../BlueBerryErrors.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/chainlink/IFeedRegistry.sol';
 
 contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
     using SafeCast for int256;
-
-    event SetMaxDelayTime(address indexed token, uint256 maxDelayTime);
-    event SetTokenRemapping(
-        address indexed token,
-        address indexed remappedToken
-    );
 
     // Chainlink denominations
     // (source: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/Denominations.sol)
@@ -27,7 +22,16 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
     /// @dev Mapping from token address to max delay time
     mapping(address => uint256) public maxDelayTimes;
 
+    event SetMaxDelayTime(address indexed token, uint256 maxDelayTime);
+    event SetTokenRemapping(
+        address indexed token,
+        address indexed remappedToken
+    );
+
     constructor(IFeedRegistry registry_) {
+        if (address(registry_) == address(0)) {
+            revert ZERO_ADDRESS();
+        }
         registry = registry_;
     }
 
@@ -38,12 +42,16 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
         address[] calldata _remappedTokens,
         uint256[] calldata _maxDelayTimes
     ) external onlyOwner {
-        require(
-            _remappedTokens.length == _maxDelayTimes.length,
-            '_remappedTokens & _maxDelayTimes length mismatched'
-        );
+        if (_remappedTokens.length != _maxDelayTimes.length) {
+            revert INPUT_ARRAY_MISMATCH();
+        }
         for (uint256 idx = 0; idx < _remappedTokens.length; idx++) {
-            require(_maxDelayTimes[idx] <= 2 days, 'too long delay time');
+            if (_maxDelayTimes[idx] > 2 days) {
+                revert TOO_LONG_DELAY(_maxDelayTimes[idx]);
+            }
+            if (_remappedTokens[idx] == address(0)) {
+                revert ZERO_ADDRESS();
+            }
             maxDelayTimes[_remappedTokens[idx]] = _maxDelayTimes[idx];
             emit SetMaxDelayTime(_remappedTokens[idx], _maxDelayTimes[idx]);
         }
@@ -57,11 +65,16 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
         address[] calldata _tokens,
         address[] calldata _remappedTokens
     ) external onlyOwner {
-        require(
-            _tokens.length == _remappedTokens.length,
-            '_tokens & _remappedTokens length mismatched'
-        );
+        if (_remappedTokens.length != _tokens.length) {
+            revert INPUT_ARRAY_MISMATCH();
+        }
         for (uint256 idx = 0; idx < _tokens.length; idx++) {
+            if (_remappedTokens[idx] == address(0)) {
+                revert ZERO_ADDRESS();
+            }
+            if (_tokens[idx] == address(0)) {
+                revert ZERO_ADDRESS();
+            }
             remappedTokens[_tokens[idx]] = _remappedTokens[idx];
             emit SetTokenRemapping(_tokens[idx], _remappedTokens[idx]);
         }
@@ -78,7 +91,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
         if (token == address(0)) token = _token;
 
         uint256 maxDelayTime = maxDelayTimes[token];
-        require(maxDelayTime != 0, 'max delay time not set');
+        if (maxDelayTime == 0) {
+            revert NO_MAX_DELAY(_token);
+        }
 
         // try to get token-USD price
         uint256 decimals = registry.decimals(token, USD);
@@ -86,10 +101,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
             token,
             USD
         );
-        require(
-            updatedAt >= block.timestamp - maxDelayTime,
-            'delayed token-eth update time'
-        );
+        if (updatedAt < block.timestamp - maxDelayTime) {
+            revert PRICE_OUTDATED(_token);
+        }
         return (answer.toUint256() * 1e18) / 10**decimals;
     }
 }

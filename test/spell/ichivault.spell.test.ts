@@ -109,7 +109,6 @@ describe('ICHI Angel Vaults Spell', () => {
 		const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
 		bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, 2000]);
 		await bank.deployed();
-		console.log('here');
 
 		// Deploy ICHI wrapper and spell
 		ichiFarm = <IIchiFarm>await ethers.getContractAt(IchiFarmABI, ADDRESS.ICHI_FARMING);
@@ -129,11 +128,11 @@ describe('ICHI Angel Vaults Spell', () => {
 		await oracle.setWhitelistERC1155([wichi.address], true);
 
 		// Setup Bank
-		await bank.setWhitelistSpells(
+		await bank.whitelistSpells(
 			[spell.address],
 			[true]
 		)
-		await bank.setWhitelistTokens([USDC], [true]);
+		await bank.whitelistTokens([USDC], [true]);
 
 		// deposit 50 eth -> 50 WETH
 		await weth.deposit({ value: utils.parseUnits('50') });

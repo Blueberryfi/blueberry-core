@@ -8,19 +8,24 @@ import {
 	IFeedRegistry,
 } from '../../typechain-types';
 import ChainlinkFeedABI from '../../abi/IFeedRegistry.json';
-import { roughlyNear } from '../assertions/roughlyNear';
 
-chai.use(roughlyNear);
+import { solidity } from 'ethereum-waffle'
+import { near } from '../assertions/near'
+import { roughlyNear } from '../assertions/roughlyNear'
+
+chai.use(solidity)
+chai.use(near)
+chai.use(roughlyNear)
 
 const OneDay = 86400;
 
 describe('Chainlink Adapter Oracle', () => {
 	let admin: SignerWithAddress;
-	let user2: SignerWithAddress;
+	let alice: SignerWithAddress;
 	let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 	let chainlinkFeedOracle: IFeedRegistry;
 	before(async () => {
-		[admin, user2] = await ethers.getSigners();
+		[admin, alice] = await ethers.getSigners();
 		chainlinkFeedOracle = <IFeedRegistry>await ethers.getContractAt(ChainlinkFeedABI, ADDRESS.ChainlinkRegistry);
 	});
 
@@ -35,26 +40,81 @@ describe('Chainlink Adapter Oracle', () => {
 		);
 	})
 
-	it("should allow maxDelayTimes setting only for owner", async () => {
-		await expect(chainlinkAdapterOracle.connect(user2).setMaxDelayTimes(
-			[ADDRESS.USDC, ADDRESS.UNI],
-			[OneDay, OneDay]
-		)).to.be.revertedWith('Ownable: caller is not the owner');
-
-		await expect(chainlinkAdapterOracle.setMaxDelayTimes(
-			[ADDRESS.USDC, ADDRESS.UNI],
-			[OneDay, OneDay, OneDay]
-		)).to.be.revertedWith('length mismatch');
-
-		await expect(chainlinkAdapterOracle.setMaxDelayTimes(
-			[ADDRESS.USDC, ADDRESS.UNI],
-			[OneDay, OneDay]
-		)).to.be.emit(chainlinkAdapterOracle, 'SetMaxDelayTime');
-
-		expect(await chainlinkAdapterOracle.maxDelayTimes(ADDRESS.USDC)).to.be.equal(OneDay);
+	describe("Constructor", () => {
+		it("should revert when feed registry address is invalid", async () => {
+			const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
+			await expect(
+				ChainlinkAdapterOracle.deploy(ethers.constants.AddressZero)
+			).to.be.revertedWith('ZERO_ADDRESS');
+		});
+		it("should set feed registry", async () => {
+			expect(await chainlinkAdapterOracle.registry()).to.be.equal(ADDRESS.ChainlinkRegistry);
+		})
 	})
+	describe("Owner", () => {
+		it("should be able to set maxDelayTimes", async () => {
+			await expect(chainlinkAdapterOracle.connect(alice).setMaxDelayTimes(
+				[ADDRESS.USDC, ADDRESS.UNI],
+				[OneDay, OneDay]
+			)).to.be.revertedWith('Ownable: caller is not the owner');
 
-	describe('price feeds', () => {
+			await expect(chainlinkAdapterOracle.setMaxDelayTimes(
+				[ADDRESS.USDC, ADDRESS.UNI],
+				[OneDay, OneDay, OneDay]
+			)).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
+
+			await expect(chainlinkAdapterOracle.setMaxDelayTimes(
+				[ADDRESS.USDC, ADDRESS.UNI],
+				[OneDay, OneDay * 3]
+			)).to.be.revertedWith('TOO_LONG_DELAY');
+
+			await expect(chainlinkAdapterOracle.setMaxDelayTimes(
+				[ADDRESS.USDC, ethers.constants.AddressZero],
+				[OneDay, OneDay]
+			)).to.be.revertedWith('ZERO_ADDRESS');
+
+			await expect(chainlinkAdapterOracle.setMaxDelayTimes(
+				[ADDRESS.USDC, ADDRESS.UNI],
+				[OneDay, OneDay]
+			)).to.be.emit(chainlinkAdapterOracle, 'SetMaxDelayTime');
+
+			expect(await chainlinkAdapterOracle.maxDelayTimes(ADDRESS.USDC)).to.be.equal(OneDay);
+		})
+		it("should be able to set setTokenRemappings", async () => {
+			await expect(chainlinkAdapterOracle.connect(alice).setTokenRemappings(
+				[ADDRESS.USDC, ADDRESS.UNI],
+				[ADDRESS.USDC, ADDRESS.UNI]
+			)).to.be.revertedWith('Ownable: caller is not the owner');
+
+			await expect(chainlinkAdapterOracle.setTokenRemappings(
+				[ADDRESS.USDC, ADDRESS.UNI],
+				[ADDRESS.USDC, ADDRESS.UNI, ADDRESS.UNI]
+			)).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
+
+			await expect(chainlinkAdapterOracle.setTokenRemappings(
+				[ADDRESS.USDC, ADDRESS.UNI],
+				[ADDRESS.USDC, ethers.constants.AddressZero]
+			)).to.be.revertedWith('ZERO_ADDRESS');
+
+			await expect(chainlinkAdapterOracle.setTokenRemappings(
+				[ADDRESS.USDC, ethers.constants.AddressZero],
+				[ADDRESS.USDC, ADDRESS.UNI]
+			)).to.be.revertedWith('ZERO_ADDRESS');
+
+			await expect(chainlinkAdapterOracle.setTokenRemappings(
+				[ADDRESS.USDC, ADDRESS.UNI],
+				[ADDRESS.USDC, ADDRESS.UNI]
+			)).to.be.emit(chainlinkAdapterOracle, 'SetTokenRemapping');
+
+			expect(await chainlinkAdapterOracle.remappedTokens(ADDRESS.USDC)).to.be.equal(ADDRESS.USDC);
+		})
+	})
+	describe('Price Feeds', () => {
+		it("should revert when max delay time is not set", async () => {
+			await expect(
+				chainlinkAdapterOracle.getPrice(ADDRESS.CRV)
+			).to.be.revertedWith('NO_MAX_DELAY');
+		})
 		it('USDC price feeds / based 10^18', async () => {
 			const decimals = await chainlinkFeedOracle.decimals(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);
 			const { answer } = await chainlinkFeedOracle.latestRoundData(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);

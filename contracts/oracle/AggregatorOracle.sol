@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 
+import '../BlueBerryErrors.sol';
 import '../interfaces/IBaseOracle.sol';
 
 contract AggregatorOracle is IBaseOracle, Ownable {
@@ -21,7 +22,7 @@ contract AggregatorOracle is IBaseOracle, Ownable {
     mapping(address => uint256) public maxPriceDeviations;
 
     uint256 public constant MIN_PRICE_DEVIATION = 1e18; // min price deviation
-    uint256 public constant MAX_PRICE_DEVIATION = 1.5e18; // max price deviation
+    uint256 public constant MAX_PRICE_DEVIATION = 1.2e18; // max price deviation, 20%
 
     /// @dev Set oracle primary sources for the token
     /// @param token Token address to set oracle sources
@@ -44,11 +45,10 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         uint256[] memory maxPriceDeviationList,
         IBaseOracle[][] memory allSources
     ) external onlyOwner {
-        require(tokens.length == allSources.length, 'inconsistent length');
-        require(
-            tokens.length == maxPriceDeviationList.length,
-            'inconsistent length'
-        );
+        if (
+            tokens.length != allSources.length ||
+            tokens.length != maxPriceDeviationList.length
+        ) revert INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             _setPrimarySources(
                 tokens[idx],
@@ -67,15 +67,17 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         uint256 maxPriceDeviation,
         IBaseOracle[] memory sources
     ) internal {
+        if (token == address(0)) revert ZERO_ADDRESS();
+        if (
+            maxPriceDeviation < MIN_PRICE_DEVIATION ||
+            maxPriceDeviation > MAX_PRICE_DEVIATION
+        ) revert OUT_OF_DEVIATION_CAP(maxPriceDeviation);
+        if (sources.length > 3) revert EXCEED_SOURCE_LEN(sources.length);
+
         primarySourceCount[token] = sources.length;
-        require(
-            maxPriceDeviation >= MIN_PRICE_DEVIATION &&
-                maxPriceDeviation <= MAX_PRICE_DEVIATION,
-            'bad max deviation value'
-        );
-        require(sources.length <= 3, 'sources length exceed 3');
         maxPriceDeviations[token] = maxPriceDeviation;
         for (uint256 idx = 0; idx < sources.length; idx++) {
+            if (address(sources[idx]) == address(0)) revert ZERO_ADDRESS();
             primarySources[token][idx] = sources[idx];
         }
         emit SetPrimarySources(token, maxPriceDeviation, sources);
@@ -86,7 +88,7 @@ contract AggregatorOracle is IBaseOracle, Ownable {
     /// NOTE: Support at most 3 oracle sources per token
     function getPrice(address token) public view override returns (uint256) {
         uint256 candidateSourceCount = primarySourceCount[token];
-        require(candidateSourceCount > 0, 'no primary source');
+        if (candidateSourceCount == 0) revert NO_PRIMARY_SOURCE(token);
         uint256[] memory prices = new uint256[](candidateSourceCount);
 
         // Get valid oracle sources
@@ -98,7 +100,7 @@ contract AggregatorOracle is IBaseOracle, Ownable {
                 prices[validSourceCount++] = px;
             } catch {}
         }
-        require(validSourceCount > 0, 'no valid source');
+        if (validSourceCount == 0) revert NO_VALID_SOURCE(token);
         for (uint256 i = 0; i < validSourceCount - 1; i++) {
             for (uint256 j = 0; j < validSourceCount - i - 1; j++) {
                 if (prices[j] > prices[j + 1]) {
@@ -121,12 +123,10 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         if (validSourceCount == 1) {
             return prices[0]; // if 1 valid source, return
         } else if (validSourceCount == 2) {
-            require(
-                (prices[1] * 1e18) / prices[0] <= maxPriceDeviation,
-                'too much deviation (2 valid sources)'
-            );
+            if ((prices[1] * 1e18) / prices[0] > maxPriceDeviation)
+                revert EXCEED_DEVIATION();
             return (prices[0] + prices[1]) / 2; // if 2 valid sources, return average
-        } else if (validSourceCount == 3) {
+        } else {
             bool midMinOk = (prices[1] * 1e18) / prices[0] <= maxPriceDeviation;
             bool maxMidOk = (prices[2] * 1e18) / prices[1] <= maxPriceDeviation;
             if (midMinOk && maxMidOk) {
@@ -136,10 +136,8 @@ contract AggregatorOracle is IBaseOracle, Ownable {
             } else if (maxMidOk) {
                 return (prices[1] + prices[2]) / 2; // return average of pair within thresh
             } else {
-                revert('too much deviation (3 valid sources)');
+                revert EXCEED_DEVIATION();
             }
-        } else {
-            revert('more than 3 valid sources not supported');
         }
     }
 }
