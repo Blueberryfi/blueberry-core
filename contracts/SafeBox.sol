@@ -2,23 +2,28 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 import './BlueBerryErrors.sol';
 import './interfaces/ISafeBox.sol';
 import './interfaces/compound/ICErc20.sol';
 
-contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
-    using SafeERC20 for IERC20;
+contract SafeBox is
+    OwnableUpgradeable,
+    ERC20Upgradeable,
+    ReentrancyGuardUpgradeable,
+    ISafeBox
+{
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /// @dev address of cToken for underlying token
-    ICErc20 public immutable cToken;
+    ICErc20 public cToken;
     /// @dev address of underlying token
-    IERC20 public immutable uToken;
+    IERC20Upgradeable public uToken;
 
     /// @dev address of Bank contract
     address public bank;
@@ -33,13 +38,15 @@ contract SafeBox is Ownable, ERC20, ReentrancyGuard, ISafeBox {
         _;
     }
 
-    constructor(
+    function initialize(
         ICErc20 _cToken,
         string memory _name,
         string memory _symbol
-    ) ERC20(_name, _symbol) {
+    ) external initializer {
+        __ERC20_init(_name, _symbol);
+        __Ownable_init();
         if (address(_cToken) == address(0)) revert ZERO_ADDRESS();
-        IERC20 _uToken = IERC20(_cToken.underlying());
+        IERC20Upgradeable _uToken = IERC20Upgradeable(_cToken.underlying());
         cToken = _cToken;
         uToken = _uToken;
         _uToken.safeApprove(address(_cToken), type(uint256).max);

@@ -10,6 +10,7 @@ import {
 	IchiVaultSpell,
 	IUniswapV2Router02,
 	IWETH,
+	MockOracle,
 	SafeBox,
 	IchiLpOracle,
 	IIchiFarm,
@@ -152,11 +153,11 @@ describe('ICHI Angel Vaults Spell', () => {
 
 		// Deposit 10k USDC to compound
 		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
-		safeBox = <SafeBox>await SafeBox.deploy(
+		safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
-		)
+		]);
 		await safeBox.deployed();
 		await safeBox.setBank(bank.address);
 		await bank.addBank(USDC, CUSDC, safeBox.address);

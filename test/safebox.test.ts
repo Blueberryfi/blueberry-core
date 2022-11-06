@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import chai, { expect } from "chai";
 import { ERC20, ICErc20, IUniswapV2Router02, IWETH, SafeBox } from "../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../constant";
@@ -39,11 +39,11 @@ describe("SafeBox", () => {
 
 	beforeEach(async () => {
 		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
-		safeBox = <SafeBox>await SafeBox.deploy(
+		safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
-		)
+		]);
 		await safeBox.deployed();
 
 		// deposit 50 eth -> 50 WETH
@@ -68,11 +68,11 @@ describe("SafeBox", () => {
 		it("should revert when cToken address is invalid", async () => {
 			const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 			// const safeBox = <SafeBox>
-			await expect(SafeBox.deploy(
+			await expect(upgrades.deployProxy(SafeBox, [
 				ethers.constants.AddressZero,
 				"Interest Bearing USDC",
 				"ibUSDC"
-			)).to.be.revertedWith('ZERO_ADDRESS');
+			])).to.be.revertedWith('ZERO_ADDRESS');
 		})
 		it("should set cToken along with uToken in constructor", async () => {
 			expect(await safeBox.uToken()).to.be.equal(USDC);
