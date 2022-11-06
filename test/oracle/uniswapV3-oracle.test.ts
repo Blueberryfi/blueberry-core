@@ -3,7 +3,7 @@ import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import {
-  SimpleOracle,
+  MockOracle,
   UniswapV3AdapterOracle,
   IUniswapV3Pool,
 } from '../../typechain-types';
@@ -14,17 +14,17 @@ chai.use(near);
 chai.use(roughlyNear);
 
 describe('Uniswap V3 Oracle', () => {
-  let simpleOracle: SimpleOracle;
+  let mockOracle: MockOracle;
   let uniswapV3Oracle: UniswapV3AdapterOracle;
 
   before(async () => {
-    const SimpleOracleFactory = await ethers.getContractFactory(
-      CONTRACT_NAMES.SimpleOracle
+    const MockOracle = await ethers.getContractFactory(
+      CONTRACT_NAMES.MockOracle
     );
-    simpleOracle = <SimpleOracle>await SimpleOracleFactory.deploy();
-    await simpleOracle.deployed();
+    mockOracle = <MockOracle>await MockOracle.deploy();
+    await mockOracle.deployed();
 
-    await simpleOracle.setPrice(
+    await mockOracle.setPrice(
       [ADDRESS.USDC],
       [BigNumber.from(10).pow(18)]  // $1
     )
@@ -33,7 +33,7 @@ describe('Uniswap V3 Oracle', () => {
       CONTRACT_NAMES.UniswapV3AdapterOracle
     );
     uniswapV3Oracle = <UniswapV3AdapterOracle>(
-      await UniswapV3AdapterOracle.deploy(simpleOracle.address)
+      await UniswapV3AdapterOracle.deploy(mockOracle.address)
     );
     await uniswapV3Oracle.deployed();
     await uniswapV3Oracle.setPoolsStable(

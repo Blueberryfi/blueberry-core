@@ -15,7 +15,7 @@ chai.use(roughlyNear)
 
 const OneDay = 86400;
 
-describe('Oracle / Uniswap LP Oracle', () => {
+describe('Uniswap V2 LP Oracle', () => {
   let uniswapOracle: UniswapV2Oracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
   before(async () => {

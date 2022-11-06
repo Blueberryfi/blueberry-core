@@ -1,5 +1,10 @@
 [
   {
+    "inputs": [],
+    "name": "INPUT_ARRAY_MISMATCH",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {

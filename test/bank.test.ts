@@ -11,7 +11,7 @@ import {
 	IUniswapV2Router02,
 	IWETH,
 	SafeBox,
-	SimpleOracle,
+	MockOracle,
 	IchiLpOracle,
 	IIchiFarm,
 	WERC20,
@@ -48,7 +48,7 @@ describe('Bank', () => {
 	let weth: IWETH;
 	let cUSDC: ICErc20;
 	let werc20: WERC20;
-	let simpleOracle: SimpleOracle;
+	let mockOracle: MockOracle;
 	let ichiOracle: IchiLpOracle;
 	let oracle: CoreOracle;
 	let spell: IchiVaultSpell;
@@ -67,10 +67,10 @@ describe('Bank', () => {
 		werc20 = <WERC20>await WERC20.deploy();
 		await werc20.deployed();
 
-		const SimpleOracle = await ethers.getContractFactory(CONTRACT_NAMES.SimpleOracle);
-		simpleOracle = <SimpleOracle>await SimpleOracle.deploy();
-		await simpleOracle.deployed();
-		await simpleOracle.setPrice(
+		const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
+		mockOracle = <MockOracle>await MockOracle.deploy();
+		await mockOracle.deployed();
+		await mockOracle.setPrice(
 			[WETH, USDC, ICHI],
 			[
 				BigNumber.from(10).pow(18).mul(ETH_PRICE),
@@ -80,7 +80,7 @@ describe('Bank', () => {
 		)
 
 		const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
-		ichiOracle = <IchiLpOracle>await IchiLpOracle.deploy(simpleOracle.address);
+		ichiOracle = <IchiLpOracle>await IchiLpOracle.deploy(mockOracle.address);
 		await ichiOracle.deployed();
 
 		const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -92,13 +92,13 @@ describe('Bank', () => {
 			[WETH, USDC, ICHI, ICHI_VAULT],
 			[{
 				liqThreshold: 9000,
-				route: simpleOracle.address,
+				route: mockOracle.address,
 			}, {
 				liqThreshold: 8000,
-				route: simpleOracle.address,
+				route: mockOracle.address,
 			}, {
 				liqThreshold: 9000,
-				route: simpleOracle.address,
+				route: mockOracle.address,
 			}, {
 				liqThreshold: 10000,
 				route: ichiOracle.address,

@@ -1,5 +1,37 @@
 [
   {
+    "inputs": [],
+    "name": "INPUT_ARRAY_MISMATCH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "threshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "LIQ_THRESHOLD_TOO_HIGH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "PRICE_FAILED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZERO_ADDRESS",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -16,6 +48,19 @@
       }
     ],
     "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "RemoveTokenSetting",
     "type": "event"
   },
   {
@@ -65,7 +110,7 @@
         "type": "tuple"
       }
     ],
-    "name": "SetTokenFactor",
+    "name": "SetTokenSetting",
     "type": "event"
   },
   {
@@ -85,19 +130,6 @@
       }
     ],
     "name": "SetWhitelist",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "UnsetTokenFactor",
     "type": "event"
   },
   {
@@ -229,6 +261,19 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "tokens",
+        "type": "address[]"
+      }
+    ],
+    "name": "removeTokenSettings",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
@@ -274,7 +319,7 @@
           }
         ],
         "internalType": "struct CoreOracle.TokenSetting[]",
-        "name": "_tokenFactors",
+        "name": "settings",
         "type": "tuple[]"
       }
     ],
@@ -377,19 +422,6 @@
       }
     ],
     "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "tokens",
-        "type": "address[]"
-      }
-    ],
-    "name": "unsetTokenSettings",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -3,9 +3,11 @@
 pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
+
+import '../BlueBerryErrors.sol';
 import '../interfaces/IBaseOracle.sol';
 
-contract SimpleOracle is IBaseOracle, Ownable {
+contract MockOracle is IBaseOracle, Ownable {
     mapping(address => uint256) public prices; // Mapping from token to price (times 1e18).
 
     /// The governor sets oracle price for a token.
@@ -14,9 +16,7 @@ contract SimpleOracle is IBaseOracle, Ownable {
     /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param token The ERC-20 token to check the value.
     function getPrice(address token) external view override returns (uint256) {
-        uint256 px = prices[token];
-        require(px != 0, 'no px');
-        return px;
+        return prices[token];
     }
 
     /// @dev Set the prices of the given token addresses.
@@ -26,7 +26,7 @@ contract SimpleOracle is IBaseOracle, Ownable {
         external
         onlyOwner
     {
-        require(tokens.length == pxs.length, 'inconsistent length');
+        if (tokens.length != pxs.length) revert INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             prices[tokens[idx]] = pxs[idx];
             emit SetPrice(tokens[idx], pxs[idx]);

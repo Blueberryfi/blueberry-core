@@ -3,7 +3,7 @@ import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import {
-	SimpleOracle,
+	MockOracle,
 	CoreOracle,
 	IchiLpOracle,
 	IICHIVault,
@@ -15,16 +15,16 @@ import { roughlyNear } from '../assertions/roughlyNear';
 chai.use(roughlyNear);
 
 describe('Ichi Vault Lp Oracle', () => {
-	let simpleOracle: SimpleOracle;
+	let mockOracle: MockOracle;
 	let coreOracle: CoreOracle;
 	let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 	let ichiOracle: IchiLpOracle;
 	let ichiVault: IICHIVault;
 
 	before(async () => {
-		const SimpleOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.SimpleOracle);
-		simpleOracle = <SimpleOracle>await SimpleOracleFactory.deploy();
-		await simpleOracle.deployed();
+		const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
+		mockOracle = <MockOracle>await MockOracle.deploy();
+		await mockOracle.deployed();
 
 		const CoreOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
 		coreOracle = <CoreOracle>await CoreOracleFactory.deploy();
@@ -39,7 +39,7 @@ describe('Ichi Vault Lp Oracle', () => {
 			[ADDRESS.USDC, ADDRESS.ICHI],
 			[
 				chainlinkAdapterOracle.address,
-				simpleOracle.address,
+				mockOracle.address,
 			]
 		);
 
@@ -53,7 +53,7 @@ describe('Ichi Vault Lp Oracle', () => {
 	it('USDC/ICHI Angel Vault Lp Price', async () => {
 		const ichiPrice = BigNumber.from(10).pow(18).mul(543).div(100); // $5.43
 
-		await simpleOracle.setPrice(
+		await mockOracle.setPrice(
 			[ADDRESS.ICHI], [ichiPrice]
 		);
 

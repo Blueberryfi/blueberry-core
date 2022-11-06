@@ -2,11 +2,14 @@ export enum CONTRACT_NAMES {
 	// Token
 	ERC20 = 'ERC20',
 	IERC20 = 'IERC20',
+
+	// MOCK
 	MockWETH = 'MockWETH',
 	MockERC20 = 'MockERC20',
 	MockCErc20 = 'MockCErc20',
 	MockCErc20_2 = 'MockCErc20_2',
 	MockFeedRegistry = 'MockFeedRegistry',
+	MockOracle = "MockOracle",
 
 	// Wrapper
 	WERC20 = 'WERC20',
@@ -18,7 +21,6 @@ export enum CONTRACT_NAMES {
 	// Oracles
 	BandAdapterOracle = "BandAdapterOracle",
 	ChainlinkAdapterOracle = "ChainlinkAdapterOracle",
-	SimpleOracle = "SimpleOracle",
 	CoreOracle = "CoreOracle",
 	UniswapV2Oracle = "UniswapV2Oracle",
 	BalancerPairOracle = "BalancerPairOracle",

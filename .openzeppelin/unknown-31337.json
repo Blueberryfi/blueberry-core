@@ -61,8 +61,43 @@
       "kind": "transparent"
     },
     {
-      "address": "0x0c626FC4A447b01554518550e30600136864640B",
-      "txHash": "0xc278dc7b858f073c6d562c70b28d1e4f46b00a9befa3e5ddd8d1bbb3ae42d0f5",
+      "address": "0x746a48E39dC57Ff14B872B8979E20efE5E5100B1",
+      "txHash": "0xfc8d563ed20f554e67767e08bdb5c019397380e5f85e577592336c20e06a4556",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9CC8B5379C40E24F374cd55973c138fff83ed214",
+      "txHash": "0x20f5c2e6b2f3bcfa2d324c66009113dd04540b1dbd5ab2163b1aaa0a66d2914a",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x89ec9355b1Bcc964e576211c8B011BD709083f8d",
+      "txHash": "0x36cb61fbbe6f4d1a9a8730f2002467fc98124e079cb49a94ef5d81f3264f00bd",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x88D1aF96098a928eE278f162c1a84f339652f95b",
+      "txHash": "0xda5528cda89ef18e9cc083228497c27779764d8c6c1fd391ede5ef1cdfa84081",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xfc073209b7936A771F77F63D42019a3a93311869",
+      "txHash": "0xa123f8a25afb4e61d677f7c3def1235f892ae01f9d44a6d36a224236e101c964",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xc775bF567D67018dfFac4E89a7Cf10f0EDd0Be93",
+      "txHash": "0x660fa85db43747b58f39a5742612b7e3b9776921135e0b1c13046e1d67f4a9eb",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xB2ff9d5e60d68A52cea3cd041b32f1390A880365",
+      "txHash": "0x4d9bab39e63a12250833500768844d3d56459a7cb654ff740a5c66ca99bd6c02",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xFf658343244c0475b9305859F1b7CDAB9784762f",
+      "txHash": "0x538cc7c5619a077b8fc418033fea1490ef3099f20a9428831600814cefc96b6a",
       "kind": "transparent"
     },
     {
@@ -71,8 +106,13 @@
       "kind": "transparent"
     },
     {
-      "address": "0x746a48E39dC57Ff14B872B8979E20efE5E5100B1",
-      "txHash": "0xfc8d563ed20f554e67767e08bdb5c019397380e5f85e577592336c20e06a4556",
+      "address": "0xAA5c5496e2586F81d8d2d0B970eB85aB088639c2",
+      "txHash": "0x0e7fcef378c5d8d578e400c7121f10d1e7a23805c94f8b9d67301f0dc99e54af",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x0c626FC4A447b01554518550e30600136864640B",
+      "txHash": "0xc278dc7b858f073c6d562c70b28d1e4f46b00a9befa3e5ddd8d1bbb3ae42d0f5",
       "kind": "transparent"
     }
   ],
@@ -1134,9 +1174,9 @@
         }
       }
     },
-    "a4ddebbf0b9ee9a00ab3afc047c209ff88919065d41351161da2d4abe3d55c28": {
+    "2f2e270eb0465c95f3940c7cd7252aa43c2529d47c49754cd094c00342bcb652": {
       "address": "0x7Cf4be31f546c04787886358b9486ca3d62B9acf",
-      "txHash": "0x66d36ebb333006a39379f556c798933759ce8381ccf9bdaf96faa8079e2017c4",
+      "txHash": "0x421fb128d5235626a3f137867eef14a0d5bac028565e3ee92ef8e2e0e1fb4a77",
       "layout": {
         "storage": [
           {
@@ -1224,7 +1264,7 @@
             "label": "oracle",
             "offset": 0,
             "slot": "154",
-            "type": "t_contract(IOracle)14395",
+            "type": "t_contract(IOracle)14407",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:174"
           },
@@ -1338,7 +1378,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IOracle)14395": {
+          "t_contract(IOracle)14407": {
             "label": "contract IOracle",
             "numberOfBytes": "20"
           },

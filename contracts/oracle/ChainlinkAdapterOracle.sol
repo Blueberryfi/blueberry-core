@@ -22,6 +22,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
     /// @dev Mapping from token address to max delay time
     mapping(address => uint256) public maxDelayTimes;
 
+    event SetRegistry(address registry);
     event SetMaxDelayTime(address indexed token, uint256 maxDelayTime);
     event SetTokenRemapping(
         address indexed token,
@@ -29,31 +30,32 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
     );
 
     constructor(IFeedRegistry registry_) {
-        if (address(registry_) == address(0)) {
-            revert ZERO_ADDRESS();
-        }
+        if (address(registry_) == address(0)) revert ZERO_ADDRESS();
+
         registry = registry_;
     }
 
+    /// @dev Set chainlink feed registry source
+    /// @param _registry Chainlink feed registry source
+    function setFeedRegistry(IFeedRegistry _registry) external onlyOwner {
+        if (address(_registry) == address(0)) revert ZERO_ADDRESS();
+        registry = _registry;
+        emit SetRegistry(address(_registry));
+    }
+
     /// @dev Set max delay time for each token
-    /// @param _remappedTokens List of remapped tokens to set max delay
-    /// @param _maxDelayTimes List of max delay times to set to
+    /// @param tokens List of remapped tokens to set max delay
+    /// @param maxDelays List of max delay times to set to
     function setMaxDelayTimes(
-        address[] calldata _remappedTokens,
-        uint256[] calldata _maxDelayTimes
+        address[] calldata tokens,
+        uint256[] calldata maxDelays
     ) external onlyOwner {
-        if (_remappedTokens.length != _maxDelayTimes.length) {
-            revert INPUT_ARRAY_MISMATCH();
-        }
-        for (uint256 idx = 0; idx < _remappedTokens.length; idx++) {
-            if (_maxDelayTimes[idx] > 2 days) {
-                revert TOO_LONG_DELAY(_maxDelayTimes[idx]);
-            }
-            if (_remappedTokens[idx] == address(0)) {
-                revert ZERO_ADDRESS();
-            }
-            maxDelayTimes[_remappedTokens[idx]] = _maxDelayTimes[idx];
-            emit SetMaxDelayTime(_remappedTokens[idx], _maxDelayTimes[idx]);
+        if (tokens.length != maxDelays.length) revert INPUT_ARRAY_MISMATCH();
+        for (uint256 idx = 0; idx < tokens.length; idx++) {
+            if (maxDelays[idx] > 2 days) revert TOO_LONG_DELAY(maxDelays[idx]);
+            if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
+            maxDelayTimes[tokens[idx]] = maxDelays[idx];
+            emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
         }
     }
 
@@ -65,16 +67,11 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
         address[] calldata _tokens,
         address[] calldata _remappedTokens
     ) external onlyOwner {
-        if (_remappedTokens.length != _tokens.length) {
+        if (_remappedTokens.length != _tokens.length)
             revert INPUT_ARRAY_MISMATCH();
-        }
         for (uint256 idx = 0; idx < _tokens.length; idx++) {
-            if (_remappedTokens[idx] == address(0)) {
-                revert ZERO_ADDRESS();
-            }
-            if (_tokens[idx] == address(0)) {
-                revert ZERO_ADDRESS();
-            }
+            if (_remappedTokens[idx] == address(0)) revert ZERO_ADDRESS();
+            if (_tokens[idx] == address(0)) revert ZERO_ADDRESS();
             remappedTokens[_tokens[idx]] = _remappedTokens[idx];
             emit SetTokenRemapping(_tokens[idx], _remappedTokens[idx]);
         }
@@ -91,9 +88,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
         if (token == address(0)) token = _token;
 
         uint256 maxDelayTime = maxDelayTimes[token];
-        if (maxDelayTime == 0) {
-            revert NO_MAX_DELAY(_token);
-        }
+        if (maxDelayTime == 0) revert NO_MAX_DELAY(_token);
 
         // try to get token-USD price
         uint256 decimals = registry.decimals(token, USD);
@@ -101,9 +96,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
             token,
             USD
         );
-        if (updatedAt < block.timestamp - maxDelayTime) {
+        if (updatedAt < block.timestamp - maxDelayTime)
             revert PRICE_OUTDATED(_token);
-        }
+
         return (answer.toUint256() * 1e18) / 10**decimals;
     }
 }

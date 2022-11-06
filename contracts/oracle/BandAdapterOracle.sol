@@ -15,17 +15,20 @@ contract BandAdapterOracle is IBaseOracle, Ownable {
     mapping(address => string) public symbols; // Mapping from token to symbol string
     mapping(address => uint256) public maxDelayTimes; // Mapping from token address to max delay time
 
-    event SetSymbol(address token, string symbol);
     event SetRef(address ref);
+    event SetSymbol(address token, string symbol);
     event SetMaxDelayTime(address token, uint256 maxDelayTime);
 
     constructor(IStdReference _ref) {
+        if (address(_ref) == address(0)) revert ZERO_ADDRESS();
+
         ref = _ref;
     }
 
     /// @dev Set standard reference source
     /// @param _ref Standard reference source
     function setRef(IStdReference _ref) external onlyOwner {
+        if (address(_ref) == address(0)) revert ZERO_ADDRESS();
         ref = _ref;
         emit SetRef(address(_ref));
     }
@@ -37,8 +40,10 @@ contract BandAdapterOracle is IBaseOracle, Ownable {
         external
         onlyOwner
     {
-        require(syms.length == tokens.length, 'length mismatch');
+        if (syms.length != tokens.length) revert INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < syms.length; idx++) {
+            if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
+
             symbols[tokens[idx]] = syms[idx];
             emit SetSymbol(tokens[idx], syms[idx]);
         }
@@ -51,9 +56,11 @@ contract BandAdapterOracle is IBaseOracle, Ownable {
         address[] calldata tokens,
         uint256[] calldata maxDelays
     ) external onlyOwner {
-        require(tokens.length == maxDelays.length, 'length mismatch');
+        if (tokens.length != maxDelays.length) revert INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            require(maxDelays[idx] <= 2 days, 'too long delay time');
+            if (maxDelays[idx] > 2 days) revert TOO_LONG_DELAY(maxDelays[idx]);
+            if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
+
             maxDelayTimes[tokens[idx]] = maxDelays[idx];
             emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
         }
@@ -64,20 +71,18 @@ contract BandAdapterOracle is IBaseOracle, Ownable {
     function getPrice(address token) external view override returns (uint256) {
         string memory sym = symbols[token];
         uint256 maxDelayTime = maxDelayTimes[token];
-        require(bytes(sym).length != 0, 'no mapping');
-        require(maxDelayTime != 0, 'max delay time not set');
+        if (bytes(sym).length == 0) revert NO_SYM_MAPPING(token);
+        if (maxDelayTime == 0) revert NO_MAX_DELAY(token);
+
         IStdReference.ReferenceData memory data = ref.getReferenceData(
             sym,
             'USD'
         );
-        require(
-            data.lastUpdatedBase >= block.timestamp - maxDelayTime,
-            'delayed base data'
-        );
-        require(
-            data.lastUpdatedQuote >= block.timestamp - maxDelayTime,
-            'delayed quote data'
-        );
+        if (
+            data.lastUpdatedBase < block.timestamp - maxDelayTime ||
+            data.lastUpdatedQuote < block.timestamp - maxDelayTime
+        ) revert PRICE_OUTDATED(token);
+
         return data.rate;
     }
 }
