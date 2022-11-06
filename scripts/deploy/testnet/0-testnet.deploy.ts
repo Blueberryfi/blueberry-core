@@ -42,7 +42,7 @@ async function main(): Promise<void> {
 	await uniV3Oracle.deployed();
 	console.log('Uni V3 Oracle Address:', uniV3Oracle.address);
 
-	await uniV3Oracle.setPoolsStable([ADDRESS_GOERLI.BaseToken], [ADDRESS_GOERLI.UNI_V3_ICHI_USDC]);
+	await uniV3Oracle.setStablePools([ADDRESS_GOERLI.BaseToken], [ADDRESS_GOERLI.UNI_V3_ICHI_USDC]);
 	await uniV3Oracle.setTimeAgos([ADDRESS_GOERLI.BaseToken], [10]); // 10s ago
 
 	// Core Oracle
