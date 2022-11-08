@@ -21,6 +21,33 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "INPUT_ARRAY_MISMATCH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      }
+    ],
+    "name": "NOT_FROM_WETH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "lp",
+        "type": "address"
+      }
+    ],
+    "name": "ORACLE_NOT_SUPPORT_LP",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {

@@ -138,7 +138,7 @@ interface IBank {
 
     function getDebtValue(uint256 positionId) external view returns (uint256);
 
-    function getCollateralValue(uint256 positionId)
+    function getPositionValue(uint256 positionId)
         external
         view
         returns (uint256);

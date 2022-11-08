@@ -5,6 +5,7 @@ pragma solidity 0.8.16;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
+import '../BlueBerryErrors.sol';
 import '../utils/ERC1155NaiveReceiver.sol';
 import '../interfaces/IBank.sol';
 import '../interfaces/IWERC20.sol';
@@ -77,7 +78,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
             (bool success, ) = bank.EXECUTOR().call{value: balance}(
                 new bytes(0)
             );
-            require(success, 'refund ETH failed');
+            if (!success) revert REFUND_ETH_FAILED(balance);
         }
     }
 
@@ -145,6 +146,6 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
 
     /// @dev Fallback function. Can only receive ETH from WETH contract.
     receive() external payable {
-        require(msg.sender == weth, 'ETH must come from WETH');
+        if (msg.sender != weth) revert NOT_FROM_WETH(msg.sender);
     }
 }

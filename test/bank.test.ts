@@ -163,6 +163,7 @@ describe('Bank', () => {
 		await bank.addBank(USDC, CUSDC, safeBox.address);
 
 		await usdc.approve(safeBox.address, ethers.constants.MaxUint256);
+		await usdc.transfer(alice.address, utils.parseUnits("500", 6));
 		await safeBox.deposit(utils.parseUnits("10000", 6));
 	})
 
@@ -196,7 +197,7 @@ describe('Bank', () => {
 		})
 	})
 
-	describe("Mics", async () => {
+	describe("Mics", () => {
 		describe("Owner", () => {
 			it("should be able to allow contract calls", async () => {
 				await expect(
@@ -290,6 +291,85 @@ describe('Bank', () => {
 
 		it("should revert EXECUTOR call when the bank is not under execution", async () => {
 			await expect(bank.EXECUTOR()).to.be.revertedWith("NOT_UNDER_EXECUTION");
+		})
+	})
+
+	describe("Liquidation", () => {
+		beforeEach(async () => {
+			const iface = new ethers.utils.Interface(SpellABI);
+			await usdc.approve(bank.address, ethers.constants.MaxUint256);
+			await bank.execute(
+				0,
+				spell.address,
+				iface.encodeFunctionData("openPosition", [
+					USDC,
+					utils.parseUnits('100', 6),
+					utils.parseUnits('300', 6) // 3x
+				])
+			)
+		})
+		it("should be able to liquidate the position => (OV - PV)/CV = LT", async () => {
+			let positionInfo = await bank.getPositionInfo(1);
+			let debtValue = await bank.getDebtValue(1)
+			let positionValue = await bank.getPositionValue(1);
+			let risk = await bank.getPositionRisk(1)
+			console.log("Debt Value:", utils.formatUnits(debtValue));
+			console.log("Position Value:", utils.formatUnits(positionValue));
+			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
+
+			console.log('===ICHI token dumped from $5 to $1===');
+			await mockOracle.setPrice(
+				[ICHI],
+				[
+					BigNumber.from(10).pow(17).mul(10), // $1
+				]
+			);
+			positionInfo = await bank.getPositionInfo(1);
+			debtValue = await bank.getDebtValue(1)
+			positionValue = await bank.getPositionValue(1);
+			risk = await bank.getPositionRisk(1)
+			console.log("Debt Value:", utils.formatUnits(debtValue));
+			console.log("Position Value:", utils.formatUnits(positionValue));
+			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
+
+			expect(await bank.isLiquidatable(1)).to.be.true;
+
+			console.log("===Portion Liquidated===");
+			const liqAmount = utils.parseUnits("100", 6);
+			await usdc.connect(alice).approve(bank.address, liqAmount)
+			await expect(
+				bank.connect(alice).liquidate(1, USDC, liqAmount)
+			).to.be.emit(bank, "Liquidate");
+
+			positionInfo = await bank.getPositionInfo(1);
+			debtValue = await bank.getDebtValue(1)
+			positionValue = await bank.getPositionValue(1);
+			risk = await bank.getPositionRisk(1)
+			console.log("Debt Value:", utils.formatUnits(debtValue));
+			console.log("Position Value:", utils.formatUnits(positionValue));
+			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
+
+			const colToken = await ethers.getContractAt("ERC1155", positionInfo.collToken);
+			console.log("Liquidator's Position Balance:", await colToken.balanceOf(alice.address, positionInfo.collId));
+
+			console.log("===Full Liquidate===");
+			await usdc.connect(alice).approve(bank.address, ethers.constants.MaxUint256)
+			await expect(
+				bank.connect(alice).liquidate(1, USDC, ethers.constants.MaxUint256)
+			).to.be.emit(bank, "Liquidate");
+
+			positionInfo = await bank.getPositionInfo(1);
+			debtValue = await bank.getDebtValue(1)
+			positionValue = await bank.getPositionValue(1);
+			risk = await bank.getPositionRisk(1)
+			console.log("Debt Value:", utils.formatUnits(debtValue));
+			console.log("Position Value:", utils.formatUnits(positionValue));
+			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
+			console.log("Liquidator's Position Balance:", await colToken.balanceOf(alice.address, positionInfo.collId));
 		})
 	})
 })

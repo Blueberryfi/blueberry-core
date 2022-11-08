@@ -9,7 +9,7 @@ contract WhitelistSpell is BasicSpell, Ownable {
     mapping(address => bool) public whitelistedLpTokens; // mapping from lp token to whitelist status
 
     modifier onlyWhitelistedLp(address lpToken) {
-        require(whitelistedLpTokens[lpToken], 'lp token not whitelisted');
+        if (!whitelistedLpTokens[lpToken]) revert LP_NOT_WHITELISTED(lpToken);
         _;
     }
 
@@ -26,16 +26,11 @@ contract WhitelistSpell is BasicSpell, Ownable {
         address[] calldata lpTokens,
         bool[] calldata statuses
     ) external onlyOwner {
-        require(
-            lpTokens.length == statuses.length,
-            'lpTokens & statuses length mismatched'
-        );
+        if (lpTokens.length != statuses.length) revert INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < lpTokens.length; idx++) {
             if (statuses[idx]) {
-                require(
-                    bank.support(lpTokens[idx]),
-                    'oracle not support lp token'
-                );
+                if (!bank.support(lpTokens[idx]))
+                    revert ORACLE_NOT_SUPPORT_LP(lpTokens[idx]);
             }
             whitelistedLpTokens[lpTokens[idx]] = statuses[idx];
         }

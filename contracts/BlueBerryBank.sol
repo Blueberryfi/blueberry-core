@@ -5,6 +5,7 @@ pragma solidity 0.8.16;
 import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol';
 
 import './BlueBerryErrors.sol';
 import './utils/ERC1155NaiveReceiver.sol';
@@ -71,14 +72,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// when allowContractCalls is set to false and caller is not whitelisted
     modifier onlyEOAEx() {
         if (!allowContractCalls && !whitelistedContracts[msg.sender]) {
-            require(msg.sender == tx.origin, 'not eoa');
+            if (msg.sender != tx.origin) revert NOT_EOA(msg.sender);
         }
         _;
     }
 
     /// @dev Reentrancy lock guard.
     modifier lock() {
-        require(_GENERAL_LOCK == _NOT_ENTERED, 'general lock');
+        if (_GENERAL_LOCK != _NOT_ENTERED) revert LOCKED();
         _GENERAL_LOCK = _ENTERED;
         _;
         _GENERAL_LOCK = _NOT_ENTERED;
@@ -86,9 +87,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
     /// @dev Ensure that the function is called from within the execution scope.
     modifier inExec() {
-        require(POSITION_ID != _NO_ID, 'not within execution');
-        require(SPELL == msg.sender, 'not from spell');
-        require(_IN_EXEC_LOCK == _NOT_ENTERED, 'in exec lock');
+        if (POSITION_ID == _NO_ID) revert NOT_IN_EXEC();
+        if (SPELL != msg.sender) revert NOT_FROM_SPELL(msg.sender);
+        if (_IN_EXEC_LOCK != _NOT_ENTERED) revert LOCKED();
         _IN_EXEC_LOCK = _ENTERED;
         _;
         _IN_EXEC_LOCK = _NOT_ENTERED;
@@ -186,12 +187,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             revert INPUT_ARRAY_MISMATCH();
         }
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (statuses[idx]) {
-                require(
-                    oracle.support(tokens[idx]),
-                    'oracle not support token'
-                );
-            }
+            if (statuses[idx] && !oracle.support(tokens[idx]))
+                revert ORACLE_NOT_SUPPORT(tokens[idx]);
             whitelistedTokens[tokens[idx]] = statuses[idx];
         }
     }
@@ -470,7 +467,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @dev Return the USD value of total collateral of the given position.
      * @param positionId The position ID to query for the collateral value.
      */
-    function getCollateralValue(uint256 positionId)
+    function getPositionValue(uint256 positionId)
         public
         view
         override
@@ -520,7 +517,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         returns (uint256 risk)
     {
         Position storage pos = positions[positionId];
-        uint256 pv = getCollateralValue(positionId);
+        uint256 pv = getPositionValue(positionId);
         uint256 ov = getDebtValue(positionId);
         uint256 cv = oracle.getUnderlyingValue(
             pos.underlyingToken,
@@ -561,11 +558,20 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             amountCall
         );
         require(pos.collToken != address(0), 'bad collateral token');
+
+        uint256 liqSize = oracle.convertForLiquidation(
+            debtToken,
+            pos.collToken,
+            pos.collId,
+            amountPaid
+        );
+        liqSize = MathUpgradeable.min(liqSize, pos.collateralSize);
+        pos.collateralSize -= liqSize;
         IERC1155Upgradeable(pos.collToken).safeTransferFrom(
             address(this),
             msg.sender,
             pos.collId,
-            0,
+            liqSize,
             ''
         );
         emit Liquidate(positionId, msg.sender, debtToken, amountPaid, share, 0);

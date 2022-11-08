@@ -42,7 +42,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
      * @param vault Address of ICHI angel vault
      */
     function addVault(address token, address vault) external onlyOwner {
-        require(token != address(0) && vault != address(0), 'zero address');
+        if (token == address(0) || vault == address(0)) revert ZERO_ADDRESS();
         vaults[token] = vault;
     }
 
@@ -109,7 +109,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
     ) external {
         address vaultAddr = vaults[token];
         address lpToken = wIchiFarm.ichiFarm().lpToken(pid);
-        require(vaultAddr == lpToken, 'incorrect lp token');
+        if (vaultAddr != lpToken) revert INCORRECT_LP(lpToken);
 
         // 1-3 Deposit on ichi vault
         depositInternal(token, amount, amountBorrow);
@@ -119,11 +119,9 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
             .getCurrentPositionInfo();
         if (collSize > 0) {
             (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
-            require(pid == decodedPid, 'incorrect pid');
-            require(
-                collToken == address(wIchiFarm),
-                'collateral token & wmasterchef mismatched'
-            );
+            if (pid != decodedPid) revert INCORRECT_PID(pid);
+            if (collToken != address(wIchiFarm))
+                revert INCORRECT_COLTOKEN(collToken);
             bank.takeCollateral(collSize);
             wIchiFarm.burn(collId, collSize);
         }
@@ -163,7 +161,8 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
     ) internal {
         IICHIVault vault = IICHIVault(vaults[token]);
         // 2. Remove Liquidity - Withdraw from ICHI Vault
-        require(address(vault) != address(0), 'lp token not whitelisted');
+        if (address(vault) == address(0))
+            revert LP_NOT_WHITELISTED(address(vault));
         uint256 positionId = bank.POSITION_ID();
 
         // 2. Compute repay amount if MAX_INT is supplied (max debt)
@@ -239,14 +238,10 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         address vault = vaults[token];
         (, address collToken, uint256 collId, , ) = bank
             .getCurrentPositionInfo();
-        require(
-            IWIchiFarm(collToken).getUnderlyingToken(collId) == vault,
-            'incorrect underlying'
-        );
-        require(
-            collToken == address(wIchiFarm),
-            'collateral token & wmasterchef mismatched'
-        );
+        if (IWIchiFarm(collToken).getUnderlyingToken(collId) != vault)
+            revert INCORRECT_UNDERLYING(vault);
+        if (collToken != address(wIchiFarm))
+            revert INCORRECT_COLTOKEN(collToken);
 
         // 1. Take out collateral
         bank.takeCollateral(lpTakeAmt);

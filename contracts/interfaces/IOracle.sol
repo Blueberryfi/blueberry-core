@@ -47,5 +47,12 @@ interface IOracle {
         view
         returns (uint256);
 
+    function convertForLiquidation(
+        address tokenIn,
+        address tokenOut,
+        uint256 tokenOutId,
+        uint256 amountIn
+    ) external view returns (uint256);
+
     function getLiqThreshold(address token) external view returns (uint256);
 }

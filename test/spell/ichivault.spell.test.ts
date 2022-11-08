@@ -196,7 +196,8 @@ describe('ICHI Angel Vaults Spell', () => {
 		console.log('Position Info', pos);
 	})
 	it("should be able to return position risk ratio", async () => {
-		await bank.getPositionRisk(1);
+		let risk = await bank.getPositionRisk(1);
+		console.log('Prev Position Risk', utils.formatUnits(risk, 2), '%');
 		await mockOracle.setPrice(
 			[USDC, ICHI],
 			[
@@ -204,7 +205,7 @@ describe('ICHI Angel Vaults Spell', () => {
 				BigNumber.from(10).pow(17).mul(40), // $4
 			]
 		);
-		const risk = await bank.getPositionRisk(1);
+		risk = await bank.getPositionRisk(1);
 		console.log('Position Risk', utils.formatUnits(risk, 2), '%');
 	})
 	it("should be able to withdraw USDC", async () => {

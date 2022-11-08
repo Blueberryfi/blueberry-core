@@ -11,6 +11,8 @@ import '../interfaces/IOracle.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/IERC20Wrapper.sol';
 
+import 'hardhat/console.sol';
+
 contract CoreOracle is IOracle, IBaseOracle, Ownable {
     struct TokenSetting {
         address route;
@@ -173,6 +175,37 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
     {
         uint256 decimals = IERC20Metadata(token).decimals();
         collateralValue = (_getPrice(token) * amount) / 10**decimals;
+    }
+
+    /// @dev Return the amount of token out as liquidation reward for liquidating token in.
+    /// @param tokenIn Input ERC20 token
+    /// @param tokenOut Output ERC1155 token
+    /// @param tokenOutId Output ERC1155 token id
+    /// @param amountIn Input ERC20 token amount
+    function convertForLiquidation(
+        address tokenIn,
+        address tokenOut,
+        uint256 tokenOutId,
+        uint256 amountIn
+    ) external view override returns (uint256) {
+        require(whitelistedERC1155[tokenOut], 'bad token');
+        address tokenOutUnderlying = IERC20Wrapper(tokenOut).getUnderlyingToken(
+            tokenOutId
+        );
+        TokenSetting memory tokenSettingIn = tokenSettings[tokenIn];
+        TokenSetting memory tokenSettingOut = tokenSettings[tokenOutUnderlying];
+
+        require(tokenSettingIn.route != address(0), 'bad underlying in');
+        require(tokenSettingOut.route != address(0), 'bad underlying out');
+
+        uint256 priceIn = _getPrice(tokenIn);
+        uint256 priceOut = _getPrice(tokenOutUnderlying);
+        uint256 decimalIn = IERC20Metadata(tokenIn).decimals();
+        uint256 decimalOut = IERC20Metadata(tokenOutUnderlying).decimals();
+
+        uint256 amountOut = (amountIn * priceIn * 10**decimalOut) /
+            (priceOut * 10**decimalIn);
+        return amountOut;
     }
 
     /**

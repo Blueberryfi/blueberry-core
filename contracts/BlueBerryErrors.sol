@@ -33,9 +33,26 @@ error LIQ_THRESHOLD_TOO_HIGH(uint256 threshold);
 
 // Spell
 error NOT_BANK(address caller);
+error REFUND_ETH_FAILED(uint256 balance);
+error NOT_FROM_WETH(address from);
+error LP_NOT_WHITELISTED(address lp);
+error ORACLE_NOT_SUPPORT_LP(address lp);
+
+// Ichi Spell
+error INCORRECT_LP(address lpToken);
+error INCORRECT_PID(uint256 pid);
+error INCORRECT_COLTOKEN(address colToken);
+error INCORRECT_UNDERLYING(address uToken);
 
 // SafeBox
 error BORROW_FAILED(uint256 amount);
 error REPAY_FAILED(uint256 amount);
 error LEND_FAILED(uint256 amount);
 error REDEEM_FAILED(uint256 amount);
+
+// Bank
+error NOT_EOA(address from);
+error LOCKED();
+error NOT_FROM_SPELL(address from);
+error NOT_IN_EXEC();
+error ORACLE_NOT_SUPPORT(address token);
