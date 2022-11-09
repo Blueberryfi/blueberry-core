@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 import '../libraries/BBMath.sol';
 import '../interfaces/IWIchiFarm.sol';
@@ -13,19 +13,20 @@ import '../interfaces/ichi/IIchiV2.sol';
 import '../interfaces/ichi/IIchiFarm.sol';
 
 contract WIchiFarm is
-    ERC1155('WIchiFarm'),
-    ReentrancyGuard,
+    ERC1155Upgradeable,
+    ReentrancyGuardUpgradeable,
     IERC20Wrapper,
     IWIchiFarm
 {
     using BBMath for uint256;
-    using SafeERC20 for IERC20;
-    using SafeERC20 for IIchiV2;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20Upgradeable for IIchiV2;
 
-    IIchiV2 public immutable ICHI;
-    IIchiFarm public immutable ichiFarm;
+    IIchiV2 public ICHI;
+    IIchiFarm public ichiFarm;
 
-    constructor(address _ichi, address _ichiFarm) {
+    function initialize(address _ichi, address _ichiFarm) external initializer {
+        __ERC1155_init('WIchiFarm');
         ICHI = IIchiV2(_ichi);
         ichiFarm = IIchiFarm(_ichiFarm);
     }
@@ -76,13 +77,22 @@ contract WIchiFarm is
         returns (uint256)
     {
         address lpToken = ichiFarm.lpToken(pid);
-        IERC20(lpToken).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20Upgradeable(lpToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
         if (
-            IERC20(lpToken).allowance(address(this), address(ichiFarm)) !=
-            type(uint256).max
+            IERC20Upgradeable(lpToken).allowance(
+                address(this),
+                address(ichiFarm)
+            ) != type(uint256).max
         ) {
             // We only need to do this once per pool, as LP token's allowance won't decrease if it's -1.
-            IERC20(lpToken).safeApprove(address(ichiFarm), type(uint256).max);
+            IERC20Upgradeable(lpToken).safeApprove(
+                address(ichiFarm),
+                type(uint256).max
+            );
         }
         ichiFarm.deposit(pid, amount, address(this));
         (uint256 ichiPerShare, , ) = ichiFarm.poolInfo(pid);
@@ -117,7 +127,7 @@ contract WIchiFarm is
 
         address lpToken = ichiFarm.lpToken(pid);
         (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
-        IERC20(lpToken).safeTransfer(msg.sender, amount);
+        IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
         uint256 stIchi = (stIchiPerShare * amount).divCeil(1e18);
         uint256 enIchi = (enIchiPerShare * amount) / 1e18;
         if (enIchi > stIchi) {

@@ -1,7 +1,33 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collToken",
+        "type": "address"
+      }
+    ],
+    "name": "ANOTHER_COL_EXIST",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "BANK_ALREADY_LISTED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "BANK_LIMIT",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "BANK_NOT_LISTED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CTOKEN_ALREADY_ADDED",
     "type": "error"
   },
   {
@@ -58,6 +84,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "NO_TREASURY_SET",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -66,6 +97,17 @@
       }
     ],
     "name": "ORACLE_NOT_SUPPORT",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "wToken",
+        "type": "address"
+      }
+    ],
+    "name": "ORACLE_NOT_SUPPORT_WTOKEN",
     "type": "error"
   },
   {
@@ -696,6 +738,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "config",
+    "outputs": [
+      {
+        "internalType": "contract IProtocolConfig",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -958,6 +1013,11 @@
       {
         "internalType": "contract IOracle",
         "name": "_oracle",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IProtocolConfig",
+        "name": "_config",
         "type": "address"
       },
       {

@@ -82,6 +82,21 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
         }
     }
 
+    /// @dev Internal call to refund tokens to the current bank executor.
+    /// @param token The token to perform the refund action.
+    function doCutRewardsFee(address token) internal {
+        if (bank.config().treasury() == address(0)) revert NO_TREASURY_SET();
+
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance > 0) {
+            uint256 fee = (balance * bank.config().depositFee()) / 10000;
+            IERC20(token).safeTransfer(bank.config().treasury(), fee);
+
+            balance -= fee;
+            IERC20(token).safeTransfer(bank.EXECUTOR(), balance);
+        }
+    }
+
     function doLend(address token, uint256 amount) internal {
         if (amount > 0) {
             bank.lend(token, amount);

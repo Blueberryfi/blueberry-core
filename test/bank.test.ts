@@ -15,7 +15,8 @@ import {
 	IchiLpOracle,
 	IIchiFarm,
 	WERC20,
-	WIchiFarm
+	WIchiFarm,
+	ProtocolConfig
 } from '../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../constant';
 import ERC20ABI from '../abi/ERC20.json'
@@ -43,6 +44,7 @@ const ETH_PRICE = 1600;
 describe('Bank', () => {
 	let admin: SignerWithAddress;
 	let alice: SignerWithAddress;
+	let treasury: SignerWithAddress;
 
 	let usdc: ERC20;
 	let weth: IWETH;
@@ -54,17 +56,18 @@ describe('Bank', () => {
 	let spell: IchiVaultSpell;
 	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
+	let config: ProtocolConfig;
 	let safeBox: SafeBox;
 	let ichiFarm: IIchiFarm;
 
 	before(async () => {
-		[admin, alice] = await ethers.getSigners();
+		[admin, alice, treasury] = await ethers.getSigners();
 		usdc = <ERC20>await ethers.getContractAt(ERC20ABI, USDC, admin);
 		weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 		cUSDC = <ICErc20>await ethers.getContractAt(ICrc20ABI, CUSDC);
 
 		const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-		werc20 = <WERC20>await WERC20.deploy();
+		werc20 = <WERC20>await upgrades.deployProxy(WERC20);
 		await werc20.deployed();
 
 		const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
@@ -106,15 +109,19 @@ describe('Bank', () => {
 		)
 
 		// Deploy Bank
+		const Config = await ethers.getContractFactory("ProtocolConfig");
+		config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address]);
+
 		const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-		bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, 2000]);
+		bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, 2000]);
 		await bank.deployed();
 
 		// Deploy ICHI wrapper and spell
 		ichiFarm = <IIchiFarm>await ethers.getContractAt(IchiFarmABI, ADDRESS.ICHI_FARMING);
 		const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-		wichi = <WIchiFarm>await WIchiFarm.deploy(ADDRESS.ICHI, ADDRESS.ICHI_FARMING);
+		wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARMING]);
 		await wichi.deployed();
+
 		const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
 		spell = <IchiVaultSpell>await ICHISpell.deploy(
 			bank.address,
@@ -174,16 +181,20 @@ describe('Bank', () => {
 		it("should revert Bank deployment when invalid args provided", async () => {
 			const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
 			await expect(
-				upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, 2000])
+				upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, config.address, 2000])
 			).to.be.revertedWith("ZERO_ADDRESS");
 
 			await expect(
-				upgrades.deployProxy(BlueBerryBank, [oracle.address, 10001])
+				upgrades.deployProxy(BlueBerryBank, [oracle.address, ethers.constants.AddressZero, 2000])
+			).to.be.revertedWith("ZERO_ADDRESS");
+
+			await expect(
+				upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, 10001])
 			).to.be.revertedWith("FEE_TOO_HIGH(10001)");
 		})
 		it("should initialize states on constructor", async () => {
 			const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-			const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, 2000]);
+			const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, 2000]);
 			await bank.deployed();
 
 			expect(await bank._GENERAL_LOCK()).to.be.equal(1);
@@ -191,6 +202,7 @@ describe('Bank', () => {
 			expect(await bank.POSITION_ID()).to.be.equal(ethers.constants.MaxUint256);
 			expect(await bank.SPELL()).to.be.equal("0x0000000000000000000000000000000000000001");
 			expect(await bank.oracle()).to.be.equal(oracle.address);
+			expect(await bank.config()).to.be.equal(config.address);
 			expect(await bank.feeBps()).to.be.equal(2000);
 			expect(await bank.nextPositionId()).to.be.equal(1);
 			expect(await bank.bankStatus()).to.be.equal(7);

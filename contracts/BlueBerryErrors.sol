@@ -7,11 +7,6 @@ error ZERO_AMOUNT();
 error ZERO_ADDRESS();
 error INPUT_ARRAY_MISMATCH();
 
-// Bank Errors
-error FEE_TOO_HIGH(uint256 feeBps);
-error NOT_UNDER_EXECUTION();
-error BANK_NOT_LISTED();
-
 // Oracle Errors
 error TOO_LONG_DELAY(uint256 delayTime);
 error NO_MAX_DELAY(address token);
@@ -31,12 +26,15 @@ error NO_STABLEPOOL(address token);
 error PRICE_FAILED(address token);
 error LIQ_THRESHOLD_TOO_HIGH(uint256 threshold);
 
+error ORACLE_NOT_SUPPORT(address token);
+error ORACLE_NOT_SUPPORT_LP(address lp);
+error ORACLE_NOT_SUPPORT_WTOKEN(address wToken);
+
 // Spell
 error NOT_BANK(address caller);
 error REFUND_ETH_FAILED(uint256 balance);
 error NOT_FROM_WETH(address from);
 error LP_NOT_WHITELISTED(address lp);
-error ORACLE_NOT_SUPPORT_LP(address lp);
 
 // Ichi Spell
 error INCORRECT_LP(address lpToken);
@@ -51,8 +49,18 @@ error LEND_FAILED(uint256 amount);
 error REDEEM_FAILED(uint256 amount);
 
 // Bank
+error FEE_TOO_HIGH(uint256 feeBps);
+error NOT_UNDER_EXECUTION();
+error BANK_NOT_LISTED();
+error BANK_ALREADY_LISTED();
+error BANK_LIMIT();
+error CTOKEN_ALREADY_ADDED();
 error NOT_EOA(address from);
 error LOCKED();
 error NOT_FROM_SPELL(address from);
 error NOT_IN_EXEC();
-error ORACLE_NOT_SUPPORT(address token);
+error ANOTHER_COL_EXIST(address collToken);
+
+// Config
+error INVALID_FEE_DISTRIBUTION();
+error NO_TREASURY_SET();

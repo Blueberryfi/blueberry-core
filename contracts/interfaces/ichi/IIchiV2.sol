@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol';
 
-interface IIchiV2 is IERC20, IERC20Permit {
+interface IIchiV2 is IERC20Upgradeable, IERC20PermitUpgradeable {
     // EIP-20 token name for this token
     function name() external view returns (string memory);
 

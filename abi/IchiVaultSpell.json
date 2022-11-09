@@ -97,6 +97,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "NO_TREASURY_SET",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",

@@ -2,14 +2,18 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
 import '../interfaces/IWERC20.sol';
 
-contract WERC20 is ERC1155('WERC20'), ReentrancyGuard, IWERC20 {
-    using SafeERC20 for IERC20;
+contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    function initialize() external initializer {
+        __ERC1155_init('WERC20');
+    }
 
     /// @dev Return the underlying ERC-20 for the given ERC-1155 token id.
     /// @param id token id (corresponds to token address for wrapped ERC20)
@@ -44,9 +48,17 @@ contract WERC20 is ERC1155('WERC20'), ReentrancyGuard, IWERC20 {
         override
         nonReentrant
     {
-        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-        uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+        uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(
+            address(this)
+        );
+        IERC20Upgradeable(token).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
+        uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(
+            address(this)
+        );
         _mint(
             msg.sender,
             uint256(uint160(token)),
@@ -64,6 +76,6 @@ contract WERC20 is ERC1155('WERC20'), ReentrancyGuard, IWERC20 {
         nonReentrant
     {
         _burn(msg.sender, uint256(uint160(token)), amount);
-        IERC20(token).safeTransfer(msg.sender, amount);
+        IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
     }
 }

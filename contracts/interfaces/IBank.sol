@@ -2,7 +2,32 @@
 
 pragma solidity 0.8.16;
 
+import './IProtocolConfig.sol';
+
 interface IBank {
+    struct Bank {
+        bool isListed; // Whether this market exists.
+        uint8 index; // Reverse look up index for this bank.
+        address cToken; // The CToken to draw liquidity from.
+        address safeBox;
+        uint256 reserve; // The reserve portion allocated to BlueBerry protocol.
+        uint256 totalDebt; // The last recorded total debt since last action.
+        uint256 totalShare; // The total debt share count across all open positions.
+        uint256 totalLend; // The total lent amount
+    }
+
+    struct Position {
+        address owner; // The owner of this position.
+        address collToken; // The ERC1155 token used as collateral for this position.
+        address underlyingToken;
+        uint256 underlyingAmount;
+        uint256 underlyingcTokenAmount;
+        uint256 collId; // The token id used as collateral.
+        uint256 collateralSize; // The size of collateral token for this position.
+        uint256 debtMap; // Bitmap of nonzero debt. i^th bit is set iff debt share of i^th bank is nonzero.
+        mapping(address => uint256) debtShareOf; // The debt share for each token.
+    }
+
     /// The governor adds a new bank gets added to the system.
     event AddBank(address token, address cToken);
     /// The governor sets the address of the oracle smart contract.
@@ -69,6 +94,10 @@ interface IBank {
     /// @dev Return the current executor (the owner of the current position).
     function EXECUTOR() external view returns (address);
 
+    function nextPositionId() external view returns (uint256);
+
+    function config() external view returns (IProtocolConfig);
+
     /// @dev Return bank information for the given token.
     function getBankInfo(address token)
         external
@@ -81,6 +110,13 @@ interface IBank {
             uint256 totalShare
         );
 
+    function getDebtValue(uint256 positionId) external view returns (uint256);
+
+    function getPositionValue(uint256 positionId)
+        external
+        view
+        returns (uint256);
+
     /// @dev Return position information for the given position id.
     function getPositionInfo(uint256 positionId)
         external
@@ -92,6 +128,20 @@ interface IBank {
             uint256 collateralSize,
             uint256 risk
         );
+
+    /// @dev Return current position information.
+    function getCurrentPositionInfo()
+        external
+        view
+        returns (
+            address owner,
+            address collToken,
+            uint256 collId,
+            uint256 collateralSize,
+            uint256 risk
+        );
+
+    function support(address token) external view returns (bool);
 
     /// @dev Return the borrow balance for given positon and token without trigger interest accrual.
     function borrowBalanceStored(uint256 positionId, address token)
@@ -136,28 +186,5 @@ interface IBank {
         uint256 amountCall
     ) external;
 
-    function getDebtValue(uint256 positionId) external view returns (uint256);
-
-    function getPositionValue(uint256 positionId)
-        external
-        view
-        returns (uint256);
-
     function accrue(address token) external;
-
-    function nextPositionId() external view returns (uint256);
-
-    /// @dev Return current position information.
-    function getCurrentPositionInfo()
-        external
-        view
-        returns (
-            address owner,
-            address collToken,
-            uint256 collId,
-            uint256 collateralSize,
-            uint256 risk
-        );
-
-    function support(address token) external view returns (bool);
 }

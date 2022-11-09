@@ -170,12 +170,13 @@ describe("SafeBox", () => {
 		})
 		it("should be able to borrow underlying tokens from compound", async () => {
 			const beforeDebt = await cUSDC.borrowBalanceStored(safeBox.address);
+			const beforeBankBalance = await usdc.balanceOf(bank.address);
 			await expect(
 				safeBox.connect(bank).borrow(borrowAmount)
 			).to.be.emit(safeBox, "Borrowed").withArgs(borrowAmount);
-
+			const afterBankBalance = await usdc.balanceOf(bank.address);
 			// should transfer underlying tokens back to the bank
-			expect(await usdc.balanceOf(bank.address)).to.be.equal(borrowAmount);
+			expect(afterBankBalance.sub(beforeBankBalance)).to.be.equal(borrowAmount);
 
 			// safebox should have no dust of underlying tokens left on it
 			expect(await usdc.balanceOf(safeBox.address)).to.be.equal(0);

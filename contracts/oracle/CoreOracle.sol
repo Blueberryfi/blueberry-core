@@ -11,8 +11,6 @@ import '../interfaces/IOracle.sol';
 import '../interfaces/IBaseOracle.sol';
 import '../interfaces/IERC20Wrapper.sol';
 
-import 'hardhat/console.sol';
-
 contract CoreOracle is IOracle, IBaseOracle, Ownable {
     struct TokenSetting {
         address route;
@@ -102,15 +100,17 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
 
     /// @dev Return whether the oracle supports evaluating collateral value of the given token.
     /// @param token ERC1155 token address to check for support
-    /// @param id ERC1155 token id to check for support
-    function supportWrappedToken(address token, uint256 id)
+    /// @param tokenId ERC1155 token id to check for support
+    function supportWrappedToken(address token, uint256 tokenId)
         external
         view
         override
         returns (bool)
     {
         if (!whitelistedERC1155[token]) return false;
-        address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(id);
+        address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(
+            tokenId
+        );
         return tokenSettings[tokenUnderlying].route != address(0);
     }
 

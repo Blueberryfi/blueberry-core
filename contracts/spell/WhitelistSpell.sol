@@ -28,10 +28,9 @@ contract WhitelistSpell is BasicSpell, Ownable {
     ) external onlyOwner {
         if (lpTokens.length != statuses.length) revert INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < lpTokens.length; idx++) {
-            if (statuses[idx]) {
-                if (!bank.support(lpTokens[idx]))
-                    revert ORACLE_NOT_SUPPORT_LP(lpTokens[idx]);
-            }
+            if (statuses[idx] && !bank.support(lpTokens[idx]))
+                revert ORACLE_NOT_SUPPORT_LP(lpTokens[idx]);
+
             whitelistedLpTokens[lpTokens[idx]] = statuses[idx];
         }
     }
