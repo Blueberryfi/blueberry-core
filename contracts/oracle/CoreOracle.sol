@@ -134,14 +134,14 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
         uint256 id,
         uint256 amount
     ) external view override returns (uint256) {
-        require(whitelistedERC1155[token], 'bad token');
-        address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(id);
-        TokenSetting memory tokenSetting = tokenSettings[tokenUnderlying];
-        require(tokenSetting.route != address(0), 'bad underlying collateral');
+        if (!whitelistedERC1155[token]) revert ERC1155_NOT_WHITELISTED(token);
+        address uToken = IERC20Wrapper(token).getUnderlyingToken(id);
+        TokenSetting memory tokenSetting = tokenSettings[uToken];
+        if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(uToken);
 
         // Underlying token is LP token, and it always has 18 decimals
         // so skipped getting LP decimals
-        uint256 underlyingValue = (_getPrice(tokenUnderlying) * amount) / 1e18;
+        uint256 underlyingValue = (_getPrice(uToken) * amount) / 1e18;
         return underlyingValue;
     }
 
@@ -157,7 +157,7 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
         returns (uint256)
     {
         TokenSetting memory tokenSetting = tokenSettings[token];
-        require(tokenSetting.liqThreshold != 0, 'bad underlying borrow');
+        if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(token);
         uint256 decimals = IERC20Metadata(token).decimals();
         uint256 debtValue = (_getPrice(token) * amount) / 10**decimals;
         return debtValue;
@@ -188,15 +188,17 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
         uint256 tokenOutId,
         uint256 amountIn
     ) external view override returns (uint256) {
-        require(whitelistedERC1155[tokenOut], 'bad token');
+        if (!whitelistedERC1155[tokenOut])
+            revert ERC1155_NOT_WHITELISTED(tokenOut);
         address tokenOutUnderlying = IERC20Wrapper(tokenOut).getUnderlyingToken(
             tokenOutId
         );
         TokenSetting memory tokenSettingIn = tokenSettings[tokenIn];
         TokenSetting memory tokenSettingOut = tokenSettings[tokenOutUnderlying];
 
-        require(tokenSettingIn.route != address(0), 'bad underlying in');
-        require(tokenSettingOut.route != address(0), 'bad underlying out');
+        if (tokenSettingIn.route == address(0)) revert NO_ORACLE_ROUTE(tokenIn);
+        if (tokenSettingOut.route == address(0))
+            revert NO_ORACLE_ROUTE(tokenOutUnderlying);
 
         uint256 priceIn = _getPrice(tokenIn);
         uint256 priceOut = _getPrice(tokenOutUnderlying);

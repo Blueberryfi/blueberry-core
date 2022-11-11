@@ -6,6 +6,7 @@ import '@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol
 import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
+import '../BlueBerryErrors.sol';
 import '../interfaces/IWERC20.sol';
 
 contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
@@ -24,7 +25,7 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
         returns (address)
     {
         address token = address(uint160(id));
-        require(uint256(uint160(token)) == id, 'id overflow');
+        if (uint256(uint160(token)) != id) revert INVALID_TOKEN_ID(id);
         return token;
     }
 

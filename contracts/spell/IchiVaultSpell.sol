@@ -260,7 +260,7 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
         int256 amount1Delta,
         bytes calldata data
     ) external override {
-        require(msg.sender == address(swapPool), 'cb2');
+        if (msg.sender != address(swapPool)) revert NOT_FROM_UNIV3(msg.sender);
         address payer = abi.decode(data, (address));
 
         if (amount0Delta > 0) {

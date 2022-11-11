@@ -208,13 +208,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @param safeBox The address of new SafeBox
      */
     function updateSafeBox(address token, address safeBox) external onlyOwner {
-        if (safeBox == address(0)) {
-            revert ZERO_ADDRESS();
-        }
+        if (safeBox == address(0)) revert ZERO_ADDRESS();
         Bank storage bank = banks[token];
-        if (!bank.isListed) {
-            revert BANK_NOT_LISTED();
-        }
+        if (!bank.isListed) revert BANK_NOT_LISTED(token);
         bank.safeBox = safeBox;
     }
 
@@ -246,7 +242,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         lock
     {
         Bank storage bank = banks[token];
-        require(bank.isListed, 'bank not exist');
+        if (!bank.isListed) revert BANK_NOT_LISTED(token);
         bank.reserve -= amount;
         IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
         emit WithdrawReserve(msg.sender, token, amount);
@@ -286,7 +282,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param token The underlying token to trigger the interest accrual.
     function accrue(address token) public override {
         Bank storage bank = banks[token];
-        require(bank.isListed, 'bank not exist');
+        if (!bank.isListed) revert BANK_NOT_LISTED(token);
         uint256 totalDebt = bank.totalDebt;
         uint256 debt = ICErc20(bank.cToken).borrowBalanceCurrent(bank.safeBox);
         if (debt > totalDebt) {
@@ -398,7 +394,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             uint256 risk
         )
     {
-        require(POSITION_ID != _NO_ID, 'no id');
+        if (POSITION_ID == _NO_ID) revert BAD_POSITION(POSITION_ID);
         return getPositionInfo(POSITION_ID);
     }
 
@@ -463,7 +459,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         if (size == 0) {
             return 0;
         } else {
-            require(pos.collToken != address(0), 'bad collateral token');
+            if (pos.collToken == address(0)) revert BAD_COLLATERAL(positionId);
             return oracle.getCollateralValue(pos.collToken, pos.collId, size);
         }
     }
@@ -534,15 +530,15 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         address debtToken,
         uint256 amountCall
     ) external override lock poke(debtToken) {
-        require(isLiquidatable(positionId), 'position still healthy');
-        require(amountCall > 0, 'zero amount');
+        if (amountCall == 0) revert ZERO_AMOUNT();
+        if (!isLiquidatable(positionId)) revert NOT_LIQUIDATABLE(positionId);
         Position storage pos = positions[positionId];
         (uint256 amountPaid, uint256 share) = repayInternal(
             positionId,
             debtToken,
             amountCall
         );
-        require(pos.collToken != address(0), 'bad collateral token');
+        if (pos.collToken == address(0)) revert BAD_COLLATERAL(positionId);
 
         uint256 liqSize = oracle.convertForLiquidation(
             debtToken,
@@ -571,16 +567,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         address spell,
         bytes memory data
     ) external payable lock onlyEOAEx returns (uint256) {
-        require(whitelistedSpells[spell], 'spell not whitelisted');
+        if (!whitelistedSpells[spell]) revert SPELL_NOT_WHITELISTED(spell);
         if (positionId == 0) {
             positionId = nextPositionId++;
             positions[positionId].owner = msg.sender;
         } else {
-            require(positionId < nextPositionId, 'position id not exists');
-            require(
-                msg.sender == positions[positionId].owner,
-                'not position owner'
-            );
+            if (positionId >= nextPositionId) revert BAD_POSITION(positionId);
+            if (msg.sender != positions[positionId].owner)
+                revert NOT_FROM_OWNER(positionId, msg.sender);
         }
         POSITION_ID = positionId;
         SPELL = spell;
@@ -597,7 +591,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             }
         }
 
-        require(!isLiquidatable(positionId), 'insufficient collateral');
+        if (isLiquidatable(positionId)) revert INSUFFICIENT_COLLATERAL();
 
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
@@ -616,8 +610,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         inExec
         poke(token)
     {
-        require(isLendAllowed(), 'lending not allowed');
-        require(whitelistedTokens[token], 'token not whitelisted');
+        if (!isLendAllowed()) revert LEND_NOT_ALLOWED();
+        if (!whitelistedTokens[token]) revert TOKEN_NOT_WHITELISTED(token);
 
         Position storage pos = positions[POSITION_ID];
         Bank storage bank = banks[token];
@@ -674,8 +668,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         inExec
         poke(token)
     {
-        require(isBorrowAllowed(), 'borrow not allowed');
-        require(whitelistedTokens[token], 'token not whitelisted');
+        if (!isBorrowAllowed()) revert BORROW_NOT_ALLOWED();
+        if (!whitelistedTokens[token]) revert TOKEN_NOT_WHITELISTED(token);
         Bank storage bank = banks[token];
         Position storage pos = positions[POSITION_ID];
         uint256 totalShare = bank.totalShare;
@@ -705,8 +699,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         inExec
         poke(token)
     {
-        require(isRepayAllowed(), 'repay not allowed');
-        require(whitelistedTokens[token], 'token not whitelisted');
+        if (!isRepayAllowed()) revert REPAY_NOT_ALLOWED();
+        if (!whitelistedTokens[token]) revert TOKEN_NOT_WHITELISTED(token);
         (uint256 amount, uint256 share) = repayInternal(
             POSITION_ID,
             token,
@@ -734,7 +728,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             amountCall = oldDebt;
         }
         uint256 paid = doRepay(token, doERC20TransferIn(token, amountCall));
-        require(paid <= oldDebt, 'paid exceeds debt'); // prevent share overflow attack
+        if (paid > oldDebt) revert REPAY_EXCEEDS_DEBT(paid, oldDebt); // prevent share overflow attack
         uint256 lessShare = paid == oldDebt
             ? oldShare
             : (paid * totalShare) / totalDebt;

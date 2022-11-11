@@ -1,5 +1,16 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collToken",
+        "type": "address"
+      }
+    ],
+    "name": "ERC1155_NOT_WHITELISTED",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "INPUT_ARRAY_MISMATCH",
     "type": "error"
@@ -13,6 +24,17 @@
       }
     ],
     "name": "LIQ_THRESHOLD_TOO_HIGH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "NO_ORACLE_ROUTE",
     "type": "error"
   },
   {
