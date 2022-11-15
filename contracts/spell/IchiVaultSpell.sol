@@ -3,17 +3,17 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 
-import './WhitelistSpell.sol';
+import './BasicSpell.sol';
 import '../libraries/UniV3/TickMath.sol';
 import '../interfaces/IWIchiFarm.sol';
 import '../interfaces/ichi/IICHIVault.sol';
 import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
 import '../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol';
 
-contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
-    using SafeERC20 for IERC20;
+contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
     IUniswapV3Pool private swapPool;
@@ -21,16 +21,18 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
     mapping(address => address) vaults;
 
     /// @dev address of ICHI farm wrapper
-    IWIchiFarm public immutable wIchiFarm;
+    IWIchiFarm public wIchiFarm;
     /// @dev address of ICHI token
-    address public immutable ICHI;
+    address public ICHI;
 
-    constructor(
+    function initialize(
         IBank _bank,
         address _werc20,
         address _weth,
         address _wichiFarm
-    ) WhitelistSpell(_bank, _werc20, _weth) {
+    ) external initializer {
+        __BasicSpell_init(_bank, _werc20, _weth);
+
         wIchiFarm = IWIchiFarm(_wichiFarm);
         ICHI = address(wIchiFarm.ICHI());
         IWIchiFarm(_wichiFarm).setApprovalForAll(address(_bank), true);
@@ -265,12 +267,12 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
 
         if (amount0Delta > 0) {
             if (payer == address(this)) {
-                IERC20(swapPool.token0()).safeTransfer(
+                IERC20Upgradeable(swapPool.token0()).safeTransfer(
                     msg.sender,
                     uint256(amount0Delta)
                 );
             } else {
-                IERC20(swapPool.token0()).safeTransferFrom(
+                IERC20Upgradeable(swapPool.token0()).safeTransferFrom(
                     payer,
                     msg.sender,
                     uint256(amount0Delta)
@@ -278,12 +280,12 @@ contract IchiVaultSpell is WhitelistSpell, IUniswapV3SwapCallback {
             }
         } else if (amount1Delta > 0) {
             if (payer == address(this)) {
-                IERC20(swapPool.token1()).safeTransfer(
+                IERC20Upgradeable(swapPool.token1()).safeTransfer(
                     msg.sender,
                     uint256(amount1Delta)
                 );
             } else {
-                IERC20(swapPool.token1()).safeTransferFrom(
+                IERC20Upgradeable(swapPool.token1()).safeTransferFrom(
                     payer,
                     msg.sender,
                     uint256(amount1Delta)

@@ -1,9 +1,11 @@
 import { BigNumber } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../../constant';
-import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
+import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, ProtocolConfig, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../../typechain-types';
 
 async function main(): Promise<void> {
+	const [deployer] = await ethers.getSigners();
+
 	// Band Adapter Oracle
 	const BandAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.BandAdapterOracle);
 	const bandOracle = <BandAdapterOracle>await BandAdapterOracle.deploy(ADDRESS.BandStdRef);
@@ -67,10 +69,13 @@ async function main(): Promise<void> {
 	);
 
 	// Bank
-	const Bank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-	const bank = <BlueBerryBank>await Bank.deploy();
+	const Config = await ethers.getContractFactory("ProtocolConfig");
+	const config = <ProtocolConfig>await upgrades.deployProxy(Config, [deployer]);
+	await config.deployed();
+
+	const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
+	const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [coreOracle.address, config.address, 2000]);
 	await bank.deployed();
-	await bank.initialize(coreOracle.address, 2000);
 
 	// WERC20 of Ichi Vault Lp
 	const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
@@ -79,7 +84,7 @@ async function main(): Promise<void> {
 
 	// WIchiFarm
 	const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-	const wichiFarm = <WIchiFarm>await WIchiFarm.deploy(ADDRESS.ICHI, ADDRESS.ICHI_FARMING);
+	const wichiFarm = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARMING]);
 	await wichiFarm.deployed();
 
 	// Ichi Vault Spell

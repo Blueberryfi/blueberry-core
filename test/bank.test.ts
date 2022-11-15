@@ -123,12 +123,12 @@ describe('Bank', () => {
 		await wichi.deployed();
 
 		const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
-		spell = <IchiVaultSpell>await ICHISpell.deploy(
+		spell = <IchiVaultSpell>await upgrades.deployProxy(ICHISpell, [
 			bank.address,
 			werc20.address,
 			weth.address,
 			wichi.address
-		)
+		])
 		await spell.deployed();
 		await spell.addVault(USDC, ICHI_VAULT);
 		await spell.setWhitelistLPTokens([ICHI_VAULT], [true]);

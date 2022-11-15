@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 
@@ -21,6 +21,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     address public blbStabilityPool;
 
     function initialize(address treasury_) external initializer {
+        __Ownable_init();
         treasury = treasury_;
 
         depositFee = 50; // 0.5% as default, base 10000

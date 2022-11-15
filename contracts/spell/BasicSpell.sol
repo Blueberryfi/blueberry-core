@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
 
 import '../BlueBerryErrors.sol';
 import '../utils/ERC1155NaiveReceiver.sol';
@@ -11,24 +11,38 @@ import '../interfaces/IBank.sol';
 import '../interfaces/IWERC20.sol';
 import '../interfaces/IWETH.sol';
 
-abstract contract BasicSpell is ERC1155NaiveReceiver {
-    using SafeERC20 for IERC20;
+abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    IBank public immutable bank;
-    IWERC20 public immutable werc20;
-    address public immutable weth;
+    IBank public bank;
+    IWERC20 public werc20;
+    address public weth;
 
     /// @dev Mapping from token to (mapping from spender to approve status)
     mapping(address => mapping(address => bool)) public approved;
 
-    constructor(
+    /// @dev mapping from lp token to whitelist status
+    mapping(address => bool) public whitelistedLpTokens;
+
+    modifier onlyWhitelistedLp(address lpToken) {
+        if (!whitelistedLpTokens[lpToken]) revert LP_NOT_WHITELISTED(lpToken);
+        _;
+    }
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    function __BasicSpell_init(
         IBank _bank,
         address _werc20,
         address _weth
-    ) {
+    ) internal onlyInitializing {
+        __Ownable_init();
+
         bank = _bank;
         werc20 = IWERC20(_werc20);
         weth = _weth;
+
         ensureApprove(_weth, address(_bank));
         IWERC20(_werc20).setApprovalForAll(address(_bank), true);
     }
@@ -39,7 +53,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
     /// NOTE: This is safe because spell is never built to hold fund custody.
     function ensureApprove(address token, address spender) internal {
         if (!approved[token][spender]) {
-            IERC20(token).safeApprove(spender, type(uint256).max);
+            IERC20Upgradeable(token).safeApprove(spender, type(uint256).max);
             approved[token][spender] = true;
         }
     }
@@ -64,9 +78,9 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
     /// @dev Internal call to refund tokens to the current bank executor.
     /// @param token The token to perform the refund action.
     function doRefund(address token) internal {
-        uint256 balance = IERC20(token).balanceOf(address(this));
+        uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
         if (balance > 0) {
-            IERC20(token).safeTransfer(bank.EXECUTOR(), balance);
+            IERC20Upgradeable(token).safeTransfer(bank.EXECUTOR(), balance);
         }
     }
 
@@ -87,13 +101,16 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
     function doCutRewardsFee(address token) internal {
         if (bank.config().treasury() == address(0)) revert NO_TREASURY_SET();
 
-        uint256 balance = IERC20(token).balanceOf(address(this));
+        uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
         if (balance > 0) {
             uint256 fee = (balance * bank.config().depositFee()) / 10000;
-            IERC20(token).safeTransfer(bank.config().treasury(), fee);
+            IERC20Upgradeable(token).safeTransfer(
+                bank.config().treasury(),
+                fee
+            );
 
             balance -= fee;
-            IERC20(token).safeTransfer(bank.EXECUTOR(), balance);
+            IERC20Upgradeable(token).safeTransfer(bank.EXECUTOR(), balance);
         }
     }
 
@@ -156,6 +173,22 @@ abstract contract BasicSpell is ERC1155NaiveReceiver {
             }
             bank.takeCollateral(amount);
             werc20.burn(token, amount);
+        }
+    }
+
+    /// @dev Set whitelist LP token statuses for spell
+    /// @param lpTokens LP tokens to set whitelist statuses
+    /// @param statuses Whitelist statuses
+    function setWhitelistLPTokens(
+        address[] calldata lpTokens,
+        bool[] calldata statuses
+    ) external onlyOwner {
+        if (lpTokens.length != statuses.length) revert INPUT_ARRAY_MISMATCH();
+        for (uint256 idx = 0; idx < lpTokens.length; idx++) {
+            if (statuses[idx] && !bank.support(lpTokens[idx]))
+                revert ORACLE_NOT_SUPPORT_LP(lpTokens[idx]);
+
+            whitelistedLpTokens[lpTokens[idx]] = statuses[idx];
         }
     }
 
