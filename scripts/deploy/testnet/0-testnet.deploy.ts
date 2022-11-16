@@ -208,20 +208,22 @@ async function main(): Promise<void> {
 	// SafeBox
 	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 	const safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
-		ADDRESS_GOERLI.bSupplyToken,
+		ADDRESS_GOERLI.bUSDC,
 		"Interest Bearing USDC",
 		"ibUSDC"
 	]);
 	await safeBox.deployed();
 	console.log('SafeBox:', safeBox.address);
-	await safeBox.setBank(bank.address);
+	await safeBox.setBank(deployment.BlueBerryBank);
+	deployment.USDC_SafeBox = safeBox.address;
+	writeDeployments(deployment);
 
 	// Add Bank
 	await bank.whitelistTokens([deployment.MockUSDC], [true])
 	await bank.addBank(
 		deployment.MockUSDC,
-		ADDRESS_GOERLI.bSupplyToken,
-		safeBox.address
+		ADDRESS_GOERLI.bUSDC,
+		deployment.USDC_SafeBox
 	)
 }
 
