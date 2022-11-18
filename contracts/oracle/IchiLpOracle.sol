@@ -18,6 +18,9 @@ contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
      */
     function getPrice(address token) external view override returns (uint256) {
         IICHIVault vault = IICHIVault(token);
+        uint256 totalSupply = vault.totalSupply();
+        if (totalSupply == 0) return 0;
+
         address token0 = vault.token0();
         address token1 = vault.token1();
 
@@ -32,6 +35,6 @@ contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
             (r1 * px1) /
             10**t1Decimal;
 
-        return (totalReserve * 1e18) / vault.totalSupply();
+        return (totalReserve * 1e18) / totalSupply;
     }
 }

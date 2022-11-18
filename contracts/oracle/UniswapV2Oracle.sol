@@ -18,6 +18,9 @@ contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
     /// @param pair The Uniswap pair to check the value.
     function getPrice(address pair) external view override returns (uint256) {
         IUniswapV2Pair pool = IUniswapV2Pair(pair);
+        uint256 totalSupply = pool.totalSupply();
+        if (totalSupply == 0) return 0;
+
         address token0 = pool.token0();
         address token1 = pool.token1();
 
@@ -32,6 +35,6 @@ contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
             (r1 * px1) /
             10**t1Decimal;
 
-        return (totalReserve * 1e18) / pool.totalSupply();
+        return (totalReserve * 1e18) / totalSupply;
     }
 }
