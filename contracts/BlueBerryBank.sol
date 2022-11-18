@@ -214,6 +214,18 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         bank.safeBox = safeBox;
     }
 
+    /**
+     * @dev Update bToken address of listed bank
+     * @param token The underlying token of the bank
+     * @param cToken The address of new SafeBox
+     */
+    function updateCToken(address token, address cToken) external onlyOwner {
+        if (cToken == address(0)) revert ZERO_ADDRESS();
+        Bank storage bank = banks[token];
+        if (!bank.isListed) revert BANK_NOT_LISTED(token);
+        bank.cToken = cToken;
+    }
+
     /// @dev Set the oracle smart contract address.
     /// @param _oracle The new oracle smart contract address.
     function setOracle(IOracle _oracle) external onlyOwner {

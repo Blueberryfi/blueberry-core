@@ -1610,6 +1610,24 @@
       },
       {
         "internalType": "address",
+        "name": "cToken",
+        "type": "address"
+      }
+    ],
+    "name": "updateCToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
         "name": "safeBox",
         "type": "address"
       }

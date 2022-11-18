@@ -484,6 +484,19 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "newBank",
+        "type": "address"
+      }
+    ],
+    "name": "setBank",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address[]",
         "name": "lpTokens",
         "type": "address[]"

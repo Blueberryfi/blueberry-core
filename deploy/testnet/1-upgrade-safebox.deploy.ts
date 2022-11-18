@@ -1,7 +1,7 @@
 import fs from 'fs';
-import { ethers, network } from "hardhat";
-import { CONTRACT_NAMES } from "../../../constant";
-import { IchiLpOracle } from "../../../typechain-types";
+import { ethers, network, upgrades } from "hardhat";
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../constant";
+import { SafeBox } from "../../typechain-types";
 
 const deploymentPath = "./deployments";
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
@@ -21,22 +21,22 @@ async function main(): Promise<void> {
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 
-	// Ichi Lp Oracle
-	const IchiLpOracle = await ethers.getContractFactory("IchiLpOracle");
-	const ichiLpOracle = <IchiLpOracle>await IchiLpOracle.deploy(deployment.CoreOracle);
-	await ichiLpOracle.deployed();
-	console.log('Ichi Lp Oracle Address:', ichiLpOracle.address);
-	deployment.IchiLpOracle = ichiLpOracle.address;
+	// SafeBox
+	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
+	const safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
+		ADDRESS_GOERLI.bUSDC,
+		"Interest Bearing USDC",
+		"ibUSDC"
+	]);
+	await safeBox.deployed();
+	console.log('SafeBox:', safeBox.address);
+	deployment.USDC_SafeBox = safeBox.address;
 	writeDeployments(deployment);
 
-	const coreOracle = await ethers.getContractAt("CoreOracle", deployment.CoreOracle);
-	await coreOracle.setTokenSettings(
-		[deployment.MockIchiVault],
-		[{
-			liqThreshold: 10000,
-			route: deployment.IchiLpOracle,
-		}]
-	);
+	await safeBox.setBank(deployment.BlueBerryBank);
+
+	const bank = await ethers.getContractAt("BlueBerryBank", deployment.BlueBerryBank);
+	await bank.updateSafeBox(deployment.MockUSDC, deployment.USDC_SafeBox);
 }
 
 main()

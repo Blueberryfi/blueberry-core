@@ -1,7 +1,7 @@
 import { utils } from 'ethers';
 import { ethers } from 'hardhat';
-import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../../constant';
-import SpellABI from '../../../abi/IchiVaultSpell.json';
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../constant';
+import SpellABI from '../../abi/IchiVaultSpell.json';
 
 async function main(): Promise<void> {
 	const iface = new ethers.utils.Interface(SpellABI);
