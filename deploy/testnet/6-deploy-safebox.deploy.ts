@@ -24,19 +24,25 @@ async function main(): Promise<void> {
 	// SafeBox
 	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 	const safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
-		ADDRESS_GOERLI.bUSDC,
-		"Interest Bearing USDC",
-		"ibUSDC"
+		ADDRESS_GOERLI.bICHI,
+		"Interest Bearing ICHI",
+		"ibICHI"
 	]);
 	await safeBox.deployed();
-	console.log('SafeBox-USDC:', safeBox.address);
-	deployment.USDC_SafeBox = safeBox.address;
+	console.log('SafeBox-ICHI:', safeBox.address);
+	deployment.ICHI_SafeBox = safeBox.address;
 	writeDeployments(deployment);
 
 	await safeBox.setBank(deployment.BlueBerryBank);
 
 	const bank = await ethers.getContractAt("BlueBerryBank", deployment.BlueBerryBank);
-	await bank.updateSafeBox(deployment.MockUSDC, deployment.USDC_SafeBox);
+	// Add Bank
+	await bank.whitelistTokens([deployment.MockIchiV2], [true])
+	await bank.addBank(
+		deployment.MockIchiV2,
+		ADDRESS_GOERLI.bICHI,
+		deployment.ICHI_SafeBox
+	)
 }
 
 main()

@@ -51,19 +51,19 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     /**
      * @notice Internal function to deposit assets on ICHI Vault
      * @param token underlying token of isolated collateral
-     * @param amount amount of underlying tokens
-     * @param amountBorrow amount to borrow from SafeBox
+     * @param collAmount amount of underlying tokens
+     * @param borrowAmount amount to borrow from SafeBox
      */
     function depositInternal(
         address token,
-        uint256 amount,
-        uint256 amountBorrow
+        uint256 collAmount,
+        uint256 borrowAmount
     ) internal {
-        // 1. Get user input amounts
-        doLend(token, amount);
+        // 1. Lend isolated collaterals on compound
+        doLend(token, collAmount);
 
         // 2. Borrow specific amounts
-        doBorrow(token, amountBorrow);
+        doBorrow(token, borrowAmount);
 
         // 3. Add liquidity - Deposit on ICHI Vault
         IICHIVault vault = IICHIVault(vaults[token]);
@@ -80,17 +80,17 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     /**
      * @notice External function to deposit assets on IchiVault
      * @param token Token address to deposit (e.g USDC)
-     * @param amount Amount of user's collateral (e.g USDC)
-     * @param amountBorrow Amount to borrow on Compound
+     * @param collAmount Amount of user's collateral (e.g USDC)
+     * @param borrowAmount Amount to borrow from Compound
      */
     function openPosition(
         address token,
-        uint256 amount,
-        uint256 amountBorrow
+        uint256 collAmount,
+        uint256 borrowAmount
     ) external {
         address vault = vaults[token];
         // 1-3 Deposit on ichi vault
-        depositInternal(token, amount, amountBorrow);
+        depositInternal(token, collAmount, borrowAmount);
 
         // 4. Put collateral - ICHI Vault Lp Token
         doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
