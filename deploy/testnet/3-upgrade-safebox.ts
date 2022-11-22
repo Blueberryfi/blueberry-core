@@ -1,7 +1,6 @@
 import fs from 'fs';
 import { ethers, network, upgrades } from "hardhat";
-import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../constant";
-import { BlueBerryBank } from "../../typechain-types";
+import { SafeBox } from "../../typechain-types";
 
 const deploymentPath = "./deployments";
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
@@ -14,13 +13,13 @@ async function main(): Promise<void> {
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 
-	const Bank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-	const bank = <BlueBerryBank>await upgrades.upgradeProxy(deployment.BlueBerryBank, Bank);
-	await bank.deployed();
+	// SafeBox
+	const SafeBox = await ethers.getContractFactory("SafeBox");
+	let safeBox = <SafeBox>await upgrades.upgradeProxy(deployment.USDC_SafeBox, SafeBox);
+	await safeBox.deployed();
 
-	console.log("Bank Upgraded", bank.address);
-
-	// await bank.updateCToken(deployment.MockUSDC, ADDRESS_GOERLI.bUSDC)
+	safeBox = <SafeBox>await upgrades.upgradeProxy(deployment.ICHI_SafeBox, SafeBox);
+	await safeBox.deployed();
 }
 
 main()

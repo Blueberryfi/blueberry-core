@@ -54,6 +54,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BORROW_FAILED",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "BORROW_NOT_ALLOWED",
     "type": "error"
@@ -194,6 +205,17 @@
       }
     ],
     "name": "REPAY_EXCEEDS_DEBT",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "REPAY_FAILED",
     "type": "error"
   },
   {

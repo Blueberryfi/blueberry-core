@@ -192,13 +192,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         Bank storage bank = banks[token];
         if (cTokenInBank[cToken]) revert CTOKEN_ALREADY_ADDED();
         if (bank.isListed) revert BANK_ALREADY_LISTED();
+        if (allBanks.length >= 256) revert BANK_LIMIT();
         cTokenInBank[cToken] = true;
         bank.isListed = true;
-        if (allBanks.length >= 256) revert BANK_LIMIT();
         bank.index = uint8(allBanks.length);
         bank.cToken = cToken;
         bank.safeBox = safeBox;
         allBanks.push(token);
+
         emit AddBank(token, cToken);
     }
 
@@ -224,6 +225,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         Bank storage bank = banks[token];
         if (!bank.isListed) revert BANK_NOT_LISTED(token);
         bank.cToken = cToken;
+        cTokenInBank[cToken] = true;
     }
 
     /// @dev Set the oracle smart contract address.
@@ -822,7 +824,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         returns (uint256 borrowAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        borrowAmount = ISafeBox(bank.safeBox).borrow(amountCall);
+
+        IERC20Upgradeable uToken = IERC20Upgradeable(token);
+        uint256 uBalanceBefore = uToken.balanceOf(address(this));
+        if (ICErc20(bank.cToken).borrow(amountCall) != 0)
+            revert BORROW_FAILED(amountCall);
+        uint256 uBalanceAfter = uToken.balanceOf(address(this));
+
+        borrowAmount = uBalanceAfter - uBalanceBefore;
         bank.totalDebt += amountCall;
     }
 
@@ -837,8 +846,11 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         returns (uint256 repaidAmount)
     {
         Bank storage bank = banks[token]; // assume the input is already sanity checked.
-        IERC20Upgradeable(token).safeTransfer(bank.safeBox, amountCall);
-        uint256 newDebt = ISafeBox(bank.safeBox).repay(amountCall);
+        if (ICErc20(bank.cToken).repayBorrow(amountCall) != 0)
+            revert REPAY_FAILED(amountCall);
+        uint256 newDebt = ICErc20(bank.cToken).borrowBalanceStored(
+            address(this)
+        );
         repaidAmount = bank.totalDebt - newDebt;
         bank.totalDebt = newDebt;
     }

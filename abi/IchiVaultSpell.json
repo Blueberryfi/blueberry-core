@@ -401,12 +401,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "collAmount",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "amountBorrow",
+        "name": "borrowAmount",
         "type": "uint256"
       }
     ],
@@ -565,6 +565,25 @@
     "name": "uniswapV3SwapCallback",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "vaults",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

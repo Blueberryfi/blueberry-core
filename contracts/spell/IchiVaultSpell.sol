@@ -18,7 +18,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
     IUniswapV3Pool private swapPool;
     /// @dev underlying token => ichi vault
-    mapping(address => address) vaults;
+    mapping(address => address) public vaults;
 
     /// @dev address of ICHI farm wrapper
     IWIchiFarm public wIchiFarm;

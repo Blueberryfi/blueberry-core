@@ -66,51 +66,6 @@ contract SafeBox is
     }
 
     /**
-     * @notice Borrow underlying assets from Compound
-     * @dev Only Bank can call this function
-     * @param amount Amount of underlying assets to borrow
-     * @return borrowAmount Amount of borrowed assets
-     */
-    function borrow(uint256 amount)
-        external
-        override
-        nonReentrant
-        onlyBank
-        returns (uint256 borrowAmount)
-    {
-        if (amount == 0) revert ZERO_AMOUNT();
-
-        uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        if (cToken.borrow(amount) != 0) revert BORROW_FAILED(amount);
-        uint256 uBalanceAfter = uToken.balanceOf(address(this));
-
-        borrowAmount = uBalanceAfter - uBalanceBefore;
-        uToken.safeTransfer(bank, borrowAmount);
-
-        emit Borrowed(borrowAmount);
-    }
-
-    /**
-     * @notice Repay debt on Compound
-     * @dev Only Bank can call this function
-     * @param amount Amount of debt to repay
-     * @return newDebt New debt after repay
-     */
-    function repay(uint256 amount)
-        external
-        override
-        nonReentrant
-        onlyBank
-        returns (uint256 newDebt)
-    {
-        if (amount == 0) revert ZERO_AMOUNT();
-        if (cToken.repayBorrow(amount) != 0) revert REPAY_FAILED(amount);
-        newDebt = cToken.borrowBalanceStored(address(this));
-
-        emit Repaid(amount, newDebt);
-    }
-
-    /**
      * @notice Deposit underlying assets on Compound and issue share token
      * @param amount Underlying token amount to deposit
      * @return ctokenAmount cToken amount

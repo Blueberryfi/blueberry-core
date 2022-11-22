@@ -183,6 +183,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     function setBank(address newBank) external onlyOwner {
         if (newBank == address(0)) revert ZERO_ADDRESS();
         bank = IBank(newBank);
+        IWERC20(werc20).setApprovalForAll(address(newBank), true);
     }
 
     /// @dev Set whitelist LP token statuses for spell

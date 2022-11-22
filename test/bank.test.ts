@@ -5,10 +5,7 @@ import { ethers, upgrades } from 'hardhat';
 import {
 	BlueBerryBank,
 	CoreOracle,
-	ERC20,
-	ICErc20,
 	IchiVaultSpell,
-	IUniswapV2Router02,
 	IWETH,
 	SafeBox,
 	MockOracle,
@@ -16,11 +13,11 @@ import {
 	IIchiFarm,
 	WERC20,
 	WIchiFarm,
-	ProtocolConfig
+	ProtocolConfig,
+	MockERC20,
+	IComptroller
 } from '../typechain-types';
-import { ADDRESS, CONTRACT_NAMES } from '../constant';
-import ERC20ABI from '../abi/ERC20.json'
-import ICrc20ABI from '../abi/ICErc20.json'
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../constant';
 import SpellABI from '../abi/IchiVaultSpell.json';
 import IchiFarmABI from '../abi/IIchiFarm.json';
 
@@ -33,11 +30,11 @@ chai.use(solidity)
 chai.use(near)
 chai.use(roughlyNear)
 
-const CUSDC = ADDRESS.cyUSDC;			// IronBank cyUSDC
-const WETH = ADDRESS.WETH;
-const USDC = ADDRESS.USDC;
-const ICHI = ADDRESS.ICHI;
-const ICHI_VAULT = ADDRESS.ICHI_VAULT_USDC;
+const CUSDC = ADDRESS_GOERLI.bUSDC;
+const WETH = ADDRESS_GOERLI.WETH;
+const USDC = ADDRESS_GOERLI.MockUSDC;
+const ICHI = ADDRESS_GOERLI.MockIchiV2;
+const ICHI_VAULT = ADDRESS_GOERLI.ICHI_VAULT_USDC;
 const ICHI_VAULT_PID = 27; // ICHI/USDC Vault PoolId
 const ETH_PRICE = 1600;
 
@@ -46,9 +43,8 @@ describe('Bank', () => {
 	let alice: SignerWithAddress;
 	let treasury: SignerWithAddress;
 
-	let usdc: ERC20;
+	let usdc: MockERC20;
 	let weth: IWETH;
-	let cUSDC: ICErc20;
 	let werc20: WERC20;
 	let mockOracle: MockOracle;
 	let ichiOracle: IchiLpOracle;
@@ -62,9 +58,8 @@ describe('Bank', () => {
 
 	before(async () => {
 		[admin, alice, treasury] = await ethers.getSigners();
-		usdc = <ERC20>await ethers.getContractAt(ERC20ABI, USDC, admin);
+		usdc = <MockERC20>await ethers.getContractAt("MockERC20", USDC, admin);
 		weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-		cUSDC = <ICErc20>await ethers.getContractAt(ICrc20ABI, CUSDC);
 
 		const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
 		werc20 = <WERC20>await upgrades.deployProxy(WERC20);
@@ -117,9 +112,9 @@ describe('Bank', () => {
 		await bank.deployed();
 
 		// Deploy ICHI wrapper and spell
-		ichiFarm = <IIchiFarm>await ethers.getContractAt(IchiFarmABI, ADDRESS.ICHI_FARMING);
+		ichiFarm = <IIchiFarm>await ethers.getContractAt(IchiFarmABI, ADDRESS_GOERLI.ICHI_FARMING);
 		const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-		wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARMING]);
+		wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS_GOERLI.MockIchiV2, ADDRESS_GOERLI.ICHI_FARMING]);
 		await wichi.deployed();
 
 		const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
@@ -141,22 +136,8 @@ describe('Bank', () => {
 		)
 		await bank.whitelistTokens([USDC], [true]);
 
-		// deposit 50 eth -> 50 WETH
-		await weth.deposit({ value: utils.parseUnits('50') });
-		await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
-
-		// swap 50 weth -> usdc
-		const uniV2Router = <IUniswapV2Router02>await ethers.getContractAt(
-			CONTRACT_NAMES.IUniswapV2Router02,
-			ADDRESS.UNI_V2_ROUTER
-		);
-		await uniV2Router.swapExactTokensForTokens(
-			utils.parseUnits('50'),
-			0,
-			[WETH, USDC],
-			admin.address,
-			ethers.constants.MaxUint256
-		)
+		// Mint $1M USDC
+		await usdc.mint(admin.address, utils.parseUnits("1000000", 6));
 
 		// Deposit 10k USDC to compound
 		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
@@ -172,6 +153,11 @@ describe('Bank', () => {
 		await usdc.approve(safeBox.address, ethers.constants.MaxUint256);
 		await usdc.transfer(alice.address, utils.parseUnits("500", 6));
 		await safeBox.deposit(utils.parseUnits("10000", 6));
+
+		// Whitelist bank contract on compound
+		const compound = <IComptroller>await ethers.getContractAt("IComptroller", ADDRESS_GOERLI.COMP, admin);
+		await compound.connect(admin)._setCreditLimit(bank.address, CUSDC, utils.parseUnits("3000000"));
+
 	})
 
 	beforeEach(async () => {
