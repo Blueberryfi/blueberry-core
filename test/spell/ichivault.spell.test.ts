@@ -5,10 +5,8 @@ import { ethers, upgrades } from 'hardhat';
 import {
 	BlueBerryBank,
 	CoreOracle,
-	ERC20,
 	ICErc20,
 	IchiVaultSpell,
-	IUniswapV2Router02,
 	IWETH,
 	MockOracle,
 	SafeBox,
@@ -16,10 +14,13 @@ import {
 	IIchiFarm,
 	WERC20,
 	WIchiFarm,
-	ProtocolConfig
+	ProtocolConfig,
+	MockERC20,
+	IComptroller,
+	MockIchiVault,
+	MockIchiFarm
 } from '../../typechain-types';
-import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import ERC20ABI from '../../abi/ERC20.json'
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../constant';
 import ICrc20ABI from '../../abi/ICErc20.json'
 import SpellABI from '../../abi/IchiVaultSpell.json';
 import IchiFarmABI from '../../abi/IIchiFarm.json';
@@ -33,12 +34,12 @@ chai.use(solidity)
 chai.use(near)
 chai.use(roughlyNear)
 
-const CUSDC = ADDRESS.cyUSDC;			// IronBank cyUSDC
-const WETH = ADDRESS.WETH;
-const USDC = ADDRESS.USDC;
-const ICHI = ADDRESS.ICHI;
-const ICHI_VAULT = ADDRESS.ICHI_VAULT_USDC;
-const ICHI_VAULT_PID = 27; // ICHI/USDC Vault PoolId
+const WETH = ADDRESS_GOERLI.WETH;
+const CUSDC = ADDRESS_GOERLI.bUSDC;
+const CICHI = ADDRESS_GOERLI.bICHI;
+const USDC = ADDRESS_GOERLI.MockUSDC;
+const ICHI = ADDRESS_GOERLI.MockIchiV2;
+const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
 const ETH_PRICE = 1600;
 
 describe('ICHI Angel Vaults Spell', () => {
@@ -46,8 +47,8 @@ describe('ICHI Angel Vaults Spell', () => {
 	let alice: SignerWithAddress;
 	let treasury: SignerWithAddress;
 
-	let usdc: ERC20;
-	let weth: IWETH;
+	let usdc: MockERC20;
+	let ichi: MockERC20;
 	let cUSDC: ICErc20;
 	let werc20: WERC20;
 	let mockOracle: MockOracle;
@@ -57,14 +58,32 @@ describe('ICHI Angel Vaults Spell', () => {
 	let wichi: WIchiFarm;
 	let config: ProtocolConfig;
 	let bank: BlueBerryBank;
-	let safeBox: SafeBox;
-	let ichiFarm: IIchiFarm;
+	let safeBoxUSDC: SafeBox;
+	let safeBoxIchi: SafeBox;
+	let ichiFarm: MockIchiFarm;
+	let ichiVault: MockIchiVault;
 
 	before(async () => {
 		[admin, alice, treasury] = await ethers.getSigners();
-		usdc = <ERC20>await ethers.getContractAt(ERC20ABI, USDC, admin);
-		weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-		cUSDC = <ICErc20>await ethers.getContractAt(ICrc20ABI, CUSDC);
+		usdc = <MockERC20>await ethers.getContractAt("MockERC20", USDC, admin);
+		ichi = <MockERC20>await ethers.getContractAt("MockERC20", ICHI, admin);
+
+		// Mint $1M USDC
+		await usdc.mint(admin.address, utils.parseUnits("1000000", 6));
+		await ichi.mint(admin.address, utils.parseUnits("1000000", 18));
+
+		const IchiVault = await ethers.getContractFactory("MockIchiVault");
+		ichiVault = await IchiVault.deploy(
+			ADDRESS_GOERLI.UNI_V3_ICHI_USDC,
+			true,
+			true,
+			admin.address,
+			admin.address,
+			3600
+		)
+		await usdc.approve(ichiVault.address, utils.parseUnits("100", 6));
+		await ichi.approve(ichiVault.address, utils.parseUnits("100", 18));
+		await ichiVault.deposit(utils.parseUnits("100", 18), utils.parseUnits("100", 6), admin.address)
 
 		const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
 		werc20 = <WERC20>await upgrades.deployProxy(WERC20);
@@ -90,9 +109,9 @@ describe('ICHI Angel Vaults Spell', () => {
 		oracle = <CoreOracle>await CoreOracle.deploy();
 		await oracle.deployed();
 
-		await oracle.setWhitelistERC1155([werc20.address, ICHI_VAULT], true);
+		await oracle.setWhitelistERC1155([werc20.address, ichiVault.address], true);
 		await oracle.setTokenSettings(
-			[WETH, USDC, ICHI, ICHI_VAULT],
+			[WETH, USDC, ICHI, ichiVault.address],
 			[{
 				liqThreshold: 9000,
 				route: mockOracle.address,
@@ -117,20 +136,25 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.deployed();
 
 		// Deploy ICHI wrapper and spell
-		ichiFarm = <IIchiFarm>await ethers.getContractAt(IchiFarmABI, ADDRESS.ICHI_FARMING);
+		ichiFarm = <MockIchiFarm>await ethers.getContractAt("MockIchiFarm", ADDRESS_GOERLI.ICHI_FARMING);
 		const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-		wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARMING]);
+		wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [
+			ADDRESS_GOERLI.MockIchiV2,
+			ADDRESS_GOERLI.MockIchiV1,
+			ADDRESS_GOERLI.ICHI_FARMING
+		]);
 		await wichi.deployed();
+
 		const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
 		spell = <IchiVaultSpell>await upgrades.deployProxy(ICHISpell, [
 			bank.address,
 			werc20.address,
-			weth.address,
+			WETH,
 			wichi.address
 		])
 		await spell.deployed();
-		await spell.addVault(USDC, ICHI_VAULT);
-		await spell.setWhitelistLPTokens([ICHI_VAULT], [true]);
+		await spell.addVault(USDC, ichiVault.address);
+		await spell.setWhitelistLPTokens([ichiVault.address], [true]);
 		await oracle.setWhitelistERC1155([wichi.address], true);
 
 		// Setup Bank
@@ -138,73 +162,167 @@ describe('ICHI Angel Vaults Spell', () => {
 			[spell.address],
 			[true]
 		)
-		await bank.whitelistTokens([USDC], [true]);
-
-		// deposit 50 eth -> 50 WETH
-		await weth.deposit({ value: utils.parseUnits('50') });
-		await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
-
-		// swap 50 weth -> usdc
-		const uniV2Router = <IUniswapV2Router02>await ethers.getContractAt(
-			CONTRACT_NAMES.IUniswapV2Router02,
-			ADDRESS.UNI_V2_ROUTER
-		);
-		await uniV2Router.swapExactTokensForTokens(
-			utils.parseUnits('50'),
-			0,
-			[WETH, USDC],
-			admin.address,
-			ethers.constants.MaxUint256
-		)
+		await bank.whitelistTokens([USDC, ICHI], [true, true]);
 
 		// Deposit 10k USDC to compound
 		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
-		safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
+		safeBoxUSDC = <SafeBox>await upgrades.deployProxy(SafeBox, [
+			bank.address,
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
-		]);
-		await safeBox.deployed();
-		await safeBox.setBank(bank.address);
-		await bank.addBank(USDC, CUSDC, safeBox.address);
+		])
+		await safeBoxUSDC.deployed();
+		await bank.addBank(USDC, CUSDC, safeBoxUSDC.address);
 
-		await usdc.approve(safeBox.address, ethers.constants.MaxUint256);
-		await safeBox.deposit(utils.parseUnits("10000", 6));
+		safeBoxIchi = <SafeBox>await upgrades.deployProxy(SafeBox, [
+			bank.address,
+			CICHI,
+			"Interest Bearing ICHI",
+			"ibICHI"
+		]);
+		await safeBoxIchi.deployed();
+		await bank.addBank(ICHI, CICHI, safeBoxIchi.address);
+
+		await usdc.approve(safeBoxUSDC.address, ethers.constants.MaxUint256);
+		await usdc.transfer(alice.address, utils.parseUnits("500", 6));
+		await safeBoxUSDC.deposit(utils.parseUnits("10000", 6));
+
+		await ichi.approve(safeBoxIchi.address, ethers.constants.MaxUint256);
+		await ichi.transfer(alice.address, utils.parseUnits("500", 18));
+		await safeBoxIchi.deposit(utils.parseUnits("10000", 6));
+
+		// Whitelist bank contract on compound
+		const compound = <IComptroller>await ethers.getContractAt("IComptroller", ADDRESS_GOERLI.COMP, admin);
+		await compound.connect(admin)._setCreditLimit(bank.address, CUSDC, utils.parseUnits("3000000"));
+		await compound.connect(admin)._setCreditLimit(bank.address, CICHI, utils.parseUnits("3000000"));
+
+		// Add new ichi vault to farming pool
+		await ichiFarm.add(100, ichiVault.address);
 	})
 
 	beforeEach(async () => {
 	})
 
-	describe("ICHI Vault Poisition", () => {
-		const depositAmount = utils.parseUnits('100', 6);
-		const borrowAmount = utils.parseUnits('300', 6);
-		it("should be able to deposit USDC on ICHI angel vault", async () => {
-			const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
+	// describe("ICHI Vault Poisition", () => {
+	// 	const depositAmount = utils.parseUnits('100', 18);
+	// 	const borrowAmount = utils.parseUnits('300', 6);
+
+	// 	it("should be able to deposit USDC on ICHI angel vault", async () => {
+	// 		const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
+	// 		const iface = new ethers.utils.Interface(SpellABI);
+	// 		await usdc.approve(bank.address, ethers.constants.MaxUint256);
+	// 		await ichi.approve(bank.address, ethers.constants.MaxUint256);
+	// 		await bank.execute(
+	// 			0,
+	// 			spell.address,
+	// 			iface.encodeFunctionData("openPosition", [
+	// 				ICHI, USDC, depositAmount, borrowAmount
+	// 			])
+	// 		)
+
+	// 		expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(2));
+	// 		const pos = await bank.getPositionInfo(1);
+	// 		expect(pos.owner).to.be.equal(admin.address);
+	// 		expect(pos.collToken).to.be.equal(werc20.address);
+	// 		expect(pos.collId).to.be.equal(BigNumber.from(ichiVault.address));
+	// 		expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+	// 		expect(
+	// 			await werc20.balanceOf(bank.address, BigNumber.from(ichiVault.address))
+	// 		).to.be.equal(pos.collateralSize);
+	// 		const bankInfo = await bank.banks(USDC);
+	// 		console.log('Bank Info', bankInfo);
+	// 		console.log('Position Info', pos);
+
+	// 		const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
+	// 		expect(
+	// 			afterTreasuryBalance.sub(beforeTreasuryBalance)
+	// 		).to.be.equal(depositAmount.mul(50).div(10000))
+	// 	})
+	// 	it("should be able to return position risk ratio", async () => {
+	// 		let risk = await bank.getPositionRisk(1);
+	// 		console.log('Prev Position Risk', utils.formatUnits(risk, 2), '%');
+	// 		await mockOracle.setPrice(
+	// 			[USDC, ICHI],
+	// 			[
+	// 				BigNumber.from(10).pow(18), // $1
+	// 				BigNumber.from(10).pow(17).mul(40), // $4
+	// 			]
+	// 		);
+	// 		risk = await bank.getPositionRisk(1);
+	// 		console.log('Position Risk', utils.formatUnits(risk, 2), '%');
+	// 	})
+	// 	it("should be able to withdraw USDC", async () => {
+	// 		await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
+	// 		await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
+
+	// 		const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
+	// 		const beforeUSDCBalance = await usdc.balanceOf(admin.address);
+	// 		const beforeIchiBalance = await ichi.balanceOf(admin.address);
+
+	// 		const iface = new ethers.utils.Interface(SpellABI);
+	// 		await bank.execute(
+	// 			1,
+	// 			spell.address,
+	// 			iface.encodeFunctionData("closePosition", [
+	// 				ICHI,
+	// 				USDC, // ICHI vault lp token is collateral
+	// 				ethers.constants.MaxUint256,	// Amount of werc20
+	// 				ethers.constants.MaxUint256,  // Amount of 
+	// 				0,
+	// 				ethers.constants.MaxUint256,
+	// 			])
+	// 		)
+	// 		const afterUSDCBalance = await usdc.balanceOf(admin.address);
+	// 		const afterIchiBalance = await ichi.balanceOf(admin.address);
+	// 		console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
+	// 		console.log('ICHI Balance Change:', afterIchiBalance.sub(beforeIchiBalance));
+	// 		const depositFee = depositAmount.mul(50).div(10000);
+	// 		const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
+	// 		expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.gte(depositAmount.sub(depositFee).sub(withdrawFee));
+
+	// 		const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
+	// 		expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(withdrawFee);
+	// 	})
+	// })
+
+	describe("ICHI Vault Farming Position", () => {
+		const depositAmount = utils.parseUnits('100', 18);
+		const borrowAmount = utils.parseUnits('200', 6);
+		it("should be able to farm USDC on ICHI angel vault", async () => {
+			const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
+
 			const iface = new ethers.utils.Interface(SpellABI);
 			await usdc.approve(bank.address, ethers.constants.MaxUint256);
+			await ichi.approve(bank.address, ethers.constants.MaxUint256);
 			await bank.execute(
 				0,
 				spell.address,
-				iface.encodeFunctionData("openPosition", [
-					USDC, depositAmount, borrowAmount
+				iface.encodeFunctionData("openPositionFarm", [
+					ICHI,
+					USDC,
+					depositAmount,
+					borrowAmount,
+					ICHI_VAULT_PID // ICHI/USDC Vault Pool Id
 				])
 			)
 
 			expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(2));
 			const pos = await bank.getPositionInfo(1);
 			expect(pos.owner).to.be.equal(admin.address);
-			expect(pos.collToken).to.be.equal(werc20.address);
-			expect(pos.collId).to.be.equal(BigNumber.from(ICHI_VAULT));
+			expect(pos.collToken).to.be.equal(wichi.address);
+			const poolInfo = await ichiFarm.poolInfo(ICHI_VAULT_PID);
+			const collId = await wichi.encodeId(ICHI_VAULT_PID, poolInfo.accIchiPerShare);
+			expect(pos.collId).to.be.equal(collId);
 			expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
 			expect(
-				await werc20.balanceOf(bank.address, BigNumber.from(ICHI_VAULT))
+				await wichi.balanceOf(bank.address, collId)
 			).to.be.equal(pos.collateralSize);
-			const bankInfo = await bank.banks(USDC);
-			console.log('Bank Info', bankInfo);
-			console.log('Position Info', pos);
 
-			const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
-			expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(depositAmount.mul(50).div(10000))
+			const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
+			expect(
+				afterTreasuryBalance.sub(beforeTreasuryBalance)
+			).to.be.equal(depositAmount.mul(50).div(10000))
 		})
 		it("should be able to return position risk ratio", async () => {
 			let risk = await bank.getPositionRisk(1);
@@ -219,79 +337,43 @@ describe('ICHI Angel Vaults Spell', () => {
 			risk = await bank.getPositionRisk(1);
 			console.log('Position Risk', utils.formatUnits(risk, 2), '%');
 		})
-		it("should be able to withdraw USDC", async () => {
-			const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
+		it("should be able to harvest on ICHI farming", async () => {
+			evm_mine_blocks(1000);
+			await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
+			await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
+
+			const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address);
+			console.log("Pending Rewards:", pendingIchi);
+			const legacyIchi = await ethers.getContractAt("MockERC20", ADDRESS_GOERLI.MockIchiV1, admin);
+			await legacyIchi.mint(ichiFarm.address, pendingIchi.mul(10000000));
+
+			const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
+			const beforeUSDCBalance = await usdc.balanceOf(admin.address);
+			const beforeIchiBalance = await ichi.balanceOf(admin.address);
+
 			const iface = new ethers.utils.Interface(SpellABI);
-			const beforeBalance = await usdc.balanceOf(admin.address);
 			await bank.execute(
 				1,
 				spell.address,
-				iface.encodeFunctionData("closePosition", [
-					USDC, // ICHI vault lp token is collateral
-					ethers.constants.MaxUint256,	// Amount of werc20
-					ethers.constants.MaxUint256,  // Amount of 
-					0,
-					ethers.constants.MaxUint256,
-				])
-			)
-			const afterBalance = await usdc.balanceOf(admin.address);
-			console.log('Balance Change:', afterBalance.sub(beforeBalance));
-			await safeBox.withdraw(utils.parseUnits("10000", 6));
-
-			const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
-			expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
-				depositAmount.sub(depositAmount.mul(50).div(10000)).mul(50).div(10000)
-			);
-		})
-	})
-
-	describe("ICHI Vault Farming Position", () => {
-		const depositAmount = utils.parseUnits('100', 6);
-		const borrowAmount = utils.parseUnits('200', 6);
-		it("should be able to farm USDC on ICHI angel vault", async () => {
-			const iface = new ethers.utils.Interface(SpellABI);
-			await usdc.approve(bank.address, ethers.constants.MaxUint256);
-			await bank.execute(
-				0,
-				spell.address,
-				iface.encodeFunctionData("openPositionFarm", [
-					USDC,
-					depositAmount,
-					borrowAmount,
-					ICHI_VAULT_PID // ICHI/USDC Vault Pool Id
-				])
-			)
-
-			expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(3));
-			const pos = await bank.getPositionInfo(2);
-			expect(pos.owner).to.be.equal(admin.address);
-			expect(pos.collToken).to.be.equal(wichi.address);
-			const poolInfo = await ichiFarm.poolInfo(ICHI_VAULT_PID);
-			const collId = await wichi.encodeId(ICHI_VAULT_PID, poolInfo.accIchiPerShare);
-			expect(pos.collId).to.be.equal(collId);
-			expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
-			expect(
-				await wichi.balanceOf(bank.address, collId)
-			).to.be.equal(pos.collateralSize);
-		})
-		it("should be able to harvest on ICHI farming", async () => {
-			console.log(await usdc.balanceOf(admin.address));
-			evm_mine_blocks(1000);
-			console.log(await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address));
-			const iface = new ethers.utils.Interface(SpellABI);
-			await bank.execute(
-				2,
-				spell.address,
 				iface.encodeFunctionData("closePositionFarm", [
+					ICHI,
 					USDC, // ICHI vault lp token is collateral
 					ethers.constants.MaxUint256,	// Amount of werc20
-					ethers.constants.MaxUint256,  // Amount of 
+					ethers.constants.MaxUint256,  // Amount of repay
 					0,
 					ethers.constants.MaxUint256,
 				])
 			)
-			await safeBox.withdraw(utils.parseUnits("10000", 6));
-			console.log(await usdc.balanceOf(admin.address));
+			const afterUSDCBalance = await usdc.balanceOf(admin.address);
+			const afterIchiBalance = await ichi.balanceOf(admin.address);
+			console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
+			console.log('ICHI Balance Change:', afterIchiBalance.sub(beforeIchiBalance));
+			const depositFee = depositAmount.mul(50).div(10000);
+			const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
+			expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.gte(depositAmount.sub(depositFee).sub(withdrawFee));
+
+			const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
+			expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(withdrawFee);
 		})
 	})
 })

@@ -39,13 +39,16 @@ contract SafeBox is
     }
 
     function initialize(
+        address _bank,
         ICErc20 _cToken,
         string memory _name,
         string memory _symbol
     ) external initializer {
         __ERC20_init(_name, _symbol);
         __Ownable_init();
-        if (address(_cToken) == address(0)) revert ZERO_ADDRESS();
+        if (address(_cToken) == address(0) || _bank == address(0))
+            revert ZERO_ADDRESS();
+        bank = _bank;
         IERC20Upgradeable _uToken = IERC20Upgradeable(_cToken.underlying());
         cToken = _cToken;
         uToken = _uToken;
@@ -70,12 +73,9 @@ contract SafeBox is
      * @param amount Underlying token amount to deposit
      * @return ctokenAmount cToken amount
      */
-    function deposit(uint256 amount)
-        external
-        override
-        nonReentrant
-        returns (uint256 ctokenAmount)
-    {
+    function deposit(
+        uint256 amount
+    ) external override nonReentrant returns (uint256 ctokenAmount) {
         if (amount == 0) revert ZERO_AMOUNT();
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         uToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -97,12 +97,9 @@ contract SafeBox is
      * @param cAmount Amount of cTokens to redeem
      * @return withdrawAmount Amount of underlying assets withdrawn
      */
-    function withdraw(uint256 cAmount)
-        external
-        override
-        nonReentrant
-        returns (uint256 withdrawAmount)
-    {
+    function withdraw(
+        uint256 cAmount
+    ) external override nonReentrant returns (uint256 withdrawAmount) {
         if (cAmount == 0) revert ZERO_AMOUNT();
 
         _burn(msg.sender, cAmount);

@@ -99,7 +99,9 @@ interface IBank {
     function config() external view returns (IProtocolConfig);
 
     /// @dev Return bank information for the given token.
-    function getBankInfo(address token)
+    function getBankInfo(
+        address token
+    )
         external
         view
         returns (
@@ -112,13 +114,14 @@ interface IBank {
 
     function getDebtValue(uint256 positionId) external view returns (uint256);
 
-    function getPositionValue(uint256 positionId)
-        external
-        view
-        returns (uint256);
+    function getPositionValue(
+        uint256 positionId
+    ) external view returns (uint256);
 
     /// @dev Return position information for the given position id.
-    function getPositionInfo(uint256 positionId)
+    function getPositionInfo(
+        uint256 positionId
+    )
         external
         view
         returns (
@@ -144,15 +147,16 @@ interface IBank {
     function support(address token) external view returns (bool);
 
     /// @dev Return the borrow balance for given positon and token without trigger interest accrual.
-    function borrowBalanceStored(uint256 positionId, address token)
-        external
-        view
-        returns (uint256);
+    function borrowBalanceStored(
+        uint256 positionId,
+        address token
+    ) external view returns (uint256);
 
     /// @dev Trigger interest accrual and return the current borrow balance.
-    function borrowBalanceCurrent(uint256 positionId, address token)
-        external
-        returns (uint256);
+    function borrowBalanceCurrent(
+        uint256 positionId,
+        address token
+    ) external returns (uint256);
 
     /// @dev Lend tokens from the bank.
     function lend(address token, uint256 amount) external;
@@ -177,7 +181,7 @@ interface IBank {
     ) external;
 
     /// @dev Take some collateral back.
-    function takeCollateral(uint256 amount) external;
+    function takeCollateral(uint256 amount) external returns (uint256);
 
     /// @dev Liquidate a position.
     function liquidate(

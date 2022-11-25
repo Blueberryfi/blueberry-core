@@ -31,11 +31,10 @@ library PoolAddress {
     /// @param factory The Uniswap V3 factory contract address
     /// @param key The PoolKey
     /// @return pool The contract address of the V3 pool
-    function computeAddress(address factory, PoolKey memory key)
-        internal
-        pure
-        returns (address pool)
-    {
+    function computeAddress(
+        address factory,
+        PoolKey memory key
+    ) internal pure returns (address pool) {
         require(key.token0 < key.token1);
         pool = address(
             uint160(
@@ -123,7 +122,7 @@ contract MockIchiVault is
     uint256 public override maxTotalSupply;
     uint256 public override hysteresis;
 
-    uint256 public constant PRECISION = 10**18;
+    uint256 public constant PRECISION = 10 ** 18;
     uint256 constant PERCENT = 100;
     address constant NULL_ADDRESS = address(0);
 
@@ -293,7 +292,10 @@ contract MockIchiVault is
      @param amount0 Amount of token0 redeemed by the submitted liquidity tokens
      @param amount1 Amount of token1 redeemed by the submitted liquidity tokens
      */
-    function withdraw(uint256 shares, address to)
+    function withdraw(
+        uint256 shares,
+        address to
+    )
         external
         override
         nonReentrant
@@ -402,8 +404,6 @@ contract MockIchiVault is
             true
         );
 
-        _distributeFees(fees0, fees1);
-
         emit Rebalance(
             currentTick(),
             IERC20(token0).balanceOf(address(this)),
@@ -449,49 +449,6 @@ contract MockIchiVault is
 
     function setFactory(address _newFactory) external onlyOwner {
         ichiVaultFactory = _newFactory;
-    }
-
-    /**
-     @notice Sends portion of swap fees to feeRecipient and affiliate.
-     @param fees0 fees for token0
-     @param fees1 fees for token1
-     */
-    function _distributeFees(uint256 fees0, uint256 fees1) internal {
-        uint256 baseFee = IICHIVaultFactory(ichiVaultFactory).baseFee();
-        // if there is no affiliate 100% of the baseFee should go to feeRecipient
-        uint256 baseFeeSplit = (affiliate == NULL_ADDRESS)
-            ? PRECISION
-            : IICHIVaultFactory(ichiVaultFactory).baseFeeSplit();
-        address feeRecipient = IICHIVaultFactory(ichiVaultFactory)
-            .feeRecipient();
-
-        require(baseFee <= PRECISION, 'IV.rebalance: fee must be <= 10**18');
-        require(
-            baseFeeSplit <= PRECISION,
-            'IV.rebalance: split must be <= 10**18'
-        );
-        require(feeRecipient != NULL_ADDRESS, 'IV.rebalance: zero address');
-
-        if (baseFee > 0) {
-            if (fees0 > 0) {
-                uint256 totalFee = (fees0 * baseFee) / PRECISION;
-                uint256 toRecipient = (totalFee * baseFeeSplit) / PRECISION;
-                uint256 toAffiliate = totalFee - toRecipient;
-                IERC20(token0).safeTransfer(feeRecipient, toRecipient);
-                if (toAffiliate > 0) {
-                    IERC20(token0).safeTransfer(affiliate, toAffiliate);
-                }
-            }
-            if (fees1 > 0) {
-                uint256 totalFee = (fees1 * baseFee) / PRECISION;
-                uint256 toRecipient = (totalFee * baseFeeSplit) / PRECISION;
-                uint256 toAffiliate = totalFee - toRecipient;
-                IERC20(token1).safeTransfer(feeRecipient, toRecipient);
-                if (toAffiliate > 0) {
-                    IERC20(token1).safeTransfer(affiliate, toAffiliate);
-                }
-            }
-        }
     }
 
     /**
@@ -585,14 +542,13 @@ contract MockIchiVault is
      @param tokensOwed0 amount of token0 owed to the owner of the position
      @param tokensOwed1 amount of token1 owed to the owner of the position
      */
-    function _position(int24 tickLower, int24 tickUpper)
+    function _position(
+        int24 tickLower,
+        int24 tickUpper
+    )
         internal
         view
-        returns (
-            uint128 liquidity,
-            uint128 tokensOwed0,
-            uint128 tokensOwed1
-        )
+        returns (uint128 liquidity, uint128 tokensOwed0, uint128 tokensOwed1)
     {
         bytes32 positionKey = keccak256(
             abi.encodePacked(address(this), tickLower, tickUpper)
@@ -712,11 +668,10 @@ contract MockIchiVault is
      @param _deposit0Max The maximum amount of token0 allowed in a deposit
      @param _deposit1Max The maximum amount of token1 allowed in a deposit
      */
-    function setDepositMax(uint256 _deposit0Max, uint256 _deposit1Max)
-        external
-        override
-        onlyOwner
-    {
+    function setDepositMax(
+        uint256 _deposit0Max,
+        uint256 _deposit1Max
+    ) external override onlyOwner {
         deposit0Max = _deposit0Max;
         deposit1Max = _deposit1Max;
         emit DepositMax(msg.sender, _deposit0Max, _deposit1Max);
@@ -802,11 +757,7 @@ contract MockIchiVault is
     function getBasePosition()
         public
         view
-        returns (
-            uint128 liquidity,
-            uint256 amount0,
-            uint256 amount1
-        )
+        returns (uint128 liquidity, uint256 amount0, uint256 amount1)
     {
         (
             uint128 positionLiquidity,
@@ -832,11 +783,7 @@ contract MockIchiVault is
     function getLimitPosition()
         public
         view
-        returns (
-            uint128 liquidity,
-            uint256 amount0,
-            uint256 amount1
-        )
+        returns (uint128 liquidity, uint256 amount0, uint256 amount1)
     {
         (
             uint128 positionLiquidity,

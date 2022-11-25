@@ -168,10 +168,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param amount The amount to take back.
     function doTakeCollateral(address token, uint256 amount) internal {
         if (amount > 0) {
-            if (amount == type(uint256).max) {
-                (, , , amount, ) = bank.getCurrentPositionInfo();
-            }
-            bank.takeCollateral(amount);
+            amount = bank.takeCollateral(amount);
             werc20.burn(token, amount);
         }
     }

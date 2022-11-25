@@ -206,7 +206,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "token",
+        "name": "collToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "borrowToken",
         "type": "address"
       },
       {
@@ -239,7 +244,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "token",
+        "name": "collToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "borrowToken",
         "type": "address"
       },
       {
@@ -396,7 +406,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "token",
+        "name": "collToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "borrowToken",
         "type": "address"
       },
       {
@@ -419,17 +434,22 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "token",
+        "name": "collToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "borrowToken",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "collAmount",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "amountBorrow",
+        "name": "borrowAmount",
         "type": "uint256"
       },
       {

@@ -23,23 +23,28 @@ contract WIchiFarm is
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeERC20Upgradeable for IIchiV2;
 
+    IERC20Upgradeable public ICHIv1;
     IIchiV2 public ICHI;
     IIchiFarm public ichiFarm;
 
-    function initialize(address _ichi, address _ichiFarm) external initializer {
+    function initialize(
+        address _ichi,
+        address _ichiv1,
+        address _ichiFarm
+    ) external initializer {
         __ERC1155_init('WIchiFarm');
         ICHI = IIchiV2(_ichi);
+        ICHIv1 = IERC20Upgradeable(_ichiv1);
         ichiFarm = IIchiFarm(_ichiFarm);
     }
 
     /// @dev Encode pid, ichiPerShare to ERC1155 token id
     /// @param pid Pool id (16-bit)
     /// @param ichiPerShare Ichi amount per share, multiplied by 1e18 (240-bit)
-    function encodeId(uint256 pid, uint256 ichiPerShare)
-        public
-        pure
-        returns (uint256 id)
-    {
+    function encodeId(
+        uint256 pid,
+        uint256 ichiPerShare
+    ) public pure returns (uint256 id) {
         if (pid >= (1 << 16)) revert BAD_PID(pid);
         if (ichiPerShare >= (1 << 240))
             revert BAD_REWARD_PER_SHARE(ichiPerShare);
@@ -48,23 +53,18 @@ contract WIchiFarm is
 
     /// @dev Decode ERC1155 token id to pid, ichiPerShare
     /// @param id Token id
-    function decodeId(uint256 id)
-        public
-        pure
-        returns (uint256 pid, uint256 ichiPerShare)
-    {
+    function decodeId(
+        uint256 id
+    ) public pure returns (uint256 pid, uint256 ichiPerShare) {
         pid = id >> 240; // First 16 bits
         ichiPerShare = id & ((1 << 240) - 1); // Last 240 bits
     }
 
     /// @dev Return the underlying ERC-20 for the given ERC-1155 token id.
     /// @param id Token id
-    function getUnderlyingToken(uint256 id)
-        external
-        view
-        override
-        returns (address)
-    {
+    function getUnderlyingToken(
+        uint256 id
+    ) external view override returns (address) {
         (uint256 pid, ) = decodeId(id);
         return ichiFarm.lpToken(pid);
     }
@@ -73,11 +73,10 @@ contract WIchiFarm is
     /// @param pid Pool id
     /// @param amount Token amount to wrap
     /// @return The token id that got minted.
-    function mint(uint256 pid, uint256 amount)
-        external
-        nonReentrant
-        returns (uint256)
-    {
+    function mint(
+        uint256 pid,
+        uint256 amount
+    ) external nonReentrant returns (uint256) {
         address lpToken = ichiFarm.lpToken(pid);
         IERC20Upgradeable(lpToken).safeTransferFrom(
             msg.sender,
@@ -107,11 +106,10 @@ contract WIchiFarm is
     /// @param id Token id
     /// @param amount Token amount to burn
     /// @return The pool id that that you will receive LP token back.
-    function burn(uint256 id, uint256 amount)
-        external
-        nonReentrant
-        returns (uint256)
-    {
+    function burn(
+        uint256 id,
+        uint256 amount
+    ) external nonReentrant returns (uint256) {
         if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
         }
@@ -124,6 +122,7 @@ contract WIchiFarm is
 
         // Convert Legacy ICHI to ICHI v2
         if (ichiRewards > 0) {
+            ICHIv1.safeApprove(address(ICHI), ichiRewards);
             ICHI.convertToV2(ichiRewards);
         }
 

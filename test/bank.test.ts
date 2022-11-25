@@ -15,7 +15,8 @@ import {
 	WIchiFarm,
 	ProtocolConfig,
 	MockERC20,
-	IComptroller
+	IComptroller,
+	MockIchiVault
 } from '../typechain-types';
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../constant';
 import SpellABI from '../abi/IchiVaultSpell.json';
@@ -31,10 +32,10 @@ chai.use(near)
 chai.use(roughlyNear)
 
 const CUSDC = ADDRESS_GOERLI.bUSDC;
+const CICHI = ADDRESS_GOERLI.bICHI;
 const WETH = ADDRESS_GOERLI.WETH;
 const USDC = ADDRESS_GOERLI.MockUSDC;
 const ICHI = ADDRESS_GOERLI.MockIchiV2;
-const ICHI_VAULT = ADDRESS_GOERLI.ICHI_VAULT_USDC;
 const ICHI_VAULT_PID = 27; // ICHI/USDC Vault PoolId
 const ETH_PRICE = 1600;
 
@@ -44,7 +45,7 @@ describe('Bank', () => {
 	let treasury: SignerWithAddress;
 
 	let usdc: MockERC20;
-	let weth: IWETH;
+	let ichi: MockERC20;
 	let werc20: WERC20;
 	let mockOracle: MockOracle;
 	let ichiOracle: IchiLpOracle;
@@ -53,13 +54,32 @@ describe('Bank', () => {
 	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
 	let config: ProtocolConfig;
-	let safeBox: SafeBox;
+	let safeBoxUSDC: SafeBox;
+	let safeBoxIchi: SafeBox;
 	let ichiFarm: IIchiFarm;
+	let ichiVault: MockIchiVault;
 
 	before(async () => {
 		[admin, alice, treasury] = await ethers.getSigners();
 		usdc = <MockERC20>await ethers.getContractAt("MockERC20", USDC, admin);
-		weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
+		ichi = <MockERC20>await ethers.getContractAt("MockERC20", ICHI, admin);
+
+		// Mint $1M USDC
+		await usdc.mint(admin.address, utils.parseUnits("1000000", 6));
+		await ichi.mint(admin.address, utils.parseUnits("1000000", 18));
+
+		const IchiVault = await ethers.getContractFactory("MockIchiVault");
+		ichiVault = await IchiVault.deploy(
+			ADDRESS_GOERLI.UNI_V3_ICHI_USDC,
+			true,
+			true,
+			admin.address,
+			admin.address,
+			3600
+		)
+		await usdc.approve(ichiVault.address, utils.parseUnits("100", 6));
+		await ichi.approve(ichiVault.address, utils.parseUnits("100", 18));
+		await ichiVault.deposit(utils.parseUnits("100", 18), utils.parseUnits("100", 6), admin.address)
 
 		const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
 		werc20 = <WERC20>await upgrades.deployProxy(WERC20);
@@ -85,9 +105,9 @@ describe('Bank', () => {
 		oracle = <CoreOracle>await CoreOracle.deploy();
 		await oracle.deployed();
 
-		await oracle.setWhitelistERC1155([werc20.address, ICHI_VAULT], true);
+		await oracle.setWhitelistERC1155([werc20.address, ichiVault.address], true);
 		await oracle.setTokenSettings(
-			[WETH, USDC, ICHI, ICHI_VAULT],
+			[WETH, USDC, ICHI, ichiVault.address],
 			[{
 				liqThreshold: 9000,
 				route: mockOracle.address,
@@ -114,19 +134,23 @@ describe('Bank', () => {
 		// Deploy ICHI wrapper and spell
 		ichiFarm = <IIchiFarm>await ethers.getContractAt(IchiFarmABI, ADDRESS_GOERLI.ICHI_FARMING);
 		const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-		wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS_GOERLI.MockIchiV2, ADDRESS_GOERLI.ICHI_FARMING]);
+		wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [
+			ADDRESS_GOERLI.MockIchiV2,
+			ADDRESS_GOERLI.MockIchiV1,
+			ADDRESS_GOERLI.ICHI_FARMING
+		]);
 		await wichi.deployed();
 
 		const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
 		spell = <IchiVaultSpell>await upgrades.deployProxy(ICHISpell, [
 			bank.address,
 			werc20.address,
-			weth.address,
+			WETH,
 			wichi.address
 		])
 		await spell.deployed();
-		await spell.addVault(USDC, ICHI_VAULT);
-		await spell.setWhitelistLPTokens([ICHI_VAULT], [true]);
+		await spell.addVault(USDC, ichiVault.address);
+		await spell.setWhitelistLPTokens([ichiVault.address], [true]);
 		await oracle.setWhitelistERC1155([wichi.address], true);
 
 		// Setup Bank
@@ -134,29 +158,40 @@ describe('Bank', () => {
 			[spell.address],
 			[true]
 		)
-		await bank.whitelistTokens([USDC], [true]);
-
-		// Mint $1M USDC
-		await usdc.mint(admin.address, utils.parseUnits("1000000", 6));
+		await bank.whitelistTokens([USDC, ICHI], [true, true]);
 
 		// Deposit 10k USDC to compound
 		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
-		safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
+		safeBoxUSDC = <SafeBox>await upgrades.deployProxy(SafeBox, [
+			bank.address,
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
 		])
-		await safeBox.deployed();
-		await safeBox.setBank(bank.address);
-		await bank.addBank(USDC, CUSDC, safeBox.address);
+		await safeBoxUSDC.deployed();
+		await bank.addBank(USDC, CUSDC, safeBoxUSDC.address);
 
-		await usdc.approve(safeBox.address, ethers.constants.MaxUint256);
+		safeBoxIchi = <SafeBox>await upgrades.deployProxy(SafeBox, [
+			bank.address,
+			CICHI,
+			"Interest Bearing ICHI",
+			"ibICHI"
+		]);
+		await safeBoxIchi.deployed();
+		await bank.addBank(ICHI, CICHI, safeBoxIchi.address);
+
+		await usdc.approve(safeBoxUSDC.address, ethers.constants.MaxUint256);
 		await usdc.transfer(alice.address, utils.parseUnits("500", 6));
-		await safeBox.deposit(utils.parseUnits("10000", 6));
+		await safeBoxUSDC.deposit(utils.parseUnits("10000", 6));
+
+		await ichi.approve(safeBoxIchi.address, ethers.constants.MaxUint256);
+		await ichi.transfer(alice.address, utils.parseUnits("500", 18));
+		await safeBoxIchi.deposit(utils.parseUnits("10000", 6));
 
 		// Whitelist bank contract on compound
 		const compound = <IComptroller>await ethers.getContractAt("IComptroller", ADDRESS_GOERLI.COMP, admin);
 		await compound.connect(admin)._setCreditLimit(bank.address, CUSDC, utils.parseUnits("3000000"));
+		await compound.connect(admin)._setCreditLimit(bank.address, CICHI, utils.parseUnits("3000000"));
 
 	})
 
@@ -270,20 +305,20 @@ describe('Bank', () => {
 				let bankInfo = await bank.banks(USDC);
 				expect(bankInfo.isListed).to.be.true;
 				await expect(
-					bank.connect(alice).updateSafeBox(USDC, safeBox.address)
+					bank.connect(alice).updateSafeBox(USDC, safeBoxUSDC.address)
 				).to.be.revertedWith('Ownable: caller is not the owner');
 
 				await expect(
-					bank.updateSafeBox(constants.AddressZero, safeBox.address)
+					bank.updateSafeBox(constants.AddressZero, safeBoxUSDC.address)
 				).to.be.revertedWith('BANK_NOT_LISTED');
 
 				await expect(
 					bank.updateSafeBox(USDC, constants.AddressZero)
 				).to.be.revertedWith('ZERO_ADDRESS');
 
-				await bank.updateSafeBox(USDC, safeBox.address);
+				await bank.updateSafeBox(USDC, safeBoxUSDC.address);
 				bankInfo = await bank.banks(USDC);
-				expect(bankInfo.safeBox).to.be.equal(safeBox.address);
+				expect(bankInfo.safeBox).to.be.equal(safeBoxUSDC.address);
 			})
 		})
 
@@ -296,17 +331,20 @@ describe('Bank', () => {
 		beforeEach(async () => {
 			const iface = new ethers.utils.Interface(SpellABI);
 			await usdc.approve(bank.address, ethers.constants.MaxUint256);
+			await ichi.approve(bank.address, ethers.constants.MaxUint256);
 			await bank.execute(
 				0,
 				spell.address,
 				iface.encodeFunctionData("openPosition", [
+					ICHI,
 					USDC,
-					utils.parseUnits('100', 6),
+					utils.parseUnits('100', 18),
 					utils.parseUnits('300', 6) // 3x
 				])
 			)
 		})
 		it("should be able to liquidate the position => (OV - PV)/CV = LT", async () => {
+			await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
 			let positionInfo = await bank.getPositionInfo(1);
 			let debtValue = await bank.getDebtValue(1)
 			let positionValue = await bank.getPositionValue(1);
@@ -320,7 +358,7 @@ describe('Bank', () => {
 			await mockOracle.setPrice(
 				[ICHI],
 				[
-					BigNumber.from(10).pow(17).mul(10), // $1
+					BigNumber.from(10).pow(17).mul(10), // $0.5
 				]
 			);
 			positionInfo = await bank.getPositionInfo(1);
@@ -333,6 +371,7 @@ describe('Bank', () => {
 			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
 
 			expect(await bank.isLiquidatable(1)).to.be.true;
+			console.log("Is Liquidatable:", await bank.isLiquidatable(1));
 
 			console.log("===Portion Liquidated===");
 			const liqAmount = utils.parseUnits("100", 6);
@@ -350,7 +389,7 @@ describe('Bank', () => {
 			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
 			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
 
-			const colToken = await ethers.getContractAt("ERC1155", positionInfo.collToken);
+			const colToken = await ethers.getContractAt("ERC1155Upgradeable", positionInfo.collToken);
 			console.log("Liquidator's Position Balance:", await colToken.balanceOf(alice.address, positionInfo.collId));
 
 			console.log("===Full Liquidate===");
@@ -363,6 +402,7 @@ describe('Bank', () => {
 			debtValue = await bank.getDebtValue(1)
 			positionValue = await bank.getPositionValue(1);
 			risk = await bank.getPositionRisk(1)
+			console.log("Cur Pos:", positionInfo);
 			console.log("Debt Value:", utils.formatUnits(debtValue));
 			console.log("Position Value:", utils.formatUnits(positionValue));
 			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');

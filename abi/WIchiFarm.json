@@ -166,6 +166,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "ICHIv1",
+    "outputs": [
+      {
+        "internalType": "contract IERC20Upgradeable",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -322,6 +335,11 @@
       {
         "internalType": "address",
         "name": "_ichi",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_ichiv1",
         "type": "address"
       },
       {

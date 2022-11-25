@@ -9,12 +9,13 @@ interface ICErc20 {
 
     function balanceOf(address user) external view returns (uint256);
 
-    function borrowBalanceStored(address account)
-        external
-        view
-        returns (uint256);
+    function borrowBalanceStored(
+        address account
+    ) external view returns (uint256);
 
     function exchangeRateStored() external view returns (uint256);
+
+    function approve(address spender, uint256 amount) external returns (bool);
 
     function mint(uint256 mintAmount) external returns (uint256);
 

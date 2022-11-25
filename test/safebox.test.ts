@@ -34,6 +34,7 @@ describe("SafeBox", () => {
 	beforeEach(async () => {
 		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 		safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
+			bank.address,
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
@@ -48,6 +49,7 @@ describe("SafeBox", () => {
 			const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 			// const safeBox = <SafeBox>
 			await expect(upgrades.deployProxy(SafeBox, [
+				bank.address,
 				ethers.constants.AddressZero,
 				"Interest Bearing USDC",
 				"ibUSDC"

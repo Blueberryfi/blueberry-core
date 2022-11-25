@@ -45,7 +45,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
-        blockNumber: 7993941,
+        blockNumber: 8014442,
       },
       accounts: {
         mnemonic: process.env.MNEMONIC,
