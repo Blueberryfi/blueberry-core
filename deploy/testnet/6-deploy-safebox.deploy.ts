@@ -33,8 +33,6 @@ async function main(): Promise<void> {
 	deployment.ICHI_SafeBox = safeBox.address;
 	writeDeployments(deployment);
 
-	await safeBox.setBank(deployment.BlueBerryBank);
-
 	const bank = await ethers.getContractAt("BlueBerryBank", deployment.BlueBerryBank);
 	// Add Bank
 	await bank.whitelistTokens([deployment.MockIchiV2], [true])

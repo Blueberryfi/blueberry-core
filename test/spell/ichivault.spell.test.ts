@@ -153,7 +153,12 @@ describe('ICHI Angel Vaults Spell', () => {
 			wichi.address
 		])
 		await spell.deployed();
-		await spell.addVault(USDC, ichiVault.address);
+		await spell.addStrategy(ichiVault.address, utils.parseUnits("200000", 6));
+		await spell.addCollaterals(
+			0,
+			[USDC, ICHI],
+			[30000, 30000]
+		);
 		await spell.setWhitelistLPTokens([ichiVault.address], [true]);
 		await oracle.setWhitelistERC1155([wichi.address], true);
 
@@ -299,6 +304,7 @@ describe('ICHI Angel Vaults Spell', () => {
 				0,
 				spell.address,
 				iface.encodeFunctionData("openPositionFarm", [
+					0,
 					ICHI,
 					USDC,
 					depositAmount,
@@ -356,6 +362,7 @@ describe('ICHI Angel Vaults Spell', () => {
 				1,
 				spell.address,
 				iface.encodeFunctionData("closePositionFarm", [
+					0,
 					ICHI,
 					USDC, // ICHI vault lp token is collateral
 					ethers.constants.MaxUint256,	// Amount of werc20

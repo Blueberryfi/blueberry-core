@@ -2,6 +2,33 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "colToken",
+        "type": "address"
+      }
+    ],
+    "name": "COL_NOT_WHITELISTED",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      }
+    ],
+    "name": "EXCEED_MAX_LIMIT",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "colToken",
         "type": "address"
@@ -57,6 +84,22 @@
       }
     ],
     "name": "LP_NOT_WHITELISTED",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "spell",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      }
+    ],
+    "name": "NOT_EXIST_STRATEGY",
     "type": "error"
   },
   {
@@ -150,17 +193,40 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
       },
+      {
+        "internalType": "address[]",
+        "name": "collaterals",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "maxLTVs",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "addCollaterals",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "address",
         "name": "vault",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
       }
     ],
-    "name": "addVault",
+    "name": "addStrategy",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -205,6 +271,11 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      },
+      {
         "internalType": "address",
         "name": "collToken",
         "type": "address"
@@ -242,6 +313,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      },
       {
         "internalType": "address",
         "name": "collToken",
@@ -327,6 +403,30 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "maxLTV",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -405,6 +505,11 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      },
+      {
         "internalType": "address",
         "name": "collToken",
         "type": "address"
@@ -433,6 +538,11 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      },
+      {
         "internalType": "address",
         "name": "collToken",
         "type": "address"
@@ -454,7 +564,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "pid",
+        "name": "farmingPid",
         "type": "uint256"
       }
     ],
@@ -535,6 +645,30 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "strategies",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPositionSize",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes4",
         "name": "interfaceId",
         "type": "bytes4"
@@ -585,25 +719,6 @@
     "name": "uniswapV3SwapCallback",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "vaults",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

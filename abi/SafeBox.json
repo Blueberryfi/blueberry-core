@@ -60,19 +60,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "Borrowed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
         "name": "account",
@@ -124,25 +111,6 @@
       }
     ],
     "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "newDebt",
-        "type": "uint256"
-      }
-    ],
-    "name": "Repaid",
     "type": "event"
   },
   {
@@ -264,19 +232,6 @@
   },
   {
     "inputs": [],
-    "name": "bank",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "cToken",
     "outputs": [
       {
@@ -371,11 +326,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_bank",
-        "type": "address"
-      },
-      {
         "internalType": "contract ICErc20",
         "name": "_cToken",
         "type": "address"
@@ -425,19 +375,6 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_bank",
-        "type": "address"
-      }
-    ],
-    "name": "setBank",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

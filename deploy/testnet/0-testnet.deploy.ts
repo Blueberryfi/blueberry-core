@@ -214,7 +214,6 @@ async function main(): Promise<void> {
 	]);
 	await safeBox.deployed();
 	console.log('SafeBox:', safeBox.address);
-	await safeBox.setBank(deployment.BlueBerryBank);
 	deployment.USDC_SafeBox = safeBox.address;
 	writeDeployments(deployment);
 

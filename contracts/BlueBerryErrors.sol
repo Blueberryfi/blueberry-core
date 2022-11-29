@@ -37,6 +37,9 @@ error NOT_BANK(address caller);
 error REFUND_ETH_FAILED(uint256 balance);
 error NOT_FROM_WETH(address from);
 error LP_NOT_WHITELISTED(address lp);
+error COL_NOT_WHITELISTED(uint256 poolId, address colToken);
+error NOT_EXIST_STRATEGY(address spell, uint poolId);
+error EXCEED_MAX_LIMIT(uint poolId);
 
 // Ichi Spell
 error INCORRECT_LP(address lpToken);

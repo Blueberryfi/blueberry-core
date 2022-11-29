@@ -4,7 +4,6 @@ pragma solidity 0.8.16;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
 
@@ -25,30 +24,17 @@ contract SafeBox is
     /// @dev address of underlying token
     IERC20Upgradeable public uToken;
 
-    /// @dev address of Bank contract
-    address public bank;
-
     event Deposited(address indexed account, uint256 amount, uint256 cAmount);
     event Withdrawn(address indexed account, uint256 amount, uint256 cAmount);
-    event Borrowed(uint256 amount);
-    event Repaid(uint256 amount, uint256 newDebt);
-
-    modifier onlyBank() {
-        if (msg.sender != bank) revert NOT_BANK(msg.sender);
-        _;
-    }
 
     function initialize(
-        address _bank,
         ICErc20 _cToken,
         string memory _name,
         string memory _symbol
     ) external initializer {
         __ERC20_init(_name, _symbol);
         __Ownable_init();
-        if (address(_cToken) == address(0) || _bank == address(0))
-            revert ZERO_ADDRESS();
-        bank = _bank;
+        if (address(_cToken) == address(0)) revert ZERO_ADDRESS();
         IERC20Upgradeable _uToken = IERC20Upgradeable(_cToken.underlying());
         cToken = _cToken;
         uToken = _uToken;
@@ -57,15 +43,6 @@ contract SafeBox is
 
     function decimals() public view override returns (uint8) {
         return cToken.decimals();
-    }
-
-    /**
-     * @notice Owner privileged function to set bank address
-     * @param _bank New bank address
-     */
-    function setBank(address _bank) external onlyOwner {
-        if (_bank == address(0)) revert ZERO_ADDRESS();
-        bank = _bank;
     }
 
     /**

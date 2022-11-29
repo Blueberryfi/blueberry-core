@@ -34,7 +34,6 @@ describe("SafeBox", () => {
 	beforeEach(async () => {
 		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 		safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
-			bank.address,
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
@@ -63,17 +62,6 @@ describe("SafeBox", () => {
 			expect(await usdc.allowance(safeBox.address, CUSDC)).to.be.equal(ethers.constants.MaxUint256);
 		})
 	})
-	describe("Owner", () => {
-		it("should be able to set bank", async () => {
-			await expect(
-				safeBox.connect(alice).setBank(bank.address)
-			).to.be.revertedWith('Ownable: caller is not the owner');
-
-			await safeBox.setBank(bank.address);
-			expect(await safeBox.bank()).to.be.equal(bank.address);
-		})
-	})
-
 	describe("Deposit", () => {
 		const depositAmount = utils.parseUnits("100", 6);
 		beforeEach(async () => { })
@@ -133,12 +121,6 @@ describe("SafeBox", () => {
 	})
 
 	describe("Utils", () => {
-		it("should be able to set valid address for bank", async () => {
-			await expect(safeBox.setBank(ethers.constants.AddressZero)).to.be.revertedWith("ZERO_ADDRESS");
-
-			await safeBox.setBank(bank.address);
-			expect(await safeBox.bank()).to.be.equal(bank.address);
-		})
 		it("should have same decimal as cToken", async () => {
 			expect(await safeBox.decimals()).to.be.equal(6);
 		})

@@ -1,0 +1,6 @@
+{
+  "BandAdapterOracle": "0xA370c6AFceE58564654e55Ff38bd835DaC7AaC4f",
+  "ChainlinkAdapterOracle": "0x23BF202cB8BABF1c5c63F7b3a0fc4d0692B0E6b4",
+  "AggregatorOracle": "0x71AE1ecd4d7ebfbE8D6df4112fe6867Ca3092428",
+  "UniswapV3AdapterOracle": "0x5b9a09DeC224aF6b88Cd7323827c2dBeFf04d101"
+}
