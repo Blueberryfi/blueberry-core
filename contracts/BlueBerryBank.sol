@@ -2,18 +2,18 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol';
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
-import './BlueBerryErrors.sol';
-import './utils/ERC1155NaiveReceiver.sol';
-import './interfaces/IBank.sol';
-import './interfaces/IOracle.sol';
-import './interfaces/ISafeBox.sol';
-import './interfaces/compound/ICErc20.sol';
-import './libraries/BBMath.sol';
+import "./BlueBerryErrors.sol";
+import "./utils/ERC1155NaiveReceiver.sol";
+import "./interfaces/IBank.sol";
+import "./interfaces/IOracle.sol";
+import "./interfaces/ISafeBox.sol";
+import "./interfaces/compound/ICErc20.sol";
+import "./libraries/BBMath.sol";
 
 contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     using BBMath for uint256;
@@ -553,7 +553,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             msg.sender,
             pos.collId,
             liqSize,
-            ''
+            ""
         );
         emit Liquidate(positionId, msg.sender, debtToken, amountPaid, share, 0);
     }
@@ -587,7 +587,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
                     revert(add(32, returndata), returndata_size)
                 }
             } else {
-                revert('bad cast call');
+                revert("bad cast call");
             }
         }
 
@@ -788,7 +788,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             msg.sender,
             pos.collId,
             amount,
-            ''
+            ""
         );
         emit TakeCollateral(
             POSITION_ID,
@@ -903,7 +903,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             address(this),
             id,
             amountCall,
-            ''
+            ""
         );
         uint256 balanceAfter = IERC1155Upgradeable(token).balanceOf(
             address(this),

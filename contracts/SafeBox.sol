@@ -2,14 +2,15 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import './BlueBerryErrors.sol';
-import './interfaces/ISafeBox.sol';
-import './interfaces/compound/ICErc20.sol';
+import "./BlueBerryErrors.sol";
+import "./interfaces/IProtocolConfig.sol";
+import "./interfaces/ISafeBox.sol";
+import "./interfaces/compound/ICErc20.sol";
 
 contract SafeBox is
     OwnableUpgradeable,
@@ -23,6 +24,9 @@ contract SafeBox is
     ICErc20 public cToken;
     /// @dev address of underlying token
     IERC20Upgradeable public uToken;
+    IProtocolConfig public config;
+
+    uint256 withdrawFeeWindowStartTime;
 
     event Deposited(address indexed account, uint256 amount, uint256 cAmount);
     event Withdrawn(address indexed account, uint256 amount, uint256 cAmount);
@@ -30,15 +34,20 @@ contract SafeBox is
     function initialize(
         ICErc20 _cToken,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        IProtocolConfig _config
     ) external initializer {
         __ERC20_init(_name, _symbol);
         __Ownable_init();
-        if (address(_cToken) == address(0)) revert ZERO_ADDRESS();
+        if (address(_cToken) == address(0) || address(_config) == address(0))
+            revert ZERO_ADDRESS();
         IERC20Upgradeable _uToken = IERC20Upgradeable(_cToken.underlying());
+        config = _config;
         cToken = _cToken;
         uToken = _uToken;
         _uToken.safeApprove(address(_cToken), type(uint256).max);
+
+        withdrawFeeWindowStartTime = block.timestamp;
     }
 
     function decimals() public view override returns (uint8) {
@@ -86,6 +95,16 @@ contract SafeBox is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
+        // Cut withdraw fee if it is in withdrawSafeBoxFee Window (2 months)
+        if (
+            block.timestamp <
+            withdrawFeeWindowStartTime + config.withdrawSafeBoxFeeWindow()
+        ) {
+            uint256 fee = (withdrawAmount * config.withdrawSafeBoxFee()) /
+                10000;
+            uToken.safeTransfer(config.treasury(), fee);
+            withdrawAmount -= fee;
+        }
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, cAmount);

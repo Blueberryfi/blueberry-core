@@ -7,7 +7,7 @@
     "prettier/prettier": "error",
     "compiler-version": [
       "error",
-      "0.8.9"
+      "0.8.16"
     ],
     "avoid-suicide": "error"
   }

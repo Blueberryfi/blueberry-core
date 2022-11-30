@@ -2,14 +2,17 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import './BlueBerryErrors.sol';
-import './interfaces/IProtocolConfig.sol';
+import "./BlueBerryErrors.sol";
+import "./interfaces/IProtocolConfig.sol";
 
 contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     uint256 public depositFee;
     uint256 public withdrawFee;
+
+    uint256 public withdrawSafeBoxFee;
+    uint256 public withdrawSafeBoxFeeWindow;
 
     uint256 public treasuryFeeRate;
     uint256 public blbStablePoolFeeRate;
@@ -29,6 +32,18 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         treasuryFeeRate = 3000; // 30% of deposit/withdraw fee => 0.15%
         blbStablePoolFeeRate = 3500; //  35% of deposit/withdraw fee => 0.175%
         blbIchiVaultFeeRate = 3500; //  35% of deposit/withdraw fee => 0.175%
+
+        withdrawSafeBoxFee = 100; // 1% as default, base 10000
+        withdrawSafeBoxFeeWindow = 60 days;
+    }
+
+    function setWithdrawSafeBoxFee(
+        uint256 fee,
+        uint256 window
+    ) external onlyOwner {
+        if (fee > 500) revert FEE_TOO_HIGH(fee);
+        withdrawSafeBoxFee = fee;
+        withdrawSafeBoxFeeWindow = window;
     }
 
     /**
