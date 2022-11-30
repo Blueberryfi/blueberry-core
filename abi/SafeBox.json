@@ -245,6 +245,19 @@
   },
   {
     "inputs": [],
+    "name": "config",
+    "outputs": [
+      {
+        "internalType": "contract IProtocolConfig",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "decimals",
     "outputs": [
       {
@@ -339,6 +352,11 @@
         "internalType": "string",
         "name": "_symbol",
         "type": "string"
+      },
+      {
+        "internalType": "contract IProtocolConfig",
+        "name": "_config",
+        "type": "address"
       }
     ],
     "name": "initialize",

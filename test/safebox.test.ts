@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers, upgrades } from "hardhat";
 import chai, { expect } from "chai";
-import { ICErc20, MockERC20, SafeBox } from "../typechain-types";
+import { ICErc20, MockERC20, ProtocolConfig, SafeBox } from "../typechain-types";
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../constant";
 import ICrc20ABI from '../abi/ICErc20.json'
 import { solidity } from 'ethereum-waffle'
@@ -20,15 +20,20 @@ describe("SafeBox", () => {
 	let admin: SignerWithAddress;
 	let alice: SignerWithAddress;
 	let bank: SignerWithAddress;
+	let treasury: SignerWithAddress;
 
 	let usdc: MockERC20;
 	let cUSDC: ICErc20;
 	let safeBox: SafeBox;
+	let config: ProtocolConfig;
 
 	before(async () => {
-		[admin, alice, bank] = await ethers.getSigners();
+		[admin, alice, bank, treasury] = await ethers.getSigners();
 		usdc = <MockERC20>await ethers.getContractAt("MockERC20", USDC, admin);
 		cUSDC = <ICErc20>await ethers.getContractAt("ICErc20", CUSDC);
+
+		const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
+		config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address]);
 	})
 
 	beforeEach(async () => {
@@ -36,7 +41,8 @@ describe("SafeBox", () => {
 		safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
 			CUSDC,
 			"Interest Bearing USDC",
-			"ibUSDC"
+			"ibUSDC",
+			config.address
 		]);
 		await safeBox.deployed();
 
@@ -46,12 +52,17 @@ describe("SafeBox", () => {
 	describe("Constructor", () => {
 		it("should revert when cToken address is invalid", async () => {
 			const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
-			// const safeBox = <SafeBox>
 			await expect(upgrades.deployProxy(SafeBox, [
-				bank.address,
 				ethers.constants.AddressZero,
 				"Interest Bearing USDC",
-				"ibUSDC"
+				"ibUSDC",
+				config.address
+			])).to.be.revertedWith('ZERO_ADDRESS');
+			await expect(upgrades.deployProxy(SafeBox, [
+				CUSDC,
+				"Interest Bearing USDC",
+				"ibUSDC",
+				ethers.constants.AddressZero
 			])).to.be.revertedWith('ZERO_ADDRESS');
 		})
 		it("should set cToken along with uToken in constructor", async () => {
@@ -115,8 +126,12 @@ describe("SafeBox", () => {
 			expect(await cUSDC.balanceOf(safeBox.address)).to.be.equal(0);
 
 			const afterUSDCBalance = await usdc.balanceOf(admin.address);
-			expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.roughlyNear(depositAmount);
-			expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.gte(depositAmount);
+			const feeRate = await config.withdrawSafeBoxFee();
+			const fee = depositAmount.mul(feeRate).div(10000);
+			const treasuryBalance = await usdc.balanceOf(treasury.address);
+			expect(treasuryBalance).to.be.equal(fee);
+
+			expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.roughlyNear(depositAmount.sub(fee));
 		})
 	})
 
