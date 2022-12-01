@@ -339,6 +339,11 @@
   {
     "inputs": [
       {
+        "internalType": "contract IProtocolConfig",
+        "name": "_config",
+        "type": "address"
+      },
+      {
         "internalType": "contract ICErc20",
         "name": "_cToken",
         "type": "address"
@@ -352,11 +357,6 @@
         "internalType": "string",
         "name": "_symbol",
         "type": "string"
-      },
-      {
-        "internalType": "contract IProtocolConfig",
-        "name": "_config",
-        "type": "address"
       }
     ],
     "name": "initialize",

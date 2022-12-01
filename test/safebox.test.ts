@@ -3,7 +3,6 @@ import { ethers, upgrades } from "hardhat";
 import chai, { expect } from "chai";
 import { ICErc20, MockERC20, ProtocolConfig, SafeBox } from "../typechain-types";
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../constant";
-import ICrc20ABI from '../abi/ICErc20.json'
 import { solidity } from 'ethereum-waffle'
 import { BigNumber, utils } from "ethers";
 import { roughlyNear } from "./assertions/roughlyNear";
@@ -39,10 +38,10 @@ describe("SafeBox", () => {
 	beforeEach(async () => {
 		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 		safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
+			config.address,
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC",
-			config.address
 		]);
 		await safeBox.deployed();
 
@@ -53,16 +52,16 @@ describe("SafeBox", () => {
 		it("should revert when cToken address is invalid", async () => {
 			const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 			await expect(upgrades.deployProxy(SafeBox, [
+				config.address,
 				ethers.constants.AddressZero,
 				"Interest Bearing USDC",
 				"ibUSDC",
-				config.address
 			])).to.be.revertedWith('ZERO_ADDRESS');
 			await expect(upgrades.deployProxy(SafeBox, [
+				ethers.constants.AddressZero,
 				CUSDC,
 				"Interest Bearing USDC",
 				"ibUSDC",
-				ethers.constants.AddressZero
 			])).to.be.revertedWith('ZERO_ADDRESS');
 		})
 		it("should set cToken along with uToken in constructor", async () => {

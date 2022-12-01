@@ -32,10 +32,10 @@ contract SafeBox is
     event Withdrawn(address indexed account, uint256 amount, uint256 cAmount);
 
     function initialize(
+        IProtocolConfig _config,
         ICErc20 _cToken,
         string memory _name,
-        string memory _symbol,
-        IProtocolConfig _config
+        string memory _symbol
     ) external initializer {
         __ERC20_init(_name, _symbol);
         __Ownable_init();
