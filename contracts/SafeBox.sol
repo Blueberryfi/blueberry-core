@@ -26,7 +26,7 @@ contract SafeBox is
     IERC20Upgradeable public uToken;
     IProtocolConfig public config;
 
-    uint256 withdrawFeeWindowStartTime;
+    uint256 public withdrawFeeWindowStartTime;
 
     event Deposited(address indexed account, uint256 amount, uint256 cAmount);
     event Withdrawn(address indexed account, uint256 amount, uint256 cAmount);
