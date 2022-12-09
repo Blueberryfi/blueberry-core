@@ -55,12 +55,12 @@ const config: HardhatUserConfig = {
         // url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
         // blockNumber: 8014442, // goerli
         url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`, // for Oracle
-        blockNumber: 16143790
+        blockNumber: 16147470
       },
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-        initialIndex: 3
-      },
+      // accounts: {
+      //   mnemonic: process.env.MNEMONIC,
+      //   initialIndex: 3
+      // },
     },
     mainnet: {
       accounts: [deployAccountKey],

@@ -24,7 +24,7 @@ describe('Uniswap V3 Oracle', () => {
 
     const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
     const LibInstance = await LinkedLibFactory.deploy();
-    console.log(LibInstance.address)
+    console.log("Uni V3 Lib Wrapper:", LibInstance.address)
     const MockOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.MockOracle
     );

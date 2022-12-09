@@ -1,8 +1,8 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers, upgrades } from "hardhat";
 import chai, { expect } from "chai";
-import { ICErc20, MockERC20, ProtocolConfig, SafeBox } from "../typechain-types";
-import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../constant";
+import { ERC20, ICErc20, IUniswapV2Router02, IWETH, ProtocolConfig, SafeBox } from "../typechain-types";
+import { ADDRESS, CONTRACT_NAMES } from "../constant";
 import { solidity } from 'ethereum-waffle'
 import { BigNumber, utils } from "ethers";
 import { roughlyNear } from "./assertions/roughlyNear";
@@ -12,8 +12,9 @@ chai.use(solidity);
 chai.use(roughlyNear);
 chai.use(near);
 
-const CUSDC = ADDRESS_GOERLI.bUSDC;
-const USDC = ADDRESS_GOERLI.MockUSDC;
+const CUSDC = ADDRESS.bUSDC;
+const USDC = ADDRESS.USDC;
+const WETH = ADDRESS.WETH;
 
 describe("SafeBox", () => {
 	let admin: SignerWithAddress;
@@ -21,14 +22,16 @@ describe("SafeBox", () => {
 	let bank: SignerWithAddress;
 	let treasury: SignerWithAddress;
 
-	let usdc: MockERC20;
+	let usdc: ERC20;
+	let weth: IWETH;
 	let cUSDC: ICErc20;
 	let safeBox: SafeBox;
 	let config: ProtocolConfig;
 
 	before(async () => {
 		[admin, alice, bank, treasury] = await ethers.getSigners();
-		usdc = <MockERC20>await ethers.getContractAt("MockERC20", USDC, admin);
+		usdc = <ERC20>await ethers.getContractAt("ERC20", USDC, admin);
+		weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 		cUSDC = <ICErc20>await ethers.getContractAt("ICErc20", CUSDC);
 
 		const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
@@ -45,7 +48,22 @@ describe("SafeBox", () => {
 		]);
 		await safeBox.deployed();
 
-		await usdc.mint(admin.address, utils.parseUnits("1000000", 6));
+		// deposit 50 eth -> 50 WETH
+		await weth.deposit({ value: utils.parseUnits('50') });
+		await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
+
+		// swap 50 weth -> usdc
+		const uniV2Router = <IUniswapV2Router02>await ethers.getContractAt(
+			CONTRACT_NAMES.IUniswapV2Router02,
+			ADDRESS.UNI_V2_ROUTER
+		);
+		await uniV2Router.swapExactTokensForTokens(
+			utils.parseUnits('50'),
+			0,
+			[WETH, USDC],
+			admin.address,
+			ethers.constants.MaxUint256
+		)
 	})
 
 	describe("Constructor", () => {
