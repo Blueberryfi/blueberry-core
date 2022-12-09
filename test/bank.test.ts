@@ -128,7 +128,7 @@ describe('Bank', () => {
 		config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address]);
 
 		const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-		bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, 2000]);
+		bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
 		await bank.deployed();
 
 		// Deploy ICHI wrapper and spell
@@ -149,7 +149,7 @@ describe('Bank', () => {
 			wichi.address
 		])
 		await spell.deployed();
-		await spell.addVault(USDC, ichiVault.address);
+		await spell.addStrategy(ichiVault.address, ethers.constants.MaxUint256);
 		await spell.setWhitelistLPTokens([ichiVault.address], [true]);
 		await oracle.setWhitelistERC1155([wichi.address], true);
 
@@ -202,20 +202,16 @@ describe('Bank', () => {
 		it("should revert Bank deployment when invalid args provided", async () => {
 			const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
 			await expect(
-				upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, config.address, 2000])
+				upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, config.address])
 			).to.be.revertedWith("ZERO_ADDRESS");
 
 			await expect(
-				upgrades.deployProxy(BlueBerryBank, [oracle.address, ethers.constants.AddressZero, 2000])
+				upgrades.deployProxy(BlueBerryBank, [oracle.address, ethers.constants.AddressZero])
 			).to.be.revertedWith("ZERO_ADDRESS");
-
-			await expect(
-				upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, 10001])
-			).to.be.revertedWith("FEE_TOO_HIGH(10001)");
 		})
 		it("should initialize states on constructor", async () => {
 			const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-			const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, 2000]);
+			const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
 			await bank.deployed();
 
 			expect(await bank._GENERAL_LOCK()).to.be.equal(1);
@@ -224,7 +220,6 @@ describe('Bank', () => {
 			expect(await bank.SPELL()).to.be.equal("0x0000000000000000000000000000000000000001");
 			expect(await bank.oracle()).to.be.equal(oracle.address);
 			expect(await bank.config()).to.be.equal(config.address);
-			expect(await bank.feeBps()).to.be.equal(2000);
 			expect(await bank.nextPositionId()).to.be.equal(1);
 			expect(await bank.bankStatus()).to.be.equal(7);
 		})
@@ -286,20 +281,6 @@ describe('Bank', () => {
 					bank.setOracle(oracle.address)
 				).to.be.emit(bank, "SetOracle").withArgs(oracle.address)
 				expect(await bank.oracle()).to.be.equal(oracle.address);
-			})
-			it("should be able to set fee bps", async () => {
-				await expect(
-					bank.connect(alice).setFeeBps(2000)
-				).to.be.revertedWith('Ownable: caller is not the owner');
-
-				await expect(
-					bank.setFeeBps(10001)
-				).to.be.revertedWith('FEE_TOO_HIGH(10001)');
-
-				await expect(
-					bank.setFeeBps(2000)
-				).to.be.emit(bank, "SetFeeBps").withArgs(2000)
-				expect(await bank.feeBps()).to.be.equal(2000);
 			})
 			it("should be able to update SafeBox address", async () => {
 				let bankInfo = await bank.banks(USDC);

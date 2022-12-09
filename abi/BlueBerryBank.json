@@ -75,17 +75,6 @@
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "feeBps",
-        "type": "uint256"
-      }
-    ],
-    "name": "FEE_TOO_HIGH",
-    "type": "error"
-  },
-  {
     "inputs": [],
     "name": "INPUT_ARRAY_MISMATCH",
     "type": "error"
@@ -268,6 +257,12 @@
         "indexed": false,
         "internalType": "address",
         "name": "cToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "safeBox",
         "type": "address"
       }
     ],
@@ -489,19 +484,6 @@
       }
     ],
     "name": "Repay",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "feeBps",
-        "type": "uint256"
-      }
-    ],
-    "name": "SetFeeBps",
     "type": "event"
   },
   {
@@ -920,19 +902,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "feeBps",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -1159,11 +1128,6 @@
         "internalType": "contract IProtocolConfig",
         "name": "_config",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_feeBps",
-        "type": "uint256"
       }
     ],
     "name": "initialize",
@@ -1511,19 +1475,6 @@
       }
     ],
     "name": "setBankStatus",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_feeBps",
-        "type": "uint256"
-      }
-    ],
-    "name": "setFeeBps",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

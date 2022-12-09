@@ -13,6 +13,12 @@
         "internalType": "address",
         "name": "cToken",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "safeBox",
+        "type": "address"
       }
     ],
     "name": "AddBank",
@@ -201,19 +207,6 @@
       }
     ],
     "name": "Repay",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "feeBps",
-        "type": "uint256"
-      }
-    ],
-    "name": "SetFeeBps",
     "type": "event"
   },
   {

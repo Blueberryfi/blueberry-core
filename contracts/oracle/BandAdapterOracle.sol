@@ -3,11 +3,11 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import '../BlueBerryErrors.sol';
-import '../interfaces/IBaseOracle.sol';
-import '../interfaces/band/IStdReference.sol';
+import "../BlueBerryErrors.sol";
+import "../interfaces/IBaseOracle.sol";
+import "../interfaces/band/IStdReference.sol";
 
 contract BandAdapterOracle is IBaseOracle, Ownable {
     IStdReference public ref; // Standard reference
@@ -60,7 +60,6 @@ contract BandAdapterOracle is IBaseOracle, Ownable {
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             if (maxDelays[idx] > 2 days) revert TOO_LONG_DELAY(maxDelays[idx]);
             if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
-
             maxDelayTimes[tokens[idx]] = maxDelays[idx];
             emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
         }
@@ -76,7 +75,7 @@ contract BandAdapterOracle is IBaseOracle, Ownable {
 
         IStdReference.ReferenceData memory data = ref.getReferenceData(
             sym,
-            'USD'
+            "USD"
         );
         if (
             data.lastUpdatedBase < block.timestamp - maxDelayTime ||
