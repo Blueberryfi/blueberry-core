@@ -60,6 +60,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "mean",
+        "type": "uint256"
+      }
+    ],
+    "name": "TOO_LOW_MEAN",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "ZERO_ADDRESS",
     "type": "error"

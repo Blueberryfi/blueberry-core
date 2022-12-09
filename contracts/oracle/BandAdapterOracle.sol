@@ -3,21 +3,18 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
+import "./BaseAdapter.sol";
 import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/band/IStdReference.sol";
 
-contract BandAdapterOracle is IBaseOracle, Ownable {
+contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     IStdReference public ref; // Standard reference
 
     mapping(address => string) public symbols; // Mapping from token to symbol string
-    mapping(address => uint256) public maxDelayTimes; // Mapping from token address to max delay time
 
     event SetRef(address ref);
     event SetSymbol(address token, string symbol);
-    event SetMaxDelayTime(address token, uint256 maxDelayTime);
 
     constructor(IStdReference _ref) {
         if (address(_ref) == address(0)) revert ZERO_ADDRESS();
@@ -46,22 +43,6 @@ contract BandAdapterOracle is IBaseOracle, Ownable {
 
             symbols[tokens[idx]] = syms[idx];
             emit SetSymbol(tokens[idx], syms[idx]);
-        }
-    }
-
-    /// @dev Set max delay time for each token
-    /// @param tokens list of tokens to set max delay
-    /// @param maxDelays list of max delay times to set to
-    function setMaxDelayTimes(
-        address[] calldata tokens,
-        uint256[] calldata maxDelays
-    ) external onlyOwner {
-        if (tokens.length != maxDelays.length) revert INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (maxDelays[idx] > 2 days) revert TOO_LONG_DELAY(maxDelays[idx]);
-            if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
-            maxDelayTimes[tokens[idx]] = maxDelays[idx];
-            emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
         }
     }
 
