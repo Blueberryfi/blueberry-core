@@ -5,12 +5,13 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
+
 import "./BasicSpell.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
-import "../interfaces/uniswap/v3/IUniswapV3Pool.sol";
-import "../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol";
 
 contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -268,8 +269,8 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
                 !isTokenA,
                 int256(amountToSwap),
                 isTokenA
-                    ? TickMath.MAX_SQRT_RATIO - 1 // Token0 -> Token1
-                    : TickMath.MIN_SQRT_RATIO + 1, // Token1 -> Token0
+                    ? UniV3WrappedLibMockup.MAX_SQRT_RATIO - 1 // Token0 -> Token1
+                    : UniV3WrappedLibMockup.MIN_SQRT_RATIO + 1, // Token1 -> Token0
                 abi.encode(address(this))
             );
         }

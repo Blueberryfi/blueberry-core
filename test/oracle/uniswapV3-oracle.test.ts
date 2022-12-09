@@ -22,6 +22,9 @@ describe('Uniswap V3 Oracle', () => {
   before(async () => {
     [admin, alice] = await ethers.getSigners();
 
+    const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+    const LibInstance = await LinkedLibFactory.deploy();
+    console.log(LibInstance.address)
     const MockOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.MockOracle
     );
@@ -29,7 +32,12 @@ describe('Uniswap V3 Oracle', () => {
     await mockOracle.deployed();
 
     const UniswapV3AdapterOracle = await ethers.getContractFactory(
-      CONTRACT_NAMES.UniswapV3AdapterOracle
+      CONTRACT_NAMES.UniswapV3AdapterOracle,
+      {
+        libraries: {
+          UniV3WrappedLibMockup: LibInstance.address
+        }
+      }
     );
     uniswapV3Oracle = <UniswapV3AdapterOracle>(
       await UniswapV3AdapterOracle.deploy(mockOracle.address)

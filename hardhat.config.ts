@@ -38,16 +38,24 @@ const config: HardhatUserConfig = {
             runs: 200,
           },
         },
+      }, {
+        version: '0.7.6',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
     ],
   },
   networks: {
     hardhat: {
       forking: {
-        url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
-        blockNumber: 8014442, // goerli
-        // url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`, // for Oracle
-        // blockNumber: 16143790
+        // url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
+        // blockNumber: 8014442, // goerli
+        url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`, // for Oracle
+        blockNumber: 16143790
       },
       accounts: {
         mnemonic: process.env.MNEMONIC,

@@ -2,14 +2,14 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
-import './UsingBaseOracle.sol';
-import '../BlueBerryErrors.sol';
-import '../interfaces/IBaseOracle.sol';
-import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
-import '../libraries/UniV3/OracleLibrary.sol';
+import "./UsingBaseOracle.sol";
+import "../BlueBerryErrors.sol";
+import "../interfaces/IBaseOracle.sol";
+import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 
 contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, Ownable {
     event SetPoolETH(address token, address pool);
@@ -67,16 +67,17 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, Ownable {
         token1 = token0 == token ? token1 : token0; // get stable token address
         uint256 stableDecimals = uint256(IERC20Metadata(token1).decimals());
         uint256 tokenDecimals = uint256(IERC20Metadata(token).decimals());
-        (int24 arithmeticMeanTick, ) = OracleLibrary.consult(
+        (int24 arithmeticMeanTick, ) = UniV3WrappedLibMockup.consult(
             stablePool,
             secondsAgo
         );
-        uint256 quoteTokenAmountForStable = OracleLibrary.getQuoteAtTick(
-            arithmeticMeanTick,
-            uint128(10**tokenDecimals),
-            token,
-            token1
-        );
+        uint256 quoteTokenAmountForStable = UniV3WrappedLibMockup
+            .getQuoteAtTick(
+                arithmeticMeanTick,
+                uint128(10**tokenDecimals),
+                token,
+                token1
+            );
 
         return
             (quoteTokenAmountForStable * base.getPrice(token1)) /
