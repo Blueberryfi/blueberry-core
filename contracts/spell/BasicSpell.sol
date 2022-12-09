@@ -2,14 +2,15 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import '../BlueBerryErrors.sol';
-import '../utils/ERC1155NaiveReceiver.sol';
-import '../interfaces/IBank.sol';
-import '../interfaces/IWERC20.sol';
-import '../interfaces/IWETH.sol';
+import "../utils/BlueBerryConst.sol";
+import "../utils/BlueBerryErrors.sol";
+import "../utils/ERC1155NaiveReceiver.sol";
+import "../interfaces/IBank.sol";
+import "../interfaces/IWERC20.sol";
+import "../interfaces/IWETH.sol";
 
 abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -103,7 +104,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
 
         uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
         if (balance > 0) {
-            uint256 fee = (balance * bank.config().depositFee()) / 10000;
+            uint256 fee = (balance * bank.config().depositFee()) / DENOMINATOR;
             IERC20Upgradeable(token).safeTransfer(
                 bank.config().treasury(),
                 fee

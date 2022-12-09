@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 import "./UsingBaseOracle.sol";
-import "../BlueBerryErrors.sol";
+import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 

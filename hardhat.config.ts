@@ -54,7 +54,7 @@ const config: HardhatUserConfig = {
       forking: {
         // url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
         // blockNumber: 8014442, // goerli
-        url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`, // for Oracle
+        url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
         blockNumber: 16147470
       },
       // accounts: {

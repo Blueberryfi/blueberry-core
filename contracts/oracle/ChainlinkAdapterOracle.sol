@@ -5,7 +5,7 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import "../BlueBerryErrors.sol";
+import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/chainlink/IFeedRegistry.sol";
 

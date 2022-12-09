@@ -3,10 +3,10 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import '../BlueBerryErrors.sol';
-import '../interfaces/IBaseOracle.sol';
+import "../utils/BlueBerryErrors.sol";
+import "../interfaces/IBaseOracle.sol";
 
 contract AggregatorOracle is IBaseOracle, Ownable {
     event SetPrimarySources(

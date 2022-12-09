@@ -2,10 +2,10 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import '../BlueBerryErrors.sol';
-import '../interfaces/IBaseOracle.sol';
+import "../utils/BlueBerryErrors.sol";
+import "../interfaces/IBaseOracle.sol";
 
 contract MockOracle is IBaseOracle, Ownable {
     mapping(address => uint256) public prices; // Mapping from token to price (times 1e18).

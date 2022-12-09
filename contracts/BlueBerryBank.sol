@@ -7,7 +7,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
-import "./BlueBerryErrors.sol";
+import "./utils/BlueBerryConst.sol";
+import "./utils/BlueBerryErrors.sol";
 import "./utils/ERC1155NaiveReceiver.sol";
 import "./interfaces/IBank.sol";
 import "./interfaces/IOracle.sol";
@@ -506,7 +507,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         if (pv >= ov) risk = 0;
         else {
-            risk = ((ov - pv) * 10000) / cv;
+            risk = ((ov - pv) * DENOMINATOR) / cv;
         }
     }
 
@@ -859,7 +860,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         returns (uint256)
     {
         if (config.treasury() == address(0)) revert NO_TREASURY_SET();
-        uint256 fee = (amount * config.depositFee()) / 10000;
+        uint256 fee = (amount * config.depositFee()) / DENOMINATOR;
         IERC20Upgradeable(token).safeTransfer(config.treasury(), fee);
         return amount - fee;
     }
@@ -869,7 +870,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         returns (uint256)
     {
         if (config.treasury() == address(0)) revert NO_TREASURY_SET();
-        uint256 fee = (amount * config.withdrawFee()) / 10000;
+        uint256 fee = (amount * config.withdrawFee()) / DENOMINATOR;
         IERC20Upgradeable(token).safeTransfer(config.treasury(), fee);
         return amount - fee;
     }
