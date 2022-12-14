@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.16;
 
-import './IProtocolConfig.sol';
+import "./IProtocolConfig.sol";
 
 interface IBank {
     struct Bank {
@@ -29,11 +29,9 @@ interface IBank {
     }
 
     /// The governor adds a new bank gets added to the system.
-    event AddBank(address token, address cToken);
+    event AddBank(address token, address cToken, address safeBox);
     /// The governor sets the address of the oracle smart contract.
     event SetOracle(address oracle);
-    /// The governor sets the basis point fee of the bank.
-    event SetFeeBps(uint256 feeBps);
     /// The governor withdraw tokens from the reserve of a bank.
     event WithdrawReserve(address user, address token, uint256 amount);
     /// Someone repays tokens to a bank via a spell caller.

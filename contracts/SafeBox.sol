@@ -7,7 +7,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "./BlueBerryErrors.sol";
+import "./utils/BlueBerryConst.sol";
+import "./utils/BlueBerryErrors.sol";
 import "./interfaces/IProtocolConfig.sol";
 import "./interfaces/ISafeBox.sol";
 import "./interfaces/compound/ICErc20.sol";
@@ -26,7 +27,7 @@ contract SafeBox is
     IERC20Upgradeable public uToken;
     IProtocolConfig public config;
 
-    uint256 withdrawFeeWindowStartTime;
+    uint256 public withdrawFeeWindowStartTime;
 
     event Deposited(address indexed account, uint256 amount, uint256 cAmount);
     event Withdrawn(address indexed account, uint256 amount, uint256 cAmount);
@@ -59,9 +60,12 @@ contract SafeBox is
      * @param amount Underlying token amount to deposit
      * @return ctokenAmount cToken amount
      */
-    function deposit(
-        uint256 amount
-    ) external override nonReentrant returns (uint256 ctokenAmount) {
+    function deposit(uint256 amount)
+        external
+        override
+        nonReentrant
+        returns (uint256 ctokenAmount)
+    {
         if (amount == 0) revert ZERO_AMOUNT();
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         uToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -83,9 +87,12 @@ contract SafeBox is
      * @param cAmount Amount of cTokens to redeem
      * @return withdrawAmount Amount of underlying assets withdrawn
      */
-    function withdraw(
-        uint256 cAmount
-    ) external override nonReentrant returns (uint256 withdrawAmount) {
+    function withdraw(uint256 cAmount)
+        external
+        override
+        nonReentrant
+        returns (uint256 withdrawAmount)
+    {
         if (cAmount == 0) revert ZERO_AMOUNT();
 
         _burn(msg.sender, cAmount);
@@ -101,7 +108,7 @@ contract SafeBox is
             withdrawFeeWindowStartTime + config.withdrawSafeBoxFeeWindow()
         ) {
             uint256 fee = (withdrawAmount * config.withdrawSafeBoxFee()) /
-                10000;
+                DENOMINATOR;
             uToken.safeTransfer(config.treasury(), fee);
             withdrawAmount -= fee;
         }

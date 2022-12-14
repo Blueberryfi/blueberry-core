@@ -22,6 +22,9 @@ describe('Uniswap V3 Oracle', () => {
   before(async () => {
     [admin, alice] = await ethers.getSigners();
 
+    const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+    const LibInstance = await LinkedLibFactory.deploy();
+    console.log("Uni V3 Lib Wrapper:", LibInstance.address)
     const MockOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.MockOracle
     );
@@ -29,7 +32,12 @@ describe('Uniswap V3 Oracle', () => {
     await mockOracle.deployed();
 
     const UniswapV3AdapterOracle = await ethers.getContractFactory(
-      CONTRACT_NAMES.UniswapV3AdapterOracle
+      CONTRACT_NAMES.UniswapV3AdapterOracle,
+      {
+        libraries: {
+          UniV3WrappedLibMockup: LibInstance.address
+        }
+      }
     );
     uniswapV3Oracle = <UniswapV3AdapterOracle>(
       await UniswapV3AdapterOracle.deploy(mockOracle.address)
@@ -79,41 +87,41 @@ describe('Uniswap V3 Oracle', () => {
     })
     it("should be able to set times ago", async () => {
       await expect(
-        uniswapV3Oracle.connect(alice).setTimeAgos(
+        uniswapV3Oracle.connect(alice).setMaxDelayTimes(
           [ADDRESS.UNI, ADDRESS.ICHI],
           [10, 10]
         )
       ).to.be.revertedWith('Ownable: caller is not the owner');
 
       await expect(
-        uniswapV3Oracle.setTimeAgos(
+        uniswapV3Oracle.setMaxDelayTimes(
           [ADDRESS.UNI, ADDRESS.ICHI],
           [10, 10, 10]
         )
       ).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
 
       await expect(
-        uniswapV3Oracle.setTimeAgos(
+        uniswapV3Oracle.setMaxDelayTimes(
           [ADDRESS.UNI, ethers.constants.AddressZero],
           [10, 10]
         )
       ).to.be.revertedWith('ZERO_ADDRESS');
 
       await expect(
-        uniswapV3Oracle.setTimeAgos(
+        uniswapV3Oracle.setMaxDelayTimes(
           [ADDRESS.UNI, ADDRESS.ICHI],
           [10, 5]
         )
       ).to.be.revertedWith('TOO_LOW_MEAN');
 
       await expect(
-        uniswapV3Oracle.setTimeAgos(
+        uniswapV3Oracle.setMaxDelayTimes(
           [ADDRESS.UNI, ADDRESS.ICHI],
           [10, 10]
         )
-      ).to.be.emit(uniswapV3Oracle, "SetTimeAgo");
+      ).to.be.emit(uniswapV3Oracle, "SetMaxDelayTime");
 
-      expect(await uniswapV3Oracle.timeAgos(ADDRESS.UNI)).to.be.equal(10);
+      expect(await uniswapV3Oracle.maxDelayTimes(ADDRESS.UNI)).to.be.equal(10);
     })
   })
 
@@ -127,7 +135,7 @@ describe('Uniswap V3 Oracle', () => {
         [ADDRESS.UNI, ADDRESS.ICHI],
         [ADDRESS.UNI_V3_UNI_USDC, ADDRESS.UNI_V3_ICHI_USDC]
       );
-      await uniswapV3Oracle.setTimeAgos(
+      await uniswapV3Oracle.setMaxDelayTimes(
         [ADDRESS.UNI, ADDRESS.ICHI],
         [10, 10] // timeAgo - 10 s
       );
@@ -139,7 +147,7 @@ describe('Uniswap V3 Oracle', () => {
       ).to.be.revertedWith('NO_MEAN');
     })
     it("should revert when stable pool is not set", async () => {
-      await uniswapV3Oracle.setTimeAgos([ADDRESS.USDC], [10]);
+      await uniswapV3Oracle.setMaxDelayTimes([ADDRESS.USDC], [10]);
       await expect(
         uniswapV3Oracle.getPrice(ADDRESS.USDC)
       ).to.be.revertedWith('NO_STABLEPOOL');

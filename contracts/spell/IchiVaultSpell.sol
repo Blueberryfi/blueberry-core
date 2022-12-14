@@ -3,14 +3,15 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import './BasicSpell.sol';
-import '../libraries/UniV3/TickMath.sol';
-import '../interfaces/IWIchiFarm.sol';
-import '../interfaces/ichi/IICHIVault.sol';
-import '../interfaces/uniswap/v3/IUniswapV3Pool.sol';
-import '../interfaces/uniswap/v3/IUniswapV3SwapCallback.sol';
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
+
+import "./BasicSpell.sol";
+import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
+import "../interfaces/IWIchiFarm.sol";
+import "../interfaces/ichi/IICHIVault.sol";
 
 contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -26,26 +27,26 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     /// @dev poolId => ichi vault
     Strategy[] public strategies;
     /// @dev poolId => collateral token => maxLTV
-    mapping(uint => mapping(address => uint)) public maxLTV;
+    mapping(uint256 => mapping(address => uint256)) public maxLTV;
     /// @dev address of ICHI farm wrapper
     IWIchiFarm public wIchiFarm;
     /// @dev address of ICHI token
     address public ICHI;
 
-    modifier existingStrategy(uint poolId) {
+    modifier existingStrategy(uint256 poolId) {
         if (strategies[poolId].vault == address(0))
             revert NOT_EXIST_STRATEGY(address(this), poolId);
 
         _;
     }
 
-    modifier onlyWhitelistedCollateral(uint poolId, address col) {
+    modifier onlyWhitelistedCollateral(uint256 poolId, address col) {
         if (maxLTV[poolId][col] == 0) revert COL_NOT_WHITELISTED(poolId, col);
 
         _;
     }
 
-    modifier withinMaxSize(uint poolId, uint posSize) {
+    modifier withinMaxSize(uint256 poolId, uint256 posSize) {
         if (posSize > strategies[poolId].maxPositionSize)
             revert EXCEED_MAX_LIMIT(poolId);
 
@@ -69,20 +70,20 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @notice Owner privileged function to add vault
      * @param vault Address of ICHI angel vault
      */
-    function addStrategy(address vault, uint maxPosSize) external onlyOwner {
+    function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
         if (vault == address(0)) revert ZERO_ADDRESS();
         strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));
     }
 
     function addCollaterals(
-        uint poolId,
+        uint256 poolId,
         address[] memory collaterals,
-        uint[] memory maxLTVs
+        uint256[] memory maxLTVs
     ) external existingStrategy(poolId) onlyOwner {
         if (collaterals.length != maxLTVs.length || collaterals.length == 0)
             revert INPUT_ARRAY_MISMATCH();
 
-        for (uint i = 0; i < collaterals.length; i++) {
+        for (uint256 i = 0; i < collaterals.length; i++) {
             maxLTV[poolId][collaterals[i]] = maxLTVs[i];
         }
     }
@@ -95,7 +96,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param borrowAmount amount to borrow from Bank
      */
     function depositInternal(
-        uint poolId,
+        uint256 poolId,
         address collToken,
         address borrowToken,
         uint256 collAmount,
@@ -129,7 +130,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param borrowAmount Amount to borrow from Bank
      */
     function openPosition(
-        uint poolId,
+        uint256 poolId,
         address collToken,
         address borrowToken,
         uint256 collAmount,
@@ -163,7 +164,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param farmingPid Pool Id of vault lp on ICHI Farm
      */
     function openPositionFarm(
-        uint poolId,
+        uint256 poolId,
         address collToken,
         address borrowToken,
         uint256 collAmount,
@@ -228,7 +229,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     }
 
     function withdrawInternal(
-        uint poolId,
+        uint256 poolId,
         address collToken,
         address borrowToken,
         uint256 amountRepay,
@@ -268,8 +269,8 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
                 !isTokenA,
                 int256(amountToSwap),
                 isTokenA
-                    ? TickMath.MAX_SQRT_RATIO - 1 // Token0 -> Token1
-                    : TickMath.MIN_SQRT_RATIO + 1, // Token1 -> Token0
+                    ? UniV3WrappedLibMockup.MAX_SQRT_RATIO - 1 // Token0 -> Token1
+                    : UniV3WrappedLibMockup.MIN_SQRT_RATIO + 1, // Token1 -> Token0
                 abi.encode(address(this))
             );
         }
@@ -295,7 +296,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param amountUWithdraw Amount of Isolated collateral to withdraw from Compound
      */
     function closePosition(
-        uint poolId,
+        uint256 poolId,
         address collToken,
         address borrowToken,
         uint256 lpTakeAmt,
@@ -321,7 +322,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     }
 
     function closePositionFarm(
-        uint poolId,
+        uint256 poolId,
         address collToken,
         address borrowToken,
         uint256 lpTakeAmt,

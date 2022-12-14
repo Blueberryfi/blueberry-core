@@ -2,14 +2,14 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/utils/math/SafeCast.sol';
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import '../BlueBerryErrors.sol';
-import '../interfaces/IBaseOracle.sol';
-import '../interfaces/chainlink/IFeedRegistry.sol';
+import "./BaseAdapter.sol";
+import "../utils/BlueBerryErrors.sol";
+import "../interfaces/IBaseOracle.sol";
+import "../interfaces/chainlink/IFeedRegistry.sol";
 
-contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
+contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     using SafeCast for int256;
 
     // Chainlink denominations
@@ -19,11 +19,8 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
 
     /// @dev Mapping from original token to remapped token for price querying (e.g. WBTC -> BTC, renBTC -> BTC)
     mapping(address => address) public remappedTokens;
-    /// @dev Mapping from token address to max delay time
-    mapping(address => uint256) public maxDelayTimes;
 
     event SetRegistry(address registry);
-    event SetMaxDelayTime(address indexed token, uint256 maxDelayTime);
     event SetTokenRemapping(
         address indexed token,
         address indexed remappedToken
@@ -41,22 +38,6 @@ contract ChainlinkAdapterOracle is IBaseOracle, Ownable {
         if (address(_registry) == address(0)) revert ZERO_ADDRESS();
         registry = _registry;
         emit SetRegistry(address(_registry));
-    }
-
-    /// @dev Set max delay time for each token
-    /// @param tokens List of remapped tokens to set max delay
-    /// @param maxDelays List of max delay times to set to
-    function setMaxDelayTimes(
-        address[] calldata tokens,
-        uint256[] calldata maxDelays
-    ) external onlyOwner {
-        if (tokens.length != maxDelays.length) revert INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (maxDelays[idx] > 2 days) revert TOO_LONG_DELAY(maxDelays[idx]);
-            if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
-            maxDelayTimes[tokens[idx]] = maxDelays[idx];
-            emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
-        }
     }
 
     /// @dev Set token remapping

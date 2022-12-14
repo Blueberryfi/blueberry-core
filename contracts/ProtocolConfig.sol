@@ -4,7 +4,8 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./BlueBerryErrors.sol";
+import "./utils/BlueBerryConst.sol";
+import "./utils/BlueBerryErrors.sol";
 import "./interfaces/IProtocolConfig.sol";
 
 contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
@@ -37,10 +38,11 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         withdrawSafeBoxFeeWindow = 60 days;
     }
 
-    function setWithdrawSafeBoxFee(
-        uint256 fee,
-        uint256 window
-    ) external onlyOwner {
+    function setWithdrawSafeBoxFee(uint256 fee, uint256 window)
+        external
+        onlyOwner
+    {
+        // Cap to 5%
         if (fee > 500) revert FEE_TOO_HIGH(fee);
         withdrawSafeBoxFee = fee;
         withdrawSafeBoxFeeWindow = window;
@@ -50,11 +52,13 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
      * @dev Owner priviledged function to set deposit fee
      */
     function setDepositFee(uint256 depositFee_) external onlyOwner {
+        // Cap to 20%
         if (depositFee_ > 2000) revert FEE_TOO_HIGH(depositFee_);
         depositFee = depositFee_;
     }
 
     function setWithdrawFee(uint256 withdrawFee_) external onlyOwner {
+        // Cap to 20%
         if (withdrawFee_ > 2000) revert FEE_TOO_HIGH(withdrawFee_);
         withdrawFee = withdrawFee_;
     }
@@ -66,7 +70,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     ) external onlyOwner {
         if (
             (treasuryFeeRate_ + blbStablePoolFeeRate_ + blbIchiVaultFeeRate_) !=
-            10000
+            DENOMINATOR
         ) revert INVALID_FEE_DISTRIBUTION();
         treasuryFeeRate = treasuryFeeRate_;
         blbStablePoolFeeRate = blbStablePoolFeeRate_;

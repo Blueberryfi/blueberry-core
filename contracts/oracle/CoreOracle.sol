@@ -3,13 +3,14 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import '../BlueBerryErrors.sol';
-import '../interfaces/IOracle.sol';
-import '../interfaces/IBaseOracle.sol';
-import '../interfaces/IERC20Wrapper.sol';
+import "../utils/BlueBerryConst.sol";
+import "../utils/BlueBerryErrors.sol";
+import "../interfaces/IOracle.sol";
+import "../interfaces/IBaseOracle.sol";
+import "../interfaces/IERC20Wrapper.sol";
 
 contract CoreOracle is IOracle, IBaseOracle, Ownable {
     struct TokenSetting {
@@ -56,7 +57,7 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             if (tokens[idx] == address(0) || settings[idx].route == address(0))
                 revert ZERO_ADDRESS();
-            if (settings[idx].liqThreshold > 10000)
+            if (settings[idx].liqThreshold > DENOMINATOR)
                 revert LIQ_THRESHOLD_TOO_HIGH(settings[idx].liqThreshold);
             tokenSettings[tokens[idx]] = settings[idx];
             emit SetTokenSetting(tokens[idx], settings[idx]);

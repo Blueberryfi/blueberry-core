@@ -2,18 +2,18 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol';
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import '../BlueBerryErrors.sol';
-import '../interfaces/IWERC20.sol';
+import "../utils/BlueBerryErrors.sol";
+import "../interfaces/IWERC20.sol";
 
 contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     function initialize() external initializer {
-        __ERC1155_init('WERC20');
+        __ERC1155_init("WERC20");
     }
 
     /// @dev Return the underlying ERC-20 for the given ERC-1155 token id.
@@ -64,7 +64,7 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
             msg.sender,
             uint256(uint160(token)),
             balanceAfter - balanceBefore,
-            ''
+            ""
         );
     }
 

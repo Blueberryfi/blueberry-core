@@ -38,19 +38,29 @@ const config: HardhatUserConfig = {
             runs: 200,
           },
         },
+      }, {
+        version: '0.7.6',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
     ],
   },
   networks: {
     hardhat: {
       forking: {
-        url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
-        blockNumber: 8014442,
+        // url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
+        // blockNumber: 8014442, // goerli
+        url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
+        blockNumber: 16147470
       },
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-        initialIndex: 3
-      },
+      // accounts: {
+      //   mnemonic: process.env.MNEMONIC,
+      //   initialIndex: 3
+      // },
     },
     mainnet: {
       accounts: [deployAccountKey],

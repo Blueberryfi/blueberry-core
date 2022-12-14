@@ -9,3 +9,4 @@ coverage.json
 typechain-types
 .env
 .openzeppelin
+.vscode/
