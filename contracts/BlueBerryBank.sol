@@ -233,8 +233,12 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Set the oracle smart contract address.
     /// @param _oracle The new oracle smart contract address.
     function setOracle(IOracle _oracle) external onlyOwner {
-        if (address(_oracle) == address(0)) {
-            revert ZERO_ADDRESS();
+        if (address(_oracle) == address(0)) revert ZERO_ADDRESS();
+
+        // Check if new oracle supports already added banks
+        for (uint256 i = 0; i < allBanks.length; i++) {
+            if (!oracle.support(allBanks[i]))
+                revert ORACLE_NOT_SUPPORT(allBanks[i]);
         }
         oracle = _oracle;
         emit SetOracle(address(_oracle));
