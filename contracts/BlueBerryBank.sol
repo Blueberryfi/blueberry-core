@@ -619,6 +619,11 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         Position storage pos = positions[POSITION_ID];
         Bank storage bank = banks[token];
+        if (pos.underlyingToken != address(0)) {
+            // already have isolated collateral, check token contract address
+            if (pos.underlyingToken != token)
+                revert INCORRECT_UNDERLYING(token);
+        }
         IERC20Upgradeable(token).safeTransferFrom(
             pos.owner,
             address(this),
