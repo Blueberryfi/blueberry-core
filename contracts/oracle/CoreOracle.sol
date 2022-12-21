@@ -215,7 +215,7 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
 
     /**
      * @notice Returns the Liquidation Threshold setting of collateral token.
-     * @notice 80% for volatile tokens, 90% for stablecoins
+     * @notice 85% for volatile tokens, 90% for stablecoins
      * @param token Underlying token address
      * @return liqThreshold of given token
      */
