@@ -21,17 +21,26 @@ async function main(): Promise<void> {
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 
+	// // Protocol Config
+	// const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
+	// const config = await upgrades.deployProxy(ProtocolConfig, [
+	// 	deployer.address
+	// ]);
+	// console.log('Protocol Config:', config.address);
+	// deployment.ProtocolConfig = config.address;
+	// writeDeployments(deployment);
+
 	// SafeBox
 	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
 	const safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
 		deployment.ProtocolConfig,
-		ADDRESS_GOERLI.bBLB,
-		"Interest Bearing BLB",
-		"ibBLB"
+		ADDRESS_GOERLI.bWETH,
+		"Interest Bearing WETH",
+		"ibWETH"
 	]);
 	await safeBox.deployed();
-	console.log('SafeBox-BLB:', safeBox.address);
-	deployment.SafeBox_BLB = safeBox.address;
+	console.log('SafeBox-WETH:', safeBox.address);
+	deployment.SafeBox_WETH = safeBox.address;
 	writeDeployments(deployment);
 }
 

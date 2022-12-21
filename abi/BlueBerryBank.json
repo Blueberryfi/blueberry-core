@@ -75,6 +75,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "uToken",
+        "type": "address"
+      }
+    ],
+    "name": "INCORRECT_UNDERLYING",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "INPUT_ARRAY_MISMATCH",
     "type": "error"
