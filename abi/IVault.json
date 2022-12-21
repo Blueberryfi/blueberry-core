@@ -128,7 +128,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "ctokenAmount",
+        "name": "shareAmount",
         "type": "uint256"
       }
     ],

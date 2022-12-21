@@ -74,7 +74,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "cAmount",
+        "name": "shareAmount",
         "type": "uint256"
       }
     ],
@@ -156,7 +156,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "cAmount",
+        "name": "shareAmount",
         "type": "uint256"
       }
     ],
@@ -305,7 +305,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "ctokenAmount",
+        "name": "shareAmount",
         "type": "uint256"
       }
     ],
@@ -506,7 +506,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "cAmount",
+        "name": "shareAmount",
         "type": "uint256"
       }
     ],
@@ -519,19 +519,6 @@
       }
     ],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "withdrawFeeWindowStartTime",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

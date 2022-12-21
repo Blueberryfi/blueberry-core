@@ -59,6 +59,8 @@ contract CoreOracle is IOracle, IBaseOracle, Ownable {
                 revert ZERO_ADDRESS();
             if (settings[idx].liqThreshold > DENOMINATOR)
                 revert LIQ_THRESHOLD_TOO_HIGH(settings[idx].liqThreshold);
+            if (settings[idx].liqThreshold < 8000)
+                revert LIQ_THRESHOLD_TOO_HIGH(settings[idx].liqThreshold);
             tokenSettings[tokens[idx]] = settings[idx];
             emit SetTokenSetting(tokens[idx], settings[idx]);
         }

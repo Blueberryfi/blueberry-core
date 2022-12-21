@@ -12,7 +12,7 @@ import "./utils/BlueBerryErrors.sol";
 import "./utils/ERC1155NaiveReceiver.sol";
 import "./interfaces/IBank.sol";
 import "./interfaces/IOracle.sol";
-import "./interfaces/ISafeBox.sol";
+import "./interfaces/IVault.sol";
 import "./interfaces/compound/ICErc20.sol";
 import "./libraries/BBMath.sol";
 
@@ -634,7 +634,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         pos.underlyingToken = token;
         pos.underlyingAmount += amount;
-        pos.underlyingcTokenAmount += ISafeBox(bank.safeBox).deposit(amount);
+        pos.underlyingcTokenAmount += IVault(bank.safeBox).deposit(amount);
         bank.totalLend += amount;
 
         emit Lend(POSITION_ID, msg.sender, token, amount);
@@ -657,8 +657,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             amount = pos.underlyingcTokenAmount;
         }
 
-        ISafeBox(bank.safeBox).approve(bank.safeBox, type(uint256).max);
-        uint256 wAmount = ISafeBox(bank.safeBox).withdraw(amount);
+        IVault(bank.safeBox).approve(bank.safeBox, type(uint256).max);
+        uint256 wAmount = IVault(bank.safeBox).withdraw(amount);
 
         wAmount = wAmount > pos.underlyingAmount
             ? pos.underlyingAmount

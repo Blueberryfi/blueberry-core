@@ -14,6 +14,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
 
     uint256 public withdrawSafeBoxFee;
     uint256 public withdrawSafeBoxFeeWindow;
+    uint256 public withdrawSafeBoxFeeWindowStartTime;
 
     uint256 public treasuryFeeRate;
     uint256 public blbStablePoolFeeRate;

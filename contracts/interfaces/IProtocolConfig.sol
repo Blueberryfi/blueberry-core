@@ -12,4 +12,9 @@ interface IProtocolConfig {
     function withdrawSafeBoxFee() external view returns (uint256);
 
     function withdrawSafeBoxFeeWindow() external view returns (uint256);
+
+    function withdrawSafeBoxFeeWindowStartTime()
+        external
+        view
+        returns (uint256);
 }

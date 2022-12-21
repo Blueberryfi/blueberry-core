@@ -25,6 +25,7 @@ error NO_STABLEPOOL(address token);
 
 error PRICE_FAILED(address token);
 error LIQ_THRESHOLD_TOO_HIGH(uint256 threshold);
+error LIQ_THRESHOLD_TOO_LOW(uint256 threshold);
 
 error ORACLE_NOT_SUPPORT(address token);
 error ORACLE_NOT_SUPPORT_LP(address lp);
@@ -38,8 +39,8 @@ error REFUND_ETH_FAILED(uint256 balance);
 error NOT_FROM_WETH(address from);
 error LP_NOT_WHITELISTED(address lp);
 error COL_NOT_WHITELISTED(uint256 poolId, address colToken);
-error NOT_EXIST_STRATEGY(address spell, uint poolId);
-error EXCEED_MAX_LIMIT(uint poolId);
+error NOT_EXIST_STRATEGY(address spell, uint256 poolId);
+error EXCEED_MAX_LIMIT(uint256 poolId);
 
 // Ichi Spell
 error INCORRECT_LP(address lpToken);
