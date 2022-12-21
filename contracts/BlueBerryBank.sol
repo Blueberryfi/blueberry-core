@@ -181,7 +181,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @dev Add a new bank to the ecosystem.
      * @param token The underlying token for the bank.
      * @param cToken The address of the cToken smart contract.
-     * @param safeBox The address of safeBox.
+     * @param safeBox The address of hardVault or softVault.
      */
     function addBank(
         address token,
@@ -208,7 +208,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /**
      * @dev Update safeBox address of listed bank
      * @param token The underlying token of the bank
-     * @param safeBox The address of new SafeBox
+     * @param safeBox The address of new hardVault or softVault
      */
     function updateSafeBox(address token, address safeBox) external onlyOwner {
         if (safeBox == address(0)) revert ZERO_ADDRESS();

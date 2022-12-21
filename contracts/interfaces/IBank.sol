@@ -9,7 +9,7 @@ interface IBank {
         bool isListed; // Whether this market exists.
         uint8 index; // Reverse look up index for this bank.
         address cToken; // The CToken to draw liquidity from.
-        address safeBox;
+        address safeBox; // The address of SoftVault or HardVault.
         uint256 reserve; // The reserve portion allocated to BlueBerry protocol.
         uint256 totalDebt; // The last recorded total debt since last action.
         uint256 totalShare; // The total debt share count across all open positions.
