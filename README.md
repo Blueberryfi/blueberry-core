@@ -15,14 +15,14 @@ Blueberry Core v1 is an upgrade and fork from Alpha Homora v2, a leveraged yield
 ## Protocol Components
 
 - BlueberryBank
-  - Store each position's collateral tokens (in the form of wrapped LP tokens)
+  - Store each position's collateral tokens (in the form of wrapped NFT tokens)
   - Users can execute "spells", e.g. opening a new position, closing/adjusting existing position.
 - Caster
-  - Intermediate contract that just calls another contract function (low-level call) with provided data (instead of bank), to prevent attac.
+  - Intermediate contract that just calls another contract function (low-level call) with provided data (instead of bank), to prevent attacks.
   - Doesn't store any funds
 - Spells (e.g. Ichi,Uniswap/Sushiswap/Curve/...)
   - Define how to interact with each pool
-  - Execute `borrow`/`repay` assets by intereacting wtih the bank, which will then interact with the lending protocol.
+  - Execute `borrow`/`repay` assets by intereacting with the bank, which will then interact with the lending protocol.
   
 ### Component Interaction Flow
 
@@ -63,6 +63,6 @@ Blueberry Core v1 is an upgrade and fork from Alpha Homora v2, a leveraged yield
 
 Prices are determined in USD.
 
-- For regular assets, asset prices can be derived from Uniswap pool (with WETH), or Keep3r.
+- For regular assets, asset prices can be derived from Chainlink, Band, or Uniswap feeds.
 - For LP tokens, asset prices will determine the optimal reserve proportion of the underlying assets, which are then used to compoute the value of LP tokens. See `Uniswapv3AdpaterOracle.sol` for example implementation.
    
