@@ -10,6 +10,7 @@ import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.so
 
 import "./BasicSpell.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
+import "../interfaces/IOracle.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
@@ -32,6 +33,8 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     IWIchiFarm public wIchiFarm;
     /// @dev address of ICHI token
     address public ICHI;
+    /// @dev address of CoreOracle
+    IOracle public oracle;
 
     modifier existingStrategy(uint256 poolId) {
         if (strategies[poolId].vault == address(0))
@@ -96,13 +99,13 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param borrowAmount amount to borrow from Bank
      */
     function depositInternal(
-        uint256 poolId,
+        uint256 strategyId,
         address collToken,
         address borrowToken,
         uint256 collAmount,
         uint256 borrowAmount
     ) internal {
-        Strategy memory strategy = strategies[poolId];
+        Strategy memory strategy = strategies[strategyId];
 
         // 1. Lend isolated collaterals on compound
         doLend(collToken, collAmount);
@@ -130,20 +133,20 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param borrowAmount Amount to borrow from Bank
      */
     function openPosition(
-        uint256 poolId,
+        uint256 strategyId,
         address collToken,
         address borrowToken,
         uint256 collAmount,
         uint256 borrowAmount
     )
         external
-        existingStrategy(poolId)
-        onlyWhitelistedCollateral(poolId, collToken)
-        withinMaxSize(poolId, borrowAmount)
+        existingStrategy(strategyId)
+        onlyWhitelistedCollateral(strategyId, collToken)
+        withinMaxSize(strategyId, borrowAmount)
     {
         // 1-3 Deposit on ichi vault
         depositInternal(
-            poolId,
+            strategyId,
             collToken,
             borrowToken,
             collAmount,
@@ -151,7 +154,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         );
 
         // 4. Put collateral - ICHI Vault Lp Token
-        address vault = strategies[poolId].vault;
+        address vault = strategies[strategyId].vault;
         doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
     }
 
@@ -164,7 +167,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param farmingPid Pool Id of vault lp on ICHI Farm
      */
     function openPositionFarm(
-        uint256 poolId,
+        uint256 strategyId,
         address collToken,
         address borrowToken,
         uint256 collAmount,
@@ -172,17 +175,17 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 farmingPid
     )
         external
-        existingStrategy(poolId)
-        onlyWhitelistedCollateral(poolId, collToken)
-        withinMaxSize(poolId, borrowAmount)
+        existingStrategy(strategyId)
+        onlyWhitelistedCollateral(strategyId, collToken)
+        withinMaxSize(strategyId, borrowAmount)
     {
-        Strategy memory strategy = strategies[poolId];
+        Strategy memory strategy = strategies[strategyId];
         address lpToken = wIchiFarm.ichiFarm().lpToken(farmingPid);
         if (strategy.vault != lpToken) revert INCORRECT_LP(lpToken);
 
         // 1-3 Deposit on ichi vault
         depositInternal(
-            poolId,
+            strategyId,
             collToken,
             borrowToken,
             collAmount,

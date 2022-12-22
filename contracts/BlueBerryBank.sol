@@ -37,6 +37,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     address[] public allBanks; // The list of all listed banks.
     mapping(address => Bank) public banks; // Mapping from token to bank data.
     mapping(address => bool) public cTokenInBank; // Mapping from cToken to its existence in bank.
+    mapping(address => bool) public hardVaultsInBank; // Mapping from hard to its existence in bank.
     mapping(uint256 => Position) public positions; // Mapping from position ID to position data.
 
     bool public allowContractCalls; // The boolean status whether to allow call from contract (false = onlyEOA)
@@ -181,15 +182,20 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @dev Add a new bank to the ecosystem.
      * @param token The underlying token for the bank.
      * @param cToken The address of the cToken smart contract.
-     * @param safeBox The address of hardVault or softVault.
+     * @param softVault The address of softVault.
+     * @param hardVault The address of hardVault.
      */
     function addBank(
         address token,
         address cToken,
-        address safeBox
+        address softVault,
+        address hardVault
     ) external onlyOwner onlyWhitelistedToken(token) {
         if (
-            token == address(0) || cToken == address(0) || safeBox == address(0)
+            token == address(0) ||
+            cToken == address(0) ||
+            softVault == address(0) ||
+            hardVault == address(0)
         ) revert ZERO_ADDRESS();
         Bank storage bank = banks[token];
         if (cTokenInBank[cToken]) revert CTOKEN_ALREADY_ADDED();
@@ -199,22 +205,32 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         bank.isListed = true;
         bank.index = uint8(allBanks.length);
         bank.cToken = cToken;
-        bank.safeBox = safeBox;
+        bank.softVault = softVault;
+        bank.hardVault = hardVault;
         allBanks.push(token);
 
-        emit AddBank(token, cToken, safeBox);
+        emit AddBank(token, cToken, softVault, hardVault);
     }
 
     /**
      * @dev Update safeBox address of listed bank
      * @param token The underlying token of the bank
-     * @param safeBox The address of new hardVault or softVault
+     * @param vault The address of new vault
      */
-    function updateSafeBox(address token, address safeBox) external onlyOwner {
-        if (safeBox == address(0)) revert ZERO_ADDRESS();
+    function updateVault(
+        address token,
+        address vault,
+        bool isSoft
+    ) external onlyOwner {
+        if (block.chainid == 1) revert ONLY_FOR_DEV();
+        if (vault == address(0)) revert ZERO_ADDRESS();
         Bank storage bank = banks[token];
         if (!bank.isListed) revert BANK_NOT_LISTED(token);
-        bank.safeBox = safeBox;
+        if (isSoft) {
+            bank.softVault = vault;
+        } else {
+            bank.hardVault = vault;
+        }
     }
 
     /**
@@ -223,6 +239,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @param cToken The address of new SafeBox
      */
     function updateCToken(address token, address cToken) external onlyOwner {
+        if (block.chainid == 1) revert ONLY_FOR_DEV();
         if (cToken == address(0)) revert ZERO_ADDRESS();
         Bank storage bank = banks[token];
         if (!bank.isListed) revert BANK_NOT_LISTED(token);
@@ -620,21 +637,24 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         Position storage pos = positions[POSITION_ID];
         Bank storage bank = banks[token];
         if (pos.underlyingToken != address(0)) {
-            // already have isolated collateral, check token contract address
+            // already have isolated collateral, allow same isolated collateral
             if (pos.underlyingToken != token)
                 revert INCORRECT_UNDERLYING(token);
         }
+        address vault = address(IVault(bank.softVault).uToken()) == token
+            ? bank.softVault
+            : bank.hardVault;
         IERC20Upgradeable(token).safeTransferFrom(
             pos.owner,
             address(this),
             amount
         );
         amount = doCutDepositFee(token, amount);
-        IERC20Upgradeable(token).approve(bank.safeBox, amount);
+        IERC20Upgradeable(token).approve(vault, amount);
 
         pos.underlyingToken = token;
         pos.underlyingAmount += amount;
-        pos.underlyingcTokenAmount += IVault(bank.safeBox).deposit(amount);
+        pos.underlyingVaultShare += IVault(vault).deposit(amount);
         bank.totalLend += amount;
 
         emit Lend(POSITION_ID, msg.sender, token, amount);
@@ -654,17 +674,20 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         Position storage pos = positions[POSITION_ID];
         Bank storage bank = banks[token];
         if (amount == type(uint256).max) {
-            amount = pos.underlyingcTokenAmount;
+            amount = pos.underlyingVaultShare;
         }
 
-        IVault(bank.safeBox).approve(bank.safeBox, type(uint256).max);
-        uint256 wAmount = IVault(bank.safeBox).withdraw(amount);
+        address vault = address(IVault(bank.softVault).uToken()) == token
+            ? bank.softVault
+            : bank.hardVault;
+        IVault(vault).approve(vault, type(uint256).max);
+        uint256 wAmount = IVault(vault).withdraw(amount);
 
         wAmount = wAmount > pos.underlyingAmount
             ? pos.underlyingAmount
             : wAmount;
 
-        pos.underlyingcTokenAmount -= amount;
+        pos.underlyingVaultShare -= amount;
         pos.underlyingAmount -= wAmount;
         bank.totalLend -= wAmount;
 
