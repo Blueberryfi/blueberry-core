@@ -106,13 +106,13 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
-        // Cut withdraw fee if it is in withdrawSafeBoxFee Window (2 months)
+        // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
         if (
             block.timestamp <
-            config.withdrawSafeBoxFeeWindowStartTime() +
-                config.withdrawSafeBoxFeeWindow()
+            config.withdrawVaultFeeWindowStartTime() +
+                config.withdrawVaultFeeWindow()
         ) {
-            uint256 fee = (withdrawAmount * config.withdrawSafeBoxFee()) /
+            uint256 fee = (withdrawAmount * config.withdrawVaultFee()) /
                 DENOMINATOR;
             uToken.safeTransfer(config.treasury(), fee);
             withdrawAmount -= fee;

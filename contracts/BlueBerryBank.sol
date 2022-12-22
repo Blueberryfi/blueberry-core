@@ -37,7 +37,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     address[] public allBanks; // The list of all listed banks.
     mapping(address => Bank) public banks; // Mapping from token to bank data.
     mapping(address => bool) public cTokenInBank; // Mapping from cToken to its existence in bank.
-    mapping(address => bool) public hardVaultsInBank; // Mapping from hard to its existence in bank.
     mapping(uint256 => Position) public positions; // Mapping from position ID to position data.
 
     bool public allowContractCalls; // The boolean status whether to allow call from contract (false = onlyEOA)
@@ -213,7 +212,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     }
 
     /**
-     * @dev Update safeBox address of listed bank
+     * @dev Update vault address of listed bank
      * @param token The underlying token of the bank
      * @param vault The address of new vault
      */
@@ -236,7 +235,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /**
      * @dev Update bToken address of listed bank
      * @param token The underlying token of the bank
-     * @param cToken The address of new SafeBox
+     * @param cToken The address of new cToken
      */
     function updateCToken(address token, address cToken) external onlyOwner {
         if (block.chainid == 1) revert ONLY_FOR_DEV();

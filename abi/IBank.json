@@ -17,7 +17,13 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "safeBox",
+        "name": "softVault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "hardVault",
         "type": "address"
       }
     ],

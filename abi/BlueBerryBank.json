@@ -170,6 +170,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "ONLY_FOR_DEV",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -273,7 +278,13 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "safeBox",
+        "name": "softVault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "hardVault",
         "type": "address"
       }
     ],
@@ -677,7 +688,12 @@
       },
       {
         "internalType": "address",
-        "name": "safeBox",
+        "name": "softVault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "hardVault",
         "type": "address"
       }
     ],
@@ -758,7 +774,12 @@
       },
       {
         "internalType": "address",
-        "name": "safeBox",
+        "name": "softVault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "hardVault",
         "type": "address"
       },
       {
@@ -1394,7 +1415,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "underlyingcTokenAmount",
+        "name": "underlyingVaultShare",
         "type": "uint256"
       },
       {
@@ -1618,11 +1639,16 @@
       },
       {
         "internalType": "address",
-        "name": "safeBox",
+        "name": "vault",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "isSoft",
+        "type": "bool"
       }
     ],
-    "name": "updateSafeBox",
+    "name": "updateVault",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

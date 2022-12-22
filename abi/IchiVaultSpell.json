@@ -506,7 +506,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "poolId",
+        "name": "strategyId",
         "type": "uint256"
       },
       {
@@ -539,7 +539,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "poolId",
+        "name": "strategyId",
         "type": "uint256"
       },
       {
@@ -571,6 +571,19 @@
     "name": "openPositionFarm",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "oracle",
+    "outputs": [
+      {
+        "internalType": "contract IOracle",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

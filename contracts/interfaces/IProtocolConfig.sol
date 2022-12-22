@@ -9,12 +9,9 @@ interface IProtocolConfig {
 
     function treasury() external view returns (address);
 
-    function withdrawSafeBoxFee() external view returns (uint256);
+    function withdrawVaultFee() external view returns (uint256);
 
-    function withdrawSafeBoxFeeWindow() external view returns (uint256);
+    function withdrawVaultFeeWindow() external view returns (uint256);
 
-    function withdrawSafeBoxFeeWindowStartTime()
-        external
-        view
-        returns (uint256);
+    function withdrawVaultFeeWindowStartTime() external view returns (uint256);
 }

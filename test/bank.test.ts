@@ -7,7 +7,7 @@ import {
 	CoreOracle,
 	IchiVaultSpell,
 	IWETH,
-	SafeBox,
+	SoftVault,
 	MockOracle,
 	IchiLpOracle,
 	WERC20,
@@ -18,7 +18,8 @@ import {
 	ERC20,
 	MockIchiV2,
 	IUniswapV2Router02,
-	MockIchiFarm
+	MockIchiFarm,
+	HardVault
 } from '../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../constant';
 import SpellABI from '../abi/IchiVaultSpell.json';
@@ -58,8 +59,9 @@ describe('Bank', () => {
 	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
 	let config: ProtocolConfig;
-	let safeBoxUSDC: SafeBox;
-	let safeBoxIchi: SafeBox;
+	let usdcSoftVault: SoftVault;
+	let ichiSoftVault: SoftVault;
+	let usdcIchiHardVault: HardVault;
 	let ichiFarm: MockIchiFarm;
 	let ichiVault: MockIchiVault;
 
@@ -210,33 +212,40 @@ describe('Bank', () => {
 		)
 		await bank.whitelistTokens([USDC, ICHI], [true, true]);
 
+		const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
+		usdcIchiHardVault = <HardVault>await upgrades.deployProxy(HardVault, [
+			bank.address,
+			USDC,
+			"Interest Bearing USDC",
+			"ibUSDC"
+		])
 		// Deposit 10k USDC to compound
-		const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
-		safeBoxUSDC = <SafeBox>await upgrades.deployProxy(SafeBox, [
+		const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
+		usdcSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
 			bank.address,
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
 		])
-		await safeBoxUSDC.deployed();
-		await bank.addBank(USDC, CUSDC, safeBoxUSDC.address);
+		await usdcSoftVault.deployed();
+		await bank.addBank(USDC, CUSDC, usdcSoftVault.address, usdcIchiHardVault.address);
 
-		safeBoxIchi = <SafeBox>await upgrades.deployProxy(SafeBox, [
+		ichiSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
 			bank.address,
 			CICHI,
 			"Interest Bearing ICHI",
 			"ibICHI"
 		]);
-		await safeBoxIchi.deployed();
-		await bank.addBank(ICHI, CICHI, safeBoxIchi.address);
+		await ichiSoftVault.deployed();
+		await bank.addBank(ICHI, CICHI, ichiSoftVault.address, usdcIchiHardVault.address);
 
-		await usdc.approve(safeBoxUSDC.address, ethers.constants.MaxUint256);
+		await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
 		await usdc.transfer(alice.address, utils.parseUnits("500", 6));
-		await safeBoxUSDC.deposit(utils.parseUnits("10000", 6));
+		await usdcSoftVault.deposit(utils.parseUnits("10000", 6));
 
-		await ichi.approve(safeBoxIchi.address, ethers.constants.MaxUint256);
+		await ichi.approve(ichiSoftVault.address, ethers.constants.MaxUint256);
 		await ichi.transfer(alice.address, utils.parseUnits("500", 18));
-		await safeBoxIchi.deposit(utils.parseUnits("10000", 6));
+		await ichiSoftVault.deposit(utils.parseUnits("10000", 6));
 
 		return;
 		// Whitelist bank contract on compound

@@ -32,9 +32,8 @@ export enum CONTRACT_NAMES {
 
 	// Protocol
 	BlueBerryBank = 'BlueBerryBank',
-	SafeBox = 'SafeBox',
-	SafeBoxETH = 'SafeBoxETH',
-	SafeBoxUniV3LP = 'SafeBoxUniV3LP',
+	HardVault = 'HardVault',
+	SoftVault = 'SoftVault',
 
 	// Spell
 	UniswapV2SpellV1 = "UniswapV2SpellV1",

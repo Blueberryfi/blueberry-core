@@ -50,7 +50,7 @@ error INCORRECT_COLTOKEN(address colToken);
 error INCORRECT_UNDERLYING(address uToken);
 error NOT_FROM_UNIV3(address sender);
 
-// SafeBox
+// Vault
 error BORROW_FAILED(uint256 amount);
 error REPAY_FAILED(uint256 amount);
 error LEND_FAILED(uint256 amount);
