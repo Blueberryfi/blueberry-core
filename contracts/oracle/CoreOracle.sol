@@ -9,10 +9,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../utils/BlueBerryConst.sol";
 import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IOracle.sol";
-import "../interfaces/IBaseOracle.sol";
 import "../interfaces/IERC20Wrapper.sol";
 
-contract CoreOracle is IOracle, IBaseOracle, Ownable {
+contract CoreOracle is IOracle, Ownable {
     struct TokenSetting {
         address route;
         uint16 liqThreshold; // The liquidation threshold, multiplied by 1e4.

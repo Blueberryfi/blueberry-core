@@ -2,7 +2,9 @@
 
 pragma solidity 0.8.16;
 
-interface IOracle {
+import "./IBaseOracle.sol";
+
+interface IOracle is IBaseOracle {
     /// @dev Return whether the ERC-20 token is supported
     /// @param token The ERC-20 token to check for support
     function support(address token) external view returns (bool);

@@ -208,7 +208,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			wichi.address
 		])
 		await spell.deployed();
-		await spell.addStrategy(ichiVault.address, utils.parseUnits("200000", 6));
+		await spell.addStrategy(ichiVault.address, utils.parseUnits("200000", 18));
 		await spell.addCollaterals(
 			0,
 			[USDC, ICHI],

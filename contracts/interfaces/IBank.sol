@@ -3,6 +3,7 @@
 pragma solidity 0.8.16;
 
 import "./IProtocolConfig.sol";
+import "./IOracle.sol";
 
 interface IBank {
     struct Bank {
@@ -98,6 +99,8 @@ interface IBank {
     function nextPositionId() external view returns (uint256);
 
     function config() external view returns (IProtocolConfig);
+
+    function oracle() external view returns (IOracle);
 
     /// @dev Return bank information for the given token.
     function getBankInfo(address token)

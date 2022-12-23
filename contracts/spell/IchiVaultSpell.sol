@@ -9,6 +9,7 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
 
 import "./BasicSpell.sol";
+import "../utils/BlueBerryConst.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IWIchiFarm.sol";
@@ -28,7 +29,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     /// @dev strategyId => ichi vault
     Strategy[] public strategies;
     /// @dev strategyId => collateral token => maxLTV
-    mapping(uint256 => mapping(address => uint256)) public maxLTV;
+    mapping(uint256 => mapping(address => uint256)) public maxLTV; // base 1e4
     /// @dev address of ICHI farm wrapper
     IWIchiFarm public wIchiFarm;
     /// @dev address of ICHI token
@@ -50,13 +51,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         _;
     }
 
-    modifier withinMaxSize(uint256 strategyId, uint256 posSize) {
-        if (posSize > strategies[strategyId].maxPositionSize)
-            revert EXCEED_MAX_LIMIT(strategyId);
-
-        _;
-    }
-
     function initialize(
         IBank _bank,
         address _werc20,
@@ -73,6 +67,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     /**
      * @notice Owner privileged function to add vault
      * @param vault Address of ICHI angel vault
+     * @param maxPosSize, USD price based maximum size of a position for given vault, based 1e18
      */
     function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
         if (vault == address(0)) revert ZERO_ADDRESS();
@@ -108,6 +103,19 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     ) internal {
         Strategy memory strategy = strategies[strategyId];
 
+        // 0. Validate MAX LTV
+        uint256 collPrice = bank.oracle().getPrice(collToken);
+        uint256 borrPrice = bank.oracle().getPrice(borrowToken);
+        uint256 collValue = (collPrice * collAmount) /
+            10**IERC20Metadata(collToken).decimals();
+        uint256 borrValue = (borrPrice * borrowAmount) /
+            10**IERC20Metadata(borrowToken).decimals();
+
+        if (
+            borrValue >
+            (collValue * maxLTV[strategyId][collToken]) / DENOMINATOR
+        ) revert EXCEED_MAX_LTV();
+
         // 1. Lend isolated collaterals on compound
         doLend(collToken, collAmount);
 
@@ -124,6 +132,13 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         } else {
             vault.deposit(0, balance, address(this));
         }
+
+        // 4. Validate Max Pos Size
+        uint256 lpPrice = bank.oracle().getPrice(strategy.vault);
+        uint256 curPosSize = (lpPrice * vault.balanceOf(address(this))) /
+            10**IICHIVault(strategy.vault).decimals();
+        if (curPosSize > strategy.maxPositionSize)
+            revert EXCEED_MAX_POS_SIZE(strategyId);
     }
 
     /**
@@ -143,7 +158,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         external
         existingStrategy(strategyId)
         onlyWhitelistedCollateral(strategyId, collToken)
-        withinMaxSize(strategyId, borrowAmount)
     {
         // 1-3 Deposit on ichi vault
         depositInternal(
@@ -178,7 +192,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         external
         existingStrategy(strategyId)
         onlyWhitelistedCollateral(strategyId, collToken)
-        withinMaxSize(strategyId, borrowAmount)
     {
         Strategy memory strategy = strategies[strategyId];
         address lpToken = wIchiFarm.ichiFarm().lpToken(farmingPid);
