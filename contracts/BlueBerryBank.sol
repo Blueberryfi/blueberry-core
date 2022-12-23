@@ -12,7 +12,8 @@ import "./utils/BlueBerryErrors.sol";
 import "./utils/ERC1155NaiveReceiver.sol";
 import "./interfaces/IBank.sol";
 import "./interfaces/IOracle.sol";
-import "./interfaces/IVault.sol";
+import "./interfaces/ISoftVault.sol";
+import "./interfaces/IHardVault.sol";
 import "./interfaces/compound/ICErc20.sol";
 import "./interfaces/compound/IComptroller.sol";
 import "./libraries/BBMath.sol";
@@ -207,6 +208,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         bank.cToken = cToken;
         bank.softVault = softVault;
         bank.hardVault = hardVault;
+
+        IHardVault(hardVault).setApprovalForAll(hardVault, true);
         allBanks.push(token);
 
         emit AddBank(token, cToken, softVault, hardVault);
@@ -629,20 +632,28 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
                 revert INCORRECT_UNDERLYING(token);
         }
 
-        address vault = address(IVault(bank.softVault).uToken()) == token
-            ? bank.softVault
-            : bank.hardVault;
         IERC20Upgradeable(token).safeTransferFrom(
             pos.owner,
             address(this),
             amount
         );
         amount = doCutDepositFee(token, amount);
-        IERC20Upgradeable(token).approve(vault, amount);
-
         pos.underlyingToken = token;
         pos.underlyingAmount += amount;
-        pos.underlyingVaultShare += IVault(vault).deposit(amount);
+
+        if (address(ISoftVault(bank.softVault).uToken()) == token) {
+            IERC20Upgradeable(token).approve(bank.softVault, amount);
+            pos.underlyingVaultShare += ISoftVault(bank.softVault).deposit(
+                amount
+            );
+        } else {
+            IERC20Upgradeable(token).approve(bank.hardVault, amount);
+            pos.underlyingVaultShare += IHardVault(bank.softVault).deposit(
+                token,
+                amount
+            );
+        }
+
         bank.totalLend += amount;
 
         emit Lend(POSITION_ID, msg.sender, token, amount);
@@ -665,11 +676,16 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             amount = pos.underlyingVaultShare;
         }
 
-        address vault = address(IVault(bank.softVault).uToken()) == token
-            ? bank.softVault
-            : bank.hardVault;
-        IVault(vault).approve(vault, type(uint256).max);
-        uint256 wAmount = IVault(vault).withdraw(amount);
+        uint256 wAmount;
+        if (address(ISoftVault(bank.softVault).uToken()) == token) {
+            ISoftVault(bank.softVault).approve(
+                bank.softVault,
+                type(uint256).max
+            );
+            wAmount = ISoftVault(bank.softVault).withdraw(amount);
+        } else {
+            wAmount = IHardVault(bank.softVault).withdraw(token, amount);
+        }
 
         wAmount = wAmount > pos.underlyingAmount
             ? pos.underlyingAmount

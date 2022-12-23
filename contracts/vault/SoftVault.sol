@@ -10,14 +10,14 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "../utils/BlueBerryConst.sol";
 import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IProtocolConfig.sol";
-import "../interfaces/IVault.sol";
+import "../interfaces/ISoftVault.sol";
 import "../interfaces/compound/ICErc20.sol";
 
 contract SoftVault is
     OwnableUpgradeable,
     ERC20Upgradeable,
     ReentrancyGuardUpgradeable,
-    IVault
+    ISoftVault
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 

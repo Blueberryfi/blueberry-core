@@ -68,7 +68,7 @@ describe('ICHI Angel Vaults Spell', () => {
 	let bank: BlueBerryBank;
 	let usdcSoftVault: SoftVault;
 	let ichiSoftVault: SoftVault;
-	let usdcIchiHardVault: HardVault;
+	let hardVault: HardVault;
 	let ichiFarm: MockIchiFarm;
 	let ichiVault: MockIchiVault;
 
@@ -225,11 +225,8 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.whitelistTokens([USDC, ICHI], [true, true]);
 
 		const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-		usdcIchiHardVault = <HardVault>await upgrades.deployProxy(HardVault, [
+		hardVault = <HardVault>await upgrades.deployProxy(HardVault, [
 			config.address,
-			USDC,
-			"Interest Bearing USDC",
-			"ibUSDC"
 		])
 		// Deposit 10k USDC to compound
 		const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
@@ -240,7 +237,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			"ibUSDC"
 		])
 		await usdcSoftVault.deployed();
-		await bank.addBank(USDC, CUSDC, usdcSoftVault.address, usdcIchiHardVault.address);
+		await bank.addBank(USDC, CUSDC, usdcSoftVault.address, hardVault.address);
 
 		ichiSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
 			config.address,
@@ -249,7 +246,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			"ibICHI"
 		]);
 		await ichiSoftVault.deployed();
-		await bank.addBank(ICHI, CICHI, ichiSoftVault.address, usdcIchiHardVault.address);
+		await bank.addBank(ICHI, CICHI, ichiSoftVault.address, hardVault.address);
 
 		await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
 		await usdc.transfer(alice.address, utils.parseUnits("500", 6));

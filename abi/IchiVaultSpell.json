@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "poolId",
+        "name": "strategyId",
         "type": "uint256"
       },
       {
@@ -24,7 +24,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "poolId",
+        "name": "strategyId",
         "type": "uint256"
       }
     ],
@@ -100,7 +100,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "poolId",
+        "name": "strategyId",
         "type": "uint256"
       }
     ],
