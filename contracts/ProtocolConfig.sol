@@ -39,14 +39,8 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         withdrawVaultFeeWindow = 60 days;
     }
 
-    function setWithdrawVaultFee(uint256 fee, uint256 window)
-        external
-        onlyOwner
-    {
-        // Cap to 5%
-        if (fee > 500) revert FEE_TOO_HIGH(fee);
-        withdrawVaultFee = fee;
-        withdrawVaultFeeWindow = window;
+    function startVaultWithdrawFee() external onlyOwner {
+        withdrawVaultFeeWindowStartTime = block.timestamp;
     }
 
     /**

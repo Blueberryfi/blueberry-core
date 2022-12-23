@@ -11,7 +11,6 @@ interface IBank {
         address cToken; // The CToken to draw liquidity from.
         address softVault;
         address hardVault;
-        uint256 reserve; // The reserve portion allocated to BlueBerry protocol.
         uint256 totalDebt; // The last recorded total debt since last action.
         uint256 totalShare; // The total debt share count across all open positions.
         uint256 totalLend; // The total lent amount
@@ -38,8 +37,6 @@ interface IBank {
     );
     /// The governor sets the address of the oracle smart contract.
     event SetOracle(address oracle);
-    /// The governor withdraw tokens from the reserve of a bank.
-    event WithdrawReserve(address user, address token, uint256 amount);
     /// Someone repays tokens to a bank via a spell caller.
     event Lend(
         uint256 positionId,
@@ -109,7 +106,6 @@ interface IBank {
         returns (
             bool isListed,
             address cToken,
-            uint256 reserve,
             uint256 totalDebt,
             uint256 totalShare
         );

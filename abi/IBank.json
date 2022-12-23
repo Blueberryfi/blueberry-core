@@ -266,31 +266,6 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "WithdrawReserve",
-    "type": "event"
-  },
-  {
     "inputs": [],
     "name": "EXECUTOR",
     "outputs": [
@@ -440,11 +415,6 @@
         "internalType": "address",
         "name": "cToken",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "reserve",
-        "type": "uint256"
       },
       {
         "internalType": "uint256",

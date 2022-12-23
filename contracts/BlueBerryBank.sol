@@ -14,6 +14,7 @@ import "./interfaces/IBank.sol";
 import "./interfaces/IOracle.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/compound/ICErc20.sol";
+import "./interfaces/compound/IComptroller.sol";
 import "./libraries/BBMath.sol";
 
 contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
@@ -211,6 +212,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         emit AddBank(token, cToken, softVault, hardVault);
     }
 
+    function enterMarkets(address comp, address[] memory markets)
+        external
+        onlyOwner
+    {
+        if (block.chainid == 1) revert ONLY_FOR_DEV();
+        IComptroller(comp).enterMarkets(markets);
+    }
+
     /**
      * @dev Update vault address of listed bank
      * @param token The underlying token of the bank
@@ -258,20 +267,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         }
         oracle = _oracle;
         emit SetOracle(address(_oracle));
-    }
-
-    /// @dev Withdraw the reserve portion of the bank.
-    /// @param amount The amount of tokens to withdraw.
-    function withdrawReserve(address token, uint256 amount)
-        external
-        onlyOwner
-        lock
-    {
-        Bank storage bank = banks[token];
-        if (!bank.isListed) revert BANK_NOT_LISTED(token);
-        bank.reserve -= amount;
-        IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
-        emit WithdrawReserve(msg.sender, token, amount);
     }
 
     /// @dev Set bank status
@@ -362,19 +357,12 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         returns (
             bool isListed,
             address cToken,
-            uint256 reserve,
             uint256 totalDebt,
             uint256 totalShare
         )
     {
         Bank storage bank = banks[token];
-        return (
-            bank.isListed,
-            bank.cToken,
-            bank.reserve,
-            bank.totalDebt,
-            bank.totalShare
-        );
+        return (bank.isListed, bank.cToken, bank.totalDebt, bank.totalShare);
     }
 
     /// @dev Return position information for the given position id.
@@ -791,8 +779,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     }
 
     /// @dev Put more collateral for users. Must only be called during execution.
-    /// @param collToken The ERC1155 token to collateral. (spell address)
-    /// @param collId The token id to collateral.
+    /// @param collToken The ERC1155 token wrapped for collateral. (Wrapped token of LP)
+    /// @param collId The token id to collateral. (Uint256 format of LP address)
     /// @param amountCall The amount of tokens to put via transferFrom.
     function putCollateral(
         address collToken,

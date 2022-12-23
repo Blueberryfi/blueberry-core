@@ -36,6 +36,7 @@ describe("SoftVault", () => {
 
 		const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
 		config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address]);
+		config.startVaultWithdrawFee();
 	})
 
 	beforeEach(async () => {
@@ -100,7 +101,7 @@ describe("SoftVault", () => {
 			await usdc.approve(vault.address, depositAmount);
 			await expect(vault.deposit(depositAmount)).to.be.emit(vault, "Deposited");
 		})
-		it("vault should hold the cTokens", async () => {
+		it("vault should hold the cTokens on deposit", async () => {
 			await usdc.approve(vault.address, depositAmount);
 			await vault.deposit(depositAmount);
 
