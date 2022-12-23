@@ -628,6 +628,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             if (pos.underlyingToken != token)
                 revert INCORRECT_UNDERLYING(token);
         }
+
         address vault = address(IVault(bank.softVault).uToken()) == token
             ? bank.softVault
             : bank.hardVault;
@@ -648,9 +649,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     }
 
     /**
-     * @dev Withdraw isolated collateral tokens lent to bank. Must only be called while under execution.
+     * @dev Withdraw isolated collateral tokens lent to bank. Must only be called from spell while under execution.
      * @param token Isolated collateral token address
-     * @param amount The amount of tokens to withdraw.
+     * @param amount The amount of vaule share token to withdraw.
      */
     function withdrawLend(address token, uint256 amount)
         external
@@ -683,7 +684,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
     }
 
-    /// @dev Borrow tokens from that bank. Must only be called while under execution.
+    /// @dev Borrow tokens from given bank. Must only be called from spell while under execution.
     /// @param token The token to borrow from the bank.
     /// @param amount The amount of tokens to borrow.
     function borrow(address token, uint256 amount)

@@ -44,7 +44,8 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     }
 
     modifier onlyWhitelistedCollateral(uint256 strategyId, address col) {
-        if (maxLTV[strategyId][col] == 0) revert COL_NOT_WHITELISTED(strategyId, col);
+        if (maxLTV[strategyId][col] == 0)
+            revert COL_NOT_WHITELISTED(strategyId, col);
 
         _;
     }
@@ -242,24 +243,24 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         Strategy memory strategy = strategies[strategyId];
 
         IICHIVault vault = IICHIVault(strategy.vault);
-        // 2. Remove Liquidity - Withdraw from ICHI Vault
+
         if (address(vault) == address(0))
             revert LP_NOT_WHITELISTED(address(vault));
         uint256 positionId = bank.POSITION_ID();
 
-        // 2. Compute repay amount if MAX_INT is supplied (max debt)
+        // 1. Compute repay amount if MAX_INT is supplied (max debt)
         if (amountRepay == type(uint256).max) {
             amountRepay = bank.borrowBalanceCurrent(positionId, borrowToken);
         }
 
-        // 3. Calculate actual amount to remove
+        // 2. Calculate actual amount to remove
         uint256 amtLPToRemove = vault.balanceOf(address(this)) -
             amountLpWithdraw;
 
-        // 4. Remove liquidity
+        // 3. Withdraw liquidity from ICHI vault
         vault.withdraw(amtLPToRemove, address(this));
 
-        // 5. Swap withdrawn tokens to initial deposit token
+        // 4. Swap withdrawn tokens to initial deposit token
         bool isTokenA = vault.token0() == borrowToken;
         uint256 amountToSwap = IERC20(
             isTokenA ? vault.token1() : vault.token0()
@@ -278,13 +279,13 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
             );
         }
 
-        // 6. Withdraw isolated collateral from Bank
+        // 5. Withdraw isolated collateral from Bank
         doWithdraw(collToken, amountUWithdraw);
 
-        // 7. Repay
+        // 6. Repay
         doRepay(borrowToken, amountRepay);
 
-        // 8. Refund
+        // 7. Refund
         doRefund(borrowToken);
         doRefund(collToken);
     }

@@ -112,7 +112,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		)
 		await ichiV1.approve(ICHI, ethers.constants.MaxUint256);
 		const ichiV1Balance = await ichiV1.balanceOf(admin.address);
-		await ichi.convertToV2(ichiV1Balance);
+		await ichi.convertToV2(ichiV1Balance.div(2));
 		console.log("ICHI Balance:", utils.formatEther(await ichi.balanceOf(admin.address)));
 
 		const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
@@ -180,6 +180,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		// Deploy Bank
 		const Config = await ethers.getContractFactory("ProtocolConfig");
 		config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address]);
+		// config.startVaultWithdrawFee();
 
 		const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
 		bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
@@ -225,7 +226,7 @@ describe('ICHI Angel Vaults Spell', () => {
 
 		const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
 		usdcIchiHardVault = <HardVault>await upgrades.deployProxy(HardVault, [
-			bank.address,
+			config.address,
 			USDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
@@ -233,7 +234,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		// Deposit 10k USDC to compound
 		const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
 		usdcSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
-			bank.address,
+			config.address,
 			CUSDC,
 			"Interest Bearing USDC",
 			"ibUSDC"
@@ -242,7 +243,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		await bank.addBank(USDC, CUSDC, usdcSoftVault.address, usdcIchiHardVault.address);
 
 		ichiSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
-			bank.address,
+			config.address,
 			CICHI,
 			"Interest Bearing ICHI",
 			"ibICHI"
@@ -272,11 +273,7 @@ describe('ICHI Angel Vaults Spell', () => {
 	beforeEach(async () => {
 	})
 
-	// describe("Constructor", async () => {
-	// 	it("Spell test cases are disabled at the moment", async () => { })
-	// })
-
-	describe("ICHI Vault Poisition", () => {
+	describe("ICHI Vault Position", () => {
 		const depositAmount = utils.parseUnits('100', 18);
 		const borrowAmount = utils.parseUnits('300', 6);
 
@@ -295,8 +292,11 @@ describe('ICHI Angel Vaults Spell', () => {
 				])
 			)
 
+			const fee = depositAmount.mul(50).div(10000);
+			expect(await ichi.balanceOf(CICHI)).to.be.near(depositAmount.sub(fee))
+
 			expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(2));
-			const pos = await bank.getPositionInfo(1);
+			const pos = await bank.positions(1);
 			expect(pos.owner).to.be.equal(admin.address);
 			expect(pos.collToken).to.be.equal(werc20.address);
 			expect(pos.collId).to.be.equal(BigNumber.from(ichiVault.address));
@@ -305,7 +305,7 @@ describe('ICHI Angel Vaults Spell', () => {
 				await werc20.balanceOf(bank.address, BigNumber.from(ichiVault.address))
 			).to.be.equal(pos.collateralSize);
 			const bankInfo = await bank.banks(USDC);
-			console.log('Bank Info', bankInfo);
+			console.log('Bank Info', bankInfo, await bank.banks(ICHI));
 			console.log('Position Info', pos);
 
 			const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
@@ -348,6 +348,7 @@ describe('ICHI Angel Vaults Spell', () => {
 					ethers.constants.MaxUint256,
 				])
 			)
+
 			const afterUSDCBalance = await usdc.balanceOf(admin.address);
 			const afterIchiBalance = await ichi.balanceOf(admin.address);
 			console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
@@ -383,8 +384,8 @@ describe('ICHI Angel Vaults Spell', () => {
 				])
 			)
 
-			expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(2));
-			const pos = await bank.getPositionInfo(1);
+			expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(3));
+			const pos = await bank.positions(2);
 			expect(pos.owner).to.be.equal(admin.address);
 			expect(pos.collToken).to.be.equal(wichi.address);
 			const poolInfo = await ichiFarm.poolInfo(ICHI_VAULT_PID);
@@ -401,7 +402,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			).to.be.equal(depositAmount.mul(50).div(10000))
 		})
 		it("should be able to return position risk ratio", async () => {
-			let risk = await bank.getPositionRisk(1);
+			let risk = await bank.getPositionRisk(2);
 			console.log('Prev Position Risk', utils.formatUnits(risk, 2), '%');
 			await mockOracle.setPrice(
 				[USDC, ICHI],
@@ -410,7 +411,7 @@ describe('ICHI Angel Vaults Spell', () => {
 					BigNumber.from(10).pow(17).mul(40), // $4
 				]
 			);
-			risk = await bank.getPositionRisk(1);
+			risk = await bank.getPositionRisk(2);
 			console.log('Position Risk', utils.formatUnits(risk, 2), '%');
 		})
 		it("should be able to harvest on ICHI farming", async () => {
@@ -420,8 +421,7 @@ describe('ICHI Angel Vaults Spell', () => {
 
 			const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address);
 			console.log("Pending Rewards:", pendingIchi);
-			const legacyIchi = await ethers.getContractAt("MockERC20", ADDRESS.ICHI_FARM, admin);
-			await legacyIchi.mint(ichiFarm.address, pendingIchi.mul(10000000));
+			await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(2))
 
 			const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
 			const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -429,7 +429,7 @@ describe('ICHI Angel Vaults Spell', () => {
 
 			const iface = new ethers.utils.Interface(SpellABI);
 			await bank.execute(
-				1,
+				2,
 				spell.address,
 				iface.encodeFunctionData("closePositionFarm", [
 					0,
