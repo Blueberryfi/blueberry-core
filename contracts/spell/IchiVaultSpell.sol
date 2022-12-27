@@ -34,8 +34,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     IWIchiFarm public wIchiFarm;
     /// @dev address of ICHI token
     address public ICHI;
-    /// @dev address of CoreOracle
-    IOracle public oracle;
 
     modifier existingStrategy(uint256 strategyId) {
         if (strategies[strategyId].vault == address(0))
