@@ -237,13 +237,33 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
 
     /**
      * @dev Reduce isolated collateral of position
+     * @param strategy ID of current position
      * @param token Isolated collateral token address
      * @param amount Amount of token to reduce position
      */
-    function reducePosition(address token, uint256 amount) external {
-        doWithdraw(token, amount);
-        doRefund(token);
+function reducePosition(
+        uint256 strategyId, 
+        address token, 
+        uint256 amount
+    ) external {
+    // Check if decreasing the collateral will move the position to maxLTV
+    Strategy memory strategy = strategies[strategyId];
+    
+    if (token == strategy.collToken) {
+        uint256 collPrice = bank.oracle().getPrice(collToken);
+        uint256 collValue = (collPrice * strategy.collAmount.sub(amount)) /
+            10**IERC20Metadata(token).decimals();
+        uint256 borrowValue = (borrPrice * strategy.borrowAmount) /
+            10**IERC20Metadata(strategy.borrowToken).decimals();
+        if (borrowValue > (collValue * maxLTV[strategyId][token]) / DENOMINATOR) {
+            // Decreasing the collateral will move the position to maxLTV, so we need to adjust the amount
+           revert COL_TOO_LOW();
+        }
     }
+
+    doWithdraw(token, amount);
+    doRefund(token);
+}
 
     function withdrawInternal(
         uint256 strategyId,
