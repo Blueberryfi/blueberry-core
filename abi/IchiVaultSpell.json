@@ -17,6 +17,11 @@
   },
   {
     "inputs": [],
+    "name": "COL_TOO_LOW",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "EXCEED_MAX_LTV",
     "type": "error"
   },
@@ -594,13 +599,28 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
         "internalType": "address",
-        "name": "token",
+        "name": "collToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "borrowToken",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "collAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "borrowAmount",
         "type": "uint256"
       }
     ],
