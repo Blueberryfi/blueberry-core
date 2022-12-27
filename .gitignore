@@ -10,3 +10,4 @@ typechain-types
 .env
 .openzeppelin
 .vscode/
+.deps/
