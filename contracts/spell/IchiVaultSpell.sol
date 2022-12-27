@@ -247,13 +247,8 @@ function reducePosition(
         uint256 collAmount,
         uint256 borrowAmount
     ) external 
-      existingStrategy(strategyId)
-      onlyWhitelistedCollateral(strategyId, collToken)
       {
-    // Check if decreasing the collateral will move the position to maxLTV
-    Strategy memory strategy = strategies[strategyId];
 
-    {
         uint256 collPrice = bank.oracle().getPrice(collToken);
         uint256 borrPrice = bank.oracle().getPrice(borrowToken);
         uint256 collValue = (collPrice * collAmount) /
@@ -264,7 +259,6 @@ function reducePosition(
             // Decreasing the collateral will move the position to maxLTV, so we need to adjust the amount
            revert COL_TOO_LOW();
         }
-    }
 
     doWithdraw(collToken, collAmount);
     doRefund(collToken);
