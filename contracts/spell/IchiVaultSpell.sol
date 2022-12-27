@@ -235,32 +235,39 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
 
     /**
      * @dev Reduce isolated collateral of position
-     * @param strategy ID of current position
-     * @param token Isolated collateral token address
-     * @param amount Amount of token to reduce position
+     * @param collToken Isolated collateral token address
+     * @param borrowToken Token address of Borrowed token
+     * @param collAmount Amount of Isolated collateral
+     * @param borrowAmount Amount to borrowed from Bank
      */
 function reducePosition(
-        uint256 strategyId, 
-        address token, 
-        uint256 amount
-    ) external {
+        uint256 strategyId,
+        address collToken,
+        address borrowToken, 
+        uint256 collAmount,
+        uint256 borrowAmount
+    ) external 
+      existingStrategy(strategyId)
+      onlyWhitelistedCollateral(strategyId, collToken)
+      {
     // Check if decreasing the collateral will move the position to maxLTV
     Strategy memory strategy = strategies[strategyId];
-    
-    if (token == strategy.collToken) {
+
+    {
         uint256 collPrice = bank.oracle().getPrice(collToken);
-        uint256 collValue = (collPrice * strategy.collAmount.sub(amount)) /
-            10**IERC20Metadata(token).decimals();
-        uint256 borrowValue = (borrPrice * strategy.borrowAmount) /
-            10**IERC20Metadata(strategy.borrowToken).decimals();
-        if (borrowValue > (collValue * maxLTV[strategyId][token]) / DENOMINATOR) {
+        uint256 borrPrice = bank.oracle().getPrice(borrowToken);
+        uint256 collValue = (collPrice * collAmount) /
+            10**IERC20Metadata(collToken).decimals();
+        uint256 borrValue = (borrPrice * borrowAmount) /
+            10**IERC20Metadata(borrowToken).decimals();
+        if (borrValue > (collValue * maxLTV[strategyId][collToken]) / DENOMINATOR) {
             // Decreasing the collateral will move the position to maxLTV, so we need to adjust the amount
            revert COL_TOO_LOW();
         }
     }
 
-    doWithdraw(token, amount);
-    doRefund(token);
+    doWithdraw(collToken, collAmount);
+    doRefund(collToken);
 }
 
     function withdrawInternal(
