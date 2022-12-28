@@ -85,6 +85,7 @@ error REPAY_EXCEEDS_DEBT(uint256 repay, uint256 debt);
 error LEND_NOT_ALLOWED();
 error BORROW_NOT_ALLOWED();
 error REPAY_NOT_ALLOWED();
+error INVALID_UTOKEN(address uToken);
 
 // Config
 error INVALID_FEE_DISTRIBUTION();

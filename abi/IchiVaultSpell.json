@@ -307,7 +307,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "amountUWithdraw",
+        "name": "amountShareWithdraw",
         "type": "uint256"
       }
     ],
@@ -350,7 +350,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "amountUWithdraw",
+        "name": "amountShareWithdraw",
         "type": "uint256"
       }
     ],
@@ -594,13 +594,18 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
         "internalType": "address",
-        "name": "token",
+        "name": "collToken",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "collAmount",
         "type": "uint256"
       }
     ],
