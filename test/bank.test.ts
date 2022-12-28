@@ -246,7 +246,7 @@ describe('Bank', () => {
 
 		return;
 		// Whitelist bank contract on compound
-		const compound = <IComptroller>await ethers.getContractAt("IComptroller", ADDRESS.COMP, admin);
+		const compound = <IComptroller>await ethers.getContractAt("IComptroller", ADDRESS.BLB_COMPTROLLER, admin);
 		await compound.connect(admin)._setCreditLimit(bank.address, CUSDC, utils.parseUnits("3000000"));
 		await compound.connect(admin)._setCreditLimit(bank.address, CICHI, utils.parseUnits("3000000"));
 

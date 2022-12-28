@@ -52,14 +52,8 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        // url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
-        // blockNumber: 8014442, // goerli
         url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
-        blockNumber: 16147470
-      },
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-        initialIndex: 3
+        blockNumber: 16283930,
       },
     },
     mainnet: {
@@ -87,6 +81,9 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY
+  },
+  mocha: {
+    timeout: 100000000
   }
 };
 

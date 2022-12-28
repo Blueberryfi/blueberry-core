@@ -131,7 +131,6 @@ interface IBank {
             address collToken,
             uint256 collId,
             uint256 collateralSize,
-            address lpToken,
             uint256 risk
         );
 
@@ -146,7 +145,6 @@ interface IBank {
             address collToken,
             uint256 collId,
             uint256 collateralSize,
-            address lpToken,
             uint256 risk
         );
 

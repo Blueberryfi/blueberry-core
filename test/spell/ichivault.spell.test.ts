@@ -74,7 +74,6 @@ describe('ICHI Angel Vaults Spell', () => {
 
 	before(async () => {
 		[admin, alice, treasury] = await ethers.getSigners();
-		console.log(admin.address)
 		usdc = <ERC20>await ethers.getContractAt("ERC20", USDC, admin);
 		ichi = <MockIchiV2>await ethers.getContractAt("MockIchiV2", ICHI, admin);
 		ichiV1 = <ERC20>await ethers.getContractAt("ERC20", ICHIV1, admin);
@@ -259,9 +258,9 @@ describe('ICHI Angel Vaults Spell', () => {
 		// Enter markets
 		// await bank.enterMarkets(ADDRESS.COMP, [CUSDC, CICHI]);
 		// Whitelist bank contract on compound
-		const compound = <IComptroller>await ethers.getContractAt("IComptroller", ADDRESS.COMP, admin);
-		await compound.connect(admin)._setCreditLimit(bank.address, CUSDC, utils.parseUnits("3000000"));
-		await compound.connect(admin)._setCreditLimit(bank.address, CICHI, utils.parseUnits("3000000"));
+		const compound = <IComptroller>await ethers.getContractAt("IComptroller", ADDRESS.BLB_COMPTROLLER, admin);
+		await compound._setCreditLimit(bank.address, CUSDC, utils.parseUnits("3000000"));
+		await compound._setCreditLimit(bank.address, CICHI, utils.parseUnits("3000000"));
 
 		// Add new ichi vault to farming pool
 		await ichiFarm.add(100, ichiVault.address);

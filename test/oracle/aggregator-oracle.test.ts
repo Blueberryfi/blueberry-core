@@ -200,7 +200,7 @@ describe('Aggregator Oracle', () => {
 		})
 		it("should revert when there is no source", async () => {
 			await expect(
-				aggregatorOracle.getPrice(ADDRESS.COMP)
+				aggregatorOracle.getPrice(ADDRESS.BLB_COMPTROLLER)
 			).to.be.revertedWith(`NO_PRIMARY_SOURCE`);
 		})
 		it("should revert when there is no source returning valid price", async () => {
