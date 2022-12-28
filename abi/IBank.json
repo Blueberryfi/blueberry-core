@@ -465,6 +465,11 @@
         "type": "uint256"
       },
       {
+        "internalType": "address",
+        "name": "lpToken",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
         "name": "risk",
         "type": "uint256"
@@ -531,6 +536,11 @@
         "internalType": "uint256",
         "name": "collateralSize",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "lpToken",
+        "type": "address"
       },
       {
         "internalType": "uint256",

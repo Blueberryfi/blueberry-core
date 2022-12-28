@@ -19,8 +19,6 @@ async function main(): Promise<void> {
 	await ichiSpell.deployed();
 
 	console.log("Ichi Vault Spell Upgraded");
-
-	await ichiSpell.setBank(deployment.BlueBerryBank);
 }
 
 main()

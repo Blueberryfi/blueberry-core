@@ -19,8 +19,6 @@ async function main(): Promise<void> {
 	await bank.deployed();
 
 	console.log("Bank Upgraded", bank.address);
-
-	// await bank.updateCToken(deployment.MockUSDC, ADDRESS_GOERLI.bUSDC)
 }
 
 main()

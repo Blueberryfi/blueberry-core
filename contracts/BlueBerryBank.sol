@@ -381,19 +381,19 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             address collToken,
             uint256 collId,
             uint256 collateralSize,
+            address lpToken,
             uint256 risk
         )
     {
         Position storage pos = positions[positionId];
-        return (
-            pos.owner,
-            pos.underlyingToken,
-            pos.underlyingAmount,
-            pos.collToken,
-            pos.collId,
-            pos.collateralSize,
-            getPositionRisk(positionId)
-        );
+        owner = pos.owner;
+        underlyingToken = pos.underlyingToken;
+        underlyingAmount = pos.underlyingAmount;
+        collToken = pos.collToken;
+        collId = pos.collId;
+        collateralSize = pos.collateralSize;
+        lpToken = IERC20Wrapper(pos.collToken).getUnderlyingToken(pos.collId);
+        risk = getPositionRisk(positionId);
     }
 
     /// @dev Return current position information
@@ -408,6 +408,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             address collToken,
             uint256 collId,
             uint256 collateralSize,
+            address lpToken,
             uint256 risk
         )
     {
