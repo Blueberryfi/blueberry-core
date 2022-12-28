@@ -85,6 +85,20 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         }
     }
 
+    function _validateMaxLTV(uint256 strategyId) internal view {
+        uint256 debtValue = bank.getDebtValue(bank.POSITION_ID());
+        (, address collToken, uint256 collAmount, , , , ) = bank
+            .getCurrentPositionInfo();
+        uint256 collPrice = bank.oracle().getPrice(collToken);
+        uint256 collValue = (collPrice * collAmount) /
+            10**IERC20Metadata(collToken).decimals();
+
+        if (
+            debtValue >
+            (collValue * maxLTV[strategyId][collToken]) / DENOMINATOR
+        ) revert EXCEED_MAX_LTV();
+    }
+
     /**
      * @notice Internal function to deposit assets on ICHI Vault
      * @param collToken Isolated collateral token address
@@ -100,19 +114,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 borrowAmount
     ) internal {
         Strategy memory strategy = strategies[strategyId];
-
-        // 0. Validate MAX LTV
-        uint256 collPrice = bank.oracle().getPrice(collToken);
-        uint256 borrPrice = bank.oracle().getPrice(borrowToken);
-        uint256 collValue = (collPrice * collAmount) /
-            10**IERC20Metadata(collToken).decimals();
-        uint256 borrValue = (borrPrice * borrowAmount) /
-            10**IERC20Metadata(borrowToken).decimals();
-
-        if (
-            borrValue >
-            (collValue * maxLTV[strategyId][collToken]) / DENOMINATOR
-        ) revert EXCEED_MAX_LTV();
 
         // 1. Lend isolated collaterals on compound
         doLend(collToken, collAmount);
@@ -130,6 +131,9 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         } else {
             vault.deposit(0, balance, address(this));
         }
+
+        // 4. Validate MAX LTV
+        _validateMaxLTV(strategyId);
 
         // 4. Validate Max Pos Size
         uint256 lpPrice = bank.oracle().getPrice(strategy.vault);
@@ -205,7 +209,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         );
 
         // 4. Take out collateral
-        (, address posCollToken, uint256 collId, uint256 collSize, ) = bank
+        (, , , address posCollToken, uint256 collId, uint256 collSize, ) = bank
             .getCurrentPositionInfo();
         if (collSize > 0) {
             (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
@@ -236,33 +240,17 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     /**
      * @dev Reduce isolated collateral of position
      * @param collToken Isolated collateral token address
-     * @param borrowToken Token address of Borrowed token
      * @param collAmount Amount of Isolated collateral
-     * @param borrowAmount Amount to borrowed from Bank
      */
-function reducePosition(
+    function reducePosition(
         uint256 strategyId,
         address collToken,
-        address borrowToken, 
-        uint256 collAmount,
-        uint256 borrowAmount
-    ) external 
-      {
-
-        uint256 collPrice = bank.oracle().getPrice(collToken);
-        uint256 borrPrice = bank.oracle().getPrice(borrowToken);
-        uint256 collValue = (collPrice * collAmount) /
-            10**IERC20Metadata(collToken).decimals();
-        uint256 borrValue = (borrPrice * borrowAmount) /
-            10**IERC20Metadata(borrowToken).decimals();
-        if (borrValue > (collValue * maxLTV[strategyId][collToken]) / DENOMINATOR) {
-            // Decreasing the collateral will move the position to maxLTV, so we need to adjust the amount
-           revert COL_TOO_LOW();
-        }
-
-    doWithdraw(collToken, collAmount);
-    doRefund(collToken);
-}
+        uint256 collAmount
+    ) external {
+        doWithdraw(collToken, collAmount);
+        doRefund(collToken);
+        _validateMaxLTV(strategyId);
+    }
 
     function withdrawInternal(
         uint256 strategyId,
@@ -270,7 +258,7 @@ function reducePosition(
         address borrowToken,
         uint256 amountRepay,
         uint256 amountLpWithdraw,
-        uint256 amountUWithdraw
+        uint256 amountShareWithdraw
     ) internal {
         Strategy memory strategy = strategies[strategyId];
 
@@ -312,7 +300,7 @@ function reducePosition(
         }
 
         // 5. Withdraw isolated collateral from Bank
-        doWithdraw(collToken, amountUWithdraw);
+        doWithdraw(collToken, amountShareWithdraw);
 
         // 6. Repay
         doRepay(borrowToken, amountRepay);
@@ -329,7 +317,7 @@ function reducePosition(
      * @param lpTakeAmt Amount of ICHI Vault LP token to take out from Bank
      * @param amountRepay Amount to repay the loan
      * @param amountLpWithdraw Amount of ICHI Vault LP to withdraw from ICHI Vault
-     * @param amountUWithdraw Amount of Isolated collateral to withdraw from Compound
+     * @param amountShareWithdraw Amount of Isolated collateral to withdraw from Compound
      */
     function closePosition(
         uint256 strategyId,
@@ -338,7 +326,7 @@ function reducePosition(
         uint256 lpTakeAmt,
         uint256 amountRepay,
         uint256 amountLpWithdraw,
-        uint256 amountUWithdraw
+        uint256 amountShareWithdraw
     )
         external
         existingStrategy(strategyId)
@@ -353,7 +341,7 @@ function reducePosition(
             borrowToken,
             amountRepay,
             amountLpWithdraw,
-            amountUWithdraw
+            amountShareWithdraw
         );
     }
 
@@ -364,14 +352,14 @@ function reducePosition(
         uint256 lpTakeAmt,
         uint256 amountRepay,
         uint256 amountLpWithdraw,
-        uint256 amountUWithdraw
+        uint256 amountShareWithdraw
     )
         external
         existingStrategy(strategyId)
         onlyWhitelistedCollateral(strategyId, collToken)
     {
         address vault = strategies[strategyId].vault;
-        (, address posCollToken, uint256 collId, , ) = bank
+        (, , , address posCollToken, uint256 collId, , ) = bank
             .getCurrentPositionInfo();
         if (IWIchiFarm(posCollToken).getUnderlyingToken(collId) != vault)
             revert INCORRECT_UNDERLYING(vault);
@@ -389,7 +377,7 @@ function reducePosition(
             borrowToken,
             amountRepay,
             amountLpWithdraw,
-            amountUWithdraw
+            amountShareWithdraw
         );
 
         // 9. Refund ichi token

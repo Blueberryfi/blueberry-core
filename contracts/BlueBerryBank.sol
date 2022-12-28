@@ -376,6 +376,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         override
         returns (
             address owner,
+            address underlyingToken,
+            uint256 underlyingAmount,
             address collToken,
             uint256 collId,
             uint256 collateralSize,
@@ -385,6 +387,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         Position storage pos = positions[positionId];
         return (
             pos.owner,
+            pos.underlyingToken,
+            pos.underlyingAmount,
             pos.collToken,
             pos.collId,
             pos.collateralSize,
@@ -399,6 +403,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         override
         returns (
             address owner,
+            address underlyingToken,
+            uint256 underlyingAmount,
             address collToken,
             uint256 collId,
             uint256 collateralSize,
@@ -648,7 +654,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             );
         } else {
             IERC20Upgradeable(token).approve(bank.hardVault, amount);
-            pos.underlyingVaultShare += IHardVault(bank.softVault).deposit(
+            pos.underlyingVaultShare += IHardVault(bank.hardVault).deposit(
                 token,
                 amount
             );
@@ -662,9 +668,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /**
      * @dev Withdraw isolated collateral tokens lent to bank. Must only be called from spell while under execution.
      * @param token Isolated collateral token address
-     * @param amount The amount of vaule share token to withdraw.
+     * @param shareAmount The amount of vaule share token to withdraw.
      */
-    function withdrawLend(address token, uint256 amount)
+    function withdrawLend(address token, uint256 shareAmount)
         external
         override
         inExec
@@ -672,8 +678,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     {
         Position storage pos = positions[POSITION_ID];
         Bank storage bank = banks[token];
-        if (amount == type(uint256).max) {
-            amount = pos.underlyingVaultShare;
+        if (token != pos.underlyingToken) revert INVALID_UTOKEN(token);
+        if (shareAmount == type(uint256).max) {
+            shareAmount = pos.underlyingVaultShare;
         }
 
         uint256 wAmount;
@@ -682,16 +689,16 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
                 bank.softVault,
                 type(uint256).max
             );
-            wAmount = ISoftVault(bank.softVault).withdraw(amount);
+            wAmount = ISoftVault(bank.softVault).withdraw(shareAmount);
         } else {
-            wAmount = IHardVault(bank.softVault).withdraw(token, amount);
+            wAmount = IHardVault(bank.hardVault).withdraw(token, shareAmount);
         }
 
         wAmount = wAmount > pos.underlyingAmount
             ? pos.underlyingAmount
             : wAmount;
 
-        pos.underlyingVaultShare -= amount;
+        pos.underlyingVaultShare -= shareAmount;
         pos.underlyingAmount -= wAmount;
         bank.totalLend -= wAmount;
 

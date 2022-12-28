@@ -40,7 +40,6 @@ error REFUND_ETH_FAILED(uint256 balance);
 error NOT_FROM_WETH(address from);
 error LP_NOT_WHITELISTED(address lp);
 error COL_NOT_WHITELISTED(uint256 strategyId, address colToken);
-error COL_TOO_LOW();
 error NOT_EXIST_STRATEGY(address spell, uint256 strategyId);
 error EXCEED_MAX_POS_SIZE(uint256 strategyId);
 error EXCEED_MAX_LTV();
@@ -86,6 +85,7 @@ error REPAY_EXCEEDS_DEBT(uint256 repay, uint256 debt);
 error LEND_NOT_ALLOWED();
 error BORROW_NOT_ALLOWED();
 error REPAY_NOT_ALLOWED();
+error INVALID_UTOKEN(address uToken);
 
 // Config
 error INVALID_FEE_DISTRIBUTION();

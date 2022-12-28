@@ -126,6 +126,8 @@ interface IBank {
         view
         returns (
             address owner,
+            address underlyingToken,
+            uint256 underlyingAmount,
             address collToken,
             uint256 collId,
             uint256 collateralSize,
@@ -138,6 +140,8 @@ interface IBank {
         view
         returns (
             address owner,
+            address underlyingToken,
+            uint256 underlyingAmount,
             address collToken,
             uint256 collId,
             uint256 collateralSize,

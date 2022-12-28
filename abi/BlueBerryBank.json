@@ -96,6 +96,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "uToken",
+        "type": "address"
+      }
+    ],
+    "name": "INVALID_UTOKEN",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "LEND_NOT_ALLOWED",
     "type": "error"
@@ -966,6 +977,16 @@
       },
       {
         "internalType": "address",
+        "name": "underlyingToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "underlyingAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
         "name": "collToken",
         "type": "address"
       },
@@ -1069,6 +1090,16 @@
         "internalType": "address",
         "name": "owner",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "underlyingToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "underlyingAmount",
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -1756,7 +1787,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "shareAmount",
         "type": "uint256"
       }
     ],
