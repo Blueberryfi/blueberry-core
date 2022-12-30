@@ -12,7 +12,7 @@
         "type": "address"
       }
     ],
-    "name": "COL_NOT_WHITELISTED",
+    "name": "COLLATERAL_NOT_EXIST",
     "type": "error"
   },
   {
@@ -95,22 +95,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "spell",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "strategyId",
-        "type": "uint256"
-      }
-    ],
-    "name": "NOT_EXIST_STRATEGY",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "sender",
         "type": "address"
       }
@@ -146,9 +130,55 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "spell",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
+    "name": "STRATEGY_NOT_EXIST",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "ZERO_ADDRESS",
     "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZERO_AMOUNT",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address[]",
+        "name": "collaterals",
+        "type": "address[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "maxLTVs",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "CollateralsAdded",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -180,6 +210,31 @@
       }
     ],
     "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "StrategyAdded",
     "type": "event"
   },
   {

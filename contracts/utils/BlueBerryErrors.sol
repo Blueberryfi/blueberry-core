@@ -39,8 +39,8 @@ error NOT_BANK(address caller);
 error REFUND_ETH_FAILED(uint256 balance);
 error NOT_FROM_WETH(address from);
 error LP_NOT_WHITELISTED(address lp);
-error COL_NOT_WHITELISTED(uint256 strategyId, address colToken);
-error NOT_EXIST_STRATEGY(address spell, uint256 strategyId);
+error COLLATERAL_NOT_EXIST(uint256 strategyId, address colToken);
+error STRATEGY_NOT_EXIST(address spell, uint256 strategyId);
 error EXCEED_MAX_POS_SIZE(uint256 strategyId);
 error EXCEED_MAX_LTV();
 

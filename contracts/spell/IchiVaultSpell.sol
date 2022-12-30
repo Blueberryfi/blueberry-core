@@ -35,16 +35,23 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     /// @dev address of ICHI token
     address public ICHI;
 
+    event StrategyAdded(uint256 strategyId, address vault, uint256 maxPosSize);
+    event CollateralsAdded(
+        uint256 strategyId,
+        address[] collaterals,
+        uint256[] maxLTVs
+    );
+
     modifier existingStrategy(uint256 strategyId) {
-        if (strategies[strategyId].vault == address(0))
-            revert NOT_EXIST_STRATEGY(address(this), strategyId);
+        if (strategyId >= strategies.length)
+            revert STRATEGY_NOT_EXIST(address(this), strategyId);
 
         _;
     }
 
-    modifier onlyWhitelistedCollateral(uint256 strategyId, address col) {
+    modifier existingCollateral(uint256 strategyId, address col) {
         if (maxLTV[strategyId][col] == 0)
-            revert COL_NOT_WHITELISTED(strategyId, col);
+            revert COLLATERAL_NOT_EXIST(strategyId, col);
 
         _;
     }
@@ -69,7 +76,9 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      */
     function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
         if (vault == address(0)) revert ZERO_ADDRESS();
+        if (maxPosSize == 0) revert ZERO_AMOUNT();
         strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));
+        emit StrategyAdded(strategies.length - 1, vault, maxPosSize);
     }
 
     function addCollaterals(
@@ -81,8 +90,12 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
             revert INPUT_ARRAY_MISMATCH();
 
         for (uint256 i = 0; i < collaterals.length; i++) {
+            if (collaterals[i] == address(0)) revert ZERO_ADDRESS();
+            if (maxLTVs[i] == 0) revert ZERO_AMOUNT();
             maxLTV[strategyId][collaterals[i]] = maxLTVs[i];
         }
+
+        emit CollateralsAdded(strategyId, collaterals, maxLTVs);
     }
 
     function _validateMaxLTV(uint256 strategyId) internal view {
@@ -159,7 +172,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     )
         external
         existingStrategy(strategyId)
-        onlyWhitelistedCollateral(strategyId, collToken)
+        existingCollateral(strategyId, collToken)
     {
         // 1-3 Deposit on ichi vault
         depositInternal(
@@ -193,7 +206,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     )
         external
         existingStrategy(strategyId)
-        onlyWhitelistedCollateral(strategyId, collToken)
+        existingCollateral(strategyId, collToken)
     {
         Strategy memory strategy = strategies[strategyId];
         address lpToken = wIchiFarm.ichiFarm().lpToken(farmingPid);
@@ -261,11 +274,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 amountShareWithdraw
     ) internal {
         Strategy memory strategy = strategies[strategyId];
-
         IICHIVault vault = IICHIVault(strategy.vault);
-
-        if (address(vault) == address(0))
-            revert LP_NOT_WHITELISTED(address(vault));
         uint256 positionId = bank.POSITION_ID();
 
         // 1. Compute repay amount if MAX_INT is supplied (max debt)
@@ -330,7 +339,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     )
         external
         existingStrategy(strategyId)
-        onlyWhitelistedCollateral(strategyId, collToken)
+        existingCollateral(strategyId, collToken)
     {
         // 1. Take out collateral
         doTakeCollateral(strategies[strategyId].vault, lpTakeAmt);
@@ -356,7 +365,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     )
         external
         existingStrategy(strategyId)
-        onlyWhitelistedCollateral(strategyId, collToken)
+        existingCollateral(strategyId, collToken)
     {
         address vault = strategies[strategyId].vault;
         (, , , address posCollToken, uint256 collId, , ) = bank
