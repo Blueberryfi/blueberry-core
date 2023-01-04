@@ -215,14 +215,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         emit AddBank(token, cToken, softVault, hardVault);
     }
 
-    function enterMarkets(address comp, address[] memory markets)
-        external
-        onlyOwner
-    {
-        if (block.chainid == 1) revert ONLY_FOR_DEV();
-        IComptroller(comp).enterMarkets(markets);
-    }
-
     /**
      * @dev Update vault address of listed bank
      * @param token The underlying token of the bank

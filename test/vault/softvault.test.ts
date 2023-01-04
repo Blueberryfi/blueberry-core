@@ -1,12 +1,12 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers, upgrades } from "hardhat";
 import chai, { expect } from "chai";
-import { ERC20, ICErc20, IUniswapV2Router02, IWETH, ProtocolConfig, SoftVault } from "../typechain-types";
-import { ADDRESS, CONTRACT_NAMES } from "../constant";
+import { ERC20, ICErc20, IUniswapV2Router02, IWETH, ProtocolConfig, SoftVault } from "../../typechain-types";
+import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { solidity } from 'ethereum-waffle'
 import { BigNumber, utils } from "ethers";
-import { roughlyNear } from "./assertions/roughlyNear";
-import { near } from "./assertions/near";
+import { roughlyNear } from "../assertions/roughlyNear";
+import { near } from "../assertions/near";
 
 chai.use(solidity);
 chai.use(roughlyNear);
@@ -134,6 +134,7 @@ describe("SoftVault", () => {
 
 		it("should be able to withdraw underlying tokens from vault with rewards", async () => {
 			const beforeUSDCBalance = await usdc.balanceOf(admin.address);
+			const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
 			const shareBalance = await vault.balanceOf(admin.address);
 
 			await expect(
@@ -144,10 +145,10 @@ describe("SoftVault", () => {
 			expect(await cUSDC.balanceOf(vault.address)).to.be.equal(0);
 
 			const afterUSDCBalance = await usdc.balanceOf(admin.address);
+			const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
 			const feeRate = await config.withdrawVaultFee();
 			const fee = depositAmount.mul(feeRate).div(10000);
-			const treasuryBalance = await usdc.balanceOf(treasury.address);
-			expect(treasuryBalance).to.be.near(fee);
+			expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.near(fee);
 
 			expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.roughlyNear(depositAmount.sub(fee));
 		})

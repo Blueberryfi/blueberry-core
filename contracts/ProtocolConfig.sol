@@ -27,6 +27,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
 
     function initialize(address treasury_) external initializer {
         __Ownable_init();
+        if (treasury_ == address(0)) revert ZERO_ADDRESS();
         treasury = treasury_;
 
         depositFee = 50; // 0.5% as default, base 10000
@@ -73,7 +74,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     }
 
     function setTreasuryWallet(address treasury_) external onlyOwner {
-        if (treasury == address(0)) revert ZERO_ADDRESS();
+        if (treasury_ == address(0)) revert ZERO_ADDRESS();
         treasury = treasury_;
     }
 
