@@ -84,17 +84,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "lp",
-        "type": "address"
-      }
-    ],
-    "name": "LP_NOT_WHITELISTED",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "sender",
         "type": "address"
       }

@@ -265,7 +265,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         // Check if new oracle supports already added banks
         for (uint256 i = 0; i < allBanks.length; i++) {
-            if (!oracle.support(allBanks[i]))
+            if (!_oracle.support(allBanks[i]))
                 revert ORACLE_NOT_SUPPORT(allBanks[i]);
         }
         oracle = _oracle;
