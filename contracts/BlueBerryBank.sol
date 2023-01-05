@@ -514,7 +514,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         if (pv >= ov) risk = 0;
         else {
-            risk = ov / (pv + cv);
+            risk = ((ov - pv) * DENOMINATOR) / cv;
         }
     }
 
