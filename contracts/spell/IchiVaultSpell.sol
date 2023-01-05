@@ -186,8 +186,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         // 4. Put collateral - ICHI Vault Lp Token
         address vault = strategies[strategyId].vault;
         doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
-
-        _validateMaxLTV(strategyId);
     }
 
     /**
@@ -316,6 +314,8 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         // 6. Repay
         doRepay(borrowToken, amountRepay);
 
+        _validateMaxLTV(strategyId);
+
         // 7. Refund
         doRefund(borrowToken);
         doRefund(collToken);
@@ -354,8 +354,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
             amountLpWithdraw,
             amountShareWithdraw
         );
-
-        _validateMaxLTV(strategyId);
     }
 
     function closePositionFarm(
