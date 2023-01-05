@@ -31,6 +31,7 @@ chai.use(solidity)
 chai.use(near)
 chai.use(roughlyNear)
 
+const CUSDC = ADDRESS.bUSDC;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const ICHI = ADDRESS.ICHI;
@@ -79,6 +80,7 @@ describe('Bank', () => {
 		oracle = protocol.oracle;
 		mockOracle = protocol.mockOracle;
 		usdcSoftVault = protocol.usdcSoftVault;
+		hardVault = protocol.hardVault;
 	})
 
 	beforeEach(async () => {
@@ -108,88 +110,6 @@ describe('Bank', () => {
 			expect(await bank.config()).to.be.equal(config.address);
 			expect(await bank.nextPositionId()).to.be.equal(1);
 			expect(await bank.bankStatus()).to.be.equal(7);
-		})
-	})
-
-	describe("Mics", () => {
-		describe("Owner", () => {
-			it("should be able to allow contract calls", async () => {
-				await expect(
-					bank.connect(alice).setAllowContractCalls(true)
-				).to.be.revertedWith('Ownable: caller is not the owner')
-
-				await bank.setAllowContractCalls(true);
-				expect(await bank.allowContractCalls()).be.true;
-			})
-			it("should be able to whitelist contracts for bank execution", async () => {
-				await expect(
-					bank.connect(alice).whitelistContracts([admin.address, alice.address], [true, true])
-				).to.be.revertedWith('Ownable: caller is not the owner')
-				await expect(
-					bank.whitelistContracts([admin.address], [true, true])
-				).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
-
-				await expect(
-					bank.whitelistContracts([admin.address, constants.AddressZero], [true, true])
-				).to.be.revertedWith('ZERO_ADDRESS');
-
-				expect(await bank.whitelistedContracts(admin.address)).to.be.false;
-				await bank.whitelistContracts([admin.address], [true]);
-				expect(await bank.whitelistedContracts(admin.address)).to.be.true;
-			})
-			it("should be able to whitelist spells", async () => {
-				await expect(
-					bank.connect(alice).whitelistSpells([admin.address, alice.address], [true, true])
-				).to.be.revertedWith('Ownable: caller is not the owner')
-				await expect(
-					bank.whitelistSpells([admin.address], [true, true])
-				).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
-
-				await expect(
-					bank.whitelistSpells([admin.address, constants.AddressZero], [true, true])
-				).to.be.revertedWith('ZERO_ADDRESS');
-
-				expect(await bank.whitelistedSpells(admin.address)).to.be.false;
-				await bank.whitelistSpells([admin.address], [true]);
-				expect(await bank.whitelistedSpells(admin.address)).to.be.true;
-			})
-			it("should be able to set oracle address", async () => {
-				await expect(
-					bank.connect(alice).setOracle(oracle.address)
-				).to.be.revertedWith('Ownable: caller is not the owner');
-
-				await expect(
-					bank.setOracle(constants.AddressZero)
-				).to.be.revertedWith('ZERO_ADDRESS');
-
-				await expect(
-					bank.setOracle(oracle.address)
-				).to.be.emit(bank, "SetOracle").withArgs(oracle.address)
-				expect(await bank.oracle()).to.be.equal(oracle.address);
-			})
-			it("should be able to update SafeBox address", async () => {
-				let bankInfo = await bank.banks(USDC);
-				expect(bankInfo.isListed).to.be.true;
-				await expect(
-					bank.connect(alice).updateVault(USDC, usdcSoftVault.address, true)
-				).to.be.revertedWith('Ownable: caller is not the owner');
-
-				await expect(
-					bank.updateVault(constants.AddressZero, usdcSoftVault.address, true)
-				).to.be.revertedWith('BANK_NOT_LISTED');
-
-				await expect(
-					bank.updateVault(USDC, constants.AddressZero, true)
-				).to.be.revertedWith('ZERO_ADDRESS');
-
-				await bank.updateVault(USDC, usdcSoftVault.address, true);
-				bankInfo = await bank.banks(USDC);
-				expect(bankInfo.softVault).to.be.equal(usdcSoftVault.address);
-			})
-		})
-
-		it("should revert EXECUTOR call when the bank is not under execution", async () => {
-			await expect(bank.EXECUTOR()).to.be.revertedWith("NOT_UNDER_EXECUTION");
 		})
 	})
 
@@ -280,4 +200,205 @@ describe('Bank', () => {
 			console.log("Liquidator's Position Balance:", await colToken.balanceOf(alice.address, positionInfo.collId));
 		})
 	})
+
+	describe("Mics", () => {
+		describe("Owner", () => {
+			it("should be able to allow contract calls", async () => {
+				await expect(
+					bank.connect(alice).setAllowContractCalls(true)
+				).to.be.revertedWith('Ownable: caller is not the owner')
+
+				await bank.setAllowContractCalls(true);
+				expect(await bank.allowContractCalls()).be.true;
+			})
+			it("should be able to whitelist contracts for bank execution", async () => {
+				await expect(
+					bank.connect(alice).whitelistContracts([admin.address, alice.address], [true, true])
+				).to.be.revertedWith('Ownable: caller is not the owner')
+				await expect(
+					bank.whitelistContracts([admin.address], [true, true])
+				).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
+
+				await expect(
+					bank.whitelistContracts([admin.address, constants.AddressZero], [true, true])
+				).to.be.revertedWith('ZERO_ADDRESS');
+
+				expect(await bank.whitelistedContracts(admin.address)).to.be.false;
+				await bank.whitelistContracts([admin.address], [true]);
+				expect(await bank.whitelistedContracts(admin.address)).to.be.true;
+			})
+			it("should be able to whitelist spells", async () => {
+				await expect(
+					bank.connect(alice).whitelistSpells([admin.address, alice.address], [true, true])
+				).to.be.revertedWith('Ownable: caller is not the owner')
+				await expect(
+					bank.whitelistSpells([admin.address], [true, true])
+				).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
+
+				await expect(
+					bank.whitelistSpells([admin.address, constants.AddressZero], [true, true])
+				).to.be.revertedWith('ZERO_ADDRESS');
+
+				expect(await bank.whitelistedSpells(admin.address)).to.be.false;
+				await bank.whitelistSpells([admin.address], [true]);
+				expect(await bank.whitelistedSpells(admin.address)).to.be.true;
+			})
+			it("should be able to whitelist tokens", async () => {
+				await expect(
+					bank.connect(alice).whitelistTokens([WETH], [true])
+				).to.be.revertedWith("Ownable: caller is not the owner");
+
+				await expect(
+					bank.whitelistTokens([WETH, ICHI], [true])
+				).to.be.revertedWith("INPUT_ARRAY_MISMATCH");
+
+				await expect(
+					bank.whitelistTokens([ADDRESS.CRV], [true])
+				).to.be.revertedWith("");
+			})
+			it("should be able to add bank", async () => {
+				await expect(
+					bank.connect(alice).addBank(USDC, CUSDC, usdcSoftVault.address, hardVault.address)
+				).to.be.revertedWith("Ownable: caller is not the owner");
+
+				await expect(
+					bank.addBank(ethers.constants.AddressZero, CUSDC, usdcSoftVault.address, hardVault.address)
+				).to.be.revertedWith("TOKEN_NOT_WHITELISTED");
+				await expect(
+					bank.addBank(USDC, ethers.constants.AddressZero, usdcSoftVault.address, hardVault.address)
+				).to.be.revertedWith("ZERO_ADDRESS");
+				await expect(
+					bank.addBank(USDC, CUSDC, ethers.constants.AddressZero, hardVault.address)
+				).to.be.revertedWith("ZERO_ADDRESS");
+				await expect(
+					bank.addBank(USDC, CUSDC, usdcSoftVault.address, ethers.constants.AddressZero)
+				).to.be.revertedWith("ZERO_ADDRESS");
+
+				await expect(
+					bank.addBank(USDC, CUSDC, usdcSoftVault.address, hardVault.address)
+				).to.be.revertedWith("CTOKEN_ALREADY_ADDED");
+				await expect(
+					bank.addBank(USDC, ADDRESS.bCRV, usdcSoftVault.address, hardVault.address)
+				).to.be.revertedWith("BANK_ALREADY_LISTED");
+			})
+			it("should be able to set oracle address", async () => {
+				await expect(
+					bank.connect(alice).setOracle(oracle.address)
+				).to.be.revertedWith('Ownable: caller is not the owner');
+
+				await expect(
+					bank.setOracle(constants.AddressZero)
+				).to.be.revertedWith('ZERO_ADDRESS');
+
+				await expect(
+					bank.setOracle(oracle.address)
+				).to.be.emit(bank, "SetOracle").withArgs(oracle.address)
+				expect(await bank.oracle()).to.be.equal(oracle.address);
+			})
+			it("should be able to update vault address (DEV Only)", async () => {
+				let bankInfo = await bank.banks(USDC);
+				expect(bankInfo.isListed).to.be.true;
+				await expect(
+					bank.connect(alice).updateVault(USDC, usdcSoftVault.address, true)
+				).to.be.revertedWith('Ownable: caller is not the owner');
+
+				await expect(
+					bank.updateVault(constants.AddressZero, usdcSoftVault.address, true)
+				).to.be.revertedWith('BANK_NOT_LISTED');
+
+				await expect(
+					bank.updateVault(USDC, constants.AddressZero, true)
+				).to.be.revertedWith('ZERO_ADDRESS');
+
+				await bank.updateVault(USDC, usdcSoftVault.address, true);
+				bankInfo = await bank.banks(USDC);
+				expect(bankInfo.softVault).to.be.equal(usdcSoftVault.address);
+
+				await bank.updateVault(USDC, hardVault.address, false);
+				bankInfo = await bank.banks(USDC);
+				expect(bankInfo.hardVault).to.be.equal(hardVault.address);
+			})
+			it("should be able to update cToken address (DEV Only)", async () => {
+				await expect(
+					bank.connect(alice).updateCToken(USDC, CUSDC)
+				).to.be.revertedWith("Ownable: caller is not the owner");
+				await expect(
+					bank.updateCToken(USDC, ethers.constants.AddressZero)
+				).to.be.revertedWith("ZERO_ADDRESS");
+				await expect(
+					bank.updateCToken(constants.AddressZero, CUSDC)
+				).to.be.revertedWith("BANK_NOT_LISTED");
+
+				await bank.updateCToken(USDC, CUSDC);
+				let bankInfo = await bank.banks(USDC);
+				expect(bankInfo.cToken).to.be.equal(CUSDC);
+			})
+			it("should be able to set bank status", async () => {
+				let bankStatus = await bank.bankStatus();
+				await expect(
+					bank.connect(alice).setBankStatus(0)
+				).to.be.revertedWith("Ownable: caller is not the owner");
+
+				await bank.setBankStatus(0);
+				expect(await bank.isBorrowAllowed()).to.be.false;
+				expect(await bank.isRepayAllowed()).to.be.false;
+				expect(await bank.isLendAllowed()).to.be.false;
+
+				const iface = new ethers.utils.Interface(SpellABI);
+				const depositAmount = utils.parseUnits('100', 18);
+				const borrowAmount = utils.parseUnits('300', 6);
+				await ichi.approve(bank.address, ethers.constants.MaxUint256);
+
+				await expect(
+					bank.execute(
+						0,
+						spell.address,
+						iface.encodeFunctionData("openPosition", [
+							0,
+							ICHI,
+							USDC,
+							depositAmount,
+							borrowAmount // 3x
+						])
+					)
+				).to.be.revertedWith("LEND_NOT_ALLOWED");
+
+				await bank.setBankStatus(4);
+				expect(await bank.isBorrowAllowed()).to.be.false;
+				expect(await bank.isRepayAllowed()).to.be.false;
+				expect(await bank.isLendAllowed()).to.be.true;
+
+				await expect(
+					bank.execute(
+						0,
+						spell.address,
+						iface.encodeFunctionData("openPosition", [
+							0,
+							ICHI,
+							USDC,
+							depositAmount,
+							borrowAmount // 3x
+						])
+					)
+				).to.be.revertedWith("BORROW_NOT_ALLOWED");
+
+				await bank.setBankStatus(7);
+			})
+		})
+		describe("Accrue", () => {
+			it("anyone can call accrue functions by tokens", async () => {
+				await expect(
+					bank.accrue(ADDRESS.WETH)
+				).to.be.revertedWith("BANK_NOT_LISTED");
+
+				await bank.accrueAll([USDC, ICHI]);
+			})
+		})
+		describe("View functions", async () => {
+			it("should revert EXECUTOR call when the bank is not under execution", async () => {
+				await expect(bank.EXECUTOR()).to.be.revertedWith("NOT_UNDER_EXECUTION");
+			})
+		})
+	})
+
 })

@@ -44,6 +44,7 @@ export interface Protocol {
   spell: IchiVaultSpell,
   usdcSoftVault: SoftVault,
   ichiSoftVault: SoftVault,
+  hardVault: HardVault,
 }
 
 export const setupProtocol = async (): Promise<Protocol> => {
@@ -56,11 +57,11 @@ export const setupProtocol = async (): Promise<Protocol> => {
   let ichiV1: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
+  let wichi: WIchiFarm;
   let mockOracle: MockOracle;
   let ichiOracle: IchiLpOracle;
   let oracle: CoreOracle;
   let spell: IchiVaultSpell;
-  let wichi: WIchiFarm;
   let config: ProtocolConfig;
   let bank: BlueBerryBank;
   let usdcSoftVault: SoftVault;
@@ -180,7 +181,6 @@ export const setupProtocol = async (): Promise<Protocol> => {
   const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
   bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
   await bank.deployed();
-  console.log(oracle.address);
 
   // Deploy ICHI wrapper and spell
   const MockIchiFarm = await ethers.getContractFactory("MockIchiFarm");
@@ -274,5 +274,6 @@ export const setupProtocol = async (): Promise<Protocol> => {
     spell,
     usdcSoftVault,
     ichiSoftVault,
+    hardVault,
   }
 }

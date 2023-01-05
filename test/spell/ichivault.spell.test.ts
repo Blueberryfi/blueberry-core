@@ -4,23 +4,15 @@ import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import {
 	BlueBerryBank,
-	CoreOracle,
-	ICErc20,
 	IchiVaultSpell,
 	IWETH,
 	MockOracle,
-	SoftVault,
-	IchiLpOracle,
 	WERC20,
 	WIchiFarm,
-	ProtocolConfig,
-	IComptroller,
 	MockIchiVault,
 	MockIchiFarm,
 	ERC20,
-	IUniswapV2Router02,
 	MockIchiV2,
-	HardVault
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import SpellABI from '../../abi/IchiVaultSpell.json';
@@ -160,7 +152,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			expect(pos.collId).to.be.equal(BigNumber.from(ichiVault.address));
 			expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
 			expect(
-				await werc20.balanceOf(bank.address, BigNumber.from(ichiVault.address))
+				await werc20.balanceOfERC20(ichiVault.address, bank.address)
 			).to.be.equal(pos.collateralSize);
 			const bankInfo = await bank.banks(USDC);
 			console.log('Bank Info', bankInfo, await bank.banks(ICHI));
@@ -317,6 +309,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			).to.be.revertedWith("INCORRECT_LP")
 		})
 		it("should be able to farm USDC on ICHI angel vault", async () => {
+			const positionId = await bank.nextPositionId();
 			const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
 
 			await usdc.approve(bank.address, ethers.constants.MaxUint256);
@@ -334,8 +327,17 @@ describe('ICHI Angel Vaults Spell', () => {
 				])
 			)
 
+			const bankInfo = await bank.getBankInfo(USDC);
+			console.log(bankInfo);
+
+			const debt = await bank.getPositionDebts(positionId);
+			expect(debt.debts.length).to.be.equal(1);
+
+			const debtShare = await bank.getPositionDebtShareOf(positionId, USDC);
+			expect(debtShare).to.be.equal(borrowAmount);
+
 			expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(3));
-			const pos = await bank.positions(2);
+			const pos = await bank.positions(positionId);
 			expect(pos.owner).to.be.equal(admin.address);
 			expect(pos.collToken).to.be.equal(wichi.address);
 			const poolInfo = await ichiFarm.poolInfo(ICHI_VAULT_PID);

@@ -1,3 +1,4 @@
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
@@ -15,6 +16,7 @@ import { roughlyNear } from '../assertions/roughlyNear';
 chai.use(roughlyNear);
 
 describe('Ichi Vault Lp Oracle', () => {
+	let admin: SignerWithAddress;
 	let mockOracle: MockOracle;
 	let coreOracle: CoreOracle;
 	let chainlinkAdapterOracle: ChainlinkAdapterOracle;
@@ -22,6 +24,8 @@ describe('Ichi Vault Lp Oracle', () => {
 	let ichiVault: IICHIVault;
 
 	before(async () => {
+		[admin] = await ethers.getSigners();
+
 		const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
 		mockOracle = <MockOracle>await MockOracle.deploy();
 		await mockOracle.deployed();
@@ -85,4 +89,26 @@ describe('Ichi Vault Lp Oracle', () => {
 		console.log('USDC/ICHI Lp Price:', utils.formatUnits(lpPrice, 18));
 		console.log('TVL:', utils.formatUnits(tvl, 18));
 	});
+
+	it("USDC/ICHI empty pool price", async () => {
+		const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+		const LibInstance = await LinkedLibFactory.deploy();
+
+		const IchiVault = await ethers.getContractFactory("MockIchiVault", {
+			libraries: {
+				UniV3WrappedLibMockup: LibInstance.address
+			}
+		});
+		const newVault = await IchiVault.deploy(
+			ADDRESS.UNI_V3_ICHI_USDC,
+			true,
+			true,
+			admin.address,
+			admin.address,
+			3600
+		)
+
+		const price = await ichiOracle.getPrice(newVault.address);
+		expect(price).to.be.equal(0);
+	})
 });
