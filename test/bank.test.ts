@@ -134,6 +134,8 @@ describe('Bank', () => {
 			)
 		})
 		it("should be able to liquidate the position => (OV - PV)/CV = LT", async () => {
+			const positionIds = await bank.getPositionIdsByOwner(admin.address);
+			console.log(positionIds);
 			await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
 			let positionInfo = await bank.getPositionInfo(1);
 			let debtValue = await bank.getDebtValue(1)

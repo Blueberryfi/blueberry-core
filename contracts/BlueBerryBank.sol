@@ -360,6 +360,26 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         return (bank.isListed, bank.cToken, bank.totalDebt, bank.totalShare);
     }
 
+    function getPositionIdsByOwner(address owner)
+        external
+        view
+        returns (uint256[] memory ids)
+    {
+        uint256[] memory matchingIds = new uint256[](nextPositionId);
+        uint256 index;
+        for (uint256 i = 0; i < nextPositionId; i++) {
+            if (positions[i].owner == owner) {
+                matchingIds[index] = i;
+                index++;
+            }
+        }
+
+        ids = new uint256[](index);
+        for (uint256 i = 0; i < index; i++) {
+            ids[i] = matchingIds[i];
+        }
+    }
+
     /// @dev Return position information for the given position id.
     /// @param positionId The position id to query for position information.
     function getPositionInfo(uint256 positionId)
@@ -811,7 +831,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         }
         uint256 amount = doERC1155TransferIn(collToken, collId, amountCall);
         pos.collateralSize += amount;
-        emit PutCollateral(POSITION_ID, msg.sender, collToken, collId, amount);
+        emit PutCollateral(
+            POSITION_ID,
+            pos.owner,
+            msg.sender,
+            collToken,
+            collId,
+            amount
+        );
     }
 
     /// @dev Take some collateral back. Must only be called during execution.

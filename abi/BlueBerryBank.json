@@ -457,6 +457,12 @@
       {
         "indexed": false,
         "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
         "name": "caller",
         "type": "address"
       },
@@ -1052,6 +1058,25 @@
       {
         "internalType": "uint256[]",
         "name": "debts",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "getPositionIdsByOwner",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "ids",
         "type": "uint256[]"
       }
     ],

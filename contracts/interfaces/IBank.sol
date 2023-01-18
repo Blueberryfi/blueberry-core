@@ -64,6 +64,7 @@ interface IBank {
     /// Someone puts tokens as collateral via a spell caller.
     event PutCollateral(
         uint256 positionId,
+        address owner,
         address caller,
         address token,
         uint256 id,
