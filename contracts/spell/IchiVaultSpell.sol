@@ -100,7 +100,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
 
     function _validateMaxLTV(uint256 strategyId) internal view {
         uint256 debtValue = bank.getDebtValue(bank.POSITION_ID());
-        (, address collToken, uint256 collAmount, , , , ) = bank
+        (, address collToken, uint256 collAmount, , , , , ) = bank
             .getCurrentPositionInfo();
         uint256 collPrice = bank.oracle().getPrice(collToken);
         uint256 collValue = (collPrice * collAmount) /
@@ -222,8 +222,16 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         );
 
         // 4. Take out collateral
-        (, , , address posCollToken, uint256 collId, uint256 collSize, ) = bank
-            .getCurrentPositionInfo();
+        (
+            ,
+            ,
+            ,
+            ,
+            address posCollToken,
+            uint256 collId,
+            uint256 collSize,
+
+        ) = bank.getCurrentPositionInfo();
         if (collSize > 0) {
             (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
             if (farmingPid != decodedPid) revert INCORRECT_PID(farmingPid);
@@ -370,7 +378,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         existingCollateral(strategyId, collToken)
     {
         address vault = strategies[strategyId].vault;
-        (, , , address posCollToken, uint256 collId, , ) = bank
+        (, , , , address posCollToken, uint256 collId, , ) = bank
             .getCurrentPositionInfo();
         if (IWIchiFarm(posCollToken).getUnderlyingToken(collId) != vault)
             revert INCORRECT_UNDERLYING(vault);

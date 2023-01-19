@@ -419,7 +419,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "bounty",
+        "name": "positionSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "underlyingSize",
         "type": "uint256"
       }
     ],
@@ -974,6 +980,11 @@
         "type": "uint256"
       },
       {
+        "internalType": "uint256",
+        "name": "underlyingVaultShare",
+        "type": "uint256"
+      },
+      {
         "internalType": "address",
         "name": "collToken",
         "type": "address"
@@ -1106,6 +1117,11 @@
       {
         "internalType": "uint256",
         "name": "underlyingAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "underlyingVaultShare",
         "type": "uint256"
       },
       {

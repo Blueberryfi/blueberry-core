@@ -85,7 +85,8 @@ interface IBank {
         address debtToken,
         uint256 amount,
         uint256 share,
-        uint256 bounty
+        uint256 positionSize,
+        uint256 underlyingSize
     );
 
     /// @dev Return the current position while under execution.
@@ -129,6 +130,7 @@ interface IBank {
             address owner,
             address underlyingToken,
             uint256 underlyingAmount,
+            uint256 underlyingVaultShare,
             address collToken,
             uint256 collId,
             uint256 collateralSize,
@@ -143,6 +145,7 @@ interface IBank {
             address owner,
             address underlyingToken,
             uint256 underlyingAmount,
+            uint256 underlyingVaultShare,
             address collToken,
             uint256 collId,
             uint256 collateralSize,

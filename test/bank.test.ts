@@ -80,6 +80,7 @@ describe('Bank', () => {
 		oracle = protocol.oracle;
 		mockOracle = protocol.mockOracle;
 		usdcSoftVault = protocol.usdcSoftVault;
+		ichiSoftVault = protocol.ichiSoftVault;
 		hardVault = protocol.hardVault;
 	})
 
@@ -157,6 +158,7 @@ describe('Bank', () => {
 			debtValue = await bank.getDebtValue(1)
 			positionValue = await bank.getPositionValue(1);
 			risk = await bank.getPositionRisk(1)
+			console.log("Cur Pos:", positionInfo);
 			console.log("Debt Value:", utils.formatUnits(debtValue));
 			console.log("Position Value:", utils.formatUnits(positionValue));
 			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
@@ -176,13 +178,16 @@ describe('Bank', () => {
 			debtValue = await bank.getDebtValue(1)
 			positionValue = await bank.getPositionValue(1);
 			risk = await bank.getPositionRisk(1)
+			console.log("Cur Pos:", positionInfo);
 			console.log("Debt Value:", utils.formatUnits(debtValue));
 			console.log("Position Value:", utils.formatUnits(positionValue));
 			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
 			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
 
 			const colToken = await ethers.getContractAt("ERC1155Upgradeable", positionInfo.collToken);
+			const uVToken = await ethers.getContractAt("ERC20Upgradeable", ichiSoftVault.address);
 			console.log("Liquidator's Position Balance:", await colToken.balanceOf(alice.address, positionInfo.collId));
+			console.log("Liquidator's Collateral Balance:", await uVToken.balanceOf(alice.address));
 
 			console.log("===Full Liquidate===");
 			await usdc.connect(alice).approve(bank.address, ethers.constants.MaxUint256)
@@ -200,6 +205,7 @@ describe('Bank', () => {
 			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
 			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
 			console.log("Liquidator's Position Balance:", await colToken.balanceOf(alice.address, positionInfo.collId));
+			console.log("Liquidator's Collateral Balance:", await uVToken.balanceOf(alice.address));
 		})
 	})
 

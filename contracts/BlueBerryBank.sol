@@ -17,6 +17,7 @@ import "./interfaces/IHardVault.sol";
 import "./interfaces/compound/ICErc20.sol";
 import "./interfaces/compound/IComptroller.sol";
 import "./libraries/BBMath.sol";
+import "hardhat/console.sol";
 
 contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     using BBMath for uint256;
@@ -390,6 +391,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             address owner,
             address underlyingToken,
             uint256 underlyingAmount,
+            uint256 underlyingVaultShare,
             address collToken,
             uint256 collId,
             uint256 collateralSize,
@@ -400,6 +402,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         owner = pos.owner;
         underlyingToken = pos.underlyingToken;
         underlyingAmount = pos.underlyingAmount;
+        underlyingVaultShare = pos.underlyingVaultShare;
         collToken = pos.collToken;
         collId = pos.collId;
         collateralSize = pos.collateralSize;
@@ -415,6 +418,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             address owner,
             address underlyingToken,
             uint256 underlyingAmount,
+            uint256 underlyingVaultShare,
             address collToken,
             uint256 collId,
             uint256 collateralSize,
@@ -532,7 +536,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             pos.underlyingAmount
         );
 
-        if (pv >= ov) risk = 0;
+        if (cv == 0) risk = 0;
+        else if (pv >= ov) risk = 0;
         else {
             risk = ((ov - pv) * DENOMINATOR) / cv;
         }
@@ -560,21 +565,25 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         if (amountCall == 0) revert ZERO_AMOUNT();
         if (!isLiquidatable(positionId)) revert NOT_LIQUIDATABLE(positionId);
         Position storage pos = positions[positionId];
+        Bank memory bank = banks[pos.underlyingToken];
+        if (pos.collToken == address(0)) revert BAD_COLLATERAL(positionId);
+
+        uint256 oldShare = pos.debtShareOf[debtToken];
         (uint256 amountPaid, uint256 share) = repayInternal(
             positionId,
             debtToken,
             amountCall
         );
-        if (pos.collToken == address(0)) revert BAD_COLLATERAL(positionId);
 
-        uint256 liqSize = oracle.convertForLiquidation(
-            debtToken,
-            pos.collToken,
-            pos.collId,
-            amountPaid
-        );
-        liqSize = MathUpgradeable.min(liqSize, pos.collateralSize);
+        uint256 liqSize = (pos.collateralSize * share) / oldShare;
+        uint256 uTokenSize = (pos.underlyingAmount * share) / oldShare;
+        uint256 uVaultShare = (pos.underlyingVaultShare * share) / oldShare;
+
         pos.collateralSize -= liqSize;
+        pos.underlyingAmount -= uTokenSize;
+        pos.underlyingVaultShare -= uVaultShare;
+
+        // Transfer position (Wrapped LP Tokens) to liquidator
         IERC1155Upgradeable(pos.collToken).safeTransferFrom(
             address(this),
             msg.sender,
@@ -582,7 +591,33 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             liqSize,
             ""
         );
-        emit Liquidate(positionId, msg.sender, debtToken, amountPaid, share, 0);
+        // Transfer underlying collaterals(vault share tokens) to liquidator
+        if (
+            address(ISoftVault(bank.softVault).uToken()) == pos.underlyingToken
+        ) {
+            IERC20Upgradeable(bank.softVault).safeTransfer(
+                msg.sender,
+                uVaultShare
+            );
+        } else {
+            IERC1155Upgradeable(bank.hardVault).safeTransferFrom(
+                address(this),
+                msg.sender,
+                uint256(uint160(pos.underlyingToken)),
+                uVaultShare,
+                ""
+            );
+        }
+
+        emit Liquidate(
+            positionId,
+            msg.sender,
+            debtToken,
+            amountPaid,
+            share,
+            liqSize,
+            uTokenSize
+        );
     }
 
     /// @dev Execute the action via BlueBerryCaster, calling its function with the supplied data.
