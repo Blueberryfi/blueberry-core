@@ -36,7 +36,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     address public ICHI;
 
     event StrategyAdded(uint256 strategyId, address vault, uint256 maxPosSize);
-    event CollateralsAdded(
+    event CollateralsSupportAdded(
         uint256 strategyId,
         address[] collaterals,
         uint256[] maxLTVs
@@ -81,7 +81,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         emit StrategyAdded(strategies.length - 1, vault, maxPosSize);
     }
 
-    function addCollaterals(
+    function addCollateralsSupport(
         uint256 strategyId,
         address[] memory collaterals,
         uint256[] memory maxLTVs
@@ -95,7 +95,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
             maxLTV[strategyId][collaterals[i]] = maxLTVs[i];
         }
 
-        emit CollateralsAdded(strategyId, collaterals, maxLTVs);
+        emit CollateralsSupportAdded(strategyId, collaterals, maxLTVs);
     }
 
     function _validateMaxLTV(uint256 strategyId) internal view {

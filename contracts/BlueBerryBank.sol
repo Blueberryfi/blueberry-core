@@ -226,7 +226,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         address vault,
         bool isSoft
     ) external onlyOwner {
-        if (block.chainid == 1) revert ONLY_FOR_DEV();
         if (vault == address(0)) revert ZERO_ADDRESS();
         Bank storage bank = banks[token];
         if (!bank.isListed) revert BANK_NOT_LISTED(token);
@@ -243,7 +242,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @param cToken The address of new cToken
      */
     function updateCToken(address token, address cToken) external onlyOwner {
-        if (block.chainid == 1) revert ONLY_FOR_DEV();
         if (cToken == address(0)) revert ZERO_ADDRESS();
         Bank storage bank = banks[token];
         if (!bank.isListed) revert BANK_NOT_LISTED(token);
@@ -253,11 +251,12 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
     /// @dev Set the oracle smart contract address.
     /// @param _oracle The new oracle smart contract address.
-    function setOracle(IOracle _oracle) external onlyOwner {
+    function setOracle(IOracle _oracle, uint256 start, uint256 limit) external onlyOwner {
         if (address(_oracle) == address(0)) revert ZERO_ADDRESS();
 
         // Check if new oracle supports already added banks
-        for (uint256 i = 0; i < allBanks.length; i++) {
+        for (uint256 i = start; i < start+ limit; i++) {
+            if (i >= allBanks.length) break;
             if (!_oracle.support(allBanks[i]))
                 revert ORACLE_NOT_SUPPORT(allBanks[i]);
         }

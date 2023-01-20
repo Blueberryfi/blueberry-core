@@ -6,7 +6,6 @@ pragma solidity 0.8.16;
 error ZERO_AMOUNT();
 error ZERO_ADDRESS();
 error INPUT_ARRAY_MISMATCH();
-error ONLY_FOR_DEV();
 
 // Oracle Errors
 error TOO_LONG_DELAY(uint256 delayTime);

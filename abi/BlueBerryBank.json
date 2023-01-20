@@ -181,11 +181,6 @@
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "ONLY_FOR_DEV",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
