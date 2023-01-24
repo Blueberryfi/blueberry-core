@@ -152,7 +152,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
   await ichiOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-  oracle = <CoreOracle>await CoreOracle.deploy();
+  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
   await oracle.deployed();
 
   await oracle.setWhitelistERC1155([werc20.address, ichi_USDC_ICHI_Vault.address], true);

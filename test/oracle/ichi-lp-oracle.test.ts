@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import {
 	MockOracle,
@@ -31,7 +31,7 @@ describe('Ichi Vault Lp Oracle', () => {
 		await mockOracle.deployed();
 
 		const CoreOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-		coreOracle = <CoreOracle>await CoreOracleFactory.deploy();
+		coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracleFactory);
 		await coreOracle.deployed();
 
 		const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);

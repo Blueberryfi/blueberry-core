@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import {
@@ -39,7 +39,7 @@ describe('Core Oracle', () => {
     mockOracle = <MockOracle>await MockOracle.deploy();
 
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-    coreOracle = <CoreOracle>await CoreOracle.deploy();
+    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
 
     const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
     werc20 = <WERC20>await WERC20.deploy();

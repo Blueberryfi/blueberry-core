@@ -3,15 +3,15 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../utils/BlueBerryConst.sol";
 import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IERC20Wrapper.sol";
 
-contract CoreOracle is IOracle, Ownable {
+contract CoreOracle is IOracle, OwnableUpgradeable {
     struct TokenSetting {
         address route;
         uint16 liqThreshold; // The liquidation threshold, multiplied by 1e4.
@@ -27,6 +27,10 @@ contract CoreOracle is IOracle, Ownable {
 
     mapping(address => TokenSetting) public tokenSettings; // Mapping from token address to oracle info.
     mapping(address => bool) public whitelistedERC1155; // Mapping from token address to whitelist status
+
+    function initialize() external initializer {
+        __Ownable_init();
+    }
 
     /// @dev Set oracle source routes for tokens
     /// @param tokens List of tokens
@@ -58,7 +62,7 @@ contract CoreOracle is IOracle, Ownable {
                 revert ZERO_ADDRESS();
             if (settings[idx].liqThreshold > DENOMINATOR)
                 revert LIQ_THRESHOLD_TOO_HIGH(settings[idx].liqThreshold);
-            if (settings[idx].liqThreshold < THRESHOLDMIN)
+            if (settings[idx].liqThreshold < MIN_LIQ_THRESHOLD)
                 revert LIQ_THRESHOLD_TOO_LOW(settings[idx].liqThreshold);
             tokenSettings[tokens[idx]] = settings[idx];
             emit SetTokenSetting(tokens[idx], settings[idx]);
@@ -160,7 +164,7 @@ contract CoreOracle is IOracle, Ownable {
     {
         TokenSetting memory tokenSetting = tokenSettings[token];
         if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(token);
-        uint256 decimals = IERC20Metadata(token).decimals();
+        uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         uint256 debtValue = (_getPrice(token) * amount) / 10**decimals;
         return debtValue;
     }
@@ -175,7 +179,7 @@ contract CoreOracle is IOracle, Ownable {
         view
         returns (uint256 collateralValue)
     {
-        uint256 decimals = IERC20Metadata(token).decimals();
+        uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         collateralValue = (_getPrice(token) * amount) / 10**decimals;
     }
 
@@ -204,8 +208,9 @@ contract CoreOracle is IOracle, Ownable {
 
         uint256 priceIn = _getPrice(tokenIn);
         uint256 priceOut = _getPrice(tokenOutUnderlying);
-        uint256 decimalIn = IERC20Metadata(tokenIn).decimals();
-        uint256 decimalOut = IERC20Metadata(tokenOutUnderlying).decimals();
+        uint256 decimalIn = IERC20MetadataUpgradeable(tokenIn).decimals();
+        uint256 decimalOut = IERC20MetadataUpgradeable(tokenOutUnderlying)
+            .decimals();
 
         uint256 amountOut = (amountIn * priceIn * 10**decimalOut) /
             (priceOut * 10**decimalIn);

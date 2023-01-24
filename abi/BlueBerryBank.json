@@ -1546,19 +1546,6 @@
   {
     "inputs": [
       {
-        "internalType": "contract IOracle",
-        "name": "_oracle",
-        "type": "address"
-      }
-    ],
-    "name": "setOracle",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "token",
         "type": "address"
@@ -1640,47 +1627,6 @@
       }
     ],
     "name": "transmit",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "cToken",
-        "type": "address"
-      }
-    ],
-    "name": "updateCToken",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "vault",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "isSoft",
-        "type": "bool"
-      }
-    ],
-    "name": "updateVault",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -289,58 +289,6 @@ describe('Bank', () => {
 					bank.addBank(USDC, ADDRESS.bCRV, usdcSoftVault.address, hardVault.address)
 				).to.be.revertedWith("BANK_ALREADY_LISTED");
 			})
-			it("should be able to set oracle address", async () => {
-				await expect(
-					bank.connect(alice).setOracle(oracle.address)
-				).to.be.revertedWith('Ownable: caller is not the owner');
-
-				await expect(
-					bank.setOracle(constants.AddressZero)
-				).to.be.revertedWith('ZERO_ADDRESS');
-
-				await expect(
-					bank.setOracle(oracle.address)
-				).to.be.emit(bank, "SetOracle").withArgs(oracle.address)
-				expect(await bank.oracle()).to.be.equal(oracle.address);
-			})
-			it("should be able to update vault address (DEV Only)", async () => {
-				let bankInfo = await bank.banks(USDC);
-				expect(bankInfo.isListed).to.be.true;
-				await expect(
-					bank.connect(alice).updateVault(USDC, usdcSoftVault.address, true)
-				).to.be.revertedWith('Ownable: caller is not the owner');
-
-				await expect(
-					bank.updateVault(constants.AddressZero, usdcSoftVault.address, true)
-				).to.be.revertedWith('BANK_NOT_LISTED');
-
-				await expect(
-					bank.updateVault(USDC, constants.AddressZero, true)
-				).to.be.revertedWith('ZERO_ADDRESS');
-
-				await bank.updateVault(USDC, usdcSoftVault.address, true);
-				bankInfo = await bank.banks(USDC);
-				expect(bankInfo.softVault).to.be.equal(usdcSoftVault.address);
-
-				await bank.updateVault(USDC, hardVault.address, false);
-				bankInfo = await bank.banks(USDC);
-				expect(bankInfo.hardVault).to.be.equal(hardVault.address);
-			})
-			it("should be able to update cToken address (DEV Only)", async () => {
-				await expect(
-					bank.connect(alice).updateCToken(USDC, CUSDC)
-				).to.be.revertedWith("Ownable: caller is not the owner");
-				await expect(
-					bank.updateCToken(USDC, ethers.constants.AddressZero)
-				).to.be.revertedWith("ZERO_ADDRESS");
-				await expect(
-					bank.updateCToken(constants.AddressZero, CUSDC)
-				).to.be.revertedWith("BANK_NOT_LISTED");
-
-				await bank.updateCToken(USDC, CUSDC);
-				let bankInfo = await bank.banks(USDC);
-				expect(bankInfo.cToken).to.be.equal(CUSDC);
-			})
 			it("should be able to set bank status", async () => {
 				let bankStatus = await bank.bankStatus();
 				await expect(
