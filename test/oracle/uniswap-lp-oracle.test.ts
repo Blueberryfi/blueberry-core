@@ -4,9 +4,9 @@ import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from "../../constant"
 import {
   UniswapV2Oracle,
-  IERC20Ex,
   IUniswapV2Pair,
   ChainlinkAdapterOracle,
+  IERC20Metadata,
 } from '../../typechain-types';
 import UniPairABI from '../../abi/IUniswapV2Pair.json';
 import { roughlyNear } from '../assertions/roughlyNear'
@@ -44,8 +44,8 @@ describe('Uniswap V2 LP Oracle', () => {
     const token1 = await pair.token1();
     const token0Price = await chainlinkAdapterOracle.getPrice(token0);
     const token1Price = await chainlinkAdapterOracle.getPrice(token1);
-    const token0Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token0);
-    const token1Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token1);
+    const token0Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token0);
+    const token1Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token1);
     const token0Decimal = await token0Contract.decimals();
     const token1Decimal = await token1Contract.decimals();
 

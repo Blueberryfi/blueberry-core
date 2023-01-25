@@ -49,7 +49,7 @@ export enum CONTRACT_NAMES {
 	ICErc20 = "ICErc20",
 	ICurvePool = "ICurvePool",
 	ICurveRegistry = "ICurveRegistry",
-	IERC20Ex = "IERC20Ex",
+	IERC20Metadata = "IERC20Metadata",
 	IUniswapV2Pair = "IUniswapV2Pair",
 	IUniswapV2Router02 = "IUniswapV2Router02",
 	IUniswapV3Pool = "IUniswapV3Pool",

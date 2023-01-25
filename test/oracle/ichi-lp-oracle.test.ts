@@ -9,7 +9,7 @@ import {
 	IchiLpOracle,
 	IICHIVault,
 	ChainlinkAdapterOracle,
-	IERC20Ex,
+	IERC20Metadata,
 } from '../../typechain-types';
 import { roughlyNear } from '../assertions/roughlyNear';
 
@@ -73,8 +73,8 @@ describe('Ichi Vault Lp Oracle', () => {
 		const token1 = await ichiVault.token1();
 		const totalSupply = await ichiVault.totalSupply();
 		const usdcPrice = await chainlinkAdapterOracle.getPrice(ADDRESS.USDC);
-		const token0Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token0);
-		const token1Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token1);
+		const token0Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token0);
+		const token1Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token1);
 		const token0Decimal = await token0Contract.decimals();
 		const token1Decimal = await token1Contract.decimals();
 
