@@ -571,9 +571,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         );
     }
 
-    /// @dev Execute the action via BlueBerryCaster, calling its function with the supplied data.
+    /// @dev Execute the action with the supplied data.
     /// @param positionId The position ID to execute the action, or zero for new position.
-    /// @param spell The target spell to invoke the execution via BlueBerryCaster.
+    /// @param spell The target spell to invoke the execution.
     /// @param data Extra data to pass to the target for the execution.
     function execute(
         uint256 positionId,
