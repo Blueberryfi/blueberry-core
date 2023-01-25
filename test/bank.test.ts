@@ -356,8 +356,8 @@ describe('Bank', () => {
 			})
 			it("should be able to check if the oracle support the token", async () => {
 				expect(await oracle.support(ADDRESS.CRV)).to.be.false;
-				// expect(await bank.support(ADDRESS.CRV)).to.be.false;
-				// expect(await bank.support(ADDRESS.USDC)).to.be.true;
+				expect(await bank.support(ADDRESS.CRV)).to.be.false;
+				expect(await bank.support(ADDRESS.USDC)).to.be.true;
 			})
 		})
 	})
