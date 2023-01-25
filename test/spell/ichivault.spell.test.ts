@@ -402,7 +402,8 @@ describe('ICHI Angel Vaults Spell', () => {
 			expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.gte(depositAmount.sub(depositFee).sub(withdrawFee));
 
 			const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
-			expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(withdrawFee);
+			// Plus rewards fee
+			expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(withdrawFee);
 		})
 	})
 

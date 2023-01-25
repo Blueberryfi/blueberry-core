@@ -354,6 +354,11 @@ describe('Bank', () => {
 			it("should revert EXECUTOR call when the bank is not under execution", async () => {
 				await expect(bank.EXECUTOR()).to.be.revertedWith("NOT_UNDER_EXECUTION");
 			})
+			it("should be able to check if the oracle support the token", async () => {
+				expect(await oracle.support(ADDRESS.CRV)).to.be.false;
+				// expect(await bank.support(ADDRESS.CRV)).to.be.false;
+				// expect(await bank.support(ADDRESS.USDC)).to.be.true;
+			})
 		})
 	})
 

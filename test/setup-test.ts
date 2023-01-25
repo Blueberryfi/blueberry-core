@@ -210,7 +210,6 @@ export const setupProtocol = async (): Promise<Protocol> => {
     [USDC, ICHI],
     [30000, 30000]
   );
-  await spell.setWhitelistLPTokens([ichi_USDC_ICHI_Vault.address], [true]);
   await oracle.setWhitelistERC1155([wichi.address], true);
 
   // Setup Bank

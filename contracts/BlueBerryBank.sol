@@ -786,18 +786,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         return (paid, lessShare);
     }
 
-    /// @dev Transmit user assets to the caller, so users only need to approve Bank for spending.
-    /// @param token The token to transfer from user to the caller.
-    /// @param amount The amount to transfer.
-    function transmit(address token, uint256 amount) external override inExec {
-        Position storage pos = positions[POSITION_ID];
-        IERC20Upgradeable(token).safeTransferFrom(
-            pos.owner,
-            msg.sender,
-            amount
-        );
-    }
-
     /// @dev Put more collateral for users. Must only be called during execution.
     /// @param collToken The ERC1155 token wrapped for collateral. (Wrapped token of LP)
     /// @param collId The token id to collateral. (Uint256 format of LP address)

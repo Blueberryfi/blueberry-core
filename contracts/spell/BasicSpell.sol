@@ -22,14 +22,6 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @dev Mapping from token to (mapping from spender to approve status)
     mapping(address => mapping(address => bool)) public approved;
 
-    /// @dev mapping from lp token to whitelist status
-    mapping(address => bool) public whitelistedLpTokens;
-
-    modifier onlyWhitelistedLp(address lpToken) {
-        if (!whitelistedLpTokens[lpToken]) revert LP_NOT_WHITELISTED(lpToken);
-        _;
-    }
-
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
@@ -59,41 +51,12 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         }
     }
 
-    /// @dev Internal call to convert msg.value ETH to WETH inside the contract.
-    function doTransmitETH() internal {
-        if (msg.value > 0) {
-            IWETH(weth).deposit{value: msg.value}();
-        }
-    }
-
-    /// @dev Internal call to transmit tokens from the bank if amount is positive.
-    /// @param token The token to perform the transmit action.
-    /// @param amount The amount to transmit.
-    /// @notice Do not use `amount` input argument to handle the received amount.
-    function doTransmit(address token, uint256 amount) internal {
-        if (amount > 0) {
-            bank.transmit(token, amount);
-        }
-    }
-
     /// @dev Internal call to refund tokens to the current bank executor.
     /// @param token The token to perform the refund action.
     function doRefund(address token) internal {
         uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
         if (balance > 0) {
             IERC20Upgradeable(token).safeTransfer(bank.EXECUTOR(), balance);
-        }
-    }
-
-    /// @dev Internal call to refund all WETH to the current executor as native ETH.
-    function doRefundETH() internal {
-        uint256 balance = IWETH(weth).balanceOf(address(this));
-        if (balance > 0) {
-            IWETH(weth).withdraw(balance);
-            (bool success, ) = bank.EXECUTOR().call{value: balance}(
-                new bytes(0)
-            );
-            if (!success) revert REFUND_ETH_FAILED(balance);
         }
     }
 
@@ -171,32 +134,6 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         if (amount > 0) {
             amount = bank.takeCollateral(amount);
             werc20.burn(token, amount);
-        }
-    }
-
-    /**
-     * @dev Set new bank address
-     * @param newBank Address of new bank
-     */
-    function setBank(address newBank) external onlyOwner {
-        if (newBank == address(0)) revert ZERO_ADDRESS();
-        bank = IBank(newBank);
-        IWERC20(werc20).setApprovalForAll(address(newBank), true);
-    }
-
-    /// @dev Set whitelist LP token statuses for spell
-    /// @param lpTokens LP tokens to set whitelist statuses
-    /// @param statuses Whitelist statuses
-    function setWhitelistLPTokens(
-        address[] calldata lpTokens,
-        bool[] calldata statuses
-    ) external onlyOwner {
-        if (lpTokens.length != statuses.length) revert INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < lpTokens.length; idx++) {
-            if (statuses[idx] && !bank.support(lpTokens[idx]))
-                revert ORACLE_NOT_SUPPORT_LP(lpTokens[idx]);
-
-            whitelistedLpTokens[lpTokens[idx]] = statuses[idx];
         }
     }
 

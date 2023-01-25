@@ -57,4 +57,10 @@ describe('Uniswap V2 LP Oracle', () => {
 
     console.log('USDC/CRV LP Price:', utils.formatUnits(oraclePrice, 18), utils.formatUnits(price, 18));
   })
+  it("should return 0 when invalid lp address provided", async () => {
+    const MockToken = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);
+    const mockToken = await MockToken.deploy("Uniswap Lp Token", "UNI_LP", 18);
+    const price = await uniswapOracle.getPrice(mockToken.address);
+    expect(price.isZero()).to.be.true;
+  })
 });

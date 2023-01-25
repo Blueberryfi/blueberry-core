@@ -111,17 +111,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "lp",
-        "type": "address"
-      }
-    ],
-    "name": "ORACLE_NOT_SUPPORT_LP",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "spell",
         "type": "address"
       },
@@ -668,37 +657,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "newBank",
-        "type": "address"
-      }
-    ],
-    "name": "setBank",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "lpTokens",
-        "type": "address[]"
-      },
-      {
-        "internalType": "bool[]",
-        "name": "statuses",
-        "type": "bool[]"
-      }
-    ],
-    "name": "setWhitelistLPTokens",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
@@ -809,25 +767,6 @@
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "whitelistedLpTokens",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
       }
     ],
     "stateMutability": "view",

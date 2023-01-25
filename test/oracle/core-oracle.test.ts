@@ -103,6 +103,14 @@ describe('Core Oracle', () => {
       await expect(coreOracle.setTokenSettings(
         [ADDRESS.USDC],
         [{
+          liqThreshold: 7500,
+          route: mockOracle.address
+        }]
+      )).to.be.revertedWith('LIQ_THRESHOLD_TOO_LOW(7500)');
+
+      await expect(coreOracle.setTokenSettings(
+        [ADDRESS.USDC],
+        [{
           liqThreshold: 9000,
           route: ethers.constants.AddressZero
         }]
@@ -206,5 +214,21 @@ describe('Core Oracle', () => {
       ).to.be.revertedWith("PRICE_FAILED");
     })
   })
-  // TODO: Cover getCollateralValue, getDebtValue, getUnderlyingValue, getLiqThreshold
+  describe("Value", () => {
+    // TODO: Cover getCollateralValue, getDebtValue, getUnderlyingValue, getLiqThreshold
+    describe("Debt Value", async () => {
+      it("should revert when oracle route is not set", async () => {
+        await expect(
+          coreOracle.getDebtValue(ADDRESS.CRV, 100)
+        ).to.be.revertedWith("NO_ORACLE_ROUTE");
+      })
+    })
+    describe("Collateral Value", async () => {
+      it("should revert when oracle route is not set", async () => {
+        await expect(
+          coreOracle.getCollateralValue(ADDRESS.CRV, 0, 100)
+        ).to.be.revertedWith("ERC1155_NOT_WHITELISTED");
+      })
+    })
+  })
 });

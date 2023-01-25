@@ -134,11 +134,15 @@ contract WIchiFarm is
             ICHI.convertToV2(ichiRewards);
         }
 
+        // Transfer LP Tokens
         address lpToken = ichiFarm.lpToken(pid);
-        (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
+
+        // Transfer Reward Tokens
+        (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
         uint256 stIchi = (stIchiPerShare * amount).divCeil(1e18);
         uint256 enIchi = (enIchiPerShare * amount) / 1e18;
+
         if (enIchi > stIchi) {
             ICHI.safeTransfer(msg.sender, enIchi - stIchi);
         }

@@ -388,8 +388,9 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         // 1. Take out collateral
         bank.takeCollateral(lpTakeAmt);
         wIchiFarm.burn(collId, lpTakeAmt);
+        doCutRewardsFee(ICHI);
 
-        // 2-8. remove liquidity
+        // 2-8. Remove liquidity
         withdrawInternal(
             strategyId,
             collToken,
@@ -400,7 +401,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         );
 
         // 9. Refund ichi token
-        doCutRewardsFee(ICHI);
         doRefund(ICHI);
     }
 

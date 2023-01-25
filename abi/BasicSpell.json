@@ -1,10 +1,5 @@
 [
   {
-    "inputs": [],
-    "name": "INPUT_ARRAY_MISMATCH",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -13,22 +8,6 @@
       }
     ],
     "name": "NOT_FROM_WETH",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "lp",
-        "type": "address"
-      }
-    ],
-    "name": "ORACLE_NOT_SUPPORT_LP",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ZERO_ADDRESS",
     "type": "error"
   },
   {
@@ -201,37 +180,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "newBank",
-        "type": "address"
-      }
-    ],
-    "name": "setBank",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "lpTokens",
-        "type": "address[]"
-      },
-      {
-        "internalType": "bool[]",
-        "name": "statuses",
-        "type": "bool[]"
-      }
-    ],
-    "name": "setWhitelistLPTokens",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "bytes4",
         "name": "interfaceId",
         "type": "bytes4"
@@ -282,25 +230,6 @@
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "whitelistedLpTokens",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
       }
     ],
     "stateMutability": "view",

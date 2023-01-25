@@ -125,8 +125,13 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
      * @param token The ERC20 token to check for support
      */
     function support(address token) external view override returns (bool) {
-        uint256 price = _getPrice(token);
-        return price != 0;
+        address route = tokenSettings[token].route;
+        if (route == address(0)) return false;
+        try IBaseOracle(route).getPrice(token) returns (uint256 price) {
+            return price != 0;
+        } catch {
+            return false;
+        }
     }
 
     /**
@@ -181,40 +186,6 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
     {
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         collateralValue = (_getPrice(token) * amount) / 10**decimals;
-    }
-
-    /// @dev Return the amount of token out as liquidation reward for liquidating token in.
-    /// @param tokenIn Input ERC20 token
-    /// @param tokenOut Output ERC1155 token
-    /// @param tokenOutId Output ERC1155 token id
-    /// @param amountIn Input ERC20 token amount
-    function convertForLiquidation(
-        address tokenIn,
-        address tokenOut,
-        uint256 tokenOutId,
-        uint256 amountIn
-    ) external view override returns (uint256) {
-        if (!whitelistedERC1155[tokenOut])
-            revert ERC1155_NOT_WHITELISTED(tokenOut);
-        address tokenOutUnderlying = IERC20Wrapper(tokenOut).getUnderlyingToken(
-            tokenOutId
-        );
-        TokenSetting memory tokenSettingIn = tokenSettings[tokenIn];
-        TokenSetting memory tokenSettingOut = tokenSettings[tokenOutUnderlying];
-
-        if (tokenSettingIn.route == address(0)) revert NO_ORACLE_ROUTE(tokenIn);
-        if (tokenSettingOut.route == address(0))
-            revert NO_ORACLE_ROUTE(tokenOutUnderlying);
-
-        uint256 priceIn = _getPrice(tokenIn);
-        uint256 priceOut = _getPrice(tokenOutUnderlying);
-        uint256 decimalIn = IERC20MetadataUpgradeable(tokenIn).decimals();
-        uint256 decimalOut = IERC20MetadataUpgradeable(tokenOutUnderlying)
-            .decimals();
-
-        uint256 amountOut = (amountIn * priceIn * 10**decimalOut) /
-            (priceOut * 10**decimalIn);
-        return amountOut;
     }
 
     /**

@@ -177,9 +177,6 @@ interface IBank {
     /// @dev Repays tokens to the bank.
     function repay(address token, uint256 amountCall) external;
 
-    /// @dev Transmit user assets to the spell.
-    function transmit(address token, uint256 amount) external;
-
     /// @dev Put more collateral for users.
     function putCollateral(
         address collToken,
