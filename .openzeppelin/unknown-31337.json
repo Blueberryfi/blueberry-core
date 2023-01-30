@@ -1,8 +1,8 @@
 {
   "manifestVersion": "3.2",
   "admin": {
-    "address": "0xd038A2EE73b64F30d65802Ad188F27921656f28F",
-    "txHash": "0x185103503f6ec093b974e8b3fffec0171824a98d64eb1630f94cfc2c458099fb"
+    "address": "0x124dDf9BdD2DdaD012ef1D5bBd77c00F05C610DA",
+    "txHash": "0x17502d4699315614c3bb56a2419ab9b21ea347d4152f73d5e773dedc4208c58b"
   },
   "proxies": [
     {
@@ -2101,11 +2101,6 @@
       "kind": "transparent"
     },
     {
-      "address": "0xe044814c9eD1e6442Af956a817c161192cBaE98F",
-      "txHash": "0x2fd1d97da6378d8688835d7e2245259e5bc69dd4e0dbc4db1289d3b4611b4741",
-      "kind": "transparent"
-    },
-    {
       "address": "0xaB837301d12cDc4b97f1E910FC56C9179894d9cf",
       "txHash": "0x34df6918efc14882a2b9e67075ed37c70131aa6bf4cff5174d5f504e56f5d041",
       "kind": "transparent"
@@ -3383,6 +3378,11 @@
     {
       "address": "0x8729c0238b265BaCF6fE397E8309897BB5c40473",
       "txHash": "0xe35a8a7a819b76ce9af7f6a1f22d5a7317f80528895d33b53898976cc23d1839",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xe044814c9eD1e6442Af956a817c161192cBaE98F",
+      "txHash": "0x61db79195e47333ea78a5db7d0bbb0b2d67e6a5cd1b8d092a0b940e39468da95",
       "kind": "transparent"
     }
   ],
@@ -8179,6 +8179,127 @@
           "t_string_storage": {
             "label": "string",
             "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "f5ceea32dd91158fbbd4244631100b608a282f4a5f1a9b4ac607b729bb0eadf1": {
+      "address": "0xc3023a2c9f7B92d1dd19F488AF6Ee107a78Df9DB",
+      "txHash": "0x48aff935c7100b7af5c214467dd78b201893bbe8a0e7b6c65dcc69244d8b5030",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "tokenSettings",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_address,t_struct(TokenSetting)18438_storage)",
+            "contract": "CoreOracle",
+            "src": "contracts/oracle/CoreOracle.sol:28"
+          },
+          {
+            "label": "whitelistedERC1155",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "CoreOracle",
+            "src": "contracts/oracle/CoreOracle.sol:29"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(TokenSetting)18438_storage)": {
+            "label": "mapping(address => struct CoreOracle.TokenSetting)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(TokenSetting)18438_storage": {
+            "label": "struct CoreOracle.TokenSetting",
+            "members": [
+              {
+                "label": "route",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "liqThreshold",
+                "type": "t_uint16",
+                "offset": 20,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint16": {
+            "label": "uint16",
+            "numberOfBytes": "2"
           },
           "t_uint256": {
             "label": "uint256",
