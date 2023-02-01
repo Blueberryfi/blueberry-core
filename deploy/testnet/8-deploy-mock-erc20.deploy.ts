@@ -7,7 +7,18 @@ async function main(): Promise<void> {
 
 	// Deploy Mock Token
 	const MockERC20 = await ethers.getContractFactory("MockERC20");
-	let mock = await MockERC20.deploy("Mock BAL", "BAL", 18);
+	let mock = await MockERC20.deploy("ICHI.Farm", "ICHI", 9);
+	await mock.deployed();
+	deployment.MockIchiV1 = mock.address;
+	writeDeployments(deployment);
+
+	const MockIchiV2 = await ethers.getContractFactory("MockIchiV2");
+	let mockIchi = await MockIchiV2.deploy(deployment.MockIchiV1);
+	await mockIchi.deployed();
+	deployment.MockIchiV2 = mockIchi.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock BAL", "BAL", 18);
 	await mock.deployed();
 	deployment.MockBAL = mock.address;
 	writeDeployments(deployment);
