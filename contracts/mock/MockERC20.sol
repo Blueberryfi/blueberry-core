@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
     uint8 _decimals;
@@ -19,7 +19,7 @@ contract MockERC20 is ERC20 {
         return _decimals;
     }
 
-    function mint(address to, uint256 amount) public {
-        _mint(to, amount);
+    function mint() external {
+        _mint(msg.sender, 100 * 10**_decimals);
     }
 }

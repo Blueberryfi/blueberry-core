@@ -1,33 +1,55 @@
-import { utils } from 'ethers';
-import fs from 'fs';
-import { ethers, network, upgrades } from "hardhat";
-import { } from "../../constant";
-import { MockERC20 } from "../../typechain-types";
-
-const deploymentPath = "./deployments";
-const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
-
-function writeDeployments(deployment: any) {
-	if (!fs.existsSync(deploymentPath)) {
-		fs.mkdirSync(deploymentPath);
-	}
-	fs.writeFileSync(deploymentFilePath, JSON.stringify(deployment, null, 2));
-}
+import { ethers } from "hardhat";
+import { deployment, writeDeployments } from '../../utils';
 
 async function main(): Promise<void> {
-	const deployment = fs.existsSync(deploymentFilePath)
-		? JSON.parse(fs.readFileSync(deploymentFilePath).toString())
-		: {};
-
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 
 	// Deploy Mock Token
 	const MockERC20 = await ethers.getContractFactory("MockERC20");
-	const mock = await MockERC20.deploy("Mock BAL", "BAL", 18);
+	let mock = await MockERC20.deploy("Mock BAL", "BAL", 18);
 	await mock.deployed();
-
 	deployment.MockBAL = mock.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock ALCX", "ALCX", 18);
+	await mock.deployed();
+	deployment.MockALCX = mock.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock CRV", "CRV", 18);
+	await mock.deployed();
+	deployment.MockCRV = mock.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock DAI", "DAI", 18);
+	await mock.deployed();
+	deployment.MockDAI = mock.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock SUSHI", "SUSHI", 18);
+	await mock.deployed();
+	deployment.MockSUSHI = mock.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock USDC", "USDC", 6);
+	await mock.deployed();
+	deployment.MockUSDC = mock.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock USDD", "USDD", 18);
+	await mock.deployed();
+	deployment.MockUSDD = mock.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock WBTC", "WBTC", 8);
+	await mock.deployed();
+	deployment.MockWBTC = mock.address;
+	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock WETH", "WETH", 18);
+	await mock.deployed();
+	deployment.MockWETH = mock.address;
 	writeDeployments(deployment);
 }
 
