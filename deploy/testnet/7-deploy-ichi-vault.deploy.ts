@@ -1,24 +1,10 @@
 import { utils } from 'ethers';
-import fs from 'fs';
-import { ethers, network, upgrades } from "hardhat";
+import { ethers } from "hardhat";
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../constant";
-import { ERC20, MockIchiVault, SafeBox } from "../../typechain-types";
-
-const deploymentPath = "./deployments";
-const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
-
-function writeDeployments(deployment: any) {
-	if (!fs.existsSync(deploymentPath)) {
-		fs.mkdirSync(deploymentPath);
-	}
-	fs.writeFileSync(deploymentFilePath, JSON.stringify(deployment, null, 2));
-}
+import { ERC20, MockIchiVault } from "../../typechain-types";
+import { deployment, writeDeployments } from '../../utils';
 
 async function main(): Promise<void> {
-	const deployment = fs.existsSync(deploymentFilePath)
-		? JSON.parse(fs.readFileSync(deploymentFilePath).toString())
-		: {};
-
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 

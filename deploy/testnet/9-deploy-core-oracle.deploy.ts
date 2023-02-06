@@ -7,6 +7,29 @@ async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
   console.log("Deployer:", deployer.address);
 
+  const aggregatorOracle = await ethers.getContractAt(CONTRACT_NAMES.AggregatorOracle, deployment.AggregatorOracle);
+  await aggregatorOracle.setMultiPrimarySources(
+    [
+      deployment.MockUSDC,
+      deployment.MockUSDD,
+      deployment.MockDAI,
+      deployment.MockWETH,
+      deployment.MockWBTC,
+    ], [
+    ethers.utils.parseEther("1.05"),
+    ethers.utils.parseEther("1.05"),
+    ethers.utils.parseEther("1.05"),
+    ethers.utils.parseEther("1.05"),
+    ethers.utils.parseEther("1.05"),
+  ], [
+    [deployment.ChainlinkAdapterOracle],
+    [deployment.ChainlinkAdapterOracle],
+    [deployment.ChainlinkAdapterOracle],
+    [deployment.ChainlinkAdapterOracle],
+    [deployment.ChainlinkAdapterOracle],
+  ]);
+  return;
+
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   const oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
   await oracle.deployed();

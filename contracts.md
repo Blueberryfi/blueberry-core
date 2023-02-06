@@ -1,21 +1,29 @@
 # Blueberry Core Protocol
 
 ## Goerli Testnet
-### Mock
-| Contract Names | Address                                    |
-| -------------- | ------------------------------------------ |
-| Mock ALCX      | 0x9eD02f1C12AdB524EC901f37cB4d9b183B2e578d |
-| Mock BAL       | 0x6c5ADE58aB4417012CBA549e5f8D7F71aE7Ede74 |
-| Mock BLB       | 0x745229756e606C88194be866B789A7a9d90BDEc5 |
-| Mock CRV       | 0xFA4cf6f231F198Ea682A0Dffd9B34679aF9Da754 |
-| Mock DAI       | 0xA2add465F592488267a589a6C21760a65de30aF0 |
-| Mock ICHI V1   | 0x61a14CDC801C6eC337c7B1aC19270Fe7Ad792fC6 |
-| Mock ICHI V2   | 0xe9B6CcC44dbA223ccF378aA630e63Bec52AaC392 |
-| Mock SUSHI     | 0x90EAB39BbF837021f7454e310f6dB04e66B002d8 |
-| Mock USDC      | 0xcBB1082F4cD910E0A6C788Bc8F3eC07Dd1890670 |
-| Mock USDD      | 0x1f194493aC9127e62E7f069A14aDCD51673Ea2D8 |
-| Mock WBTC      | 0x9Ca01f860BF0803625fF858EE63D3Fca68ECf43e |
-| Mock WETH      | 0x203788323Ab4B29220972972E7dEF2a037523A49 |
+### Mock Contracts
+| Contract Names           | Address                                    |
+| ------------------------ | ------------------------------------------ |
+| Mock ALCX                | 0x9eD02f1C12AdB524EC901f37cB4d9b183B2e578d |
+| Mock BAL                 | 0x6c5ADE58aB4417012CBA549e5f8D7F71aE7Ede74 |
+| Mock BLB                 | 0x745229756e606C88194be866B789A7a9d90BDEc5 |
+| Mock CRV                 | 0xFA4cf6f231F198Ea682A0Dffd9B34679aF9Da754 |
+| Mock DAI                 | 0xA2add465F592488267a589a6C21760a65de30aF0 |
+| Mock ICHI V1             | 0x61a14CDC801C6eC337c7B1aC19270Fe7Ad792fC6 |
+| Mock ICHI V2             | 0xe9B6CcC44dbA223ccF378aA630e63Bec52AaC392 |
+| Mock SUSHI               | 0x90EAB39BbF837021f7454e310f6dB04e66B002d8 |
+| Mock USDC                | 0xcBB1082F4cD910E0A6C788Bc8F3eC07Dd1890670 |
+| Mock USDD                | 0x1f194493aC9127e62E7f069A14aDCD51673Ea2D8 |
+| Mock WBTC                | 0x9Ca01f860BF0803625fF858EE63D3Fca68ECf43e |
+| Mock WETH                | 0x203788323Ab4B29220972972E7dEF2a037523A49 |
+| Mock Ichi Farm           | 0x8E1170c422617435D67da98c2Fef3399870aB621 |
+| Mock Ichi Vault USDC/BLB | 0xFa77E8Ecda5Cb0a0024eEe778AD7371592Dd8838 |
+| Uni V3 Pool USDC/ALCX    | 0xED3f4BCB5Fef0413D1517F8fC6A7E1D12028965A |
+| Uni V3 Pool USDC/BAL     | 0x8EfEB2ebC7D703Ff5625209064154684059a92be |
+| Uni V3 Pool USDC/BLB     | 0x754485C767D52Dc9A1a4E7e847189749eE74fCe0 |
+| Uni V3 Pool USDC/CRV     | 0x95dBBfF537F32706D568007855df6aAa3Af25fA2 |
+| Uni V3 Pool USDC/SUSHI   | 0xe5605D7AA56700969c306362bFb384dbF2B7B491 |
+| Uni V3 Pool USDC/ICHI    | 0x410513DD3e841Af4b71Ea2E42ddEdA99cfd7AC3a |
 
 ### Oracle
 | Contract Names            | Address                                    |
@@ -30,7 +38,11 @@
 | Contract Names     | Address                                    |
 | ------------------ | ------------------------------------------ |
 | Protocol Config    | 0x993a27dEd2DE5a61E2cD1E8aCB247faBfa8EA4C2 |
-| Blueberry Bank     |                                            |
+| Blueberry Bank     | 0xcfc4aeD0a0D4713C71aE9A428030C8178ffd1c24 |
+| WERC20             | 0xD9D849Cfd10B6f534DDD9744558b62d11F724f84 |
+| WIchiFarm          | 0xD94034e633F7c1Be6a3C5c7E8F519a40EBf52A5C |
+| ICHI Spell         | 0xd7361fb8a09f1644FF4CC94F0c10577F5D0a7c88 |
+| Hard Vault         | 0x0Ec3DA33D89A3905b50636F878340fCCd64ae936 |
 | Soft Vault - ALCX  | 0x30BCB5fDe3AC11A27e14928B8B9f879433Fa92C7 |
 | Soft Vault - BAL   | 0xBF32f19675B7803254c74c62309c0d953d54384E |
 | Soft Vault - BLB   | 0x4547CacC204df76887DBe619fDc3218bf29082F6 |

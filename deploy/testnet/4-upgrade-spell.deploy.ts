@@ -1,24 +1,24 @@
-import fs from 'fs';
-import { ethers, network, upgrades } from "hardhat";
-import { CONTRACT_NAMES } from "../../constant";
+import { ethers, upgrades } from "hardhat";
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../constant";
 import { IchiVaultSpell } from "../../typechain-types";
-
-const deploymentPath = "./deployments";
-const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
+import { deployment, writeDeployments } from '../../utils';
 
 async function main(): Promise<void> {
-	const deployment = fs.existsSync(deploymentFilePath)
-		? JSON.parse(fs.readFileSync(deploymentFilePath).toString())
-		: {};
-
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 
 	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
-	const ichiSpell = <IchiVaultSpell>await upgrades.upgradeProxy(deployment.IchiSpell, IchiVaultSpell);
-	await ichiSpell.deployed();
 
-	console.log("Ichi Vault Spell Upgraded");
+	const spell = <IchiVaultSpell>await upgrades.deployProxy(IchiVaultSpell, [
+		deployment.BlueBerryBank,
+		deployment.WERC20,
+		ADDRESS_GOERLI.WETH,
+		deployment.WIchiFarm
+	])
+	await spell.deployed();
+	console.log("Ichi Vault Spell Deployed:", spell.address);
+	deployment.IchiSpell = spell.address;
+	writeDeployments(deployment)
 }
 
 main()

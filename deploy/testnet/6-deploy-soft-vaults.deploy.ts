@@ -1,20 +1,30 @@
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../constant";
-import { SoftVault } from "../../typechain-types";
+import { HardVault, SoftVault } from "../../typechain-types";
 import { deployment, writeDeployments } from '../../utils';
 
 async function main(): Promise<void> {
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 
-	// // Protocol Config
-	// const ProtocolConfig = await ethers.getContractFactory(CONTRACT_NAMES.ProtocolConfig);
-	// const config = await upgrades.deployProxy(ProtocolConfig, [
-	// 	deployer.address
-	// ]);
-	// console.log('Protocol Config:', config.address);
-	// deployment.ProtocolConfig = config.address;
-	// writeDeployments(deployment);
+	// Protocol Config
+	const ProtocolConfig = await ethers.getContractFactory(CONTRACT_NAMES.ProtocolConfig);
+	const config = await upgrades.deployProxy(ProtocolConfig, [
+		deployer.address
+	]);
+	console.log('Protocol Config:', config.address);
+	deployment.ProtocolConfig = config.address;
+	writeDeployments(deployment);
+
+	// HardVault
+	const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
+	const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [
+		deployment.ProtocolConfig,
+	])
+	await hardVault.deployed();
+	console.log("Hard Vault:", hardVault.address);
+	deployment.HardVault = hardVault.address;
+	writeDeployments(deployment);
 
 	// SoftVault
 	const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
