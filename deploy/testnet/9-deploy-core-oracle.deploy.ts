@@ -41,11 +41,11 @@ async function main(): Promise<void> {
   const oracle = <CoreOracle>await ethers.getContractAt(CONTRACT_NAMES.CoreOracle, deployment.CoreOracle);
   await oracle.setTokenSettings(
     [
-      deployment.MockALCX,
+      deployment.MockWBTC,
     ],
     [
       {
-        route: "0x1FBC7d02e39603B3D2EF5764679d461bC00ecA6E",
+        route: "0xA2f423d048bdA5AaC35B8b4bcbD42cd6F32Da461",
         liqThreshold: 9000
       },
     ]
