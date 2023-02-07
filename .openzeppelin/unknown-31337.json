@@ -7539,7 +7539,7 @@
             "label": "ICHIv1",
             "offset": 0,
             "slot": "201",
-            "type": "t_contract(IERC20Upgradeable)2556",
+            "type": "t_contract(IERC20Upgradeable)1710",
             "contract": "WIchiFarm",
             "src": "contracts/wrapper/WIchiFarm.sol:26"
           },
@@ -7547,7 +7547,7 @@
             "label": "ICHI",
             "offset": 0,
             "slot": "202",
-            "type": "t_contract(IIchiV2)12712",
+            "type": "t_contract(IIchiV2)2705",
             "contract": "WIchiFarm",
             "src": "contracts/wrapper/WIchiFarm.sol:27"
           },
@@ -7555,7 +7555,7 @@
             "label": "ichiFarm",
             "offset": 0,
             "slot": "203",
-            "type": "t_contract(IIchiFarm)12502",
+            "type": "t_contract(IIchiFarm)2495",
             "contract": "WIchiFarm",
             "src": "contracts/wrapper/WIchiFarm.sol:28"
           }
@@ -7581,15 +7581,15 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IERC20Upgradeable)2556": {
+          "t_contract(IERC20Upgradeable)1710": {
             "label": "contract IERC20Upgradeable",
             "numberOfBytes": "20"
           },
-          "t_contract(IIchiFarm)12502": {
+          "t_contract(IIchiFarm)2495": {
             "label": "contract IIchiFarm",
             "numberOfBytes": "20"
           },
-          "t_contract(IIchiV2)12712": {
+          "t_contract(IIchiV2)2705": {
             "label": "contract IIchiV2",
             "numberOfBytes": "20"
           },
@@ -8114,7 +8114,7 @@
             "label": "cToken",
             "offset": 0,
             "slot": "201",
-            "type": "t_contract(ICErc20)11843",
+            "type": "t_contract(ICErc20)1792",
             "contract": "SoftVault",
             "src": "contracts/vault/SoftVault.sol:25"
           },
@@ -8122,7 +8122,7 @@
             "label": "uToken",
             "offset": 0,
             "slot": "202",
-            "type": "t_contract(IERC20Upgradeable)2556",
+            "type": "t_contract(IERC20Upgradeable)1030",
             "contract": "SoftVault",
             "src": "contracts/vault/SoftVault.sol:27"
           },
@@ -8130,7 +8130,7 @@
             "label": "config",
             "offset": 0,
             "slot": "203",
-            "type": "t_contract(IProtocolConfig)11463",
+            "type": "t_contract(IProtocolConfig)1690",
             "contract": "SoftVault",
             "src": "contracts/vault/SoftVault.sol:28"
           }
@@ -8156,15 +8156,15 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(ICErc20)11843": {
+          "t_contract(ICErc20)1792": {
             "label": "contract ICErc20",
             "numberOfBytes": "20"
           },
-          "t_contract(IERC20Upgradeable)2556": {
+          "t_contract(IERC20Upgradeable)1030": {
             "label": "contract IERC20Upgradeable",
             "numberOfBytes": "20"
           },
-          "t_contract(IProtocolConfig)11463": {
+          "t_contract(IProtocolConfig)1690": {
             "label": "contract IProtocolConfig",
             "numberOfBytes": "20"
           },

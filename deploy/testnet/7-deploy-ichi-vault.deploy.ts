@@ -27,7 +27,7 @@ async function main(): Promise<void> {
 		}
 	});
 	const ichiVault = <MockIchiVault>await MockIchiVault.deploy(
-		ADDRESS_GOERLI.UNI_V3_USDC_BLB,
+		ADDRESS_GOERLI.UNI_V3_USDC_ALCX,
 		true,
 		true,
 		deployer.address,
@@ -36,7 +36,7 @@ async function main(): Promise<void> {
 	);
 	await ichiVault.deployed();
 	console.log('Mock Ichi Vault:', ichiVault.address);
-	deployment.MockIchiVault_USDC_BLB = ichiVault.address;
+	deployment.MockIchiVault_USDC_ALCX = ichiVault.address;
 	writeDeployments(deployment);
 }
 
