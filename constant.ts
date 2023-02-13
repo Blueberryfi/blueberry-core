@@ -9,7 +9,7 @@ export enum CONTRACT_NAMES {
 	MockCErc20 = 'MockCErc20',
 	MockCErc20_2 = 'MockCErc20_2',
 	MockFeedRegistry = 'MockFeedRegistry',
-	MockOracle = "MockOracle",
+	MockOracle = 'MockOracle',
 
 	// Wrapper
 	WERC20 = 'WERC20',
@@ -19,16 +19,17 @@ export enum CONTRACT_NAMES {
 	WStakingRewards = 'WStakingRewards',
 
 	// Oracles
-	BandAdapterOracle = "BandAdapterOracle",
-	ChainlinkAdapterOracle = "ChainlinkAdapterOracle",
-	CoreOracle = "CoreOracle",
-	UniswapV2Oracle = "UniswapV2Oracle",
-	BalancerPairOracle = "BalancerPairOracle",
-	ERC20KP3ROracle = "ERC20KP3ROracle",
-	CurveOracle = "CurveOracle",
-	UniswapV3AdapterOracle = "UniswapV3AdapterOracle",
-	AggregatorOracle = "AggregatorOracle",
-	IchiLpOracle = "IchiLpOracle",
+	BandAdapterOracle = 'BandAdapterOracle',
+	ChainlinkAdapterOracle = 'ChainlinkAdapterOracle',
+	CoreOracle = 'CoreOracle',
+	UniswapV2Oracle = 'UniswapV2Oracle',
+	BalancerPairOracle = 'BalancerPairOracle',
+	ERC20KP3ROracle = 'ERC20KP3ROracle',
+	CurveOracle = 'CurveOracle',
+	UniswapV3AdapterOracle = 'UniswapV3AdapterOracle',
+	AggregatorOracle = 'AggregatorOracle',
+	IchiLpOracle = 'IchiLpOracle',
+	ManualOracle = 'ManualOracle',
 
 	// Protocol
 	BlueBerryBank = 'BlueBerryBank',
@@ -37,23 +38,23 @@ export enum CONTRACT_NAMES {
 	ProtocolConfig = 'ProtocolConfig',
 
 	// Spell
-	UniswapV2SpellV1 = "UniswapV2SpellV1",
-	SushiswapSpellV1 = "SushiswapSpellV1",
-	BalancerSpellV1 = "BalancerSpellV1",
-	CurveSpellV1 = "CurveSpellV1",
-	IchiVaultSpell = "IchiVaultSpell",
+	UniswapV2SpellV1 = 'UniswapV2SpellV1',
+	SushiswapSpellV1 = 'SushiswapSpellV1',
+	BalancerSpellV1 = 'BalancerSpellV1',
+	CurveSpellV1 = 'CurveSpellV1',
+	IchiVaultSpell = 'IchiVaultSpell',
 
 	// Interface
-	IWETH = "IWETH",
-	IComptroller = "IComptroller",
-	ICEtherEx = "ICEtherEx",
-	ICErc20 = "ICErc20",
-	ICurvePool = "ICurvePool",
-	ICurveRegistry = "ICurveRegistry",
-	IERC20Metadata = "IERC20Metadata",
-	IUniswapV2Pair = "IUniswapV2Pair",
-	IUniswapV2Router02 = "IUniswapV2Router02",
-	IUniswapV3Pool = "IUniswapV3Pool",
+	IWETH = 'IWETH',
+	IComptroller = 'IComptroller',
+	ICEtherEx = 'ICEtherEx',
+	ICErc20 = 'ICErc20',
+	ICurvePool = 'ICurvePool',
+	ICurveRegistry = 'ICurveRegistry',
+	IERC20Metadata = 'IERC20Metadata',
+	IUniswapV2Pair = 'IUniswapV2Pair',
+	IUniswapV2Router02 = 'IUniswapV2Router02',
+	IUniswapV3Pool = 'IUniswapV3Pool',
 	IICHIVault = 'IICHIVault',
 }
 
@@ -103,7 +104,7 @@ export const ADDRESS_GOERLI = {
 	ICHI_VAULT_USDC_BLB: '0xFa77E8Ecda5Cb0a0024eEe778AD7371592Dd8838',
 	ICHI_VAULT_USDC_ALCX: '0xd63fa53d09c29AE49ab3EBD41ea00274c10bb119',
 	ICHI_FARMING: '0x616b9E0598D92DF2c826DeeE5934c43269F9b62A',
-}
+};
 
 export const ADDRESS = {
 	// Tokens
@@ -135,6 +136,7 @@ export const ADDRESS = {
 	crUSDT: '0x797AAB1ce7c01eB727ab980762bA88e7133d2157',
 	cUSDC: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
 	cyUSDC: '0x76Eb2FE28b36B3ee97F3Adae0C69606eeDB2A37c',
+	alETH: '0x0100546f2cd4c9d97f798ffc9755e47865ff7ee6',
 	CHAINLINK_BTC: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
 	CHAINLINK_ETH: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
 	CHAINLINK_USD: '0x0000000000000000000000000000000000000348',
@@ -179,4 +181,4 @@ export const ADDRESS = {
 	// ICHI
 	ICHI_VAULT_USDC: '0x683F081DBC729dbD34AbaC708Fa0B390d49F1c39',
 	ICHI_FARMING: '0x275dfe03bc036257cd0a713ee819dbd4529739c8',
-}
+};
