@@ -639,6 +639,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         amount = doCutDepositFee(token, amount);
         pos.underlyingToken = token;
         pos.underlyingAmount += amount;
+        bank.totalLend += amount;
 
         if (address(ISoftVault(bank.softVault).uToken()) == token) {
             IERC20Upgradeable(token).approve(bank.softVault, amount);
@@ -652,8 +653,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
                 amount
             );
         }
-
-        bank.totalLend += amount;
 
         emit Lend(POSITION_ID, msg.sender, token, amount);
     }
