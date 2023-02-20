@@ -87,6 +87,7 @@ interface IBank {
         uint256 positionSize,
         uint256 underlyingSize
     );
+    event Execute(uint256 positionId, address owner);
 
     /// @dev Return the current position while under execution.
     function POSITION_ID() external view returns (uint256);

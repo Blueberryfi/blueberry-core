@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.16;
-pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MockIchiFarm is Ownable {
     using SafeERC20 for IERC20;
@@ -135,7 +134,7 @@ contract MockIchiFarm is Ownable {
     function add(uint256 allocPoint, IERC20 _lpToken) external onlyOwner {
         require(
             !addedLPs[address(_lpToken)],
-            'ichiFarmV2::there is already a pool with this LP'
+            "ichiFarmV2::there is already a pool with this LP"
         );
         uint256 lastRewardBlock = block.number;
         totalAllocPoint += allocPoint;
@@ -249,7 +248,7 @@ contract MockIchiFarm is Ownable {
         uint256 amount,
         address to
     ) external {
-        require(!nonReentrant, 'ichiFarmV2::nonReentrant - try again');
+        require(!nonReentrant, "ichiFarmV2::nonReentrant - try again");
         nonReentrant = true;
 
         PoolInfo memory pool = updatePool(pid);
@@ -277,7 +276,7 @@ contract MockIchiFarm is Ownable {
         uint256 amount,
         address to
     ) external {
-        require(!nonReentrant, 'ichiFarmV2::nonReentrant - try again');
+        require(!nonReentrant, "ichiFarmV2::nonReentrant - try again");
         nonReentrant = true;
 
         PoolInfo memory pool = updatePool(pid);
@@ -300,7 +299,7 @@ contract MockIchiFarm is Ownable {
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param to Receiver of ICHI rewards.
     function harvest(uint256 pid, address to) external {
-        require(!nonReentrant, 'ichiFarmV2::nonReentrant - try again');
+        require(!nonReentrant, "ichiFarmV2::nonReentrant - try again");
         nonReentrant = true;
 
         PoolInfo memory pool = updatePool(pid);

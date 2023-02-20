@@ -312,26 +312,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         return (bank.isListed, bank.cToken, bank.totalShare);
     }
 
-    function getPositionIdsByOwner(address owner)
-        external
-        view
-        returns (uint256[] memory ids)
-    {
-        uint256[] memory matchingIds = new uint256[](nextPositionId);
-        uint256 index;
-        for (uint256 i = 0; i < nextPositionId; i++) {
-            if (positions[i].owner == owner) {
-                matchingIds[index] = i;
-                index++;
-            }
-        }
-
-        ids = new uint256[](index);
-        for (uint256 i = 0; i < index; i++) {
-            ids[i] = matchingIds[i];
-        }
-    }
-
     /// @dev Return position information for the given position id.
     /// @param positionId The position id to query for position information.
     function getPositionInfo(uint256 positionId)
@@ -608,6 +588,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
+
+        emit Execute(positionId, msg.sender);
 
         return positionId;
     }
