@@ -183,23 +183,21 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /**
      * @dev Add a new bank to the ecosystem.
      * @param token The underlying token for the bank.
-     * @param cToken The address of the cToken smart contract.
      * @param softVault The address of softVault.
      * @param hardVault The address of hardVault.
      */
     function addBank(
         address token,
-        address cToken,
         address softVault,
         address hardVault
     ) external onlyOwner onlyWhitelistedToken(token) {
         if (
             token == address(0) ||
-            cToken == address(0) ||
             softVault == address(0) ||
             hardVault == address(0)
         ) revert ZERO_ADDRESS();
         Bank storage bank = banks[token];
+        address cToken = address(ISoftVault(softVault).cToken());
         if (cTokenInBank[cToken]) revert CTOKEN_ALREADY_ADDED();
         if (bank.isListed) revert BANK_ALREADY_LISTED();
         if (allBanks.length >= 256) revert BANK_LIMIT();
