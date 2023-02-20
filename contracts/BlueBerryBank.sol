@@ -5,7 +5,6 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 import "./utils/BlueBerryConst.sol";
 import "./utils/BlueBerryErrors.sol";
@@ -15,9 +14,7 @@ import "./interfaces/IOracle.sol";
 import "./interfaces/ISoftVault.sol";
 import "./interfaces/IHardVault.sol";
 import "./interfaces/compound/ICErc20.sol";
-import "./interfaces/compound/IComptroller.sol";
 import "./libraries/BBMath.sol";
-import "hardhat/console.sol";
 
 contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     using BBMath for uint256;
@@ -640,6 +637,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         amount = doCutDepositFee(token, amount);
         pos.underlyingToken = token;
         pos.underlyingAmount += amount;
+        bank.totalLend += amount;
 
         if (address(ISoftVault(bank.softVault).uToken()) == token) {
             IERC20Upgradeable(token).approve(bank.softVault, amount);
@@ -653,8 +651,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
                 amount
             );
         }
-
-        bank.totalLend += amount;
 
         emit Lend(POSITION_ID, msg.sender, token, amount);
     }
