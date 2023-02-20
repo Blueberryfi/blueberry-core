@@ -46,10 +46,10 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         address stablePool = stablePools[token];
         if (stablePool == address(0)) revert NO_STABLEPOOL(token);
 
-        address fLiqToken = IUniswapV3Pool(stablePool).token0();
-        address sLiqToken = IUniswapV3Pool(stablePool).token1();
-        sLiqToken = fLiqToken == token ? sLiqToken : fLiqToken; // get stable token address
-        uint256 stableDecimals = uint256(IERC20Metadata(sLiqToken).decimals());
+        address poolToken0 = IUniswapV3Pool(stablePool).token0();
+        address poolToken1 = IUniswapV3Pool(stablePool).token1();
+        poolToken1 = poolToken0 == token ? poolToken1 : poolToken0; // get stable token address
+        uint256 stableDecimals = uint256(IERC20Metadata(poolToken1).decimals());
         uint256 tokenDecimals = uint256(IERC20Metadata(token).decimals());
         (int24 arithmeticMeanTick, ) = UniV3WrappedLibMockup.consult(
             stablePool,
@@ -60,11 +60,11 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
                 arithmeticMeanTick,
                 uint128(10**tokenDecimals),
                 token,
-                sLiqToken
+                poolToken1
             );
 
         return
-            (quoteTokenAmountForStable * base.getPrice(sLiqToken)) /
+            (quoteTokenAmountForStable * base.getPrice(poolToken1)) /
             10**stableDecimals;
     }
 }
