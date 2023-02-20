@@ -36,6 +36,7 @@ contract WIchiFarm is
         address _ichiv1,
         address _ichiFarm
     ) external initializer {
+        __ReentrancyGuard_init();
         __ERC1155_init("WIchiFarm");
         ICHI = IIchiV2(_ichi);
         ICHIv1 = IERC20Upgradeable(_ichiv1);

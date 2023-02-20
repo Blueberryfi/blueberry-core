@@ -17,6 +17,7 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     }
 
     function initialize() external initializer {
+        __ReentrancyGuard_init();
         __ERC1155_init("WERC20");
     }
 
