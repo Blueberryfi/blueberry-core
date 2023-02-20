@@ -55,10 +55,6 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         _;
     }
 
-    constructor() {
-        _disableInitializers();
-    }
-
     function initialize(
         IBank _bank,
         address _werc20,

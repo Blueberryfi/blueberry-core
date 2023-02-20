@@ -38,10 +38,6 @@ contract SoftVault is
         uint256 shareAmount
     );
 
-    constructor() {
-        _disableInitializers();
-    }
-
     function initialize(
         IProtocolConfig _config,
         ICErc20 _cToken,

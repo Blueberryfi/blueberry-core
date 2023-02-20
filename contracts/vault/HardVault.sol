@@ -33,10 +33,6 @@ contract HardVault is
         uint256 shareAmount
     );
 
-    constructor() {
-        _disableInitializers();
-    }
-
     function initialize(IProtocolConfig _config) external initializer {
         __ERC1155_init("HardVault");
         __Ownable_init();
