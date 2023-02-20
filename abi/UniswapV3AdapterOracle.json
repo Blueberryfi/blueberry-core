@@ -118,25 +118,6 @@
         "type": "address"
       }
     ],
-    "name": "SetPoolETH",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "pool",
-        "type": "address"
-      }
-    ],
     "name": "SetPoolStable",
     "type": "event"
   },

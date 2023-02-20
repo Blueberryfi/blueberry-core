@@ -676,11 +676,6 @@
       },
       {
         "internalType": "address",
-        "name": "cToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "softVault",
         "type": "address"
       },
@@ -774,11 +769,6 @@
         "internalType": "address",
         "name": "hardVault",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalDebt",
-        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -940,11 +930,6 @@
         "internalType": "address",
         "name": "cToken",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalDebt",
-        "type": "uint256"
       },
       {
         "internalType": "uint256",

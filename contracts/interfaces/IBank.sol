@@ -12,7 +12,6 @@ interface IBank {
         address cToken; // The CToken to draw liquidity from.
         address softVault;
         address hardVault;
-        uint256 totalDebt; // The last recorded total debt since last action.
         uint256 totalShare; // The total debt share count across all open positions.
         uint256 totalLend; // The total lent amount
     }
@@ -111,7 +110,6 @@ interface IBank {
         returns (
             bool isListed,
             address cToken,
-            uint256 totalDebt,
             uint256 totalShare
         );
 
