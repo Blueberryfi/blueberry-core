@@ -266,28 +266,22 @@ describe('Bank', () => {
 			})
 			it("should be able to add bank", async () => {
 				await expect(
-					bank.connect(alice).addBank(USDC, CUSDC, usdcSoftVault.address, hardVault.address)
+					bank.connect(alice).addBank(USDC, usdcSoftVault.address, hardVault.address)
 				).to.be.revertedWith("Ownable: caller is not the owner");
 
 				await expect(
-					bank.addBank(ethers.constants.AddressZero, CUSDC, usdcSoftVault.address, hardVault.address)
+					bank.addBank(ethers.constants.AddressZero, usdcSoftVault.address, hardVault.address)
 				).to.be.revertedWith("TOKEN_NOT_WHITELISTED");
 				await expect(
-					bank.addBank(USDC, ethers.constants.AddressZero, usdcSoftVault.address, hardVault.address)
+					bank.addBank(USDC, ethers.constants.AddressZero, hardVault.address)
 				).to.be.revertedWith("ZERO_ADDRESS");
 				await expect(
-					bank.addBank(USDC, CUSDC, ethers.constants.AddressZero, hardVault.address)
-				).to.be.revertedWith("ZERO_ADDRESS");
-				await expect(
-					bank.addBank(USDC, CUSDC, usdcSoftVault.address, ethers.constants.AddressZero)
+					bank.addBank(USDC, usdcSoftVault.address, ethers.constants.AddressZero)
 				).to.be.revertedWith("ZERO_ADDRESS");
 
 				await expect(
-					bank.addBank(USDC, CUSDC, usdcSoftVault.address, hardVault.address)
+					bank.addBank(USDC, usdcSoftVault.address, hardVault.address)
 				).to.be.revertedWith("CTOKEN_ALREADY_ADDED");
-				await expect(
-					bank.addBank(USDC, ADDRESS.bCRV, usdcSoftVault.address, hardVault.address)
-				).to.be.revertedWith("BANK_ALREADY_LISTED");
 			})
 			it("should be able to set bank status", async () => {
 				let bankStatus = await bank.bankStatus();

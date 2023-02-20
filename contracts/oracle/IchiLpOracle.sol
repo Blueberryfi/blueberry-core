@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import './UsingBaseOracle.sol';
-import '../interfaces/IBaseOracle.sol';
-import '../interfaces/ichi/IICHIVault.sol';
+import "./UsingBaseOracle.sol";
+import "../interfaces/IBaseOracle.sol";
+import "../interfaces/ichi/IICHIVault.sol";
 
 contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}

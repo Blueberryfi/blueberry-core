@@ -232,7 +232,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
     "ibUSDC"
   ])
   await usdcSoftVault.deployed();
-  await bank.addBank(USDC, CUSDC, usdcSoftVault.address, hardVault.address);
+  await bank.addBank(USDC, usdcSoftVault.address, hardVault.address);
 
   ichiSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
     config.address,
@@ -241,7 +241,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
     "ibICHI"
   ]);
   await ichiSoftVault.deployed();
-  await bank.addBank(ICHI, CICHI, ichiSoftVault.address, hardVault.address);
+  await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address);
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits("500", 6));
