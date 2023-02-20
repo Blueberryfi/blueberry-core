@@ -19,9 +19,6 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     IWERC20 public werc20;
     address public weth;
 
-    /// @dev Mapping from token to (mapping from spender to approve status)
-    mapping(address => mapping(address => bool)) public approved;
-
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
@@ -36,19 +33,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         werc20 = IWERC20(_werc20);
         weth = _weth;
 
-        ensureApprove(_weth, address(_bank));
         IWERC20(_werc20).setApprovalForAll(address(_bank), true);
-    }
-
-    /// @dev Ensure that the spell has approved the given spender to spend all of its tokens.
-    /// @param token The token to approve.
-    /// @param spender The spender to allow spending.
-    /// NOTE: This is safe because spell is never built to hold fund custody.
-    function ensureApprove(address token, address spender) internal {
-        if (!approved[token][spender]) {
-            IERC20Upgradeable(token).safeApprove(spender, type(uint256).max);
-            approved[token][spender] = true;
-        }
     }
 
     /// @dev Internal call to refund tokens to the current bank executor.
@@ -107,7 +92,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param amount The amount to repay.
     function doRepay(address token, uint256 amount) internal {
         if (amount > 0) {
-            ensureApprove(token, address(bank));
+            IERC20Upgradeable(token).safeApprove(address(bank), amount);
             bank.repay(token, amount);
         }
     }
@@ -117,7 +102,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param amount The amount to put in the bank.
     function doPutCollateral(address token, uint256 amount) internal {
         if (amount > 0) {
-            ensureApprove(token, address(werc20));
+            IERC20Upgradeable(token).safeApprove(address(werc20), amount);
             werc20.mint(token, amount);
             bank.putCollateral(
                 address(werc20),

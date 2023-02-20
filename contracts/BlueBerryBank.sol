@@ -680,10 +680,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         uint256 wAmount;
         if (address(ISoftVault(bank.softVault).uToken()) == token) {
-            ISoftVault(bank.softVault).approve(
-                bank.softVault,
-                type(uint256).max
-            );
+            ISoftVault(bank.softVault).approve(bank.softVault, shareAmount);
             wAmount = ISoftVault(bank.softVault).withdraw(shareAmount);
         } else {
             wAmount = IHardVault(bank.hardVault).withdraw(token, shareAmount);

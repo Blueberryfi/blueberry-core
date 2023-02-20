@@ -87,9 +87,6 @@ describe("SoftVault", () => {
 			expect(await vault.uToken()).to.be.equal(USDC);
 			expect(await vault.cToken()).to.be.equal(CUSDC);
 		})
-		it("should grant max allowance of uToken to cToken address", async () => {
-			expect(await usdc.allowance(vault.address, CUSDC)).to.be.equal(ethers.constants.MaxUint256);
-		})
 	})
 	describe("Deposit", () => {
 		const depositAmount = utils.parseUnits("100", 6);

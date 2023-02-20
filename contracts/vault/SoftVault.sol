@@ -52,7 +52,6 @@ contract SoftVault is
         config = _config;
         cToken = _cToken;
         uToken = _uToken;
-        _uToken.safeApprove(address(_cToken), type(uint256).max);
     }
 
     function decimals() public view override returns (uint8) {
@@ -76,6 +75,7 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         uint256 cBalanceBefore = cToken.balanceOf(address(this));
+        uToken.safeApprove(address(cToken), amount);
         if (cToken.mint(uBalanceAfter - uBalanceBefore) != 0)
             revert LEND_FAILED(amount);
         uint256 cBalanceAfter = cToken.balanceOf(address(this));
