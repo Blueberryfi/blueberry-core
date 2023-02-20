@@ -12,6 +12,10 @@ import "../interfaces/IWERC20.sol";
 contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize() external initializer {
         __ERC1155_init("WERC20");
     }

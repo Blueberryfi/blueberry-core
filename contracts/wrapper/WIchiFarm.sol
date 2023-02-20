@@ -27,6 +27,10 @@ contract WIchiFarm is
     IIchiV2 public ICHI;
     IIchiFarm public ichiFarm;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         address _ichi,
         address _ichiv1,

@@ -27,6 +27,10 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
     mapping(address => TokenSetting) public tokenSettings; // Mapping from token address to oracle info.
     mapping(address => bool) public whitelistedERC1155; // Mapping from token address to whitelist status
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize() external initializer {
         __Ownable_init();
     }

@@ -25,6 +25,10 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     /// @dev $BLB liquidity pool against stablecoins
     address public blbStabilityPool;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(address treasury_) external initializer {
         __Ownable_init();
         if (treasury_ == address(0)) revert ZERO_ADDRESS();

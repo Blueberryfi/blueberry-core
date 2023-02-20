@@ -85,6 +85,10 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @dev Initialize the bank smart contract, using msg.sender as the first governor.
     /// @param _oracle The oracle smart contract address.
     /// @param _config The Protocol config address
