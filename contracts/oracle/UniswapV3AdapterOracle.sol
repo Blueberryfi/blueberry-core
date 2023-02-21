@@ -8,7 +8,6 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 import "./BaseAdapter.sol";
 import "./UsingBaseOracle.sol";
-import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 
@@ -26,10 +25,10 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         external
         onlyOwner
     {
-        if (tokens.length != pools.length) revert INPUT_ARRAY_MISMATCH();
+        if (tokens.length != pools.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             if (tokens[idx] == address(0) || pools[idx] == address(0))
-                revert ZERO_ADDRESS();
+                revert Errors.ZERO_ADDRESS();
             stablePools[tokens[idx]] = pools[idx];
             emit SetPoolStable(tokens[idx], pools[idx]);
         }
@@ -40,10 +39,10 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     function getPrice(address token) external view override returns (uint256) {
         // Maximum cap of maxDelayTime is 2 days(172,800), safe to convert
         uint32 secondsAgo = uint32(maxDelayTimes[token]);
-        if (secondsAgo == 0) revert NO_MEAN(token);
+        if (secondsAgo == 0) revert Errors.NO_MEAN(token);
 
         address stablePool = stablePools[token];
-        if (stablePool == address(0)) revert NO_STABLEPOOL(token);
+        if (stablePool == address(0)) revert Errors.NO_STABLEPOOL(token);
 
         address poolToken0 = IUniswapV3Pool(stablePool).token0();
         address poolToken1 = IUniswapV3Pool(stablePool).token1();

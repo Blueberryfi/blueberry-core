@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../utils/BlueBerryErrors.sol";
+import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IBaseOracle.sol";
 
 contract MockOracle is IBaseOracle, Ownable {
@@ -26,7 +26,7 @@ contract MockOracle is IBaseOracle, Ownable {
         external
         onlyOwner
     {
-        if (tokens.length != pxs.length) revert INPUT_ARRAY_MISMATCH();
+        if (tokens.length != pxs.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             prices[tokens[idx]] = pxs[idx];
             emit SetPrice(tokens[idx], pxs[idx]);

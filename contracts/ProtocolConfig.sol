@@ -4,8 +4,8 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./utils/BlueBerryConst.sol";
-import "./utils/BlueBerryErrors.sol";
+import "./utils/BlueBerryConst.sol" as Constants;
+import "./utils/BlueBerryErrors.sol" as Errors;
 import "./interfaces/IProtocolConfig.sol";
 
 contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
@@ -27,7 +27,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
 
     function initialize(address treasury_) external initializer {
         __Ownable_init();
-        if (treasury_ == address(0)) revert ZERO_ADDRESS();
+        if (treasury_ == address(0)) revert Errors.ZERO_ADDRESS();
         treasury = treasury_;
 
         depositFee = 50; // 0.5% as default, base 10000
@@ -49,13 +49,13 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
      */
     function setDepositFee(uint256 depositFee_) external onlyOwner {
         // Cap to 20%
-        if (depositFee_ > 2000) revert FEE_TOO_HIGH(depositFee_);
+        if (depositFee_ > 2000) revert Errors.FEE_TOO_HIGH(depositFee_);
         depositFee = depositFee_;
     }
 
     function setWithdrawFee(uint256 withdrawFee_) external onlyOwner {
         // Cap to 20%
-        if (withdrawFee_ > 2000) revert FEE_TOO_HIGH(withdrawFee_);
+        if (withdrawFee_ > 2000) revert Errors.FEE_TOO_HIGH(withdrawFee_);
         withdrawFee = withdrawFee_;
     }
 
@@ -66,25 +66,25 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     ) external onlyOwner {
         if (
             (treasuryFeeRate_ + blbStablePoolFeeRate_ + blbIchiVaultFeeRate_) !=
-            DENOMINATOR
-        ) revert INVALID_FEE_DISTRIBUTION();
+            Constants.DENOMINATOR
+        ) revert Errors.INVALID_FEE_DISTRIBUTION();
         treasuryFeeRate = treasuryFeeRate_;
         blbStablePoolFeeRate = blbStablePoolFeeRate_;
         blbIchiVaultFeeRate = blbIchiVaultFeeRate_;
     }
 
     function setTreasuryWallet(address treasury_) external onlyOwner {
-        if (treasury_ == address(0)) revert ZERO_ADDRESS();
+        if (treasury_ == address(0)) revert Errors.ZERO_ADDRESS();
         treasury = treasury_;
     }
 
     function setBlbUsdcIchiVault(address vault_) external onlyOwner {
-        if (vault_ == address(0)) revert ZERO_ADDRESS();
+        if (vault_ == address(0)) revert Errors.ZERO_ADDRESS();
         blbUsdcIchiVault = vault_;
     }
 
     function setBlbStabilityPool(address pool_) external onlyOwner {
-        if (pool_ == address(0)) revert ZERO_ADDRESS();
+        if (pool_ == address(0)) revert Errors.ZERO_ADDRESS();
         blbStabilityPool = pool_;
     }
 }

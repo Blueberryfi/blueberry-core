@@ -3,7 +3,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../utils/BlueBerryErrors.sol";
+import "../utils/BlueBerryErrors.sol" as Errors;
 
 abstract contract BaseAdapter is Ownable {
     /// @dev Mapping from token address to max delay time
@@ -18,11 +18,13 @@ abstract contract BaseAdapter is Ownable {
         address[] calldata tokens,
         uint256[] calldata maxDelays
     ) external onlyOwner {
-        if (tokens.length != maxDelays.length) revert INPUT_ARRAY_MISMATCH();
+        if (tokens.length != maxDelays.length)
+            revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (maxDelays[idx] > 2 days) revert TOO_LONG_DELAY(maxDelays[idx]);
-            if (maxDelays[idx] < 10) revert TOO_LOW_MEAN(maxDelays[idx]);
-            if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
+            if (maxDelays[idx] > 2 days)
+                revert Errors.TOO_LONG_DELAY(maxDelays[idx]);
+            if (maxDelays[idx] < 10) revert Errors.TOO_LOW_MEAN(maxDelays[idx]);
+            if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
             maxDelayTimes[tokens[idx]] = maxDelays[idx];
             emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
         }

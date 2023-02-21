@@ -5,8 +5,8 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "../utils/BlueBerryConst.sol";
-import "../utils/BlueBerryErrors.sol";
+import "../utils/BlueBerryConst.sol" as Constants;
+import "../utils/BlueBerryErrors.sol" as Errors;
 import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
@@ -48,11 +48,13 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @dev Internal call to refund tokens to the current bank executor.
     /// @param token The token to perform the refund action.
     function doCutRewardsFee(address token) internal {
-        if (bank.config().treasury() == address(0)) revert NO_TREASURY_SET();
+        if (bank.config().treasury() == address(0))
+            revert Errors.NO_TREASURY_SET();
 
         uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
         if (balance > 0) {
-            uint256 fee = (balance * bank.config().depositFee()) / DENOMINATOR;
+            uint256 fee = (balance * bank.config().depositFee()) /
+                Constants.DENOMINATOR;
             IERC20Upgradeable(token).safeTransfer(
                 bank.config().treasury(),
                 fee
@@ -124,6 +126,6 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
 
     /// @dev Fallback function. Can only receive ETH from WETH contract.
     receive() external payable {
-        if (msg.sender != weth) revert NOT_FROM_WETH(msg.sender);
+        if (msg.sender != weth) revert Errors.NOT_FROM_WETH(msg.sender);
     }
 }

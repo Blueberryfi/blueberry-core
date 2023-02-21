@@ -7,8 +7,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol";
-import "../utils/BlueBerryErrors.sol";
+import "../utils/BlueBerryConst.sol" as Constants;
+import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/IHardVault.sol";
 
@@ -36,7 +36,7 @@ contract HardVault is
     function initialize(IProtocolConfig _config) external initializer {
         __ERC1155_init("HardVault");
         __Ownable_init();
-        if (address(_config) == address(0)) revert ZERO_ADDRESS();
+        if (address(_config) == address(0)) revert Errors.ZERO_ADDRESS();
         config = _config;
     }
 
@@ -56,7 +56,7 @@ contract HardVault is
     /// @param id token id (corresponds to token address for wrapped ERC20)
     function getUnderlyingToken(uint256 id) external pure returns (address) {
         address token = address(uint160(id));
-        if (uint256(uint160(token)) != id) revert INVALID_TOKEN_ID(id);
+        if (uint256(uint160(token)) != id) revert Errors.INVALID_TOKEN_ID(id);
         return token;
     }
 
@@ -71,7 +71,7 @@ contract HardVault is
         nonReentrant
         returns (uint256 shareAmount)
     {
-        if (amount == 0) revert ZERO_AMOUNT();
+        if (amount == 0) revert Errors.ZERO_AMOUNT();
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         uToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -94,7 +94,7 @@ contract HardVault is
         nonReentrant
         returns (uint256 withdrawAmount)
     {
-        if (shareAmount == 0) revert ZERO_AMOUNT();
+        if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         _burn(msg.sender, uint256(uint160(token)), shareAmount);
         withdrawAmount = shareAmount;
@@ -106,7 +106,7 @@ contract HardVault is
                 config.withdrawVaultFeeWindow()
         ) {
             uint256 fee = (withdrawAmount * config.withdrawVaultFee()) /
-                DENOMINATOR;
+                Constants.DENOMINATOR;
             uToken.safeTransfer(config.treasury(), fee);
             withdrawAmount -= fee;
         }

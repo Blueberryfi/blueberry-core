@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../utils/BlueBerryErrors.sol";
+import "../utils/BlueBerryErrors.sol" as Errors;
 import "../libraries/BBMath.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/IERC20Wrapper.sol";
@@ -47,9 +47,9 @@ contract WIchiFarm is
         pure
         returns (uint256 id)
     {
-        if (pid >= (1 << 16)) revert BAD_PID(pid);
+        if (pid >= (1 << 16)) revert Errors.BAD_PID(pid);
         if (ichiPerShare >= (1 << 240))
-            revert BAD_REWARD_PER_SHARE(ichiPerShare);
+            revert Errors.BAD_REWARD_PER_SHARE(ichiPerShare);
         return (pid << 240) | ichiPerShare;
     }
 

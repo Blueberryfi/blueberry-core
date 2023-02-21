@@ -3,7 +3,6 @@
 pragma solidity 0.8.16;
 
 import "./BaseAdapter.sol";
-import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/band/IStdReference.sol";
 
@@ -16,7 +15,7 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     event SetSymbol(address token, string symbol);
 
     constructor(IStdReference _ref) {
-        if (address(_ref) == address(0)) revert ZERO_ADDRESS();
+        if (address(_ref) == address(0)) revert Errors.ZERO_ADDRESS();
 
         ref = _ref;
     }
@@ -24,7 +23,7 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     /// @dev Set standard reference source
     /// @param _ref Standard reference source
     function setRef(IStdReference _ref) external onlyOwner {
-        if (address(_ref) == address(0)) revert ZERO_ADDRESS();
+        if (address(_ref) == address(0)) revert Errors.ZERO_ADDRESS();
         ref = _ref;
         emit SetRef(address(_ref));
     }
@@ -36,9 +35,9 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
         external
         onlyOwner
     {
-        if (syms.length != tokens.length) revert INPUT_ARRAY_MISMATCH();
+        if (syms.length != tokens.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < syms.length; idx++) {
-            if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
+            if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
 
             symbols[tokens[idx]] = syms[idx];
             emit SetSymbol(tokens[idx], syms[idx]);
@@ -50,8 +49,8 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     function getPrice(address token) external view override returns (uint256) {
         string memory sym = symbols[token];
         uint256 maxDelayTime = maxDelayTimes[token];
-        if (bytes(sym).length == 0) revert NO_SYM_MAPPING(token);
-        if (maxDelayTime == 0) revert NO_MAX_DELAY(token);
+        if (bytes(sym).length == 0) revert Errors.NO_SYM_MAPPING(token);
+        if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
 
         IStdReference.ReferenceData memory data = ref.getReferenceData(
             sym,
@@ -60,7 +59,7 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
         if (
             data.lastUpdatedBase < block.timestamp - maxDelayTime ||
             data.lastUpdatedQuote < block.timestamp - maxDelayTime
-        ) revert PRICE_OUTDATED(token);
+        ) revert Errors.PRICE_OUTDATED(token);
 
         return data.rate;
     }
