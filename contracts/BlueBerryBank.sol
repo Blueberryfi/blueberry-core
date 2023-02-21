@@ -265,35 +265,32 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         return ICErc20(banks[token].cToken).borrowBalanceStored(address(this));
     }
 
-    /// @dev Return the borrow balance for given position and token without triggering interest accrual.
-    /// @param positionId The position to query for borrow balance.
-    /// @param token The token to query for borrow balance.
-    function borrowBalanceStored(uint256 positionId, address token)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        uint256 totalDebt = _borrowBalanceStored(token);
-        uint256 totalShare = banks[token].totalShare;
-        uint256 share = positions[positionId].debtShareOf[token];
-        if (share == 0 || totalDebt == 0) {
-            return 0;
-        } else {
-            return (share * totalDebt).divCeil(totalShare);
-        }
-    }
-
     /// @dev Trigger interest accrual and return the current borrow balance.
     /// @param positionId The position to query for borrow balance.
-    /// @param token The token to query for borrow balance.
-    function borrowBalanceCurrent(uint256 positionId, address token)
+    function currentPositionDebt(uint256 positionId)
         external
         override
-        poke(token)
+        poke(positions[positionId].debtToken)
         returns (uint256)
     {
-        return borrowBalanceStored(positionId, token);
+        return getPositionDebt(positionId);
+    }
+
+    /// @dev Return the debt of given position.
+    /// @param positionId position id to get debts of
+    function getPositionDebt(uint256 positionId)
+        public
+        view
+        returns (uint256 debt)
+    {
+        Position memory pos = positions[positionId];
+        Bank memory bank = banks[pos.debtToken];
+        if (pos.debtShare == 0 || bank.totalShare == 0) {
+            return 0;
+        }
+        debt = (pos.debtShare * _borrowBalanceStored(pos.debtToken)).divCeil(
+            bank.totalShare
+        );
     }
 
     /// @dev Return bank information for the given token.
@@ -312,32 +309,13 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         return (bank.isListed, bank.cToken, bank.totalShare);
     }
 
-    /// @dev Return position information for the given position id.
-    /// @param positionId The position id to query for position information.
     function getPositionInfo(uint256 positionId)
-        public
+        external
         view
         override
-        returns (
-            address owner,
-            address underlyingToken,
-            uint256 underlyingAmount,
-            uint256 underlyingVaultShare,
-            address collToken,
-            uint256 collId,
-            uint256 collateralSize,
-            uint256 risk
-        )
+        returns (Position memory)
     {
-        Position storage pos = positions[positionId];
-        owner = pos.owner;
-        underlyingToken = pos.underlyingToken;
-        underlyingAmount = pos.underlyingAmount;
-        underlyingVaultShare = pos.underlyingVaultShare;
-        collToken = pos.collToken;
-        collId = pos.collId;
-        collateralSize = pos.collateralSize;
-        risk = getPositionRisk(positionId);
+        return positions[positionId];
     }
 
     /// @dev Return current position information
@@ -345,65 +323,10 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         external
         view
         override
-        returns (
-            address owner,
-            address underlyingToken,
-            uint256 underlyingAmount,
-            uint256 underlyingVaultShare,
-            address collToken,
-            uint256 collId,
-            uint256 collateralSize,
-            uint256 risk
-        )
+        returns (Position memory)
     {
         if (POSITION_ID == _NO_ID) revert BAD_POSITION(POSITION_ID);
-        return getPositionInfo(POSITION_ID);
-    }
-
-    /// @dev Return the debt share of the given bank token for the given position id.
-    /// @param positionId position id to get debt of
-    /// @param token ERC20 debt token to query
-    function getPositionDebtShareOf(uint256 positionId, address token)
-        external
-        view
-        returns (uint256)
-    {
-        return positions[positionId].debtShareOf[token];
-    }
-
-    /// @dev Return the list of all debts for the given position id.
-    /// @param positionId position id to get debts of
-    function getPositionDebts(uint256 positionId)
-        external
-        view
-        returns (address[] memory tokens, uint256[] memory debts)
-    {
-        Position storage pos = positions[positionId];
-        uint256 count = 0;
-        uint256 bitMap = pos.debtMap;
-        while (bitMap > 0) {
-            if ((bitMap & 1) != 0) {
-                count++;
-            }
-            bitMap >>= 1;
-        }
-        tokens = new address[](count);
-        debts = new uint256[](count);
-        bitMap = pos.debtMap;
-        count = 0;
-        uint256 idx = 0;
-        while (bitMap > 0) {
-            if ((bitMap & 1) != 0) {
-                address token = allBanks[idx];
-                Bank storage bank = banks[token];
-                tokens[count] = token;
-                debts[count] = (pos.debtShareOf[token] *
-                    _borrowBalanceStored(token)).divCeil(bank.totalShare);
-                count++;
-            }
-            idx++;
-            bitMap >>= 1;
-        }
+        return positions[POSITION_ID];
     }
 
     /**
@@ -432,26 +355,11 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         public
         view
         override
-        returns (uint256)
+        returns (uint256 debtValue)
     {
-        uint256 value = 0;
-        Position storage pos = positions[positionId];
-        uint256 bitMap = pos.debtMap;
-        uint256 idx = 0;
-        while (bitMap > 0) {
-            if ((bitMap & 1) != 0) {
-                address token = allBanks[idx];
-                uint256 share = pos.debtShareOf[token];
-                Bank storage bank = banks[token];
-                uint256 debt = (share * _borrowBalanceStored(token)).divCeil(
-                    bank.totalShare
-                );
-                value += oracle.getDebtValue(token, debt);
-            }
-            idx++;
-            bitMap >>= 1;
-        }
-        return value;
+        Position memory pos = positions[positionId];
+        uint256 debt = getPositionDebt(positionId);
+        debtValue = oracle.getDebtValue(pos.debtToken, debt);
     }
 
     function getPositionRisk(uint256 positionId)
@@ -495,11 +403,12 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     ) external override lock poke(debtToken) {
         if (amountCall == 0) revert ZERO_AMOUNT();
         if (!isLiquidatable(positionId)) revert NOT_LIQUIDATABLE(positionId);
+
         Position storage pos = positions[positionId];
         Bank memory bank = banks[pos.underlyingToken];
         if (pos.collToken == address(0)) revert BAD_COLLATERAL(positionId);
 
-        uint256 oldShare = pos.debtShareOf[debtToken];
+        uint256 oldShare = pos.debtShare;
         (uint256 amountPaid, uint256 share) = repayInternal(
             positionId,
             debtToken,
@@ -612,6 +521,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             // already have isolated collateral, allow same isolated collateral
             if (pos.underlyingToken != token)
                 revert INCORRECT_UNDERLYING(token);
+        } else {
+            pos.underlyingToken = token;
         }
 
         IERC20Upgradeable(token).safeTransferFrom(
@@ -620,7 +531,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             amount
         );
         amount = doCutDepositFee(token, amount);
-        pos.underlyingToken = token;
         pos.underlyingAmount += amount;
         bank.totalLend += amount;
 
@@ -692,17 +602,20 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         if (!isBorrowAllowed()) revert BORROW_NOT_ALLOWED();
         Bank storage bank = banks[token];
         Position storage pos = positions[POSITION_ID];
+        if (pos.debtToken != address(0)) {
+            // already have some debts, allow same debt token
+            if (pos.debtToken != token) revert INCORRECT_DEBT(token);
+        } else {
+            pos.debtToken = token;
+        }
+
         uint256 totalShare = bank.totalShare;
         uint256 totalDebt = _borrowBalanceStored(token);
         uint256 share = totalShare == 0
             ? amount
             : (amount * totalShare).divCeil(totalDebt);
         bank.totalShare += share;
-        uint256 newShare = pos.debtShareOf[token] + share;
-        pos.debtShareOf[token] = newShare;
-        if (newShare > 0) {
-            pos.debtMap |= (1 << uint256(bank.index));
-        }
+        pos.debtShare += share;
         IERC20Upgradeable(token).safeTransfer(
             msg.sender,
             doBorrow(token, amount)
@@ -740,9 +653,10 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     ) internal returns (uint256, uint256) {
         Bank storage bank = banks[token];
         Position storage pos = positions[positionId];
+        if (pos.debtToken != token) revert INCORRECT_DEBT(token);
         uint256 totalShare = bank.totalShare;
         uint256 totalDebt = _borrowBalanceStored(token);
-        uint256 oldShare = pos.debtShareOf[token];
+        uint256 oldShare = pos.debtShare;
         uint256 oldDebt = (oldShare * totalDebt).divCeil(totalShare);
         if (amountCall == type(uint256).max) {
             amountCall = oldDebt;
@@ -753,12 +667,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 lessShare = paid == oldDebt
             ? oldShare
             : (paid * totalShare) / totalDebt;
-        bank.totalShare = totalShare - lessShare;
-        uint256 newShare = oldShare - lessShare;
-        pos.debtShareOf[token] = newShare;
-        if (newShare == 0) {
-            pos.debtMap &= ~(1 << uint256(bank.index));
-        }
+        bank.totalShare -= lessShare;
+        pos.debtShare -= lessShare;
         return (paid, lessShare);
     }
 

@@ -164,13 +164,12 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         external
         view
         override
-        returns (uint256)
+        returns (uint256 debtValue)
     {
         TokenSetting memory tokenSetting = tokenSettings[token];
         if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(token);
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
-        uint256 debtValue = (_getPrice(token) * amount) / 10**decimals;
-        return debtValue;
+        debtValue = (_getPrice(token) * amount) / 10**decimals;
     }
 
     /**
@@ -183,6 +182,8 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         view
         returns (uint256 collateralValue)
     {
+        TokenSetting memory tokenSetting = tokenSettings[token];
+        if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(token);
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         collateralValue = (_getPrice(token) * amount) / 10**decimals;
     }

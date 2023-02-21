@@ -79,6 +79,25 @@
       {
         "indexed": false,
         "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "Execute",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "positionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
         "name": "caller",
         "type": "address"
       },
@@ -348,54 +367,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "positionId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "borrowBalanceCurrent",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "positionId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "borrowBalanceStored",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "config",
     "outputs": [
@@ -406,6 +377,25 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "positionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "currentPositionDebt",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -442,44 +432,56 @@
     "name": "getCurrentPositionInfo",
     "outputs": [
       {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "underlyingToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "underlyingAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "underlyingVaultShare",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "collId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "collateralSize",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "risk",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "underlyingToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "debtToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "underlyingAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "underlyingVaultShare",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralSize",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "debtShare",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IBank.Position",
+        "name": "",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -515,44 +517,56 @@
     "name": "getPositionInfo",
     "outputs": [
       {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "underlyingToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "underlyingAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "underlyingVaultShare",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "collId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "collateralSize",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "risk",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "underlyingToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "debtToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "underlyingAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "underlyingVaultShare",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralSize",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "debtShare",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IBank.Position",
+        "name": "",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",

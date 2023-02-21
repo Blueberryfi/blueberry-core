@@ -135,8 +135,6 @@ describe('Bank', () => {
 			)
 		})
 		it("should be able to liquidate the position => (OV - PV)/CV = LT", async () => {
-			const positionIds = await bank.getPositionIdsByOwner(admin.address);
-			console.log(positionIds);
 			await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
 			let positionInfo = await bank.getPositionInfo(1);
 			let debtValue = await bank.getDebtValue(1)
@@ -186,8 +184,8 @@ describe('Bank', () => {
 
 			const colToken = await ethers.getContractAt("ERC1155Upgradeable", positionInfo.collToken);
 			const uVToken = await ethers.getContractAt("ERC20Upgradeable", ichiSoftVault.address);
-			console.log("Liquidator's Position Balance:", await colToken.balanceOf(alice.address, positionInfo.collId));
-			console.log("Liquidator's Collateral Balance:", await uVToken.balanceOf(alice.address));
+			console.log("Liquidator's Position Balance:", utils.formatUnits(await colToken.balanceOf(alice.address, positionInfo.collId)));
+			console.log("Liquidator's Collateral Balance:", utils.formatUnits(await uVToken.balanceOf(alice.address)));
 
 			console.log("===Full Liquidate===");
 			await usdc.connect(alice).approve(bank.address, ethers.constants.MaxUint256)

@@ -20,12 +20,12 @@ interface IBank {
         address owner; // The owner of this position.
         address collToken; // The ERC1155 token used as collateral for this position.
         address underlyingToken;
+        address debtToken;
         uint256 underlyingAmount;
         uint256 underlyingVaultShare;
         uint256 collId; // The token id used as collateral.
         uint256 collateralSize; // The size of collateral token for this position.
-        uint256 debtMap; // Bitmap of nonzero debt. i^th bit is set iff debt share of i^th bank is nonzero.
-        mapping(address => uint256) debtShareOf; // The debt share for each token.
+        uint256 debtShare; // The debt share for each token.
     }
 
     /// The governor adds a new bank gets added to the system.
@@ -121,48 +121,18 @@ interface IBank {
         view
         returns (uint256);
 
-    /// @dev Return position information for the given position id.
     function getPositionInfo(uint256 positionId)
         external
         view
-        returns (
-            address owner,
-            address underlyingToken,
-            uint256 underlyingAmount,
-            uint256 underlyingVaultShare,
-            address collToken,
-            uint256 collId,
-            uint256 collateralSize,
-            uint256 risk
-        );
+        returns (Position memory);
 
     /// @dev Return current position information.
-    function getCurrentPositionInfo()
-        external
-        view
-        returns (
-            address owner,
-            address underlyingToken,
-            uint256 underlyingAmount,
-            uint256 underlyingVaultShare,
-            address collToken,
-            uint256 collId,
-            uint256 collateralSize,
-            uint256 risk
-        );
+    function getCurrentPositionInfo() external view returns (Position memory);
 
     function support(address token) external view returns (bool);
 
-    /// @dev Return the borrow balance for given positon and token without trigger interest accrual.
-    function borrowBalanceStored(uint256 positionId, address token)
-        external
-        view
-        returns (uint256);
-
     /// @dev Trigger interest accrual and return the current borrow balance.
-    function borrowBalanceCurrent(uint256 positionId, address token)
-        external
-        returns (uint256);
+    function currentPositionDebt(uint256 positionId) external returns (uint256);
 
     /// @dev Lend tokens from the bank.
     function lend(address token, uint256 amount) external;

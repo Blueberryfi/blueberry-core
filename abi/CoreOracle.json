@@ -224,7 +224,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "debtValue",
         "type": "uint256"
       }
     ],

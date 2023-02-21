@@ -330,16 +330,11 @@ describe('ICHI Angel Vaults Spell', () => {
 			const bankInfo = await bank.getBankInfo(USDC);
 			console.log(bankInfo);
 
-			const debt = await bank.getPositionDebts(positionId);
-			expect(debt.debts.length).to.be.equal(1);
-
-			const debtShare = await bank.getPositionDebtShareOf(positionId, USDC);
-			expect(debtShare).to.be.equal(borrowAmount);
-
 			expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(3));
 			const pos = await bank.positions(positionId);
 			expect(pos.owner).to.be.equal(admin.address);
 			expect(pos.collToken).to.be.equal(wichi.address);
+			expect(pos.debtToken).to.be.equal(USDC);
 			const poolInfo = await ichiFarm.poolInfo(ICHI_VAULT_PID);
 			const collId = await wichi.encodeId(ICHI_VAULT_PID, poolInfo.accIchiPerShare);
 			expect(pos.collId).to.be.equal(collId);

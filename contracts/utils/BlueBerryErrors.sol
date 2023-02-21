@@ -48,6 +48,7 @@ error INCORRECT_LP(address lpToken);
 error INCORRECT_PID(uint256 pid);
 error INCORRECT_COLTOKEN(address colToken);
 error INCORRECT_UNDERLYING(address uToken);
+error INCORRECT_DEBT(address debtToken);
 error NOT_FROM_UNIV3(address sender);
 
 // Vault
