@@ -105,7 +105,8 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
 
         if (
             debtValue >
-            (uValue * maxLTV[strategyId][pos.underlyingToken]) / DENOMINATOR
+            (uValue * maxLTV[strategyId][pos.underlyingToken]) /
+                Constants.DENOMINATOR
         ) revert Errors.EXCEED_MAX_LTV();
     }
 

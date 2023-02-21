@@ -610,7 +610,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         Position storage pos = positions[POSITION_ID];
         if (pos.debtToken != address(0)) {
             // already have some debts, allow same debt token
-            if (pos.debtToken != token) revert INCORRECT_DEBT(token);
+            if (pos.debtToken != token) revert Errors.INCORRECT_DEBT(token);
         } else {
             pos.debtToken = token;
         }
@@ -659,7 +659,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     ) internal returns (uint256, uint256) {
         Bank storage bank = banks[token];
         Position storage pos = positions[positionId];
-        if (pos.debtToken != token) revert INCORRECT_DEBT(token);
+        if (pos.debtToken != token) revert Errors.INCORRECT_DEBT(token);
         uint256 totalShare = bank.totalShare;
         uint256 totalDebt = _borrowBalanceStored(token);
         uint256 oldShare = pos.debtShare;

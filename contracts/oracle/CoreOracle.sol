@@ -190,7 +190,8 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         returns (uint256 collateralValue)
     {
         TokenSetting memory tokenSetting = tokenSettings[token];
-        if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(token);
+        if (tokenSetting.route == address(0))
+            revert Errors.NO_ORACLE_ROUTE(token);
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         collateralValue = (_getPrice(token) * amount) / 10**decimals;
     }
