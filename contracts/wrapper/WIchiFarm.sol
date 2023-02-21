@@ -91,18 +91,12 @@ contract WIchiFarm is
             address(this),
             amount
         );
-        if (
-            IERC20Upgradeable(lpToken).allowance(
-                address(this),
-                address(ichiFarm)
-            ) != type(uint256).max
-        ) {
-            // We only need to do this once per pool, as LP token's allowance won't decrease if it's -1.
-            IERC20Upgradeable(lpToken).safeApprove(
-                address(ichiFarm),
-                type(uint256).max
-            );
-        }
+
+        _ensureApprove(
+            IERC20Upgradeable(lpToken),
+            address(ichiFarm),
+            type(uint256).max
+        );
         ichiFarm.deposit(pid, amount, address(this));
         (uint256 ichiPerShare, , ) = ichiFarm.poolInfo(pid);
         uint256 id = encodeId(pid, ichiPerShare);
@@ -131,7 +125,11 @@ contract WIchiFarm is
 
         // Convert Legacy ICHI to ICHI v2
         if (ichiRewards > 0) {
-            ICHIv1.safeApprove(address(ICHI), ichiRewards);
+            _ensureApprove(
+                IERC20Upgradeable(ICHIv1),
+                address(ICHI),
+                ichiRewards
+            );
             ICHI.convertToV2(ichiRewards);
         }
 
@@ -148,5 +146,18 @@ contract WIchiFarm is
             ICHI.safeTransfer(msg.sender, enIchi - stIchi);
         }
         return pid;
+    }
+
+    /// @dev Ensure token approve
+    /// @param token IERC20Upgradeable token address
+    /// @param spender Token spender address
+    /// @param amount Token amount to approve
+    function _ensureApprove(
+        IERC20Upgradeable token,
+        address spender,
+        uint256 amount
+    ) internal {
+        if (IERC20Upgradeable(token).allowance(address(this), spender) < amount)
+            IERC20Upgradeable(token).safeApprove(spender, amount);
     }
 }
