@@ -523,9 +523,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             ""
         );
         // Transfer underlying collaterals(vault share tokens) to liquidator
-        if (
-            address(ISoftVault(bank.softVault).uToken()) == pos.underlyingToken
-        ) {
+        if (isSoftVault(pos.underlyingToken)) {
             IERC20Upgradeable(bank.softVault).safeTransfer(
                 msg.sender,
                 uVaultShare
@@ -626,7 +624,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         pos.underlyingAmount += amount;
         bank.totalLend += amount;
 
-        if (address(ISoftVault(bank.softVault).uToken()) == token) {
+        if (isSoftVault(token)) {
             IERC20Upgradeable(token).approve(bank.softVault, amount);
             pos.underlyingVaultShare += ISoftVault(bank.softVault).deposit(
                 amount
@@ -661,7 +659,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         }
 
         uint256 wAmount;
-        if (address(ISoftVault(bank.softVault).uToken()) == token) {
+        if (isSoftVault(token)) {
             ISoftVault(bank.softVault).approve(bank.softVault, shareAmount);
             wAmount = ISoftVault(bank.softVault).withdraw(shareAmount);
         } else {
@@ -930,5 +928,10 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             id
         );
         return balanceAfter - balanceBefore;
+    }
+
+    function isSoftVault(address token) internal view returns (bool) {
+        Bank storage bank = banks[token];
+        return address(ISoftVault(bank.softVault).uToken()) == token;
     }
 }
