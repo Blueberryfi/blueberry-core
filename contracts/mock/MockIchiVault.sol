@@ -128,7 +128,8 @@ contract MockIchiVault is
     uint32 public twapPeriod;
 
     /**
-     @notice creates an instance of ICHIVault based on the pool. allowToken parameters control whether the ICHIVault allows one-sided or two-sided liquidity provision
+     @notice creates an instance of ICHIVault based on the pool. 
+            allowToken parameters control whether the ICHIVault allows one-sided or two-sided liquidity provision
      @param _pool Uniswap V3 pool for which liquidity is managed
      @param _allowToken0 flag that indicates whether token0 is accepted during deposit
      @param _allowToken1 flag that indicates whether token1 is accepted during deposit
@@ -182,7 +183,8 @@ contract MockIchiVault is
     }
 
     /**
-     @notice Distributes shares to depositor equal to the token1 value of his deposit multiplied by the ratio of total liquidity shares issued divided by the pool's AUM measured in token1 value. 
+     @notice Distributes shares to depositor equal to the token1 value of his deposit multiplied 
+            by the ratio of total liquidity shares issued divided by the pool's AUM measured in token1 value. 
      @param deposit0 Amount of token0 transfered from sender to ICHIVault
      @param deposit1 Amount of token0 transfered from sender to ICHIVault
      @param to Address to which liquidity tokens are minted
@@ -285,7 +287,8 @@ contract MockIchiVault is
     }
 
     /**
-     @notice Redeems shares by sending out a percentage of the ICHIVault's AUM - this percentage is equal to the percentage of total issued shares represented by the redeeemed shares.
+     @notice Redeems shares by sending out a percentage of the ICHIVault's AUM - 
+            this percentage is equal to the percentage of total issued shares represented by the redeeemed shares.
      @param shares Number of liquidity tokens to redeem as pool assets
      @param to Address to which redeemed pool assets are sent
      @param amount0 Amount of token0 redeemed by the submitted liquidity tokens
@@ -335,12 +338,17 @@ contract MockIchiVault is
 
     /**
      @notice Updates ICHIVault's LP positions.
-     @dev The base position is placed first with as much liquidity as possible and is typically symmetric around the current price. This order should use up all of one token, leaving some unused quantity of the other. This unused amount is then placed as a single-sided order.
+     @dev The base position is placed first with as much liquidity as possible and
+        is typically symmetric around the current price.
+        This order should use up all of one token, leaving some unused quantity of the other.
+        This unused amount is then placed as a single-sided order.
      @param _baseLower The lower tick of the base position
      @param _baseUpper The upper tick of the base position
      @param _limitLower The lower tick of the limit position
      @param _limitUpper The upper tick of the limit position
-     @param swapQuantity Quantity of tokens to swap; if quantity is positive, `swapQuantity` token0 are swaped for token1, if negative, `swapQuantity` token1 is swaped for token0
+     @param swapQuantity Quantity of tokens to swap;
+        if quantity is positive, `swapQuantity` token0 are swaped for token1,
+        if negative, `swapQuantity` token1 is swaped for token0
      */
     function rebalance(
         int24 _baseLower,
@@ -477,7 +485,8 @@ contract MockIchiVault is
      @param tickUpper The upper tick of the liquidity position
      @param liquidity amount of liquidity to burn
      @param to The account to receive token0 and token1 amounts
-     @param collectAll Flag that indicates whether all token0 and token1 tokens should be collected or only the ones released during this burn
+     @param collectAll Flag that indicates whether all token0 and token1 tokens should be collected 
+                        or only the ones released during this burn
      @param amount0 released amount of token0
      @param amount1 released amount of token1
      */
@@ -640,7 +649,8 @@ contract MockIchiVault is
     }
 
     /**
-     @notice Sets the hysteresis threshold (in percentage points, 10**16 = 1%). When difference between spot price and TWAP exceeds the threshold, a check for a flashloan attack is executed
+     @notice Sets the hysteresis threshold (in percentage points, 10**16 = 1%).
+        When difference between spot price and TWAP exceeds the threshold, a check for a flashloan attack is executed
      @dev onlyOwner
      @param _hysteresis hysteresis threshold
      */

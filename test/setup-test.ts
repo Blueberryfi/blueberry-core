@@ -119,7 +119,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
       UniV3WrappedLibMockup: LibInstance.address
     }
   });
-  ichi_USDC_ICHI_Vault = await IchiVault.deploy(
+  ichi_USDC_ICHI_Vault = <MockIchiVault>await IchiVault.deploy(
     ADDRESS.UNI_V3_ICHI_USDC,
     true,
     true,
