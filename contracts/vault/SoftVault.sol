@@ -7,8 +7,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol";
-import "../utils/BlueBerryErrors.sol";
+import "../utils/BlueBerryConst.sol" as Constants;
+import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/ISoftVault.sol";
 import "../interfaces/compound/ICErc20.sol";
@@ -47,7 +47,7 @@ contract SoftVault is
         __ERC20_init(_name, _symbol);
         __Ownable_init();
         if (address(_cToken) == address(0) || address(_config) == address(0))
-            revert ZERO_ADDRESS();
+            revert Errors.ZERO_ADDRESS();
         IERC20Upgradeable _uToken = IERC20Upgradeable(_cToken.underlying());
         config = _config;
         cToken = _cToken;
@@ -69,7 +69,7 @@ contract SoftVault is
         nonReentrant
         returns (uint256 shareAmount)
     {
-        if (amount == 0) revert ZERO_AMOUNT();
+        if (amount == 0) revert Errors.ZERO_AMOUNT();
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         uToken.safeTransferFrom(msg.sender, address(this), amount);
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
@@ -77,7 +77,7 @@ contract SoftVault is
         uint256 cBalanceBefore = cToken.balanceOf(address(this));
         uToken.safeApprove(address(cToken), amount);
         if (cToken.mint(uBalanceAfter - uBalanceBefore) != 0)
-            revert LEND_FAILED(amount);
+            revert Errors.LEND_FAILED(amount);
         uint256 cBalanceAfter = cToken.balanceOf(address(this));
 
         shareAmount = cBalanceAfter - cBalanceBefore;
@@ -97,12 +97,13 @@ contract SoftVault is
         nonReentrant
         returns (uint256 withdrawAmount)
     {
-        if (shareAmount == 0) revert ZERO_AMOUNT();
+        if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
 
         _burn(msg.sender, shareAmount);
 
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        if (cToken.redeem(shareAmount) != 0) revert REDEEM_FAILED(shareAmount);
+        if (cToken.redeem(shareAmount) != 0)
+            revert Errors.REDEEM_FAILED(shareAmount);
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
@@ -113,7 +114,7 @@ contract SoftVault is
                 config.withdrawVaultFeeWindow()
         ) {
             uint256 fee = (withdrawAmount * config.withdrawVaultFee()) /
-                DENOMINATOR;
+                Constants.DENOMINATOR;
             uToken.safeTransfer(config.treasury(), fee);
             withdrawAmount -= fee;
         }

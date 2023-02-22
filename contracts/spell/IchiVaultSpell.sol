@@ -8,7 +8,6 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
 
 import "./BasicSpell.sol";
-import "../utils/BlueBerryConst.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IWIchiFarm.sol";
@@ -43,14 +42,14 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
 
     modifier existingStrategy(uint256 strategyId) {
         if (strategyId >= strategies.length)
-            revert STRATEGY_NOT_EXIST(address(this), strategyId);
+            revert Errors.STRATEGY_NOT_EXIST(address(this), strategyId);
 
         _;
     }
 
     modifier existingCollateral(uint256 strategyId, address col) {
         if (maxLTV[strategyId][col] == 0)
-            revert COLLATERAL_NOT_EXIST(strategyId, col);
+            revert Errors.COLLATERAL_NOT_EXIST(strategyId, col);
 
         _;
     }
@@ -74,8 +73,8 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param maxPosSize, USD price based maximum size of a position for given vault, based 1e18
      */
     function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
-        if (vault == address(0)) revert ZERO_ADDRESS();
-        if (maxPosSize == 0) revert ZERO_AMOUNT();
+        if (vault == address(0)) revert Errors.ZERO_ADDRESS();
+        if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));
         emit StrategyAdded(strategies.length - 1, vault, maxPosSize);
     }
@@ -86,11 +85,11 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256[] memory maxLTVs
     ) external existingStrategy(strategyId) onlyOwner {
         if (collaterals.length != maxLTVs.length || collaterals.length == 0)
-            revert INPUT_ARRAY_MISMATCH();
+            revert Errors.INPUT_ARRAY_MISMATCH();
 
         for (uint256 i = 0; i < collaterals.length; i++) {
-            if (collaterals[i] == address(0)) revert ZERO_ADDRESS();
-            if (maxLTVs[i] == 0) revert ZERO_AMOUNT();
+            if (collaterals[i] == address(0)) revert Errors.ZERO_ADDRESS();
+            if (maxLTVs[i] == 0) revert Errors.ZERO_AMOUNT();
             maxLTV[strategyId][collaterals[i]] = maxLTVs[i];
         }
 
@@ -106,8 +105,9 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
 
         if (
             debtValue >
-            (uValue * maxLTV[strategyId][pos.underlyingToken]) / DENOMINATOR
-        ) revert EXCEED_MAX_LTV();
+            (uValue * maxLTV[strategyId][pos.underlyingToken]) /
+                Constants.DENOMINATOR
+        ) revert Errors.EXCEED_MAX_LTV();
     }
 
     /**
@@ -151,7 +151,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 curPosSize = (lpPrice * vault.balanceOf(address(this))) /
             10**IICHIVault(strategy.vault).decimals();
         if (curPosSize > strategy.maxPositionSize)
-            revert EXCEED_MAX_POS_SIZE(strategyId);
+            revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
     }
 
     /**
@@ -208,7 +208,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
     {
         Strategy memory strategy = strategies[strategyId];
         address lpToken = wIchiFarm.ichiFarm().lpToken(farmingPid);
-        if (strategy.vault != lpToken) revert INCORRECT_LP(lpToken);
+        if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         // 1-3 Deposit on ichi vault
         depositInternal(
@@ -226,9 +226,10 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 collSize = pos.collateralSize;
         if (collSize > 0) {
             (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
-            if (farmingPid != decodedPid) revert INCORRECT_PID(farmingPid);
+            if (farmingPid != decodedPid)
+                revert Errors.INCORRECT_PID(farmingPid);
             if (posCollToken != address(wIchiFarm))
-                revert INCORRECT_COLTOKEN(posCollToken);
+                revert Errors.INCORRECT_COLTOKEN(posCollToken);
             bank.takeCollateral(collSize);
             wIchiFarm.burn(collId, collSize);
         }
@@ -377,9 +378,9 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
         if (IWIchiFarm(posCollToken).getUnderlyingToken(collId) != vault)
-            revert INCORRECT_UNDERLYING(vault);
+            revert Errors.INCORRECT_UNDERLYING(vault);
         if (posCollToken != address(wIchiFarm))
-            revert INCORRECT_COLTOKEN(posCollToken);
+            revert Errors.INCORRECT_COLTOKEN(posCollToken);
 
         // 1. Take out collateral
         bank.takeCollateral(lpTakeAmt);
@@ -405,7 +406,8 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         int256 amount1Delta,
         bytes calldata data
     ) external override {
-        if (msg.sender != address(swapPool)) revert NOT_FROM_UNIV3(msg.sender);
+        if (msg.sender != address(swapPool))
+            revert Errors.NOT_FROM_UNIV3(msg.sender);
         address payer = abi.decode(data, (address));
 
         if (amount0Delta > 0) {

@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../utils/BlueBerryErrors.sol";
+import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IBaseOracle.sol";
 
 contract AggregatorOracle is IBaseOracle, Ownable {
@@ -47,7 +47,7 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         if (
             tokens.length != allSources.length ||
             tokens.length != maxPriceDeviationList.length
-        ) revert INPUT_ARRAY_MISMATCH();
+        ) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             _setPrimarySources(
                 tokens[idx],
@@ -66,17 +66,18 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         uint256 maxPriceDeviation,
         IBaseOracle[] memory sources
     ) internal {
-        if (token == address(0)) revert ZERO_ADDRESS();
+        if (token == address(0)) revert Errors.ZERO_ADDRESS();
         if (
             maxPriceDeviation < MIN_PRICE_DEVIATION ||
             maxPriceDeviation > MAX_PRICE_DEVIATION
-        ) revert OUT_OF_DEVIATION_CAP(maxPriceDeviation);
-        if (sources.length > 3) revert EXCEED_SOURCE_LEN(sources.length);
+        ) revert Errors.OUT_OF_DEVIATION_CAP(maxPriceDeviation);
+        if (sources.length > 3) revert Errors.EXCEED_SOURCE_LEN(sources.length);
 
         primarySourceCount[token] = sources.length;
         maxPriceDeviations[token] = maxPriceDeviation;
         for (uint256 idx = 0; idx < sources.length; idx++) {
-            if (address(sources[idx]) == address(0)) revert ZERO_ADDRESS();
+            if (address(sources[idx]) == address(0))
+                revert Errors.ZERO_ADDRESS();
             primarySources[token][idx] = sources[idx];
         }
         emit SetPrimarySources(token, maxPriceDeviation, sources);
@@ -87,7 +88,7 @@ contract AggregatorOracle is IBaseOracle, Ownable {
     /// NOTE: Support at most 3 oracle sources per token
     function getPrice(address token) external view override returns (uint256) {
         uint256 candidateSourceCount = primarySourceCount[token];
-        if (candidateSourceCount == 0) revert NO_PRIMARY_SOURCE(token);
+        if (candidateSourceCount == 0) revert Errors.NO_PRIMARY_SOURCE(token);
         uint256[] memory prices = new uint256[](candidateSourceCount);
 
         // Get valid oracle sources
@@ -99,7 +100,7 @@ contract AggregatorOracle is IBaseOracle, Ownable {
                 prices[validSourceCount++] = px;
             } catch {}
         }
-        if (validSourceCount == 0) revert NO_VALID_SOURCE(token);
+        if (validSourceCount == 0) revert Errors.NO_VALID_SOURCE(token);
         for (uint256 i = 0; i < validSourceCount - 1; i++) {
             for (uint256 j = 0; j < validSourceCount - i - 1; j++) {
                 if (prices[j] > prices[j + 1]) {
@@ -118,12 +119,12 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         //     --> if all within threshold, return median
         //     --> if one pair within threshold, return average of the pair
         //     --> if none, revert
-        // - revert otherwise
+        // - revert Errors.otherwise
         if (validSourceCount == 1) {
             return prices[0]; // if 1 valid source, return
         } else if (validSourceCount == 2) {
             if ((prices[1] * 1e18) / prices[0] > maxPriceDeviation)
-                revert EXCEED_DEVIATION();
+                revert Errors.EXCEED_DEVIATION();
             return (prices[0] + prices[1]) / 2; // if 2 valid sources, return average
         } else {
             bool midMinOk = (prices[1] * 1e18) / prices[0] <= maxPriceDeviation;
@@ -135,7 +136,7 @@ contract AggregatorOracle is IBaseOracle, Ownable {
             } else if (maxMidOk) {
                 return (prices[1] + prices[2]) / 2; // return average of pair within thresh
             } else {
-                revert EXCEED_DEVIATION();
+                revert Errors.EXCEED_DEVIATION();
             }
         }
     }

@@ -5,7 +5,6 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "./BaseAdapter.sol";
-import "../utils/BlueBerryErrors.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/chainlink/IFeedRegistry.sol";
 
@@ -27,7 +26,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     );
 
     constructor(IFeedRegistry registry_) {
-        if (address(registry_) == address(0)) revert ZERO_ADDRESS();
+        if (address(registry_) == address(0)) revert Errors.ZERO_ADDRESS();
 
         registry = registry_;
     }
@@ -35,7 +34,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     /// @dev Set chainlink feed registry source
     /// @param _registry Chainlink feed registry source
     function setFeedRegistry(IFeedRegistry _registry) external onlyOwner {
-        if (address(_registry) == address(0)) revert ZERO_ADDRESS();
+        if (address(_registry) == address(0)) revert Errors.ZERO_ADDRESS();
         registry = _registry;
         emit SetRegistry(address(_registry));
     }
@@ -49,10 +48,11 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         address[] calldata _remappedTokens
     ) external onlyOwner {
         if (_remappedTokens.length != _tokens.length)
-            revert INPUT_ARRAY_MISMATCH();
+            revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < _tokens.length; idx++) {
-            if (_remappedTokens[idx] == address(0)) revert ZERO_ADDRESS();
-            if (_tokens[idx] == address(0)) revert ZERO_ADDRESS();
+            if (_remappedTokens[idx] == address(0))
+                revert Errors.ZERO_ADDRESS();
+            if (_tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
             remappedTokens[_tokens[idx]] = _remappedTokens[idx];
             emit SetTokenRemapping(_tokens[idx], _remappedTokens[idx]);
         }
@@ -69,7 +69,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         if (token == address(0)) token = _token;
 
         uint256 maxDelayTime = maxDelayTimes[token];
-        if (maxDelayTime == 0) revert NO_MAX_DELAY(_token);
+        if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(_token);
 
         // try to get token-USD price
         uint256 decimals = registry.decimals(token, USD);
@@ -78,7 +78,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
             USD
         );
         if (updatedAt < block.timestamp - maxDelayTime)
-            revert PRICE_OUTDATED(_token);
+            revert Errors.PRICE_OUTDATED(_token);
 
         return (answer.toUint256() * 1e18) / 10**decimals;
     }

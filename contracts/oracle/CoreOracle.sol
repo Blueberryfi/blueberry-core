@@ -5,8 +5,8 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol";
-import "../utils/BlueBerryErrors.sol";
+import "../utils/BlueBerryConst.sol" as Constants;
+import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IOracle.sol";
 import "../interfaces/IERC20Wrapper.sol";
 
@@ -38,10 +38,11 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         external
         onlyOwner
     {
-        if (tokens.length != routes.length) revert INPUT_ARRAY_MISMATCH();
+        if (tokens.length != routes.length)
+            revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             if (tokens[idx] == address(0) || routes[idx] == address(0))
-                revert ZERO_ADDRESS();
+                revert Errors.ZERO_ADDRESS();
 
             tokenSettings[tokens[idx]].route = routes[idx];
             emit SetRoute(tokens[idx], routes[idx]);
@@ -55,14 +56,17 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         address[] memory tokens,
         TokenSetting[] memory settings
     ) external onlyOwner {
-        if (tokens.length != settings.length) revert INPUT_ARRAY_MISMATCH();
+        if (tokens.length != settings.length)
+            revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             if (tokens[idx] == address(0) || settings[idx].route == address(0))
-                revert ZERO_ADDRESS();
-            if (settings[idx].liqThreshold > DENOMINATOR)
-                revert LIQ_THRESHOLD_TOO_HIGH(settings[idx].liqThreshold);
-            if (settings[idx].liqThreshold < MIN_LIQ_THRESHOLD)
-                revert LIQ_THRESHOLD_TOO_LOW(settings[idx].liqThreshold);
+                revert Errors.ZERO_ADDRESS();
+            if (settings[idx].liqThreshold > Constants.DENOMINATOR)
+                revert Errors.LIQ_THRESHOLD_TOO_HIGH(
+                    settings[idx].liqThreshold
+                );
+            if (settings[idx].liqThreshold < Constants.MIN_LIQ_THRESHOLD)
+                revert Errors.LIQ_THRESHOLD_TOO_LOW(settings[idx].liqThreshold);
             tokenSettings[tokens[idx]] = settings[idx];
             emit SetTokenSetting(tokens[idx], settings[idx]);
         }
@@ -85,7 +89,7 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         onlyOwner
     {
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (tokens[idx] == address(0)) revert ZERO_ADDRESS();
+            if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
             whitelistedERC1155[tokens[idx]] = ok;
             emit SetWhitelist(tokens[idx], ok);
         }
@@ -93,7 +97,7 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
 
     function _getPrice(address token) internal view returns (uint256) {
         uint256 px = IBaseOracle(tokenSettings[token].route).getPrice(token);
-        if (px == 0) revert PRICE_FAILED(token);
+        if (px == 0) revert Errors.PRICE_FAILED(token);
         return px;
     }
 
@@ -144,10 +148,12 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         uint256 id,
         uint256 amount
     ) external view override returns (uint256) {
-        if (!whitelistedERC1155[token]) revert ERC1155_NOT_WHITELISTED(token);
+        if (!whitelistedERC1155[token])
+            revert Errors.ERC1155_NOT_WHITELISTED(token);
         address uToken = IERC20Wrapper(token).getUnderlyingToken(id);
         TokenSetting memory tokenSetting = tokenSettings[uToken];
-        if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(uToken);
+        if (tokenSetting.route == address(0))
+            revert Errors.NO_ORACLE_ROUTE(uToken);
 
         // Underlying token is LP token, and it always has 18 decimals
         // so skipped getting LP decimals
@@ -167,7 +173,8 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         returns (uint256 debtValue)
     {
         TokenSetting memory tokenSetting = tokenSettings[token];
-        if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(token);
+        if (tokenSetting.route == address(0))
+            revert Errors.NO_ORACLE_ROUTE(token);
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         debtValue = (_getPrice(token) * amount) / 10**decimals;
     }
@@ -183,7 +190,8 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         returns (uint256 collateralValue)
     {
         TokenSetting memory tokenSetting = tokenSettings[token];
-        if (tokenSetting.route == address(0)) revert NO_ORACLE_ROUTE(token);
+        if (tokenSetting.route == address(0))
+            revert Errors.NO_ORACLE_ROUTE(token);
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         collateralValue = (_getPrice(token) * amount) / 10**decimals;
     }
