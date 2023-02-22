@@ -4,6 +4,7 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 import "./BaseAdapter.sol";
@@ -12,6 +13,8 @@ import "../interfaces/IBaseOracle.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 
 contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
+    using SafeCast for uint256;
+
     event SetPoolStable(address token, address pool);
 
     mapping(address => address) public stablePools; // Mapping from token address to token/(USDT/USDC/DAI) pool address
@@ -38,7 +41,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     /// @param token The ERC-20 token to check the value.
     function getPrice(address token) external view override returns (uint256) {
         // Maximum cap of maxDelayTime is 2 days(172,800), safe to convert
-        uint32 secondsAgo = uint32(maxDelayTimes[token]);
+        uint32 secondsAgo = maxDelayTimes[token].toUint32();
         if (secondsAgo == 0) revert Errors.NO_MEAN(token);
 
         address stablePool = stablePools[token];
@@ -60,7 +63,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         uint256 quoteTokenAmountForStable = UniV3WrappedLibMockup
             .getQuoteAtTick(
                 arithmeticMeanTick,
-                uint128(10**tokenDecimals),
+                uint256(10**tokenDecimals).toUint128(),
                 token,
                 stablePoolToken
             );

@@ -90,3 +90,6 @@ error INVALID_UTOKEN(address uToken);
 // Config
 error INVALID_FEE_DISTRIBUTION();
 error NO_TREASURY_SET();
+
+// Utilities
+error CAST();
