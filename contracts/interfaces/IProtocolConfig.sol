@@ -7,6 +7,8 @@ interface IProtocolConfig {
 
     function withdrawFee() external view returns (uint256);
 
+    function rewardFee() external view returns (uint256);
+
     function treasury() external view returns (address);
 
     function withdrawVaultFee() external view returns (uint256);

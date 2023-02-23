@@ -9,9 +9,12 @@ import "./utils/BlueBerryErrors.sol" as Errors;
 import "./interfaces/IProtocolConfig.sol";
 
 contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
+    // Leveraging Fee
     uint256 public depositFee;
     uint256 public withdrawFee;
+    uint256 public rewardFee;
 
+    // Liquidity Vault (SoftVault/HardVault) Fee
     uint256 public withdrawVaultFee;
     uint256 public withdrawVaultFeeWindow;
     uint256 public withdrawVaultFeeWindowStartTime;
@@ -32,6 +35,8 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
 
         depositFee = 50; // 0.5% as default, base 10000
         withdrawFee = 50; // 0.5% as default, base 10000
+        rewardFee = 1000; // 10% as default, base 10000
+
         treasuryFeeRate = 3000; // 30% of deposit/withdraw fee => 0.15%
         blbStablePoolFeeRate = 3500; //  35% of deposit/withdraw fee => 0.175%
         blbIchiVaultFeeRate = 3500; //  35% of deposit/withdraw fee => 0.175%
@@ -57,6 +62,12 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         // Cap to 20%
         if (withdrawFee_ > 2000) revert Errors.FEE_TOO_HIGH(withdrawFee_);
         withdrawFee = withdrawFee_;
+    }
+
+    function setRewardFee(uint256 rewardFee_) external onlyOwner {
+        // Cap to 20%
+        if (rewardFee_ > 2000) revert Errors.FEE_TOO_HIGH(rewardFee_);
+        rewardFee = rewardFee_;
     }
 
     function setFeeDistribution(

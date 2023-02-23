@@ -53,7 +53,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
 
         uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
         if (balance > 0) {
-            uint256 fee = (balance * bank.config().depositFee()) /
+            uint256 fee = (balance * bank.config().rewardFee()) /
                 Constants.DENOMINATOR;
             IERC20Upgradeable(token).safeTransfer(
                 bank.config().treasury(),

@@ -4,7 +4,7 @@ import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import {
 	BlueBerryBank,
-	IchiVaultSpell,
+	IchiSpell,
 	IWETH,
 	MockOracle,
 	WERC20,
@@ -15,7 +15,7 @@ import {
 	MockIchiV2,
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import SpellABI from '../../abi/IchiVaultSpell.json';
+import SpellABI from '../../abi/IchiSpell.json';
 
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
@@ -47,7 +47,7 @@ describe('ICHI Angel Vaults Spell', () => {
 	let weth: IWETH;
 	let werc20: WERC20;
 	let mockOracle: MockOracle;
-	let spell: IchiVaultSpell;
+	let spell: IchiSpell;
 	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
 	let ichiFarm: MockIchiFarm;
@@ -501,12 +501,12 @@ describe('ICHI Angel Vaults Spell', () => {
 	})
 
 	describe("Owner Functions", () => {
-		let spell: IchiVaultSpell;
+		let spell: IchiSpell;
 		const maxPosSize = utils.parseEther("200000");
 
 		beforeEach(async () => {
-			const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
-			spell = <IchiVaultSpell>await upgrades.deployProxy(ICHISpell, [
+			const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
+			spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
 				bank.address,
 				werc20.address,
 				WETH,

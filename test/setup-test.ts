@@ -4,7 +4,7 @@ import { ethers, upgrades } from 'hardhat';
 import {
   BlueBerryBank,
   CoreOracle,
-  IchiVaultSpell,
+  IchiSpell,
   IWETH,
   MockOracle,
   SoftVault,
@@ -41,7 +41,7 @@ export interface Protocol {
   oracle: CoreOracle,
   config: ProtocolConfig,
   bank: BlueBerryBank,
-  spell: IchiVaultSpell,
+  spell: IchiSpell,
   usdcSoftVault: SoftVault,
   ichiSoftVault: SoftVault,
   hardVault: HardVault,
@@ -61,7 +61,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
   let mockOracle: MockOracle;
   let ichiOracle: IchiVaultOracle;
   let oracle: CoreOracle;
-  let spell: IchiVaultSpell;
+  let spell: IchiSpell;
   let config: ProtocolConfig;
   let bank: BlueBerryBank;
   let usdcSoftVault: SoftVault;
@@ -196,8 +196,8 @@ export const setupProtocol = async (): Promise<Protocol> => {
   ]);
   await wichi.deployed();
 
-  const ICHISpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
-  spell = <IchiVaultSpell>await upgrades.deployProxy(ICHISpell, [
+  const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
+  spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
     bank.address,
     werc20.address,
     WETH,

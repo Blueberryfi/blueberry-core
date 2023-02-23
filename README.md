@@ -24,7 +24,7 @@ The protocol is integrated with existing lending protocol. Whenever a user wants
 ### Component Interaction Flow
 
 1. User -> BlueberryBank.
-   User calls `execute` to BlueberryBank, specifying which spell and function to use, e.g. `depositInternal` using IchiVaultSpell.
+   User calls `execute` to BlueberryBank, specifying which spell and function to use, e.g. `depositInternal` using IchiSpell.
 2. BlueberryBank -> Spell
 3. Spell may call BlueberryBank to e.g. `doBorrow` funds and `doRepay` debt. Funders are then sent to Spell. to execute pool interaction.   
 4. Spells -> Pools   
@@ -37,9 +37,9 @@ The protocol is integrated with existing lending protocol. Whenever a user wants
 
 ### putCollateral
 
-1. User calls `execute(0, USDT, WETH, data)` on BlueberryBank contract. `data` encodes IchiVaultSpell function call with arguments (including how much of each asset to supply, to borrow, and slippage control settings).
-2. BlueberryBank uses data call to encoded `putCollateral` function call with arguments) to IchiVaultSpell.
-3. IchiVaultSpell executes `putCollateralWERC20`
+1. User calls `execute(0, USDT, WETH, data)` on BlueberryBank contract. `data` encodes IchiSpell function call with arguments (including how much of each asset to supply, to borrow, and slippage control settings).
+2. BlueberryBank uses data call to encoded `putCollateral` function call with arguments) to IchiSpell.
+3. IchiSpell executes `putCollateralWERC20`
   - `doBorrow` from the lending protocol
   - Optimally swap assets and add liquidity to Uniswap pool
   - Wrap LP tokens to wrapper WERC20 (toget ERC 1155)

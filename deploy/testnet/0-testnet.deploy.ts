@@ -2,8 +2,8 @@ import fs from 'fs';
 import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades, network } from 'hardhat';
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../constant';
-import SpellABI from '../../abi/IchiVaultSpell.json';
-import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiVaultOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, MockIchiFarm, MockIchiVault, ProtocolConfig, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
+import SpellABI from '../../abi/IchiSpell.json';
+import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiVaultOracle, IchiSpell, IICHIVault, MockFeedRegistry, MockIchiFarm, MockIchiVault, ProtocolConfig, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
 
 const deploymentPath = "./deployments";
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
@@ -190,8 +190,8 @@ async function main(): Promise<void> {
 	)
 
 	// Ichi Vault Spell
-	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
-	const ichiSpell = <IchiVaultSpell>await upgrades.deployProxy(IchiVaultSpell, [
+	const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
+	const ichiSpell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
 		deployment.BlueBerryBank,
 		deployment.WERC20,
 		ADDRESS_GOERLI.WETH,

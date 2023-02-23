@@ -1,15 +1,15 @@
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../constant";
-import { IchiVaultSpell } from "../../typechain-types";
+import { IchiSpell } from "../../typechain-types";
 import { deployment, writeDeployments } from '../../utils';
 
 async function main(): Promise<void> {
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 
-	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
+	const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
 
-	const spell = <IchiVaultSpell>await upgrades.deployProxy(IchiVaultSpell, [
+	const spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
 		deployment.BlueBerryBank,
 		deployment.WERC20,
 		ADDRESS_GOERLI.WETH,

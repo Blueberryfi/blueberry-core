@@ -5,7 +5,7 @@ import { ethers, upgrades } from 'hardhat';
 import {
 	BlueBerryBank,
 	CoreOracle,
-	IchiVaultSpell,
+	IchiSpell,
 	IWETH,
 	SoftVault,
 	MockOracle,
@@ -20,7 +20,7 @@ import {
 	HardVault
 } from '../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../constant';
-import SpellABI from '../abi/IchiVaultSpell.json';
+import SpellABI from '../abi/IchiSpell.json';
 
 import { solidity } from 'ethereum-waffle'
 import { near } from './assertions/near'
@@ -51,7 +51,7 @@ describe('Bank', () => {
 	let mockOracle: MockOracle;
 	let ichiOracle: IchiVaultOracle;
 	let oracle: CoreOracle;
-	let spell: IchiVaultSpell;
+	let spell: IchiSpell;
 	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
 	let config: ProtocolConfig;

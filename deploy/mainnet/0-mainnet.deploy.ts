@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiVaultOracle, IchiVaultSpell, ProtocolConfig, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
+import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiVaultOracle, IchiSpell, ProtocolConfig, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
 
 async function main(): Promise<void> {
 	const [deployer] = await ethers.getSigners();
@@ -88,8 +88,8 @@ async function main(): Promise<void> {
 	await wichiFarm.deployed();
 
 	// Ichi Vault Spell
-	const IchiVaultSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultSpell);
-	const ichiSpell = <IchiVaultSpell>await IchiVaultSpell.deploy(
+	const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
+	const ichiSpell = <IchiSpell>await IchiSpell.deploy(
 		bank.address,
 		werc20.address,
 		ADDRESS.WETH,

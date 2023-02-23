@@ -13,7 +13,7 @@ import "../interfaces/IOracle.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
-contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
+contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     struct Strategy {
