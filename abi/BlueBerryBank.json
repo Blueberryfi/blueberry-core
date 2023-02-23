@@ -187,11 +187,6 @@
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "NO_TREASURY_SET",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -913,6 +908,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "feeManager",
+    "outputs": [
+      {
+        "internalType": "contract IFeeManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -1147,12 +1155,17 @@
     "inputs": [
       {
         "internalType": "contract IOracle",
-        "name": "_oracle",
+        "name": "oracle_",
         "type": "address"
       },
       {
         "internalType": "contract IProtocolConfig",
-        "name": "_config",
+        "name": "config_",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IFeeManager",
+        "name": "feeManager_",
         "type": "address"
       }
     ],

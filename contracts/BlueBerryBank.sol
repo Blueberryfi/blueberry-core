@@ -27,12 +27,15 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
     uint256 public _GENERAL_LOCK; // TEMPORARY: re-entrancy lock guard.
     uint256 public _IN_EXEC_LOCK; // TEMPORARY: exec lock guard.
-    uint256 public override POSITION_ID; // TEMPORARY: position ID currently under execution.
-    address public override SPELL; // TEMPORARY: spell currently under execution.
+    uint256 public POSITION_ID; // TEMPORARY: position ID currently under execution.
+    address public SPELL; // TEMPORARY: spell currently under execution.
 
     IProtocolConfig public config;
     IOracle public oracle; // The oracle address for determining prices.
-    uint256 public override nextPositionId; // Next available position ID, starting from 1 (see initialize).
+    IFeeManager public feeManager;
+
+    uint256 public nextPositionId; // Next available position ID, starting from 1 (see initialize).
+    uint256 public bankStatus; // Each bit stores certain bank status, e.g. borrow allowed, repay allowed
 
     address[] public allBanks; // The list of all listed banks.
     mapping(address => Bank) public banks; // Mapping from token to bank data.
@@ -43,8 +46,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     mapping(address => bool) public whitelistedTokens; // Mapping from token to whitelist status
     mapping(address => bool) public whitelistedSpells; // Mapping from spell to whitelist status
     mapping(address => bool) public whitelistedContracts; // Mapping from user to whitelist status
-
-    uint256 public bankStatus; // Each bit stores certain bank status, e.g. borrow allowed, repay allowed
 
     /// @dev Ensure that the function is called from EOA
     /// when allowContractCalls is set to false and caller is not whitelisted
@@ -87,14 +88,20 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     }
 
     /// @dev Initialize the bank smart contract, using msg.sender as the first governor.
-    /// @param _oracle The oracle smart contract address.
-    /// @param _config The Protocol config address
-    function initialize(IOracle _oracle, IProtocolConfig _config)
-        external
-        initializer
-    {
+    /// @param oracle_ The oracle smart contract address.
+    /// @param config_ The Protocol config address
+    /// @param feeManager_ The Fee manager address
+    function initialize(
+        IOracle oracle_,
+        IProtocolConfig config_,
+        IFeeManager feeManager_
+    ) external initializer {
         __Ownable_init();
-        if (address(_oracle) == address(0) || address(_config) == address(0)) {
+        if (
+            address(oracle_) == address(0) ||
+            address(config_) == address(0) ||
+            address(feeManager_) == address(0)
+        ) {
             revert Errors.ZERO_ADDRESS();
         }
         _GENERAL_LOCK = _NOT_ENTERED;
@@ -102,12 +109,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         POSITION_ID = _NO_ID;
         SPELL = _NO_ADDRESS;
 
-        config = _config;
-        oracle = _oracle;
+        config = config_;
+        oracle = oracle_;
+        feeManager = feeManager_;
+
         nextPositionId = 1;
         bankStatus = 7; // allow borrow, lend, repay
 
-        emit SetOracle(address(_oracle));
+        emit SetOracle(address(oracle_));
     }
 
     /// @dev Return the current executor (the owner of the current position).
@@ -536,7 +545,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             address(this),
             amount
         );
-        amount = doCutDepositFee(token, amount);
+        IERC20Upgradeable(token).approve(address(feeManager), amount);
+        amount = feeManager.doCutDepositFee(token, amount);
         pos.underlyingAmount += amount;
         bank.totalLend += amount;
 
@@ -590,7 +600,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         pos.underlyingAmount -= wAmount;
         bank.totalLend -= wAmount;
 
-        wAmount = doCutWithdrawFee(token, wAmount);
+        IERC20Upgradeable(token).approve(address(feeManager), wAmount);
+        wAmount = feeManager.doCutWithdrawFee(token, wAmount);
 
         IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
     }
@@ -777,26 +788,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             revert Errors.REPAY_FAILED(amountCall);
         uint256 newDebt = _borrowBalanceStored(token);
         repaidAmount = beforeDebt - newDebt;
-    }
-
-    function doCutDepositFee(address token, uint256 amount)
-        internal
-        returns (uint256)
-    {
-        if (config.treasury() == address(0)) revert Errors.NO_TREASURY_SET();
-        uint256 fee = (amount * config.depositFee()) / Constants.DENOMINATOR;
-        IERC20Upgradeable(token).safeTransfer(config.treasury(), fee);
-        return amount - fee;
-    }
-
-    function doCutWithdrawFee(address token, uint256 amount)
-        internal
-        returns (uint256)
-    {
-        if (config.treasury() == address(0)) revert Errors.NO_TREASURY_SET();
-        uint256 fee = (amount * config.withdrawFee()) / Constants.DENOMINATOR;
-        IERC20Upgradeable(token).safeTransfer(config.treasury(), fee);
-        return amount - fee;
     }
 
     /// @dev Internal function to perform ERC20 transfer in and return amount actually received.

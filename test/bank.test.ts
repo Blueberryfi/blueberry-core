@@ -17,7 +17,8 @@ import {
 	ERC20,
 	MockIchiV2,
 	MockIchiFarm,
-	HardVault
+	HardVault,
+	FeeManager
 } from '../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../constant';
 import SpellABI from '../abi/IchiSpell.json';
@@ -55,6 +56,7 @@ describe('Bank', () => {
 	let wichi: WIchiFarm;
 	let bank: BlueBerryBank;
 	let config: ProtocolConfig;
+	let feeManager: FeeManager;
 	let usdcSoftVault: SoftVault;
 	let ichiSoftVault: SoftVault;
 	let hardVault: HardVault;
@@ -71,6 +73,7 @@ describe('Bank', () => {
 
 		protocol = await setupProtocol();
 		config = protocol.config;
+		feeManager = protocol.feeManager;
 		bank = protocol.bank;
 		spell = protocol.spell;
 		ichiFarm = protocol.ichiFarm;
@@ -91,16 +94,20 @@ describe('Bank', () => {
 		it("should revert Bank deployment when invalid args provided", async () => {
 			const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
 			await expect(
-				upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, config.address])
+				upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, config.address, feeManager.address])
 			).to.be.revertedWith("ZERO_ADDRESS");
 
 			await expect(
-				upgrades.deployProxy(BlueBerryBank, [oracle.address, ethers.constants.AddressZero])
+				upgrades.deployProxy(BlueBerryBank, [oracle.address, ethers.constants.AddressZero, feeManager.address])
+			).to.be.revertedWith("ZERO_ADDRESS");
+
+			await expect(
+				upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, ethers.constants.AddressZero])
 			).to.be.revertedWith("ZERO_ADDRESS");
 		})
 		it("should initialize states on constructor", async () => {
 			const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-			const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
+			const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, feeManager.address]);
 			await bank.deployed();
 
 			expect(await bank._GENERAL_LOCK()).to.be.equal(1);

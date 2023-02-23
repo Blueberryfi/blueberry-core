@@ -3,6 +3,7 @@
 pragma solidity 0.8.16;
 
 import "./IProtocolConfig.sol";
+import "./IFeeManager.sol";
 import "./IOracle.sol";
 
 interface IBank {
@@ -101,6 +102,8 @@ interface IBank {
     function nextPositionId() external view returns (uint256);
 
     function config() external view returns (IProtocolConfig);
+
+    function feeManager() external view returns (IFeeManager);
 
     function oracle() external view returns (IOracle);
 

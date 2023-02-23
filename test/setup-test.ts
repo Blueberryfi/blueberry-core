@@ -18,7 +18,8 @@ import {
   ERC20,
   IUniswapV2Router02,
   MockIchiV2,
-  HardVault
+  HardVault,
+  FeeManager
 } from '../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../constant';
 
@@ -45,6 +46,7 @@ export interface Protocol {
   usdcSoftVault: SoftVault,
   ichiSoftVault: SoftVault,
   hardVault: HardVault,
+  feeManager: FeeManager
 }
 
 export const setupProtocol = async (): Promise<Protocol> => {
@@ -63,6 +65,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
   let oracle: CoreOracle;
   let spell: IchiSpell;
   let config: ProtocolConfig;
+  let feeManager: FeeManager;
   let bank: BlueBerryBank;
   let usdcSoftVault: SoftVault;
   let ichiSoftVault: SoftVault;
@@ -176,10 +179,15 @@ export const setupProtocol = async (): Promise<Protocol> => {
   // Deploy Bank
   const Config = await ethers.getContractFactory("ProtocolConfig");
   config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address]);
+  await config.deployed();
   // config.startVaultWithdrawFee();
 
+  const FeeManager = await ethers.getContractFactory("FeeManager");
+  feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address]);
+  await feeManager.deployed()
+
   const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-  bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
+  bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, feeManager.address]);
   await bank.deployed();
 
   // Deploy ICHI wrapper and spell
@@ -269,6 +277,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
     ichiOracle,
     oracle,
     config,
+    feeManager,
     bank,
     spell,
     usdcSoftVault,

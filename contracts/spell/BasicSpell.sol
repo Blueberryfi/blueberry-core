@@ -47,21 +47,20 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
 
     /// @dev Internal call to refund tokens to the current bank executor.
     /// @param token The token to perform the refund action.
-    function doCutRewardsFee(address token) internal {
-        if (bank.config().treasury() == address(0))
-            revert Errors.NO_TREASURY_SET();
-
-        uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
-        if (balance > 0) {
-            uint256 fee = (balance * bank.config().rewardFee()) /
-                Constants.DENOMINATOR;
-            IERC20Upgradeable(token).safeTransfer(
-                bank.config().treasury(),
-                fee
+    function doRefundRewards(address token) internal {
+        uint256 rewardsBalance = IERC20Upgradeable(token).balanceOf(
+            address(this)
+        );
+        if (rewardsBalance > 0) {
+            IERC20Upgradeable(token).safeApprove(
+                address(bank.feeManager()),
+                rewardsBalance
             );
-
-            balance -= fee;
-            IERC20Upgradeable(token).safeTransfer(bank.EXECUTOR(), balance);
+            rewardsBalance -= bank.feeManager().doCutRewardsFee(
+                token,
+                rewardsBalance
+            );
+            doRefund(token);
         }
     }
 
