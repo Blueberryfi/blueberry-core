@@ -8,7 +8,7 @@ import {
   IWETH,
   MockOracle,
   SoftVault,
-  IchiLpOracle,
+  IchiVaultOracle,
   WERC20,
   WIchiFarm,
   ProtocolConfig,
@@ -37,7 +37,7 @@ export interface Protocol {
   werc20: WERC20,
   wichi: WIchiFarm,
   mockOracle: MockOracle,
-  ichiOracle: IchiLpOracle,
+  ichiOracle: IchiVaultOracle,
   oracle: CoreOracle,
   config: ProtocolConfig,
   bank: BlueBerryBank,
@@ -59,7 +59,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
   let werc20: WERC20;
   let wichi: WIchiFarm;
   let mockOracle: MockOracle;
-  let ichiOracle: IchiLpOracle;
+  let ichiOracle: IchiVaultOracle;
   let oracle: CoreOracle;
   let spell: IchiVaultSpell;
   let config: ProtocolConfig;
@@ -147,8 +147,8 @@ export const setupProtocol = async (): Promise<Protocol> => {
     ],
   )
 
-  const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
-  ichiOracle = <IchiLpOracle>await IchiLpOracle.deploy(mockOracle.address);
+  const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle);
+  ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(mockOracle.address);
   await ichiOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);

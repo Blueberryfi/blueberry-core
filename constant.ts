@@ -28,7 +28,7 @@ export enum CONTRACT_NAMES {
 	CurveOracle = "CurveOracle",
 	UniswapV3AdapterOracle = "UniswapV3AdapterOracle",
 	AggregatorOracle = "AggregatorOracle",
-	IchiLpOracle = "IchiLpOracle",
+	IchiVaultOracle = "IchiVaultOracle",
 
 	// Protocol
 	BlueBerryBank = 'BlueBerryBank',

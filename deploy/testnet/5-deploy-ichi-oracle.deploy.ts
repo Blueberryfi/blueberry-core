@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { CONTRACT_NAMES } from "../../constant";
-import { IchiLpOracle } from "../../typechain-types";
+import { IchiVaultOracle } from "../../typechain-types";
 import { deployment, writeDeployments } from "../../utils";
 
 async function main(): Promise<void> {
@@ -8,11 +8,11 @@ async function main(): Promise<void> {
 	console.log("Deployer:", deployer.address);
 
 	// Ichi Lp Oracle
-	const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
-	const ichiLpOracle = <IchiLpOracle>await IchiLpOracle.deploy(deployment.CoreOracle);
-	await ichiLpOracle.deployed();
-	console.log('Ichi Lp Oracle Address:', ichiLpOracle.address);
-	deployment.IchiLpOracle = ichiLpOracle.address;
+	const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle);
+	const ichiVaultOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(deployment.CoreOracle);
+	await ichiVaultOracle.deployed();
+	console.log('Ichi Lp Oracle Address:', ichiVaultOracle.address);
+	deployment.IchiVaultOracle = ichiVaultOracle.address;
 	writeDeployments(deployment);
 
 	// const coreOracle = await ethers.getContractAt("CoreOracle", deployment.CoreOracle);
@@ -20,7 +20,7 @@ async function main(): Promise<void> {
 	// 	[deployment.MockIchiVault],
 	// 	[{
 	// 		liqThreshold: 10000,
-	// 		route: deployment.IchiLpOracle,
+	// 		route: deployment.IchiVaultOracle,
 	// 	}]
 	// );
 }

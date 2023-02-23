@@ -7097,7 +7097,7 @@
             "label": "config",
             "offset": 0,
             "slot": "251",
-            "type": "t_contract(IProtocolConfig)10317",
+            "type": "t_contract(IProtocolConfig)9703",
             "contract": "HardVault",
             "src": "contracts/vault/HardVault.sol:23"
           }
@@ -7123,7 +7123,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IProtocolConfig)10317": {
+          "t_contract(IProtocolConfig)9703": {
             "label": "contract IProtocolConfig",
             "numberOfBytes": "20"
           },
@@ -7411,7 +7411,7 @@
             "label": "cToken",
             "offset": 0,
             "slot": "201",
-            "type": "t_contract(ICErc20)10611",
+            "type": "t_contract(ICErc20)9997",
             "contract": "SoftVault",
             "src": "contracts/vault/SoftVault.sol:25"
           },
@@ -7427,7 +7427,7 @@
             "label": "config",
             "offset": 0,
             "slot": "203",
-            "type": "t_contract(IProtocolConfig)10317",
+            "type": "t_contract(IProtocolConfig)9703",
             "contract": "SoftVault",
             "src": "contracts/vault/SoftVault.sol:28"
           }
@@ -7453,7 +7453,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(ICErc20)10611": {
+          "t_contract(ICErc20)9997": {
             "label": "contract ICErc20",
             "numberOfBytes": "20"
           },
@@ -7461,7 +7461,7 @@
             "label": "contract IERC20Upgradeable",
             "numberOfBytes": "20"
           },
-          "t_contract(IProtocolConfig)10317": {
+          "t_contract(IProtocolConfig)9703": {
             "label": "contract IProtocolConfig",
             "numberOfBytes": "20"
           },
@@ -7538,7 +7538,7 @@
             "label": "tokenSettings",
             "offset": 0,
             "slot": "101",
-            "type": "t_mapping(t_address,t_struct(TokenSetting)14783_storage)",
+            "type": "t_mapping(t_address,t_struct(TokenSetting)12043_storage)",
             "contract": "CoreOracle",
             "src": "contracts/oracle/CoreOracle.sol:27"
           },
@@ -7572,11 +7572,11 @@
             "label": "mapping(address => bool)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(TokenSetting)14783_storage)": {
+          "t_mapping(t_address,t_struct(TokenSetting)12043_storage)": {
             "label": "mapping(address => struct CoreOracle.TokenSetting)",
             "numberOfBytes": "32"
           },
-          "t_struct(TokenSetting)14783_storage": {
+          "t_struct(TokenSetting)12043_storage": {
             "label": "struct CoreOracle.TokenSetting",
             "members": [
               {
@@ -7699,7 +7699,7 @@
             "label": "config",
             "offset": 0,
             "slot": "154",
-            "type": "t_contract(IProtocolConfig)10317",
+            "type": "t_contract(IProtocolConfig)9703",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:33"
           },
@@ -7707,7 +7707,7 @@
             "label": "oracle",
             "offset": 0,
             "slot": "155",
-            "type": "t_contract(IOracle)10284",
+            "type": "t_contract(IOracle)9670",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:34"
           },
@@ -7731,7 +7731,7 @@
             "label": "banks",
             "offset": 0,
             "slot": "158",
-            "type": "t_mapping(t_address,t_struct(Bank)9882_storage)",
+            "type": "t_mapping(t_address,t_struct(Bank)9268_storage)",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:38"
           },
@@ -7747,7 +7747,7 @@
             "label": "positions",
             "offset": 0,
             "slot": "160",
-            "type": "t_mapping(t_uint256,t_struct(Position)9901_storage)",
+            "type": "t_mapping(t_uint256,t_struct(Position)9287_storage)",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:40"
           },
@@ -7813,11 +7813,11 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IOracle)10284": {
+          "t_contract(IOracle)9670": {
             "label": "contract IOracle",
             "numberOfBytes": "20"
           },
-          "t_contract(IProtocolConfig)10317": {
+          "t_contract(IProtocolConfig)9703": {
             "label": "contract IProtocolConfig",
             "numberOfBytes": "20"
           },
@@ -7825,15 +7825,15 @@
             "label": "mapping(address => bool)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(Bank)9882_storage)": {
+          "t_mapping(t_address,t_struct(Bank)9268_storage)": {
             "label": "mapping(address => struct IBank.Bank)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(Position)9901_storage)": {
+          "t_mapping(t_uint256,t_struct(Position)9287_storage)": {
             "label": "mapping(uint256 => struct IBank.Position)",
             "numberOfBytes": "32"
           },
-          "t_struct(Bank)9882_storage": {
+          "t_struct(Bank)9268_storage": {
             "label": "struct IBank.Bank",
             "members": [
               {
@@ -7881,7 +7881,7 @@
             ],
             "numberOfBytes": "160"
           },
-          "t_struct(Position)9901_storage": {
+          "t_struct(Position)9287_storage": {
             "label": "struct IBank.Position",
             "members": [
               {
@@ -8050,7 +8050,7 @@
             "label": "ICHI",
             "offset": 0,
             "slot": "202",
-            "type": "t_contract(IIchiV2)11231",
+            "type": "t_contract(IIchiV2)10505",
             "contract": "WIchiFarm",
             "src": "contracts/wrapper/WIchiFarm.sol:27"
           },
@@ -8058,7 +8058,7 @@
             "label": "ichiFarm",
             "offset": 0,
             "slot": "203",
-            "type": "t_contract(IIchiFarm)11021",
+            "type": "t_contract(IIchiFarm)10295",
             "contract": "WIchiFarm",
             "src": "contracts/wrapper/WIchiFarm.sol:28"
           }
@@ -8088,11 +8088,11 @@
             "label": "contract IERC20Upgradeable",
             "numberOfBytes": "20"
           },
-          "t_contract(IIchiFarm)11021": {
+          "t_contract(IIchiFarm)10295": {
             "label": "contract IIchiFarm",
             "numberOfBytes": "20"
           },
-          "t_contract(IIchiV2)11231": {
+          "t_contract(IIchiV2)10505": {
             "label": "contract IIchiV2",
             "numberOfBytes": "20"
           },
@@ -8185,7 +8185,7 @@
             "label": "bank",
             "offset": 0,
             "slot": "150",
-            "type": "t_contract(IBank)10162",
+            "type": "t_contract(IBank)9548",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:18"
           },
@@ -8193,7 +8193,7 @@
             "label": "werc20",
             "offset": 0,
             "slot": "151",
-            "type": "t_contract(IWERC20)10385",
+            "type": "t_contract(IWERC20)9771",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:19"
           },
@@ -8209,7 +8209,7 @@
             "label": "swapPool",
             "offset": 0,
             "slot": "153",
-            "type": "t_contract(IUniswapV3Pool)6538",
+            "type": "t_contract(IUniswapV3Pool)5938",
             "contract": "IchiVaultSpell",
             "src": "contracts/spell/IchiVaultSpell.sol:25"
           },
@@ -8217,7 +8217,7 @@
             "label": "strategies",
             "offset": 0,
             "slot": "154",
-            "type": "t_array(t_struct(Strategy)16093_storage)dyn_storage",
+            "type": "t_array(t_struct(Strategy)13491_storage)dyn_storage",
             "contract": "IchiVaultSpell",
             "src": "contracts/spell/IchiVaultSpell.sol:28"
           },
@@ -8233,7 +8233,7 @@
             "label": "wIchiFarm",
             "offset": 0,
             "slot": "156",
-            "type": "t_contract(IWIchiFarm)10471",
+            "type": "t_contract(IWIchiFarm)9857",
             "contract": "IchiVaultSpell",
             "src": "contracts/spell/IchiVaultSpell.sol:32"
           },
@@ -8251,7 +8251,7 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_array(t_struct(Strategy)16093_storage)dyn_storage": {
+          "t_array(t_struct(Strategy)13491_storage)dyn_storage": {
             "label": "struct IchiVaultSpell.Strategy[]",
             "numberOfBytes": "32"
           },
@@ -8267,19 +8267,19 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IBank)10162": {
+          "t_contract(IBank)9548": {
             "label": "contract IBank",
             "numberOfBytes": "20"
           },
-          "t_contract(IUniswapV3Pool)6538": {
+          "t_contract(IUniswapV3Pool)5938": {
             "label": "contract IUniswapV3Pool",
             "numberOfBytes": "20"
           },
-          "t_contract(IWERC20)10385": {
+          "t_contract(IWERC20)9771": {
             "label": "contract IWERC20",
             "numberOfBytes": "20"
           },
-          "t_contract(IWIchiFarm)10471": {
+          "t_contract(IWIchiFarm)9857": {
             "label": "contract IWIchiFarm",
             "numberOfBytes": "20"
           },
@@ -8291,7 +8291,7 @@
             "label": "mapping(uint256 => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_struct(Strategy)16093_storage": {
+          "t_struct(Strategy)13491_storage": {
             "label": "struct IchiVaultSpell.Strategy",
             "members": [
               {

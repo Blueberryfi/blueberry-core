@@ -9,7 +9,7 @@ import {
 	IWETH,
 	SoftVault,
 	MockOracle,
-	IchiLpOracle,
+	IchiVaultOracle,
 	WERC20,
 	WIchiFarm,
 	ProtocolConfig,
@@ -49,7 +49,7 @@ describe('Bank', () => {
 	let weth: IWETH;
 	let werc20: WERC20;
 	let mockOracle: MockOracle;
-	let ichiOracle: IchiLpOracle;
+	let ichiOracle: IchiVaultOracle;
 	let oracle: CoreOracle;
 	let spell: IchiVaultSpell;
 	let wichi: WIchiFarm;

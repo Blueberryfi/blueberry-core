@@ -8,7 +8,7 @@ import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
-contract IchiLpOracle is UsingBaseOracle, IBaseOracle {
+contract IchiVaultOracle is UsingBaseOracle, IBaseOracle {
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /**

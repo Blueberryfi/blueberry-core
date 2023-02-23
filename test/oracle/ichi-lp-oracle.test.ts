@@ -6,7 +6,7 @@ import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import {
 	MockOracle,
 	CoreOracle,
-	IchiLpOracle,
+	IchiVaultOracle,
 	IICHIVault,
 	ChainlinkAdapterOracle,
 	IERC20Metadata,
@@ -24,12 +24,12 @@ chai.use(solidity)
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 
-describe('Ichi Vault Lp Oracle', () => {
+describe('Ichi Vault Oracle', () => {
 	let admin: SignerWithAddress;
 	let mockOracle: MockOracle;
 	let coreOracle: CoreOracle;
 	let chainlinkAdapterOracle: ChainlinkAdapterOracle;
-	let ichiOracle: IchiLpOracle;
+	let ichiOracle: IchiVaultOracle;
 	let ichiVault: IICHIVault;
 	let uniswapV3Oracle: UniswapV3AdapterOracle;
 
@@ -88,8 +88,8 @@ describe('Ichi Vault Lp Oracle', () => {
 			]
 		);
 
-		const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
-		ichiOracle = <IchiLpOracle>(await IchiLpOracle.deploy(coreOracle.address));
+		const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle);
+		ichiOracle = <IchiVaultOracle>(await IchiVaultOracle.deploy(coreOracle.address));
 		await ichiOracle.deployed();
 	});
 

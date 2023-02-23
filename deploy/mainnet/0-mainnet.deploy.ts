@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, ProtocolConfig, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
+import { AggregatorOracle, BandAdapterOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiVaultOracle, IchiVaultSpell, ProtocolConfig, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
 
 async function main(): Promise<void> {
 	const [deployer] = await ethers.getSigners();
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
 	console.log('Uni V3 Oracle Address:', uniV3Oracle.address);
 
 	await uniV3Oracle.setStablePools([ADDRESS.ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
-	await uniV3Oracle.setTimeAgos([ADDRESS.ICHI], [10]); // 10s ago
+	await uniV3Oracle.setMaxDelayTimes([ADDRESS.ICHI], [10]); // 10s ago
 
 	// Core Oracle
 	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -58,14 +58,14 @@ async function main(): Promise<void> {
 	);
 
 	// Ichi Lp Oracle
-	const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
-	const ichiLpOracle = <IchiLpOracle>await IchiLpOracle.deploy(coreOracle.address);
-	await ichiLpOracle.deployed();
-	console.log('Ichi Lp Oracle Address:', ichiLpOracle.address);
+	const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle);
+	const ichiVaultOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(coreOracle.address);
+	await ichiVaultOracle.deployed();
+	console.log('Ichi Lp Oracle Address:', ichiVaultOracle.address);
 
 	await coreOracle.setRoute(
 		[ADDRESS.ICHI_VAULT_USDC],
-		[ichiLpOracle.address]
+		[ichiVaultOracle.address]
 	);
 
 	// Bank

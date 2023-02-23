@@ -3,7 +3,7 @@ import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades, network } from 'hardhat';
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../constant';
 import SpellABI from '../../abi/IchiVaultSpell.json';
-import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiLpOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, MockIchiFarm, MockIchiVault, ProtocolConfig, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
+import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiVaultOracle, IchiVaultSpell, IICHIVault, MockFeedRegistry, MockIchiFarm, MockIchiVault, ProtocolConfig, SafeBox, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
 
 const deploymentPath = "./deployments";
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
@@ -92,7 +92,7 @@ async function main(): Promise<void> {
 	writeDeployments(deployment);
 
 	await uniV3Oracle.setStablePools([deployment.MockIchiV2], [ADDRESS_GOERLI.UNI_V3_ICHI_USDC]);
-	await uniV3Oracle.setTimeAgos([deployment.MockIchiV2], [10]); // 10s ago
+	await uniV3Oracle.setMaxDelayTimes([deployment.MockIchiV2], [10]); // 10s ago
 
 	// Core Oracle
 	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -103,11 +103,11 @@ async function main(): Promise<void> {
 	writeDeployments(deployment);
 
 	// Ichi Lp Oracle
-	const IchiLpOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiLpOracle);
-	const ichiLpOracle = <IchiLpOracle>await IchiLpOracle.deploy(deployment.CoreOracle);
-	await ichiLpOracle.deployed();
-	console.log('Ichi Lp Oracle Address:', ichiLpOracle.address);
-	deployment.IchiLpOracle = ichiLpOracle.address;
+	const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle);
+	const ichiVaultOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(deployment.CoreOracle);
+	await ichiVaultOracle.deployed();
+	console.log('Ichi Lp Oracle Address:', ichiVaultOracle.address);
+	deployment.IchiVaultOracle = ichiVaultOracle.address;
 	writeDeployments(deployment);
 
 	// Config, set deployer addresss as treasury wallet in default
@@ -185,7 +185,7 @@ async function main(): Promise<void> {
 			route: deployment.AggregatorOracle,
 		}, {
 			liqThreshold: 10000,
-			route: deployment.IchiLpOracle,
+			route: deployment.IchiVaultOracle,
 		}]
 	)
 
@@ -206,7 +206,7 @@ async function main(): Promise<void> {
 	await bank.whitelistSpells([deployment.IchiSpell], [true]);
 
 	// SafeBox
-	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SafeBox);
+	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
 	const safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
 		ADDRESS_GOERLI.bUSDC,
 		"Interest Bearing USDC",
