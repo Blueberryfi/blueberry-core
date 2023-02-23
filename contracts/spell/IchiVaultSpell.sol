@@ -298,6 +298,7 @@ contract IchiVaultSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 amountToSwap = IERC20(
             isTokenA ? vault.token1() : vault.token0()
         ).balanceOf(address(this));
+        if (amountToSwap > 2**255) revert Errors.CAST();
         if (amountToSwap > 0) {
             swapPool = IUniswapV3Pool(vault.pool());
             swapPool.swap(
