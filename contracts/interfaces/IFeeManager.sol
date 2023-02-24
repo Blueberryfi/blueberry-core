@@ -10,7 +10,11 @@ interface IFeeManager {
         external
         returns (uint256);
 
-    function doCutRewardsFee(address token, uint256 rewards)
+    function doCutRewardsFee(address token, uint256 amount)
+        external
+        returns (uint256);
+
+    function doCutVaultWithdrawFee(address token, uint256 amount)
         external
         returns (uint256);
 }

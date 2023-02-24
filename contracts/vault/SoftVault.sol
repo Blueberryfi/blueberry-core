@@ -75,7 +75,7 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         uint256 cBalanceBefore = cToken.balanceOf(address(this));
-        uToken.safeApprove(address(cToken), amount);
+        uToken.approve(address(cToken), amount);
         if (cToken.mint(uBalanceAfter - uBalanceBefore) != 0)
             revert Errors.LEND_FAILED(amount);
         uint256 cBalanceAfter = cToken.balanceOf(address(this));
@@ -107,17 +107,11 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
-        // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
-        if (
-            block.timestamp <
-            config.withdrawVaultFeeWindowStartTime() +
-                config.withdrawVaultFeeWindow()
-        ) {
-            uint256 fee = (withdrawAmount * config.withdrawVaultFee()) /
-                Constants.DENOMINATOR;
-            uToken.safeTransfer(config.treasury(), fee);
-            withdrawAmount -= fee;
-        }
+        uToken.approve(address(config.feeManager()), withdrawAmount);
+        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
+            address(uToken),
+            withdrawAmount
+        );
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);

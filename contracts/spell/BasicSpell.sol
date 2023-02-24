@@ -56,10 +56,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
                 address(bank.feeManager()),
                 rewardsBalance
             );
-            rewardsBalance -= bank.feeManager().doCutRewardsFee(
-                token,
-                rewardsBalance
-            );
+            bank.feeManager().doCutRewardsFee(token, rewardsBalance);
             doRefund(token);
         }
     }

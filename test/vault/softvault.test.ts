@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers, upgrades } from "hardhat";
 import chai, { expect } from "chai";
-import { ERC20, ICErc20, IUniswapV2Router02, IWETH, ProtocolConfig, SoftVault } from "../../typechain-types";
+import { ERC20, FeeManager, ICErc20, IUniswapV2Router02, IWETH, ProtocolConfig, SoftVault } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { solidity } from 'ethereum-waffle'
 import { BigNumber, utils } from "ethers";
@@ -37,6 +37,12 @@ describe("SoftVault", () => {
 		const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
 		config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address]);
 		config.startVaultWithdrawFee();
+
+		const FeeManager = await ethers.getContractFactory("FeeManager");
+		const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address]);
+		await feeManager.deployed()
+		await config.setFeeManager(feeManager.address);
+
 	})
 
 	beforeEach(async () => {

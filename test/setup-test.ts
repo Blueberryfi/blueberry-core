@@ -185,6 +185,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
   const FeeManager = await ethers.getContractFactory("FeeManager");
   feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address]);
   await feeManager.deployed()
+  await config.setFeeManager(feeManager.address);
 
   const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
   bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, feeManager.address]);

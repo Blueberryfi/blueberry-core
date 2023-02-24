@@ -28,6 +28,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     /// @dev $BLB liquidity pool against stablecoins
     address public blbStabilityPool;
 
+    // Protocol
+    IFeeManager public feeManager;
+
     function initialize(address treasury_) external initializer {
         __Ownable_init();
         if (treasury_ == address(0)) revert Errors.ZERO_ADDRESS();
@@ -87,6 +90,11 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     function setTreasuryWallet(address treasury_) external onlyOwner {
         if (treasury_ == address(0)) revert Errors.ZERO_ADDRESS();
         treasury = treasury_;
+    }
+
+    function setFeeManager(address feeManager_) external onlyOwner {
+        if (feeManager_ == address(0)) revert Errors.ZERO_ADDRESS();
+        feeManager = IFeeManager(feeManager_);
     }
 
     function setBlbUsdcIchiVault(address vault_) external onlyOwner {

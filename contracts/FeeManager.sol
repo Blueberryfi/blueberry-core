@@ -8,8 +8,6 @@ import "./interfaces/IProtocolConfig.sol";
 import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
 
-import "hardhat/console.sol";
-
 contract FeeManager is OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -38,11 +36,27 @@ contract FeeManager is OwnableUpgradeable {
 
     /// @dev Cut performance fee from the rewards generated from the leveraged position
     /// @param token The token to perform the refund action.
-    function doCutRewardsFee(address token, uint256 rewards)
+    function doCutRewardsFee(address token, uint256 amount)
         external
         returns (uint256)
     {
-        return _doCutFee(token, rewards, config.rewardFee());
+        return _doCutFee(token, amount, config.rewardFee());
+    }
+
+    function doCutVaultWithdrawFee(address token, uint256 amount)
+        external
+        returns (uint256)
+    {
+        // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
+        if (
+            block.timestamp <
+            config.withdrawVaultFeeWindowStartTime() +
+                config.withdrawVaultFeeWindow()
+        ) {
+            return _doCutFee(token, amount, config.withdrawVaultFee());
+        } else {
+            return amount;
+        }
     }
 
     function _doCutFee(

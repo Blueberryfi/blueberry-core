@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.16;
 
+import "./IFeeManager.sol";
+
 interface IProtocolConfig {
     function depositFee() external view returns (uint256);
 
@@ -16,4 +18,6 @@ interface IProtocolConfig {
     function withdrawVaultFeeWindow() external view returns (uint256);
 
     function withdrawVaultFeeWindowStartTime() external view returns (uint256);
+
+    function feeManager() external view returns (IFeeManager);
 }
