@@ -625,7 +625,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "collAmount",
+        "name": "collShareAmount",
         "type": "uint256"
       }
     ],

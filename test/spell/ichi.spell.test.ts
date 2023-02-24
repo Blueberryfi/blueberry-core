@@ -425,18 +425,35 @@ describe('ICHI Angel Vaults Spell', () => {
 			);
 		})
 
+		it("should revert when another strategyId provided", async () => {
+			const nextPosId = await bank.nextPositionId();
+			await spell.addStrategy(alice.address, utils.parseUnits("2000", 18));
+			await expect(bank.execute(
+				nextPosId.sub(1),
+				spell.address,
+				iface.encodeFunctionData("reducePosition", [
+					1,
+					ICHI,
+					depositAmount.div(2)
+				])
+			)).to.be.revertedWith("INCORRECT_STRATEGY_ID")
+		})
+
 		it("should revert when reducing position exceeds max LTV", async () => {
 			const nextPosId = await bank.nextPositionId();
+			const positionId = nextPosId.sub(1)
+			const positionInfo = await bank.getPositionInfo(positionId)
+			const underlyingShareAmount = positionInfo.underlyingVaultShare
 
-			await bank.execute(
-				nextPosId.sub(1),
+			await expect(bank.execute(
+				positionId,
 				spell.address,
 				iface.encodeFunctionData("reducePosition", [
 					0,
 					ICHI,
-					depositAmount.div(2)
+					underlyingShareAmount
 				])
-			)
+			)).to.be.revertedWith("EXCEED_MAX_LTV")
 		})
 
 		it("should be able to reduce position within maxLTV", async () => {

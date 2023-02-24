@@ -257,12 +257,12 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     /**
      * @dev Reduce isolated collateral of position
      * @param collToken Isolated collateral token address
-     * @param collAmount Amount of Isolated collateral
+     * @param collShareAmount Amount of Isolated collateral
      */
     function reducePosition(
         uint256 strategyId,
         address collToken,
-        uint256 collAmount
+        uint256 collShareAmount
     ) external {
         address positionCollToken = bank
             .getPositionInfo(bank.POSITION_ID())
@@ -274,7 +274,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             .getUnderlyingToken(positionCollId);
         if (strategies[strategyId].vault != unwrappedCollToken)
             revert Errors.INCORRECT_STRATEGY_ID(strategyId);
-        doWithdraw(collToken, collAmount);
+        doWithdraw(collToken, collShareAmount);
         doRefund(collToken);
         _validateMaxLTV(strategyId);
     }
