@@ -117,7 +117,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param borrowToken Token address to borrow
      * @param borrowAmount amount to borrow from Bank
      */
-    function depositInternal(
+    function _depositInternal(
         uint256 strategyId,
         address collToken,
         address borrowToken,
@@ -173,7 +173,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         existingCollateral(strategyId, collToken)
     {
         // 1-3 Deposit on ichi vault
-        depositInternal(
+        _depositInternal(
             strategyId,
             collToken,
             borrowToken,
@@ -211,7 +211,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         // 1-3 Deposit on ichi vault
-        depositInternal(
+        _depositInternal(
             strategyId,
             collToken,
             borrowToken,
@@ -264,12 +264,22 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         address collToken,
         uint256 collAmount
     ) external {
+        address positionCollToken = bank
+            .getPositionInfo(bank.POSITION_ID())
+            .collToken;
+        uint256 positionCollId = bank
+            .getPositionInfo(bank.POSITION_ID())
+            .collId;
+        address unwrappedCollToken = IERC20Wrapper(positionCollToken)
+            .getUnderlyingToken(positionCollId);
+        if (strategies[strategyId].vault != unwrappedCollToken)
+            revert Errors.INCORRECT_STRATEGY_ID(strategyId);
         doWithdraw(collToken, collAmount);
         doRefund(collToken);
         _validateMaxLTV(strategyId);
     }
 
-    function withdrawInternal(
+    function _withdrawInternal(
         uint256 strategyId,
         address collToken,
         address borrowToken,
@@ -351,7 +361,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         // 1. Take out collateral
         doTakeCollateral(strategies[strategyId].vault, lpTakeAmt);
 
-        withdrawInternal(
+        _withdrawInternal(
             strategyId,
             collToken,
             borrowToken,
@@ -389,7 +399,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         doRefundRewards(ICHI);
 
         // 2-8. Remove liquidity
-        withdrawInternal(
+        _withdrawInternal(
             strategyId,
             collToken,
             borrowToken,

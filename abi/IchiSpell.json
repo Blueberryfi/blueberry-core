@@ -72,6 +72,17 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
+    "name": "INCORRECT_STRATEGY_ID",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "uToken",
         "type": "address"
