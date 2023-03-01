@@ -203,11 +203,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             softVault == address(0) ||
             hardVault == address(0)
         ) revert Errors.ZERO_ADDRESS();
+
         Bank storage bank = banks[token];
         address cToken = address(ISoftVault(softVault).cToken());
+
         if (cTokenInBank[cToken]) revert Errors.CTOKEN_ALREADY_ADDED();
         if (bank.isListed) revert Errors.BANK_ALREADY_LISTED();
         if (allBanks.length >= 256) revert Errors.BANK_LIMIT();
+
         cTokenInBank[cToken] = true;
         bank.isListed = true;
         bank.index = uint8(allBanks.length);
@@ -422,7 +425,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             revert Errors.BAD_COLLATERAL(positionId);
 
         uint256 oldShare = pos.debtShare;
-        (uint256 amountPaid, uint256 share) = repayInternal(
+        (uint256 amountPaid, uint256 share) = _repay(
             positionId,
             debtToken,
             amountCall
@@ -445,7 +448,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             ""
         );
         // Transfer underlying collaterals(vault share tokens) to liquidator
-        if (isSoftVault(pos.underlyingToken)) {
+        if (_isSoftVault(pos.underlyingToken)) {
             IERC20Upgradeable(bank.softVault).safeTransfer(
                 msg.sender,
                 uVaultShare
@@ -550,7 +553,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         pos.underlyingAmount += amount;
         bank.totalLend += amount;
 
-        if (isSoftVault(token)) {
+        if (_isSoftVault(token)) {
             IERC20Upgradeable(token).approve(bank.softVault, amount);
             pos.underlyingVaultShare += ISoftVault(bank.softVault).deposit(
                 amount
@@ -585,7 +588,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         }
 
         uint256 wAmount;
-        if (isSoftVault(token)) {
+        if (_isSoftVault(token)) {
             ISoftVault(bank.softVault).approve(bank.softVault, shareAmount);
             wAmount = ISoftVault(bank.softVault).withdraw(shareAmount);
         } else {
@@ -635,7 +638,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         pos.debtShare += share;
         IERC20Upgradeable(token).safeTransfer(
             msg.sender,
-            doBorrow(token, amount)
+            _doBorrow(token, amount)
         );
         emit Borrow(POSITION_ID, msg.sender, token, amount, share);
     }
@@ -651,7 +654,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         onlyWhitelistedToken(token)
     {
         if (!isRepayAllowed()) revert Errors.REPAY_NOT_ALLOWED();
-        (uint256 amount, uint256 share) = repayInternal(
+        (uint256 amount, uint256 share) = _repay(
             POSITION_ID,
             token,
             amountCall
@@ -663,7 +666,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param positionId The position ID to repay the debt.
     /// @param token The bank token to pay the debt.
     /// @param amountCall The amount to repay by calling transferFrom, or -1 for debt size.
-    function repayInternal(
+    function _repay(
         uint256 positionId,
         address token,
         uint256 amountCall
@@ -678,8 +681,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         if (amountCall == type(uint256).max) {
             amountCall = oldDebt;
         }
-        amountCall = doERC20TransferIn(token, amountCall);
-        uint256 paid = doRepay(token, amountCall);
+        amountCall = _doERC20TransferIn(token, amountCall);
+        uint256 paid = _doRepay(token, amountCall);
         if (paid > oldDebt) revert Errors.REPAY_EXCEEDS_DEBT(paid, oldDebt); // prevent share overflow attack
         uint256 lessShare = paid == oldDebt
             ? oldShare
@@ -707,7 +710,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             pos.collToken = collToken;
             pos.collId = collId;
         }
-        uint256 amount = doERC1155TransferIn(collToken, collId, amountCall);
+        uint256 amount = _doERC1155TransferIn(collToken, collId, amountCall);
         pos.collateralSize += amount;
         emit PutCollateral(
             POSITION_ID,
@@ -756,7 +759,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @param amountCall The amount use in the transferFrom call.
      * NOTE: Caller must ensure that cToken interest was already accrued up to this block.
      */
-    function doBorrow(address token, uint256 amountCall)
+    function _doBorrow(address token, uint256 amountCall)
         internal
         returns (uint256 borrowAmount)
     {
@@ -777,7 +780,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @param amountCall The amount to use in the repay call.
      * NOTE: Caller must ensure that cToken interest was already accrued up to this block.
      */
-    function doRepay(address token, uint256 amountCall)
+    function _doRepay(address token, uint256 amountCall)
         internal
         returns (uint256 repaidAmount)
     {
@@ -793,7 +796,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Internal function to perform ERC20 transfer in and return amount actually received.
     /// @param token The token to perform transferFrom action.
     /// @param amountCall The amount use in the transferFrom call.
-    function doERC20TransferIn(address token, uint256 amountCall)
+    function _doERC20TransferIn(address token, uint256 amountCall)
         internal
         returns (uint256)
     {
@@ -815,7 +818,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param token The token to perform transferFrom action.
     /// @param id The id to perform transferFrom action.
     /// @param amountCall The amount use in the transferFrom call.
-    function doERC1155TransferIn(
+    function _doERC1155TransferIn(
         address token,
         uint256 id,
         uint256 amountCall
@@ -838,7 +841,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         return balanceAfter - balanceBefore;
     }
 
-    function isSoftVault(address token) internal view returns (bool) {
+    function _isSoftVault(address token) internal view returns (bool) {
         Bank storage bank = banks[token];
         return address(ISoftVault(bank.softVault).uToken()) == token;
     }

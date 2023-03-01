@@ -3,7 +3,7 @@
 pragma solidity 0.8.16;
 
 interface IWETH {
-    function balanceOf(address user) external returns (uint256);
+    function balanceOf(address user) external view returns (uint256);
 
     function approve(address to, uint256 value) external returns (bool);
 

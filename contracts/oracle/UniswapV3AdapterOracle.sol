@@ -51,10 +51,8 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         address poolToken1 = IUniswapV3Pool(stablePool).token1();
         address stablePoolToken = poolToken0 == token ? poolToken1 : poolToken0; // get stable token address
 
-        uint256 stableDecimals = uint256(
-            IERC20Metadata(stablePoolToken).decimals()
-        );
-        uint256 tokenDecimals = uint256(IERC20Metadata(token).decimals());
+        uint8 stableDecimals = IERC20Metadata(stablePoolToken).decimals();
+        uint8 tokenDecimals = IERC20Metadata(token).decimals();
 
         (int24 arithmeticMeanTick, ) = UniV3WrappedLibMockup.consult(
             stablePool,

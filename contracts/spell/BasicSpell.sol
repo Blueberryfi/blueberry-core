@@ -38,7 +38,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
 
     /// @dev Internal call to refund tokens to the current bank executor.
     /// @param token The token to perform the refund action.
-    function doRefund(address token) internal {
+    function _doRefund(address token) internal {
         uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
         if (balance > 0) {
             IERC20Upgradeable(token).safeTransfer(bank.EXECUTOR(), balance);
@@ -47,27 +47,27 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
 
     /// @dev Internal call to refund tokens to the current bank executor.
     /// @param token The token to perform the refund action.
-    function doRefundRewards(address token) internal {
+    function _doRefundRewards(address token) internal {
         uint256 rewardsBalance = IERC20Upgradeable(token).balanceOf(
             address(this)
         );
         if (rewardsBalance > 0) {
-            IERC20Upgradeable(token).safeApprove(
+            IERC20Upgradeable(token).approve(
                 address(bank.feeManager()),
                 rewardsBalance
             );
             bank.feeManager().doCutRewardsFee(token, rewardsBalance);
-            doRefund(token);
+            _doRefund(token);
         }
     }
 
-    function doLend(address token, uint256 amount) internal {
+    function _doLend(address token, uint256 amount) internal {
         if (amount > 0) {
             bank.lend(token, amount);
         }
     }
 
-    function doWithdraw(address token, uint256 amount) internal {
+    function _doWithdraw(address token, uint256 amount) internal {
         if (amount > 0) {
             bank.withdrawLend(token, amount);
         }
@@ -79,7 +79,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
      * @param amount The amount to borrow.
      * @notice Do not use `amount` input argument to handle the received amount.
      */
-    function doBorrow(address token, uint256 amount) internal {
+    function _doBorrow(address token, uint256 amount) internal {
         if (amount > 0) {
             bank.borrow(token, amount);
         }
@@ -88,9 +88,9 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @dev Internal call to repay tokens to the bank on behalf of the current executor.
     /// @param token The token to repay to the bank.
     /// @param amount The amount to repay.
-    function doRepay(address token, uint256 amount) internal {
+    function _doRepay(address token, uint256 amount) internal {
         if (amount > 0) {
-            IERC20Upgradeable(token).safeApprove(address(bank), amount);
+            IERC20Upgradeable(token).approve(address(bank), amount);
             bank.repay(token, amount);
         }
     }
@@ -98,9 +98,9 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @dev Internal call to put collateral tokens in the bank.
     /// @param token The token to put in the bank.
     /// @param amount The amount to put in the bank.
-    function doPutCollateral(address token, uint256 amount) internal {
+    function _doPutCollateral(address token, uint256 amount) internal {
         if (amount > 0) {
-            IERC20Upgradeable(token).safeApprove(address(werc20), amount);
+            IERC20Upgradeable(token).approve(address(werc20), amount);
             werc20.mint(token, amount);
             bank.putCollateral(
                 address(werc20),
@@ -113,7 +113,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @dev Internal call to take collateral tokens from the bank.
     /// @param token The token to take back.
     /// @param amount The amount to take back.
-    function doTakeCollateral(address token, uint256 amount) internal {
+    function _doTakeCollateral(address token, uint256 amount) internal {
         if (amount > 0) {
             amount = bank.takeCollateral(amount);
             werc20.burn(token, amount);

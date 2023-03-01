@@ -150,6 +150,6 @@ contract WIchiFarm is
         uint256 amount
     ) internal {
         if (IERC20Upgradeable(token).allowance(address(this), spender) < amount)
-            IERC20Upgradeable(token).safeApprove(spender, amount);
+            IERC20Upgradeable(token).approve(spender, amount);
     }
 }

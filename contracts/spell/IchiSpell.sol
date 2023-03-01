@@ -3,6 +3,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
@@ -14,6 +15,8 @@ import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
 contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
+    using SafeCast for uint256;
+    using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     struct Strategy {
@@ -34,7 +37,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     address public ICHI;
 
     event StrategyAdded(uint256 strategyId, address vault, uint256 maxPosSize);
-    event CollateralsSupportAdded(
+    event CollateralsMaxLTVSet(
         uint256 strategyId,
         address[] collaterals,
         uint256[] maxLTVs
@@ -79,7 +82,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         emit StrategyAdded(strategies.length - 1, vault, maxPosSize);
     }
 
-    function addCollateralsSupport(
+    function setCollateralsMaxLTVs(
         uint256 strategyId,
         address[] memory collaterals,
         uint256[] memory maxLTVs
@@ -93,7 +96,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             maxLTV[strategyId][collaterals[i]] = maxLTVs[i];
         }
 
-        emit CollateralsSupportAdded(strategyId, collaterals, maxLTVs);
+        emit CollateralsMaxLTVSet(strategyId, collaterals, maxLTVs);
     }
 
     function _validateMaxLTV(uint256 strategyId) internal view {
@@ -117,7 +120,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param borrowToken Token address to borrow
      * @param borrowAmount amount to borrow from Bank
      */
-    function _depositInternal(
+    function _deposit(
         uint256 strategyId,
         address collToken,
         address borrowToken,
@@ -127,16 +130,16 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         Strategy memory strategy = strategies[strategyId];
 
         // 1. Lend isolated collaterals on compound
-        doLend(collToken, collAmount);
+        _doLend(collToken, collAmount);
 
         // 2. Borrow specific amounts
-        doBorrow(borrowToken, borrowAmount);
+        _doBorrow(borrowToken, borrowAmount);
 
         // 3. Add liquidity - Deposit on ICHI Vault
         IICHIVault vault = IICHIVault(strategy.vault);
         bool isTokenA = vault.token0() == borrowToken;
         uint256 balance = IERC20(borrowToken).balanceOf(address(this));
-        IERC20Upgradeable(borrowToken).safeApprove(address(vault), balance);
+        IERC20Upgradeable(borrowToken).approve(address(vault), balance);
         if (isTokenA) {
             vault.deposit(balance, 0, address(this));
         } else {
@@ -173,17 +176,11 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         existingCollateral(strategyId, collToken)
     {
         // 1-3 Deposit on ichi vault
-        _depositInternal(
-            strategyId,
-            collToken,
-            borrowToken,
-            collAmount,
-            borrowAmount
-        );
+        _deposit(strategyId, collToken, borrowToken, collAmount, borrowAmount);
 
         // 4. Put collateral - ICHI Vault Lp Token
         address vault = strategies[strategyId].vault;
-        doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
+        _doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
     }
 
     /**
@@ -211,13 +208,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         // 1-3 Deposit on ichi vault
-        _depositInternal(
-            strategyId,
-            collToken,
-            borrowToken,
-            collAmount,
-            borrowAmount
-        );
+        _deposit(strategyId, collToken, borrowToken, collAmount, borrowAmount);
 
         // 4. Take out collateral
         IBank.Position memory pos = bank.getCurrentPositionInfo();
@@ -236,10 +227,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
 
         // 5. Deposit on farming pool, put collateral
         uint256 lpAmount = IERC20(strategy.vault).balanceOf(address(this));
-        IERC20Upgradeable(strategy.vault).safeApprove(
-            address(wIchiFarm),
-            lpAmount
-        );
+        IERC20Upgradeable(strategy.vault).approve(address(wIchiFarm), lpAmount);
         uint256 id = wIchiFarm.mint(farmingPid, lpAmount);
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }
@@ -251,7 +239,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      */
     function increasePosition(address token, uint256 amount) external {
         // 1. Get user input amounts
-        doLend(token, amount);
+        _doLend(token, amount);
     }
 
     /**
@@ -264,6 +252,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         address collToken,
         uint256 collShareAmount
     ) external {
+        // Validate strategy id
         address positionCollToken = bank
             .getPositionInfo(bank.POSITION_ID())
             .collToken;
@@ -274,17 +263,18 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             .getUnderlyingToken(positionCollId);
         if (strategies[strategyId].vault != unwrappedCollToken)
             revert Errors.INCORRECT_STRATEGY_ID(strategyId);
-        doWithdraw(collToken, collShareAmount);
-        doRefund(collToken);
+
+        _doWithdraw(collToken, collShareAmount);
+        _doRefund(collToken);
         _validateMaxLTV(strategyId);
     }
 
-    function _withdrawInternal(
+    function _withdraw(
         uint256 strategyId,
         address collToken,
         address borrowToken,
         uint256 amountRepay,
-        uint256 amountLpWithdraw,
+        uint256 amountLpToLeave,
         uint256 amountShareWithdraw
     ) internal {
         Strategy memory strategy = strategies[strategyId];
@@ -298,7 +288,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
 
         // 2. Calculate actual amount to remove
         uint256 amtLPToRemove = vault.balanceOf(address(this)) -
-            amountLpWithdraw;
+            amountLpToLeave;
 
         // 3. Withdraw liquidity from ICHI vault
         vault.withdraw(amtLPToRemove, address(this));
@@ -308,14 +298,14 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 amountToSwap = IERC20(
             isTokenA ? vault.token1() : vault.token0()
         ).balanceOf(address(this));
-        if (amountToSwap > 2**255) revert Errors.CAST();
+
         if (amountToSwap > 0) {
             swapPool = IUniswapV3Pool(vault.pool());
             swapPool.swap(
                 address(this),
                 // if withdraw token is Token0, then swap token1 -> token0 (false)
                 !isTokenA,
-                int256(amountToSwap),
+                amountToSwap.toInt256(),
                 isTokenA
                     ? UniV3WrappedLibMockup.MAX_SQRT_RATIO - 1 // Token0 -> Token1
                     : UniV3WrappedLibMockup.MIN_SQRT_RATIO + 1, // Token1 -> Token0
@@ -324,16 +314,16 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         }
 
         // 5. Withdraw isolated collateral from Bank
-        doWithdraw(collToken, amountShareWithdraw);
+        _doWithdraw(collToken, amountShareWithdraw);
 
         // 6. Repay
-        doRepay(borrowToken, amountRepay);
+        _doRepay(borrowToken, amountRepay);
 
         _validateMaxLTV(strategyId);
 
         // 7. Refund
-        doRefund(borrowToken);
-        doRefund(collToken);
+        _doRefund(borrowToken);
+        _doRefund(collToken);
     }
 
     /**
@@ -342,7 +332,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param borrowToken Token address to withdraw (e.g USDC)
      * @param lpTakeAmt Amount of ICHI Vault LP token to take out from Bank
      * @param amountRepay Amount to repay the loan
-     * @param amountLpWithdraw Amount of ICHI Vault LP to withdraw from ICHI Vault
+     * @param amountLpToLeave Amount of ICHI Vault LP to leave on ICHI Vault
      * @param amountShareWithdraw Amount of Isolated collateral to withdraw from Compound
      */
     function closePosition(
@@ -351,7 +341,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         address borrowToken,
         uint256 lpTakeAmt,
         uint256 amountRepay,
-        uint256 amountLpWithdraw,
+        uint256 amountLpToLeave,
         uint256 amountShareWithdraw
     )
         external
@@ -359,14 +349,14 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         existingCollateral(strategyId, collToken)
     {
         // 1. Take out collateral
-        doTakeCollateral(strategies[strategyId].vault, lpTakeAmt);
+        _doTakeCollateral(strategies[strategyId].vault, lpTakeAmt);
 
-        _withdrawInternal(
+        _withdraw(
             strategyId,
             collToken,
             borrowToken,
             amountRepay,
-            amountLpWithdraw,
+            amountLpToLeave,
             amountShareWithdraw
         );
     }
@@ -377,7 +367,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         address borrowToken,
         uint256 lpTakeAmt,
         uint256 amountRepay,
-        uint256 amountLpWithdraw,
+        uint256 amountLpToLeave,
         uint256 amountShareWithdraw
     )
         external
@@ -396,20 +386,20 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         // 1. Take out collateral
         bank.takeCollateral(lpTakeAmt);
         wIchiFarm.burn(collId, lpTakeAmt);
-        doRefundRewards(ICHI);
+        _doRefundRewards(ICHI);
 
         // 2-8. Remove liquidity
-        _withdrawInternal(
+        _withdraw(
             strategyId,
             collToken,
             borrowToken,
             amountRepay,
-            amountLpWithdraw,
+            amountLpToLeave,
             amountShareWithdraw
         );
 
         // 9. Refund ichi token
-        doRefund(ICHI);
+        _doRefund(ICHI);
     }
 
     function uniswapV3SwapCallback(
@@ -425,26 +415,26 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             if (payer == address(this)) {
                 IERC20Upgradeable(swapPool.token0()).safeTransfer(
                     msg.sender,
-                    uint256(amount0Delta)
+                    amount0Delta.toUint256()
                 );
             } else {
                 IERC20Upgradeable(swapPool.token0()).safeTransferFrom(
                     payer,
                     msg.sender,
-                    uint256(amount0Delta)
+                    amount0Delta.toUint256()
                 );
             }
         } else if (amount1Delta > 0) {
             if (payer == address(this)) {
                 IERC20Upgradeable(swapPool.token1()).safeTransfer(
                     msg.sender,
-                    uint256(amount1Delta)
+                    amount1Delta.toUint256()
                 );
             } else {
                 IERC20Upgradeable(swapPool.token1()).safeTransferFrom(
                     payer,
                     msg.sender,
-                    uint256(amount1Delta)
+                    amount1Delta.toUint256()
                 );
             }
         }

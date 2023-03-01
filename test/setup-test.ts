@@ -214,7 +214,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
   ])
   await spell.deployed();
   await spell.addStrategy(ichi_USDC_ICHI_Vault.address, utils.parseUnits("2000", 18));
-  await spell.addCollateralsSupport(
+  await spell.setCollateralsMaxLTVs(
     0,
     [USDC, ICHI],
     [30000, 30000]

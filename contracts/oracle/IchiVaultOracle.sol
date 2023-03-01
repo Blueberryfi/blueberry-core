@@ -8,6 +8,21 @@ import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
+/**
+ * @author gmspacex
+ * @title Ichi Vault Oracle
+ * @notice Oracle contract provides price feeds of Ichi Vault share tokens
+ * @dev The logic of this oracle is using legacy & traditional mathematics of Uniswap Lp Oracle.
+ *      However, it is resistant to the flash loan attack and price manipulations.
+ *      The minting logics of Ichi Vault when you deposit underlying assets on the vault
+ *      depends on the price of token1 of the vault
+ *      Ichi Vault is already using secured Uni V3 Price Oracle. and here is the minting logics
+ *      uint256 price = _fetchSpot(token0, token1, currentTick(), PRECISION);                       MockIchiVault#L239
+ *      uint256 twap = _fetchTwap(pool, token0, token1, twapPeriod, PRECISION);                     MockIchiVault#L243
+ *      uint256 deposit0PricedInToken1 = (deposit0 * ((price < twap) ? price : twap)) / PRECISION;  MockIchiVault#L255
+ *      shares = deposit1 + deposit0PricedInToken1;                                                 MockIchiVault#L273
+ *      _mint(to, shares);                                                                          MockIchiVault#L280
+ */
 contract IchiVaultOracle is UsingBaseOracle, IBaseOracle {
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 

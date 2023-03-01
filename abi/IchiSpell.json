@@ -1,10 +1,5 @@
 [
   {
-    "inputs": [],
-    "name": "CAST",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -166,7 +161,7 @@
         "type": "uint256[]"
       }
     ],
-    "name": "CollateralsSupportAdded",
+    "name": "CollateralsMaxLTVSet",
     "type": "event"
   },
   {
@@ -242,29 +237,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "strategyId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address[]",
-        "name": "collaterals",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "maxLTVs",
-        "type": "uint256[]"
-      }
-    ],
-    "name": "addCollateralsSupport",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "vault",
         "type": "address"
@@ -322,7 +294,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "amountLpWithdraw",
+        "name": "amountLpToLeave",
         "type": "uint256"
       },
       {
@@ -365,7 +337,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "amountLpWithdraw",
+        "name": "amountLpToLeave",
         "type": "uint256"
       },
       {
@@ -637,6 +609,29 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "collaterals",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "maxLTVs",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "setCollateralsMaxLTVs",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -561,7 +561,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			})
 			it("only owner should be able to add collaterals", async () => {
 				await expect(
-					spell.connect(alice).addCollateralsSupport(
+					spell.connect(alice).setCollateralsMaxLTVs(
 						0,
 						[USDC, ICHI],
 						[30000, 30000]
@@ -570,7 +570,7 @@ describe('ICHI Angel Vaults Spell', () => {
 			})
 			it("should revert when adding collaterals for non-existing strategy", async () => {
 				await expect(
-					spell.addCollateralsSupport(
+					spell.setCollateralsMaxLTVs(
 						1,
 						[USDC, ICHI],
 						[30000, 30000]
@@ -579,14 +579,14 @@ describe('ICHI Angel Vaults Spell', () => {
 			})
 			it("should revert when collateral or maxLTV is zero", async () => {
 				await expect(
-					spell.addCollateralsSupport(
+					spell.setCollateralsMaxLTVs(
 						0,
 						[ethers.constants.AddressZero, ICHI],
 						[30000, 30000]
 					)
 				).to.be.revertedWith("ZERO_ADDRESS");
 				await expect(
-					spell.addCollateralsSupport(
+					spell.setCollateralsMaxLTVs(
 						0,
 						[USDC, ICHI],
 						[0, 30000]
@@ -595,14 +595,14 @@ describe('ICHI Angel Vaults Spell', () => {
 			})
 			it("should revert when input array length does not match", async () => {
 				await expect(
-					spell.addCollateralsSupport(
+					spell.setCollateralsMaxLTVs(
 						0,
 						[USDC, ICHI, WETH],
 						[30000, 30000]
 					)
 				).to.be.revertedWith("INPUT_ARRAY_MISMATCH")
 				await expect(
-					spell.addCollateralsSupport(
+					spell.setCollateralsMaxLTVs(
 						0,
 						[],
 						[]
@@ -611,12 +611,12 @@ describe('ICHI Angel Vaults Spell', () => {
 			})
 			it("owner should be able to add collaterals", async () => {
 				await expect(
-					spell.addCollateralsSupport(
+					spell.setCollateralsMaxLTVs(
 						0,
 						[USDC, ICHI],
 						[30000, 30000]
 					)
-				).to.be.emit(spell, "CollateralsSupportAdded")
+				).to.be.emit(spell, "CollateralsMaxLTVSet")
 			})
 		})
 	})
