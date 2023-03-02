@@ -10,7 +10,6 @@ import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.so
 
 import "./BasicSpell.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
-import "../interfaces/IOracle.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 

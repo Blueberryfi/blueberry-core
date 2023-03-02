@@ -12,6 +12,7 @@ error TOO_LONG_DELAY(uint256 delayTime);
 error NO_MAX_DELAY(address token);
 error PRICE_OUTDATED(address token);
 error NO_SYM_MAPPING(address token);
+error PRICE_NEGATIVE(address token);
 
 error OUT_OF_DEVIATION_CAP(uint256 deviation);
 error EXCEED_SOURCE_LEN(uint256 length);

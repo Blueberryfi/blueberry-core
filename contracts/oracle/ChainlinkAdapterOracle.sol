@@ -1,4 +1,12 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
 pragma solidity 0.8.16;
 
@@ -8,6 +16,11 @@ import "./BaseAdapter.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/chainlink/IFeedRegistry.sol";
 
+/**
+ * @author gmspacex
+ * @title ChainlinkAdapterOracle
+ * @notice Oracle Adapter contract which provides price feeds from Chainlink
+ */
 contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     using SafeCast for int256;
 
@@ -16,7 +29,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     IFeedRegistry public registry;
     address public constant USD = address(840);
 
-    /// @dev Mapping from original token to remapped token for price querying (e.g. WBTC -> BTC, renBTC -> BTC)
+    /// @dev Mapping from original token to remapped token for price querying (e.g. WBTC -> BTC, WETH -> ETH)
     mapping(address => address) public remappedTokens;
 
     event SetRegistry(address registry);
@@ -31,54 +44,56 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         registry = registry_;
     }
 
-    /// @dev Set chainlink feed registry source
-    /// @param _registry Chainlink feed registry source
-    function setFeedRegistry(IFeedRegistry _registry) external onlyOwner {
-        if (address(_registry) == address(0)) revert Errors.ZERO_ADDRESS();
-        registry = _registry;
-        emit SetRegistry(address(_registry));
+    /// @notice Set chainlink feed registry source
+    /// @param registry_ Chainlink feed registry source
+    function setFeedRegistry(IFeedRegistry registry_) external onlyOwner {
+        if (address(registry_) == address(0)) revert Errors.ZERO_ADDRESS();
+        registry = registry_;
+        emit SetRegistry(address(registry_));
     }
 
     /// @dev Set token remapping
-    /// @param _tokens List of tokens to set remapping
-    /// @param _remappedTokens List of tokens to set remapping to
+    /// @param tokens_ List of tokens to set remapping
+    /// @param remappedTokens_ List of tokens to set remapping to
     /// @notice Token decimals of the original and remapped tokens should be the same
     function setTokenRemappings(
-        address[] calldata _tokens,
-        address[] calldata _remappedTokens
+        address[] calldata tokens_,
+        address[] calldata remappedTokens_
     ) external onlyOwner {
-        if (_remappedTokens.length != _tokens.length)
+        if (remappedTokens_.length != tokens_.length)
             revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < _tokens.length; idx++) {
-            if (_remappedTokens[idx] == address(0))
-                revert Errors.ZERO_ADDRESS();
-            if (_tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
-            remappedTokens[_tokens[idx]] = _remappedTokens[idx];
-            emit SetTokenRemapping(_tokens[idx], _remappedTokens[idx]);
+        for (uint256 idx = 0; idx < tokens_.length; idx++) {
+            if (
+                remappedTokens_[idx] == address(0) || tokens_[idx] == address(0)
+            ) revert Errors.ZERO_ADDRESS();
+
+            remappedTokens[tokens_[idx]] = remappedTokens_[idx];
+            emit SetTokenRemapping(tokens_[idx], remappedTokens_[idx]);
         }
     }
 
     /**
-     * @notice Returns the USD based price of given token, price value has 18 decimals
-     * @param _token Token address to get price of
+     * @notice Returns the USD price of given token, price value has 18 decimals
+     * @param token_ Token address to get price of
      * @return price USD price of token in 18 decimal
      */
-    function getPrice(address _token) external view override returns (uint256) {
+    function getPrice(address token_) external view override returns (uint256) {
         // remap token if possible
-        address token = remappedTokens[_token];
-        if (token == address(0)) token = _token;
+        address token = remappedTokens[token_];
+        if (token == address(0)) token = token_;
 
         uint256 maxDelayTime = maxDelayTimes[token];
-        if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(_token);
+        if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token_);
 
-        // try to get token-USD price
+        // Get token-USD price
         uint256 decimals = registry.decimals(token, USD);
         (, int256 answer, , uint256 updatedAt, ) = registry.latestRoundData(
             token,
             USD
         );
         if (updatedAt < block.timestamp - maxDelayTime)
-            revert Errors.PRICE_OUTDATED(_token);
+            revert Errors.PRICE_OUTDATED(token_);
+        if (answer < 0) revert Errors.PRICE_NEGATIVE(token_);
 
         return (answer.toUint256() * 1e18) / 10**decimals;
     }

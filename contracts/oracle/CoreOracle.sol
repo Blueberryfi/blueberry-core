@@ -1,4 +1,12 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
 pragma solidity 0.8.16;
 
@@ -7,15 +15,15 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../interfaces/IOracle.sol";
+import "../interfaces/ICoreOracle.sol";
 import "../interfaces/IERC20Wrapper.sol";
 
-contract CoreOracle is IOracle, OwnableUpgradeable {
-    struct TokenSetting {
-        address route;
-        uint16 liqThreshold; // The liquidation threshold, multiplied by 1e4.
-    }
-
+/**
+ * @author gmspacex
+ * @title Core Oracle
+ * @notice Oracle contract which provides price feeds to Bank contract
+ */
+contract CoreOracle is ICoreOracle, OwnableUpgradeable {
     /// The owner sets oracle token factor for a token.
     event SetTokenSetting(address indexed token, TokenSetting tokenFactor);
     /// The owner unsets oracle token factor for a token.
@@ -24,14 +32,15 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
     event SetWhitelist(address indexed token, bool ok);
     event SetRoute(address indexed token, address route);
 
-    mapping(address => TokenSetting) public tokenSettings; // Mapping from token address to oracle info.
+    /// @dev Mapping from token address to settings.
+    mapping(address => TokenSetting) public tokenSettings;
     mapping(address => bool) public whitelistedERC1155; // Mapping from token address to whitelist status
 
     function initialize() external initializer {
         __Ownable_init();
     }
 
-    /// @dev Set oracle source routes for tokens
+    /// @notice Set oracle source routes for tokens
     /// @param tokens List of tokens
     /// @param routes List of oracle source routes
     function setRoute(address[] calldata tokens, address[] calldata routes)
@@ -49,7 +58,7 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         }
     }
 
-    /// @dev Set oracle token factors for the given list of token addresses.
+    /// @notice Set oracle token factors for the given list of token addresses.
     /// @param tokens List of tokens to set info
     /// @param settings List of oracle token factors
     function setTokenSettings(
@@ -72,7 +81,7 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         }
     }
 
-    /// @dev Unset token factors for the given list of token addresses
+    /// @notice Unset token factors for the given list of token addresses
     /// @param tokens List of tokens to unset info
     function removeTokenSettings(address[] memory tokens) external onlyOwner {
         for (uint256 idx = 0; idx < tokens.length; idx++) {
@@ -81,7 +90,7 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         }
     }
 
-    /// @dev Whitelist ERC1155(wrapped tokens)
+    /// @notice Whitelist ERC1155(wrapped tokens)
     /// @param tokens List of tokens to set whitelist status
     /// @param ok Whitelist status
     function setWhitelistERC1155(address[] memory tokens, bool ok)
@@ -95,39 +104,45 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
         }
     }
 
+    /// @notice Return USD price of given token, multiplied by 10**18.
+    /// @param token The ERC-20 token to get the price of.
     function _getPrice(address token) internal view returns (uint256) {
-        uint256 px = IBaseOracle(tokenSettings[token].route).getPrice(token);
+        address route = tokenSettings[token].route;
+        if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
+        uint256 px = IBaseOracle(route).getPrice(token);
         if (px == 0) revert Errors.PRICE_FAILED(token);
         return px;
     }
 
-    /// @dev Return the USD based price of the given input, multiplied by 10**18.
-    /// @param token The ERC-20 token to check the value.
+    /// @notice Return USD price of given token, multiplied by 10**18.
+    /// @param token The ERC-20 token to get the price of.
     function getPrice(address token) external view override returns (uint256) {
         return _getPrice(token);
     }
 
-    /// @dev Return whether the oracle supports evaluating collateral value of the given token.
-    /// @param token ERC1155 token address to check for support
-    /// @param tokenId ERC1155 token id to check for support
-    function supportWrappedToken(address token, uint256 tokenId)
+    /// @notice Return whether the oracle supports underlying token of given wrapper.
+    /// @dev Only validate wrappers of Blueberry protocol such as WERC20
+    /// @param token ERC1155 token address to check the support
+    /// @param tokenId ERC1155 token id to check the support
+    function isWrappedTokenSupported(address token, uint256 tokenId)
         external
         view
         override
         returns (bool)
     {
         if (!whitelistedERC1155[token]) return false;
-        address tokenUnderlying = IERC20Wrapper(token).getUnderlyingToken(
-            tokenId
-        );
-        return tokenSettings[tokenUnderlying].route != address(0);
+        address uToken = IERC20Wrapper(token).getUnderlyingToken(tokenId);
+        return tokenSettings[uToken].route != address(0);
     }
 
-    /**
-     * @dev Return whether the ERC20 token is supported
-     * @param token The ERC20 token to check for support
-     */
-    function support(address token) external view override returns (bool) {
+    /// @notice Return whether the oracle given ERC20 token
+    /// @param token The ERC20 token to check the support
+    function isTokenSupported(address token)
+        external
+        view
+        override
+        returns (bool)
+    {
         address route = tokenSettings[token].route;
         if (route == address(0)) return false;
         try IBaseOracle(route).getPrice(token) returns (uint256 price) {
@@ -138,67 +153,42 @@ contract CoreOracle is IOracle, OwnableUpgradeable {
     }
 
     /**
-     * @dev Return the USD value of the given input for collateral purpose.
+     * @notice Return the USD value of given position
      * @param token ERC1155 token address to get collateral value
      * @param id ERC1155 token id to get collateral value
      * @param amount Token amount to get collateral value, based 1e18
      */
-    function getCollateralValue(
+    function getPositionValue(
         address token,
         uint256 id,
         uint256 amount
-    ) external view override returns (uint256) {
+    ) external view override returns (uint256 positionValue) {
         if (!whitelistedERC1155[token])
             revert Errors.ERC1155_NOT_WHITELISTED(token);
         address uToken = IERC20Wrapper(token).getUnderlyingToken(id);
-        TokenSetting memory tokenSetting = tokenSettings[uToken];
-        if (tokenSetting.route == address(0))
-            revert Errors.NO_ORACLE_ROUTE(uToken);
-
         // Underlying token is LP token, and it always has 18 decimals
         // so skipped getting LP decimals
-        uint256 underlyingValue = (_getPrice(uToken) * amount) / 1e18;
-        return underlyingValue;
+        positionValue = (_getPrice(uToken) * amount) / 1e18;
     }
 
     /**
-     * @dev Return the USD value of the given input for borrow purpose.
-     * @param token ERC20 token address to get borrow value
-     * @param amount ERC20 token amount to get borrow value
+     * @dev Return the USD value of the token and amount.
+     * @param token ERC20 token address
+     * @param amount ERC20 token amount
      */
-    function getDebtValue(address token, uint256 amount)
+    function getTokenValue(address token, uint256 amount)
         external
         view
         override
         returns (uint256 debtValue)
     {
-        TokenSetting memory tokenSetting = tokenSettings[token];
-        if (tokenSetting.route == address(0))
-            revert Errors.NO_ORACLE_ROUTE(token);
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         debtValue = (_getPrice(token) * amount) / 10**decimals;
     }
 
     /**
-     * @dev Return the USD value of isolated collateral.
-     * @param token ERC20 token address to get collateral value
-     * @param amount ERC20 token amount to get collateral value
-     */
-    function getUnderlyingValue(address token, uint256 amount)
-        external
-        view
-        returns (uint256 collateralValue)
-    {
-        TokenSetting memory tokenSetting = tokenSettings[token];
-        if (tokenSetting.route == address(0))
-            revert Errors.NO_ORACLE_ROUTE(token);
-        uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
-        collateralValue = (_getPrice(token) * amount) / 10**decimals;
-    }
-
-    /**
      * @notice Returns the Liquidation Threshold setting of collateral token.
-     * @notice 85% for volatile tokens, 90% for stablecoins
+     * @dev 85% for volatile tokens, 90% for stablecoins
      * @param token Underlying token address
      * @return liqThreshold of given token
      */

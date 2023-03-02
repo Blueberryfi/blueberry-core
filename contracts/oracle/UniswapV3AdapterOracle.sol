@@ -1,4 +1,12 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
 pragma solidity 0.8.16;
 
@@ -12,18 +20,24 @@ import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 
+/**
+ * @author gmspacex
+ * @title Uniswap V3 Adapter Oracle
+ * @notice Oracle contract which provides price feeds of tokens from Uni V3 pool paired with stablecoins
+ */
 contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     using SafeCast for uint256;
 
     event SetPoolStable(address token, address pool);
 
-    mapping(address => address) public stablePools; // Mapping from token address to token/(USDT/USDC/DAI) pool address
+    /// @dev Mapping from token address to Uni V3 pool of token/(USDT|USDC|DAI) pair
+    mapping(address => address) public stablePools;
 
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
-    /// @dev Set price reference for Stable pair
-    /// @param tokens list of tokens to set reference
-    /// @param pools list of reference pool contract addresses
+    /// @notice Set stablecoin pools for multiple tokens
+    /// @param tokens list of tokens to set stablecoin pool references
+    /// @param pools list of reference pool addresses
     function setStablePools(address[] calldata tokens, address[] calldata pools)
         external
         onlyOwner
@@ -37,8 +51,9 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         }
     }
 
-    /// @dev Return the USD based price of the given input, multiplied by 10**18.
-    /// @param token The ERC-20 token to check the value.
+    /// @notice Return USD price of given token, multiplied by 10**18.
+    /// @param token The vault token to get the price of.
+    /// @return price USD price of token in 18 decimals.
     function getPrice(address token) external view override returns (uint256) {
         // Maximum cap of maxDelayTime is 2 days(172,800), safe to convert
         uint32 secondsAgo = maxDelayTimes[token].toUint32();
@@ -49,9 +64,9 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
 
         address poolToken0 = IUniswapV3Pool(stablePool).token0();
         address poolToken1 = IUniswapV3Pool(stablePool).token1();
-        address stablePoolToken = poolToken0 == token ? poolToken1 : poolToken0; // get stable token address
+        address stablecoin = poolToken0 == token ? poolToken1 : poolToken0; // get stable token address
 
-        uint8 stableDecimals = IERC20Metadata(stablePoolToken).decimals();
+        uint8 stableDecimals = IERC20Metadata(stablecoin).decimals();
         uint8 tokenDecimals = IERC20Metadata(token).decimals();
 
         (int24 arithmeticMeanTick, ) = UniV3WrappedLibMockup.consult(
@@ -63,11 +78,11 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
                 arithmeticMeanTick,
                 uint256(10**tokenDecimals).toUint128(),
                 token,
-                stablePoolToken
+                stablecoin
             );
 
         return
-            (quoteTokenAmountForStable * base.getPrice(stablePoolToken)) /
+            (quoteTokenAmountForStable * base.getPrice(stablecoin)) /
             10**stableDecimals;
     }
 }

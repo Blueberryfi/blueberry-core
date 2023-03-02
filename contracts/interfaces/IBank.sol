@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 
 import "./IProtocolConfig.sol";
 import "./IFeeManager.sol";
-import "./IOracle.sol";
+import "./ICoreOracle.sol";
 
 interface IBank {
     struct Bank {
@@ -105,7 +105,7 @@ interface IBank {
 
     function feeManager() external view returns (IFeeManager);
 
-    function oracle() external view returns (IOracle);
+    function oracle() external view returns (ICoreOracle);
 
     /// @dev Return bank information for the given token.
     function getBankInfo(address token)
@@ -131,8 +131,6 @@ interface IBank {
 
     /// @dev Return current position information.
     function getCurrentPositionInfo() external view returns (Position memory);
-
-    function support(address token) external view returns (bool);
 
     /// @dev Trigger interest accrual and return the current borrow balance.
     function currentPositionDebt(uint256 positionId) external returns (uint256);

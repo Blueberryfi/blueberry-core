@@ -354,11 +354,8 @@ describe('Bank', () => {
 				await expect(bank.EXECUTOR()).to.be.revertedWith("NOT_UNDER_EXECUTION");
 			})
 			it("should be able to check if the oracle support the token", async () => {
-				expect(await oracle.support(ADDRESS.CRV)).to.be.false;
-				expect(await bank.support(ADDRESS.CRV)).to.be.false;
-				expect(await bank.support(ADDRESS.USDC)).to.be.true;
+				expect(await oracle.isTokenSupported(ADDRESS.CRV)).to.be.false;
 			})
 		})
 	})
-
 })

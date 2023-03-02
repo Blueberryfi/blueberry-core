@@ -1,4 +1,12 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
 pragma solidity 0.8.16;
 
@@ -7,14 +15,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IBaseOracle.sol";
 
+/**
+ * @author gmspacex
+ * @title Aggregator Oracle
+ * @notice Oracle contract which provides aggregated price feeds from several oracle sources
+ */
 contract AggregatorOracle is IBaseOracle, Ownable {
-    event SetPrimarySources(
-        address indexed token,
-        uint256 maxPriceDeviation,
-        IBaseOracle[] oracles
-    );
-
-    mapping(address => uint256) public primarySourceCount; // Mapping from token to number of sources
+    /// @dev Mapping from token to number of sources
+    mapping(address => uint256) public primarySourceCount;
     /// @dev Mapping from token to (mapping from index to oracle source)
     mapping(address => mapping(uint256 => IBaseOracle)) public primarySources;
     /// @dev Mapping from token to max price deviation (multiplied by 1e18)
@@ -23,9 +31,16 @@ contract AggregatorOracle is IBaseOracle, Ownable {
     uint256 public constant MIN_PRICE_DEVIATION = 1e18; // min price deviation
     uint256 public constant MAX_PRICE_DEVIATION = 1.2e18; // max price deviation, 20%
 
-    /// @dev Set oracle primary sources for the token
+    event SetPrimarySources(
+        address indexed token,
+        uint256 maxPriceDeviation,
+        IBaseOracle[] oracles
+    );
+
+    /// @notice Set primary oracle sources for the given token
+    /// @dev Only owner can set primary sources
     /// @param token Token address to set oracle sources
-    /// @param maxPriceDeviation Max price deviation (in 1e18) for token
+    /// @param maxPriceDeviation Max price deviation (in 1e18) of price feeds
     /// @param sources Oracle sources for the token
     function setPrimarySources(
         address token,
@@ -35,19 +50,21 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         _setPrimarySources(token, maxPriceDeviation, sources);
     }
 
-    /// @dev Set oracle primary sources for multiple tokens
+    /// @notice Set primary oracle sources for multiple tokens
     /// @param tokens List of token addresses to set oracle sources
-    /// @param maxPriceDeviationList List of max price deviations (in 1e18) for tokens
+    /// @param maxPriceDeviationList List of max price deviations (in 1e18) of price feeds
     /// @param allSources List of oracle sources for tokens
     function setMultiPrimarySources(
         address[] memory tokens,
         uint256[] memory maxPriceDeviationList,
         IBaseOracle[][] memory allSources
     ) external onlyOwner {
+        // Validate inputs
         if (
             tokens.length != allSources.length ||
             tokens.length != maxPriceDeviationList.length
         ) revert Errors.INPUT_ARRAY_MISMATCH();
+
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             _setPrimarySources(
                 tokens[idx],
@@ -57,15 +74,17 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         }
     }
 
-    /// @dev Set oracle primary sources for tokens
+    /// @notice Set primary oracle sources for given token
+    /// @dev Emit SetPrimarySources event when primary oracles set successfully
     /// @param token Token to set oracle sources
-    /// @param maxPriceDeviation Max price deviation (in 1e18) for token
+    /// @param maxPriceDeviation Max price deviation (in 1e18) of price feeds
     /// @param sources Oracle sources for the token
     function _setPrimarySources(
         address token,
         uint256 maxPriceDeviation,
         IBaseOracle[] memory sources
     ) internal {
+        // Validate inputs
         if (token == address(0)) revert Errors.ZERO_ADDRESS();
         if (
             maxPriceDeviation < MIN_PRICE_DEVIATION ||
@@ -83,9 +102,9 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         emit SetPrimarySources(token, maxPriceDeviation, sources);
     }
 
-    /// @dev Return the USD based price of the given input, multiplied by 10**18.
+    /// @notice Return USD price of given token, multiplied by 10**18.
+    /// @dev Support at most 3 oracle sources per token
     /// @param token Token to get price of
-    /// NOTE: Support at most 3 oracle sources per token
     function getPrice(address token) external view override returns (uint256) {
         uint256 candidateSourceCount = primarySourceCount[token];
         if (candidateSourceCount == 0) revert Errors.NO_PRIMARY_SOURCE(token);

@@ -151,7 +151,7 @@
           }
         ],
         "indexed": false,
-        "internalType": "struct CoreOracle.TokenSetting",
+        "internalType": "struct ICoreOracle.TokenSetting",
         "name": "tokenFactor",
         "type": "tuple"
       }
@@ -184,6 +184,25 @@
         "internalType": "address",
         "name": "token",
         "type": "address"
+      }
+    ],
+    "name": "getLiqThreshold",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
       },
       {
         "internalType": "uint256",
@@ -196,54 +215,11 @@
         "type": "uint256"
       }
     ],
-    "name": "getCollateralValue",
+    "name": "getPositionValue",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "getDebtValue",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "debtValue",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "getLiqThreshold",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
+        "name": "positionValue",
         "type": "uint256"
       }
     ],
@@ -282,11 +258,11 @@
         "type": "uint256"
       }
     ],
-    "name": "getUnderlyingValue",
+    "name": "getTokenValue",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "collateralValue",
+        "name": "debtValue",
         "type": "uint256"
       }
     ],
@@ -298,6 +274,49 @@
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "isTokenSupported",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isWrappedTokenSupported",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -371,7 +390,7 @@
             "type": "uint16"
           }
         ],
-        "internalType": "struct CoreOracle.TokenSetting[]",
+        "internalType": "struct ICoreOracle.TokenSetting[]",
         "name": "settings",
         "type": "tuple[]"
       }
@@ -397,49 +416,6 @@
     "name": "setWhitelistERC1155",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "support",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "supportWrappedToken",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

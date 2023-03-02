@@ -1,4 +1,12 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
 pragma solidity 0.8.16;
 
@@ -6,32 +14,39 @@ import "./BaseAdapter.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/band/IStdReference.sol";
 
+/**
+ * @author gmspacex
+ * @title BandAdapterOracle
+ * @notice Oracle Adapter contract which provides price feeds from Band Protocol
+ */
 contract BandAdapterOracle is IBaseOracle, BaseAdapter {
-    IStdReference public ref; // Standard reference
+    /// @dev BandStandardRef oracle contract
+    IStdReference public ref;
 
-    mapping(address => string) public symbols; // Mapping from token to symbol string
+    /// @dev Mapping from token to symbol string (Band provides price feeds by token symbols)
+    mapping(address => string) public symbols;
 
     event SetRef(address ref);
     event SetSymbol(address token, string symbol);
 
-    constructor(IStdReference _ref) {
-        if (address(_ref) == address(0)) revert Errors.ZERO_ADDRESS();
+    constructor(IStdReference ref_) {
+        if (address(ref_) == address(0)) revert Errors.ZERO_ADDRESS();
 
-        ref = _ref;
+        ref = ref_;
     }
 
-    /// @dev Set standard reference source
-    /// @param _ref Standard reference source
-    function setRef(IStdReference _ref) external onlyOwner {
-        if (address(_ref) == address(0)) revert Errors.ZERO_ADDRESS();
-        ref = _ref;
-        emit SetRef(address(_ref));
+    /// @notice Set standard reference source
+    /// @param ref_ Standard reference source
+    function setRef(IStdReference ref_) external onlyOwner {
+        if (address(ref_) == address(0)) revert Errors.ZERO_ADDRESS();
+        ref = ref_;
+        emit SetRef(address(ref_));
     }
 
-    /// @dev Set token symbols
+    /// @notice Set token symbols
     /// @param tokens List of tokens
     /// @param syms List of string symbols
-    function setSymbols(address[] memory tokens, string[] memory syms)
+    function setSymbols(address[] calldata tokens, string[] calldata syms)
         external
         onlyOwner
     {
@@ -44,8 +59,9 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
         }
     }
 
-    /// @dev Return the USD based price of the given input, multiplied by 10**18.
-    /// @param token The ERC-20 token to check the value.
+    /// @notice Return the USD price of given token, multiplied by 10**18.
+    /// @dev Band protocol is already providing 1e18 precision feeds
+    /// @param token The ERC-20 token to get the price of.
     function getPrice(address token) external view override returns (uint256) {
         string memory sym = symbols[token];
         uint256 maxDelayTime = maxDelayTimes[token];

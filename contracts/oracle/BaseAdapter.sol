@@ -1,17 +1,30 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../utils/BlueBerryErrors.sol" as Errors;
 
+/**
+ * @author gmspacex
+ * @title BaseAdapter
+ * @notice Base Adapter Contract which interacts with external oracle services
+ */
 abstract contract BaseAdapter is Ownable {
     /// @dev Mapping from token address to max delay time
     mapping(address => uint256) public maxDelayTimes;
 
     event SetMaxDelayTime(address token, uint256 maxDelayTime);
 
-    /// @dev Set max delay time for each token
+    /// @notice Set max delay time for each token
     /// @param tokens List of remapped tokens to set max delay
     /// @param maxDelays List of max delay times to set to
     function setMaxDelayTimes(

@@ -10,7 +10,7 @@ import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
 import "./utils/ERC1155NaiveReceiver.sol";
 import "./interfaces/IBank.sol";
-import "./interfaces/IOracle.sol";
+import "./interfaces/ICoreOracle.sol";
 import "./interfaces/ISoftVault.sol";
 import "./interfaces/IHardVault.sol";
 import "./interfaces/compound/ICErc20.sol";
@@ -31,7 +31,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     address public SPELL; // TEMPORARY: spell currently under execution.
 
     IProtocolConfig public config;
-    IOracle public oracle; // The oracle address for determining prices.
+    ICoreOracle public oracle; // The oracle address for determining prices.
     IFeeManager public feeManager;
 
     uint256 public nextPositionId; // Next available position ID, starting from 1 (see initialize).
@@ -92,7 +92,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param config_ The Protocol config address
     /// @param feeManager_ The Fee manager address
     function initialize(
-        IOracle oracle_,
+        ICoreOracle oracle_,
         IProtocolConfig config_,
         IFeeManager feeManager_
     ) external initializer {
@@ -181,7 +181,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (statuses[idx] && !oracle.support(tokens[idx]))
+            if (statuses[idx] && !oracle.isTokenSupported(tokens[idx]))
                 revert Errors.ORACLE_NOT_SUPPORT(tokens[idx]);
             whitelistedTokens[tokens[idx]] = statuses[idx];
         }
@@ -246,12 +246,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @notice check last bit of bankStatus
     function isLendAllowed() public view returns (bool) {
         return (bankStatus & 0x04) > 0;
-    }
-
-    /// @dev Check whether the oracle supports the token
-    /// @param token ERC-20 token to check for support
-    function support(address token) external view override returns (bool) {
-        return oracle.support(token);
     }
 
     /// @dev Trigger interest accrual for the given bank.
@@ -359,7 +353,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         } else {
             if (pos.collToken == address(0))
                 revert Errors.BAD_COLLATERAL(positionId);
-            return oracle.getCollateralValue(pos.collToken, pos.collId, size);
+            return oracle.getPositionValue(pos.collToken, pos.collId, size);
         }
     }
 
@@ -373,7 +367,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     {
         Position memory pos = positions[positionId];
         uint256 debt = getPositionDebt(positionId);
-        debtValue = oracle.getDebtValue(pos.debtToken, debt);
+        debtValue = oracle.getTokenValue(pos.debtToken, debt);
     }
 
     function getPositionRisk(uint256 positionId)
@@ -384,7 +378,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         Position storage pos = positions[positionId];
         uint256 pv = getPositionValue(positionId);
         uint256 ov = getDebtValue(positionId);
-        uint256 cv = oracle.getUnderlyingValue(
+        uint256 cv = oracle.getTokenValue(
             pos.underlyingToken,
             pos.underlyingAmount
         );
@@ -703,7 +697,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     ) external override inExec {
         Position storage pos = positions[POSITION_ID];
         if (pos.collToken != collToken || pos.collId != collId) {
-            if (!oracle.supportWrappedToken(collToken, collId))
+            if (!oracle.isWrappedTokenSupported(collToken, collId))
                 revert Errors.ORACLE_NOT_SUPPORT_WTOKEN(collToken);
             if (pos.collateralSize > 0)
                 revert Errors.ANOTHER_COL_EXIST(pos.collToken);

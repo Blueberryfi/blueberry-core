@@ -192,22 +192,22 @@ describe('Core Oracle', () => {
       await coreOracle.setWhitelistERC1155([werc20.address], true);
 
       expect(
-        await coreOracle.supportWrappedToken(ADDRESS.USDC, 0)
+        await coreOracle.isWrappedTokenSupported(ADDRESS.USDC, 0)
       ).to.be.false;
 
       let collId = BigNumber.from(ADDRESS.USDC);
       expect(
-        await coreOracle.supportWrappedToken(werc20.address, collId)
+        await coreOracle.isWrappedTokenSupported(werc20.address, collId)
       ).to.be.true;
 
       collId = BigNumber.from(ADDRESS.USDT);
-      expect(await coreOracle.supportWrappedToken(werc20.address, collId)).to.be.false;
+      expect(await coreOracle.isWrappedTokenSupported(werc20.address, collId)).to.be.false;
     })
     it("should be able to get if the token price is supported or not", async () => {
       await coreOracle.setRoute([ADDRESS.USDT], [mockOracle.address]);
       await mockOracle.setPrice([ADDRESS.USDC], [utils.parseEther("1")]);
 
-      expect(await coreOracle.support(ADDRESS.USDC)).to.be.true;
+      expect(await coreOracle.isTokenSupported(ADDRESS.USDC)).to.be.true;
 
       await expect(
         coreOracle.getPrice(ADDRESS.USDT)
@@ -215,18 +215,18 @@ describe('Core Oracle', () => {
     })
   })
   describe("Value", () => {
-    // TODO: Cover getCollateralValue, getDebtValue, getUnderlyingValue, getLiqThreshold
+    // TODO: Cover getPositionValue, getTokenValue, getLiqThreshold
     describe("Debt Value", async () => {
       it("should revert when oracle route is not set", async () => {
         await expect(
-          coreOracle.getDebtValue(ADDRESS.CRV, 100)
+          coreOracle.getTokenValue(ADDRESS.CRV, 100)
         ).to.be.revertedWith("NO_ORACLE_ROUTE");
       })
     })
     describe("Collateral Value", async () => {
       it("should revert when oracle route is not set", async () => {
         await expect(
-          coreOracle.getCollateralValue(ADDRESS.CRV, 0, 100)
+          coreOracle.getPositionValue(ADDRESS.CRV, 0, 100)
         ).to.be.revertedWith("ERC1155_NOT_WHITELISTED");
       })
     })

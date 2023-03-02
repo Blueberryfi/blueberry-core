@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "contract IStdReference",
-        "name": "_ref",
+        "name": "ref_",
         "type": "address"
       }
     ],
@@ -238,7 +238,7 @@
     "inputs": [
       {
         "internalType": "contract IStdReference",
-        "name": "_ref",
+        "name": "ref_",
         "type": "address"
       }
     ],
