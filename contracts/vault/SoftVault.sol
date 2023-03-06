@@ -13,6 +13,13 @@ import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/ISoftVault.sol";
 import "../interfaces/compound/ICErc20.sol";
 
+/**
+ * @author gmspacex
+ * @title Soft Vault
+ * @notice Soft Vault is a spot where users lend and borrow tokens through Blueberry Lending Protocol(Compound Fork).
+ * @dev SoftVault is communicating with cTokens to lend and borrow underlying tokens from/to Compound fork.
+ *      Underlying tokens can be ERC20 tokens listed by Blueberry team, such as USDC, USDT, DAI, WETH, ...
+ */
 contract SoftVault is
     OwnableUpgradeable,
     ERC20Upgradeable,
@@ -25,6 +32,7 @@ contract SoftVault is
     ICErc20 public cToken;
     /// @dev address of underlying token
     IERC20Upgradeable public uToken;
+    /// @dev address of protocol config
     IProtocolConfig public config;
 
     event Deposited(
@@ -44,10 +52,13 @@ contract SoftVault is
         string memory _name,
         string memory _symbol
     ) external initializer {
-        __ERC20_init(_name, _symbol);
+        __ReentrancyGuard_init();
         __Ownable_init();
+        __ERC20_init(_name, _symbol);
+
         if (address(_cToken) == address(0) || address(_config) == address(0))
             revert Errors.ZERO_ADDRESS();
+
         IERC20Upgradeable _uToken = IERC20Upgradeable(_cToken.underlying());
         config = _config;
         cToken = _cToken;
@@ -61,7 +72,7 @@ contract SoftVault is
     /**
      * @notice Deposit underlying assets on Compound and issue share token
      * @param amount Underlying token amount to deposit
-     * @return shareAmount cToken amount
+     * @return shareAmount same as cToken amount received
      */
     function deposit(uint256 amount)
         external
@@ -88,6 +99,7 @@ contract SoftVault is
 
     /**
      * @notice Withdraw underlying assets from Compound
+     * @dev It cuts vault withdraw fee when you withdraw within the vault withdraw window (2 months)
      * @param shareAmount Amount of cTokens to redeem
      * @return withdrawAmount Amount of underlying assets withdrawn
      */

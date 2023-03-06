@@ -12,6 +12,15 @@ import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/IHardVault.sol";
 
+/**
+ * @author gmspacex
+ * @title Hard Vault
+ * @notice Hard Vault is a spot to lock LP tokens as collateral.
+ * @dev HardVault is just holding LP tokens deposited by users.
+ *      LP tokens should be listed by Blueberry team.
+ *      HardVault is ERC1155 and Underlying LP tokens are identified by casted tokenId from token address
+ * @dev HardVault is not on the road yet, need more research.
+ */
 contract HardVault is
     OwnableUpgradeable,
     ERC1155Upgradeable,
@@ -34,13 +43,15 @@ contract HardVault is
     );
 
     function initialize(IProtocolConfig _config) external initializer {
-        __ERC1155_init("HardVault");
+        __ReentrancyGuard_init();
         __Ownable_init();
+        __ERC1155_init("HardVault");
+
         if (address(_config) == address(0)) revert Errors.ZERO_ADDRESS();
         config = _config;
     }
 
-    /// @dev Return the underlying ERC20 balance for the user.
+    /// @notice Return the underlying ERC20 balance for the user.
     /// @param token token address to get balance of
     /// @param user user address to get balance of
     function balanceOfERC20(address token, address user)
@@ -52,7 +63,7 @@ contract HardVault is
         return balanceOf(user, uint256(uint160(token)));
     }
 
-    /// @dev Return the underlying ERC-20 for the given ERC-1155 token id.
+    /// @notice Return the underlying ERC-20 for the given ERC-1155 token id.
     /// @param id token id (corresponds to token address for wrapped ERC20)
     function getUnderlyingToken(uint256 id) external pure returns (address) {
         address token = address(uint160(id));
@@ -61,9 +72,9 @@ contract HardVault is
     }
 
     /**
-     * @notice Deposit underlying assets on Compound and issue share token
+     * @notice Deposit underlying assets on the vault and issue share token
      * @param amount Underlying token amount to deposit
-     * @return shareAmount cToken amount
+     * @return shareAmount amount of vault share tokens minted
      */
     function deposit(address token, uint256 amount)
         external
@@ -84,8 +95,8 @@ contract HardVault is
     }
 
     /**
-     * @notice Withdraw underlying assets from Compound
-     * @param shareAmount Amount of cTokens to redeem
+     * @notice Withdraw underlying assets from the vault
+     * @param shareAmount Amount of vault share tokens to redeem
      * @return withdrawAmount Amount of underlying assets withdrawn
      */
     function withdraw(address token, uint256 shareAmount)
@@ -97,19 +108,13 @@ contract HardVault is
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         _burn(msg.sender, uint256(uint160(token)), shareAmount);
-        withdrawAmount = shareAmount;
 
         // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
-        if (
-            block.timestamp <
-            config.withdrawVaultFeeWindowStartTime() +
-                config.withdrawVaultFeeWindow()
-        ) {
-            uint256 fee = (withdrawAmount * config.withdrawVaultFee()) /
-                Constants.DENOMINATOR;
-            uToken.safeTransfer(config.treasury(), fee);
-            withdrawAmount -= fee;
-        }
+        uToken.approve(address(config.feeManager()), shareAmount);
+        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
+            address(uToken),
+            withdrawAmount
+        );
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);
