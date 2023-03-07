@@ -8,6 +8,11 @@ import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
 import "./interfaces/IProtocolConfig.sol";
 
+/**
+ * @title ProtocolConfig
+ * @author gmspacex
+ * @notice Hotspot of all configurable states of the protocol
+ */
 contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     // Leveraging Fee
     uint256 public depositFee;

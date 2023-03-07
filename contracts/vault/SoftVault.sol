@@ -65,6 +65,7 @@ contract SoftVault is
         uToken = _uToken;
     }
 
+    /// @dev Vault has same decimal as cToken, cToken has same decimal as underlyingToken
     function decimals() public view override returns (uint8) {
         return cToken.decimals();
     }
@@ -74,12 +75,9 @@ contract SoftVault is
      * @param amount Underlying token amount to deposit
      * @return shareAmount same as cToken amount received
      */
-    function deposit(uint256 amount)
-        external
-        override
-        nonReentrant
-        returns (uint256 shareAmount)
-    {
+    function deposit(
+        uint256 amount
+    ) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         uToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -103,12 +101,9 @@ contract SoftVault is
      * @param shareAmount Amount of cTokens to redeem
      * @return withdrawAmount Amount of underlying assets withdrawn
      */
-    function withdraw(uint256 shareAmount)
-        external
-        override
-        nonReentrant
-        returns (uint256 withdrawAmount)
-    {
+    function withdraw(
+        uint256 shareAmount
+    ) external override nonReentrant returns (uint256 withdrawAmount) {
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
 
         _burn(msg.sender, shareAmount);

@@ -20,33 +20,43 @@ contract FeeManager is OwnableUpgradeable {
         config = config_;
     }
 
-    function doCutDepositFee(address token, uint256 amount)
-        external
-        returns (uint256)
-    {
+    /// @notice Cut deposit fee when lending isolated underlying assets to Compound fork
+    /// @param token underlying token address
+    /// @param amount deposit amount
+    function doCutDepositFee(
+        address token,
+        uint256 amount
+    ) external returns (uint256) {
         return _doCutFee(token, amount, config.depositFee());
     }
 
-    function doCutWithdrawFee(address token, uint256 amount)
-        external
-        returns (uint256)
-    {
+    /// @notice Cut withdraw fee when redeeming isolated underlying tokens from Compound fork
+    /// @param token underlying token address
+    /// @param amount withdraw amount
+    function doCutWithdrawFee(
+        address token,
+        uint256 amount
+    ) external returns (uint256) {
         return _doCutFee(token, amount, config.withdrawFee());
     }
 
-    /// @dev Cut performance fee from the rewards generated from the leveraged position
-    /// @param token The token to perform the refund action.
-    function doCutRewardsFee(address token, uint256 amount)
-        external
-        returns (uint256)
-    {
+    /// @notice Cut performance fee from the rewards generated from the leveraged position
+    /// @param token reward token address
+    /// @param amount reward amount
+    function doCutRewardsFee(
+        address token,
+        uint256 amount
+    ) external returns (uint256) {
         return _doCutFee(token, amount, config.rewardFee());
     }
 
-    function doCutVaultWithdrawFee(address token, uint256 amount)
-        external
-        returns (uint256)
-    {
+    /// @notice Cut vault withdraw fee when perform withdraw from Compound fork within the given window
+    /// @param token underlying token address
+    /// @param amount withdraw amount
+    function doCutVaultWithdrawFee(
+        address token,
+        uint256 amount
+    ) external returns (uint256) {
         // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
         if (
             block.timestamp <
@@ -59,6 +69,10 @@ contract FeeManager is OwnableUpgradeable {
         }
     }
 
+    /// @dev Cut fee from given amount with given rate and send fee to the treasury
+    /// @param token fee token address
+    /// @param amount total amount to cut fee from
+    /// @param feeRate fee rate, based 10000
     function _doCutFee(
         address token,
         uint256 amount,

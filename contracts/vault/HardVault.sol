@@ -29,6 +29,7 @@ contract HardVault is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    /// @dev address of protocol config
     IProtocolConfig public config;
 
     event Deposited(
@@ -51,24 +52,35 @@ contract HardVault is
         config = _config;
     }
 
+    /// @dev Encode given underlying token address to tokenId
+    function _encodeTokenId(address uToken) internal pure returns (uint) {
+        return uint256(uint160(uToken));
+    }
+
+    /// @dev Decode given tokenId to underlyingToken address
+    function _decodeTokenId(uint tokenId) internal pure returns (address) {
+        return address(uint160(tokenId));
+    }
+
     /// @notice Return the underlying ERC20 balance for the user.
     /// @param token token address to get balance of
     /// @param user user address to get balance of
-    function balanceOfERC20(address token, address user)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return balanceOf(user, uint256(uint160(token)));
+    function balanceOfERC20(
+        address token,
+        address user
+    ) external view override returns (uint256) {
+        return balanceOf(user, _encodeTokenId(token));
     }
 
     /// @notice Return the underlying ERC-20 for the given ERC-1155 token id.
-    /// @param id token id (corresponds to token address for wrapped ERC20)
-    function getUnderlyingToken(uint256 id) external pure returns (address) {
-        address token = address(uint160(id));
-        if (uint256(uint160(token)) != id) revert Errors.INVALID_TOKEN_ID(id);
-        return token;
+    /// @param tokenId token id (corresponds to token address for wrapped ERC20)
+    /// @return token underlying token address of given tokenId
+    function getUnderlyingToken(
+        uint256 tokenId
+    ) external pure override returns (address token) {
+        token = _decodeTokenId(tokenId);
+        if (_encodeTokenId(token) != tokenId)
+            revert Errors.INVALID_TOKEN_ID(tokenId);
     }
 
     /**
@@ -76,12 +88,10 @@ contract HardVault is
      * @param amount Underlying token amount to deposit
      * @return shareAmount amount of vault share tokens minted
      */
-    function deposit(address token, uint256 amount)
-        external
-        override
-        nonReentrant
-        returns (uint256 shareAmount)
-    {
+    function deposit(
+        address token,
+        uint256 amount
+    ) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
@@ -99,15 +109,13 @@ contract HardVault is
      * @param shareAmount Amount of vault share tokens to redeem
      * @return withdrawAmount Amount of underlying assets withdrawn
      */
-    function withdraw(address token, uint256 shareAmount)
-        external
-        override
-        nonReentrant
-        returns (uint256 withdrawAmount)
-    {
+    function withdraw(
+        address token,
+        uint256 shareAmount
+    ) external override nonReentrant returns (uint256 withdrawAmount) {
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
-        _burn(msg.sender, uint256(uint160(token)), shareAmount);
+        _burn(msg.sender, _encodeTokenId(token), shareAmount);
 
         // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
         uToken.approve(address(config.feeManager()), shareAmount);

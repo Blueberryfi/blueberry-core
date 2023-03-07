@@ -10,9 +10,9 @@ interface IBank {
     struct Bank {
         bool isListed; // Whether this market exists.
         uint8 index; // Reverse look up index for this bank.
-        address cToken; // The CToken to draw liquidity from.
-        address softVault;
         address hardVault;
+        address softVault;
+        address cToken; // The CToken to draw liquidity from.
         uint256 totalShare; // The total debt share count across all open positions.
         uint256 totalLend; // The total lent amount
     }
@@ -20,25 +20,25 @@ interface IBank {
     struct Position {
         address owner; // The owner of this position.
         address collToken; // The ERC1155 token used as collateral for this position.
-        address underlyingToken;
-        address debtToken;
-        uint256 underlyingAmount;
-        uint256 underlyingVaultShare;
-        uint256 collId; // The token id used as collateral.
-        uint256 collateralSize; // The size of collateral token for this position.
-        uint256 debtShare; // The debt share for each token.
+        address underlyingToken; // Isolated underlying collateral
+        address debtToken; // Debt Token
+        uint256 underlyingAmount; // Amount of isolated underlying collateral locked in the vault
+        uint256 underlyingVaultShare; // Amount of vault share for isolated underlying coll
+        uint256 collId; // The token id of Wrapper.
+        uint256 collateralSize; // The amount of wrapped token for this position.
+        uint256 debtShare; // The debt share of debt token for given bank.
     }
 
-    /// The governor adds a new bank gets added to the system.
+    /// The owner adds a new bank gets added to the system.
     event AddBank(
         address token,
         address cToken,
         address softVault,
         address hardVault
     );
-    /// The governor sets the address of the oracle smart contract.
+    /// The owner sets the address of the oracle smart contract.
     event SetOracle(address oracle);
-    /// Someone repays tokens to a bank via a spell caller.
+    /// Someone lend tokens to a bank via a spell caller.
     event Lend(
         uint256 positionId,
         address caller,
@@ -107,27 +107,19 @@ interface IBank {
 
     function oracle() external view returns (ICoreOracle);
 
-    /// @dev Return bank information for the given token.
-    function getBankInfo(address token)
-        external
-        view
-        returns (
-            bool isListed,
-            address cToken,
-            uint256 totalShare
-        );
+    function getBankInfo(
+        address token
+    ) external view returns (bool isListed, address cToken, uint256 totalShare);
 
     function getDebtValue(uint256 positionId) external view returns (uint256);
 
-    function getPositionValue(uint256 positionId)
-        external
-        view
-        returns (uint256);
+    function getPositionValue(
+        uint256 positionId
+    ) external view returns (uint256);
 
-    function getPositionInfo(uint256 positionId)
-        external
-        view
-        returns (Position memory);
+    function getPositionInfo(
+        uint256 positionId
+    ) external view returns (Position memory);
 
     /// @dev Return current position information.
     function getCurrentPositionInfo() external view returns (Position memory);

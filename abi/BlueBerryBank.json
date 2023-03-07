@@ -782,7 +782,7 @@
       },
       {
         "internalType": "address",
-        "name": "cToken",
+        "name": "hardVault",
         "type": "address"
       },
       {
@@ -792,7 +792,7 @@
       },
       {
         "internalType": "address",
-        "name": "hardVault",
+        "name": "cToken",
         "type": "address"
       },
       {
