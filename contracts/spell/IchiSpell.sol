@@ -147,19 +147,20 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         bool isTokenA = vault.token0() == borrowToken;
         uint256 balance = IERC20(borrowToken).balanceOf(address(this));
         IERC20Upgradeable(borrowToken).approve(address(vault), balance);
+        uint ichiVaultShare;
         if (isTokenA) {
-            vault.deposit(balance, 0, address(this));
+            ichiVaultShare = vault.deposit(balance, 0, address(this));
         } else {
-            vault.deposit(0, balance, address(this));
+            ichiVaultShare = vault.deposit(0, balance, address(this));
         }
 
         // 4. Validate MAX LTV
         _validateMaxLTV(strategyId);
 
         // 5. Validate Max Pos Size
-        uint256 lpPrice = bank.oracle().getPrice(strategy.vault);
-        uint256 curPosSize = (lpPrice * vault.balanceOf(address(this))) /
-            10 ** IICHIVault(strategy.vault).decimals();
+        uint256 lpPrice = bank.oracle().getPrice(address(vault));
+        uint256 curPosSize = (lpPrice * ichiVaultShare) /
+            10 ** vault.decimals();
         if (curPosSize > strategy.maxPositionSize)
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
     }
