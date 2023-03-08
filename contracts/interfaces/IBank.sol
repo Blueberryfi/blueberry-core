@@ -134,7 +134,7 @@ interface IBank {
     function withdrawLend(address token, uint256 amount) external;
 
     /// @dev Borrow tokens from the bank.
-    function borrow(address token, uint256 amount) external;
+    function borrow(address token, uint256 amount) external returns (uint256);
 
     /// @dev Repays tokens to the bank.
     function repay(address token, uint256 amountCall) external;

@@ -603,10 +603,18 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Borrow tokens from given bank. Must only be called from spell while under execution.
     /// @param token The token to borrow from the bank.
     /// @param amount The amount of tokens to borrow.
+    /// @return borrowedAmount Returns the borrowed amount
     function borrow(
         address token,
         uint256 amount
-    ) external override inExec poke(token) onlyWhitelistedToken(token) {
+    )
+        external
+        override
+        inExec
+        poke(token)
+        onlyWhitelistedToken(token)
+        returns (uint256 borrowedAmount)
+    {
         if (!isBorrowAllowed()) revert Errors.BORROW_NOT_ALLOWED();
         Bank storage bank = banks[token];
         Position storage pos = positions[POSITION_ID];
@@ -624,10 +632,10 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             : (amount * totalShare).divCeil(totalDebt);
         bank.totalShare += share;
         pos.debtShare += share;
-        IERC20Upgradeable(token).safeTransfer(
-            msg.sender,
-            _doBorrow(token, amount)
-        );
+
+        borrowedAmount = _doBorrow(token, amount);
+        IERC20Upgradeable(token).safeTransfer(msg.sender, borrowedAmount);
+
         emit Borrow(POSITION_ID, msg.sender, token, amount, share);
     }
 

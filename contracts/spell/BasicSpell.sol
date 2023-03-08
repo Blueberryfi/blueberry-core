@@ -87,9 +87,12 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
      * @param amount The amount to borrow.
      * @notice Do not use `amount` input argument to handle the received amount.
      */
-    function _doBorrow(address token, uint256 amount) internal {
+    function _doBorrow(
+        address token,
+        uint256 amount
+    ) internal returns (uint256 borrowedAmount) {
         if (amount > 0) {
-            bank.borrow(token, amount);
+            borrowedAmount = bank.borrow(token, amount);
         }
     }
 

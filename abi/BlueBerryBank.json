@@ -823,7 +823,13 @@
       }
     ],
     "name": "borrow",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "borrowedAmount",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },

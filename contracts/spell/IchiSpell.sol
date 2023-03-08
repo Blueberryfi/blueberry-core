@@ -140,18 +140,17 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         _doLend(collToken, collAmount);
 
         // 2. Borrow specific amounts
-        _doBorrow(borrowToken, borrowAmount);
+        uint256 borrowBalance = _doBorrow(borrowToken, borrowAmount);
 
         // 3. Add liquidity - Deposit on ICHI Vault
         IICHIVault vault = IICHIVault(strategy.vault);
         bool isTokenA = vault.token0() == borrowToken;
-        uint256 balance = IERC20(borrowToken).balanceOf(address(this));
-        IERC20Upgradeable(borrowToken).approve(address(vault), balance);
+        IERC20Upgradeable(borrowToken).approve(address(vault), borrowBalance);
         uint ichiVaultShare;
         if (isTokenA) {
-            ichiVaultShare = vault.deposit(balance, 0, address(this));
+            ichiVaultShare = vault.deposit(borrowBalance, 0, address(this));
         } else {
-            ichiVaultShare = vault.deposit(0, balance, address(this));
+            ichiVaultShare = vault.deposit(0, borrowBalance, address(this));
         }
 
         // 4. Validate MAX LTV
