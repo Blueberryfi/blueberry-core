@@ -411,6 +411,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         address debtToken,
         uint256 amountCall
     ) external override lock poke(debtToken) {
+        if (!isRepayAllowed()) revert Errors.REPAY_NOT_ALLOWED();
         if (amountCall == 0) revert Errors.ZERO_AMOUNT();
         if (!isLiquidatable(positionId))
             revert Errors.NOT_LIQUIDATABLE(positionId);
