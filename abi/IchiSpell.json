@@ -46,6 +46,17 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "debtToken",
+        "type": "address"
+      }
+    ],
+    "name": "INCORRECT_DEBT",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "lpToken",
         "type": "address"
       }

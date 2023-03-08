@@ -127,6 +127,12 @@ describe('Bank', () => {
 		const iface = new ethers.utils.Interface(SpellABI);
 
 		beforeEach(async () => {
+			await mockOracle.setPrice(
+				[ICHI],
+				[
+					BigNumber.from(10).pow(18).mul(5), // $5
+				],
+			)
 			await usdc.approve(bank.address, ethers.constants.MaxUint256);
 			await ichi.approve(bank.address, ethers.constants.MaxUint256);
 			await bank.execute(
@@ -204,13 +210,47 @@ describe('Bank', () => {
 			debtValue = await bank.getDebtValue(1)
 			positionValue = await bank.getPositionValue(1);
 			risk = await bank.getPositionRisk(1)
+			const collateralBalance = await colToken.balanceOf(alice.address, positionInfo.collId)
 			console.log("Cur Pos:", positionInfo);
 			console.log("Debt Value:", utils.formatUnits(debtValue));
 			console.log("Position Value:", utils.formatUnits(positionValue));
 			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
 			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
-			console.log("Liquidator's Position Balance:", await colToken.balanceOf(alice.address, positionInfo.collId));
+			console.log("Liquidator's Position Balance:", collateralBalance);
 			console.log("Liquidator's Collateral Balance:", await uVToken.balanceOf(alice.address));
+
+			console.log(await werc20.balanceOf(alice.address, positionInfo.collId))
+			await werc20.connect(alice).burn(ichiVault.address, collateralBalance)
+			const lpBalance = await ichiVault.balanceOf(alice.address)
+			await ichiVault.connect(alice).withdraw(lpBalance, alice.address)
+		})
+		it("should be able to maintain the position to get rid of liquidation", async () => {
+			const positionId = (await bank.nextPositionId()).sub(1)
+			await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
+			let risk = await bank.getPositionRisk(positionId)
+			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+
+			await mockOracle.setPrice(
+				[ICHI],
+				[
+					BigNumber.from(10).pow(17).mul(8), // $0.8
+				]
+			);
+			risk = await bank.getPositionRisk(positionId)
+			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+			expect(await bank.isLiquidatable(positionId)).to.be.true;
+
+			await bank.execute(
+				positionId,
+				spell.address,
+				iface.encodeFunctionData("increasePosition", [
+					ICHI,
+					depositAmount.div(3)
+				])
+			)
+			risk = await bank.getPositionRisk(positionId)
+			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+			expect(await bank.isLiquidatable(positionId)).to.be.false;
 		})
 	})
 

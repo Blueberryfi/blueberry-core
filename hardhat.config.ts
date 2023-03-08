@@ -3,7 +3,7 @@ import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import 'solidity-coverage';
 import 'hardhat-abi-exporter';
-import 'hardhat-gas-reporter';
+// import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import '@openzeppelin/hardhat-upgrades'
 import { HardhatUserConfig } from 'hardhat/config';

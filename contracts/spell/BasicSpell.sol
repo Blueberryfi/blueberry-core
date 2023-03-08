@@ -82,10 +82,10 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     }
 
     /**
-     * @dev Internal call to borrow tokens from the bank on behalf of the current executor.
+     * @notice Internal call to borrow tokens from the bank on behalf of the current executor.
      * @param token The token to borrow from the bank.
      * @param amount The amount to borrow.
-     * @notice Do not use `amount` input argument to handle the received amount.
+     * @return borrowedAmount The amount of borrowed tokens
      */
     function _doBorrow(
         address token,

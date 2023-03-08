@@ -144,6 +144,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
 
         // 3. Add liquidity - Deposit on ICHI Vault
         IICHIVault vault = IICHIVault(strategy.vault);
+        if (vault.token0() != borrowToken && vault.token1() != borrowToken)
+            revert Errors.INCORRECT_DEBT(borrowToken);
         bool isTokenA = vault.token0() == borrowToken;
         IERC20Upgradeable(borrowToken).approve(address(vault), borrowBalance);
         uint ichiVaultShare;
