@@ -1,4 +1,12 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
 pragma solidity 0.8.16;
 
@@ -103,7 +111,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         uint256 uPrice = bank.oracle().getPrice(pos.underlyingToken);
         uint256 uValue = (uPrice * pos.underlyingAmount) /
-            10**IERC20Metadata(pos.underlyingToken).decimals();
+            10 ** IERC20Metadata(pos.underlyingToken).decimals();
 
         if (
             debtValue >
@@ -151,7 +159,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         // 5. Validate Max Pos Size
         uint256 lpPrice = bank.oracle().getPrice(strategy.vault);
         uint256 curPosSize = (lpPrice * vault.balanceOf(address(this))) /
-            10**IICHIVault(strategy.vault).decimals();
+            10 ** IICHIVault(strategy.vault).decimals();
         if (curPosSize > strategy.maxPositionSize)
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
     }
