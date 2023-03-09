@@ -295,17 +295,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "lpTakeAmt",
+        "name": "amountLpRemove",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
         "name": "amountRepay",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountLpToLeave",
         "type": "uint256"
       },
       {
@@ -338,17 +333,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "lpTakeAmt",
+        "name": "amountLpRemove",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
         "name": "amountRepay",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountLpToLeave",
         "type": "uint256"
       },
       {

@@ -121,6 +121,10 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
 
     /**
      * @notice Internal function to deposit assets on ICHI Vault
+     * @dev Deposit isolated underlying to Blueberry Money Market,
+     *      Borrow tokens from Blueberry Money Market,
+     *      Then deposit borrowed tokens on ICHI vault
+     * @param strategyId Strategy ID
      * @param collToken Isolated collateral token address
      * @param collAmount Amount of isolated collateral
      * @param borrowToken Token address to borrow
@@ -277,12 +281,25 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         _validateMaxLTV(strategyId);
     }
 
+    /**
+     * @notice Internal function to withdraw assets from ICHI Vault
+     * @dev Withdraw assets from ICHI Vault,
+     *      Swap withdrawn assets to debt token,
+     *      Withdraw isolated collaterals from Blueberry Money Market,
+     *      Repay Debt and refund rest to user
+     * @param strategyId Strategy ID
+     * @param collToken Isolated collateral token address
+     * @param borrowToken Token address of debt
+     * @param amountLpRemove Amount of ICHI Vault LP to withdraw
+     * @param amountRepay Amount of debt to repay
+     * @param amountShareWithdraw Amount of isolated collaterals to withdraw
+     */
     function _withdraw(
         uint256 strategyId,
         address collToken,
         address borrowToken,
         uint256 amountRepay,
-        uint256 amountLpToLeave,
+        uint256 amountLpRemove,
         uint256 amountShareWithdraw
     ) internal {
         Strategy memory strategy = strategies[strategyId];
@@ -295,11 +312,12 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         }
 
         // 2. Calculate actual amount to remove
-        uint256 amtLPToRemove = vault.balanceOf(address(this)) -
-            amountLpToLeave;
+        if (amountLpRemove == type(uint256).max) {
+            amountLpRemove = vault.balanceOf(address(this));
+        }
 
         // 3. Withdraw liquidity from ICHI vault
-        vault.withdraw(amtLPToRemove, address(this));
+        vault.withdraw(amountLpRemove, address(this));
 
         // 4. Swap withdrawn tokens to initial deposit token
         bool isTokenA = vault.token0() == borrowToken;
@@ -338,18 +356,16 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      * @notice External function to withdraw assets from ICHI Vault
      * @param collToken Token address to withdraw (e.g USDC)
      * @param borrowToken Token address to withdraw (e.g USDC)
-     * @param lpTakeAmt Amount of ICHI Vault LP token to take out from Bank
+     * @param amountLpRemove Amount of ICHI Vault LP token to take out from Bank
      * @param amountRepay Amount to repay the loan
-     * @param amountLpToLeave Amount of ICHI Vault LP to leave on ICHI Vault
      * @param amountShareWithdraw Amount of Isolated collateral to withdraw from Compound
      */
     function closePosition(
         uint256 strategyId,
         address collToken,
         address borrowToken,
-        uint256 lpTakeAmt,
+        uint256 amountLpRemove,
         uint256 amountRepay,
-        uint256 amountLpToLeave,
         uint256 amountShareWithdraw
     )
         external
@@ -357,14 +373,15 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         existingCollateral(strategyId, collToken)
     {
         // 1. Take out collateral
-        _doTakeCollateral(strategies[strategyId].vault, lpTakeAmt);
+        _doTakeCollateral(strategies[strategyId].vault, amountLpRemove);
 
+        // 2-8. Remove liquidity
         _withdraw(
             strategyId,
             collToken,
             borrowToken,
             amountRepay,
-            amountLpToLeave,
+            amountLpRemove,
             amountShareWithdraw
         );
     }
@@ -373,9 +390,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 strategyId,
         address collToken,
         address borrowToken,
-        uint256 lpTakeAmt,
+        uint256 amountLpRemove,
         uint256 amountRepay,
-        uint256 amountLpToLeave,
         uint256 amountShareWithdraw
     )
         external
@@ -392,8 +408,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             revert Errors.INCORRECT_COLTOKEN(posCollToken);
 
         // 1. Take out collateral
-        bank.takeCollateral(lpTakeAmt);
-        wIchiFarm.burn(collId, lpTakeAmt);
+        bank.takeCollateral(amountLpRemove);
+        wIchiFarm.burn(collId, amountLpRemove);
         _doRefundRewards(ICHI);
 
         // 2-8. Remove liquidity
@@ -402,7 +418,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             collToken,
             borrowToken,
             amountRepay,
-            amountLpToLeave,
+            amountLpRemove,
             amountShareWithdraw
         );
 

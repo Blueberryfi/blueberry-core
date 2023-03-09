@@ -185,10 +185,9 @@ describe('ICHI Angel Vaults Spell', () => {
 					iface.encodeFunctionData("closePosition", [
 						1,
 						ICHI,
-						USDC, // ICHI vault lp token is collateral
+						USDC, // Debt
 						ethers.constants.MaxUint256,	// Amount of werc20
 						ethers.constants.MaxUint256,  // Amount of repay
-						0,
 						ethers.constants.MaxUint256,
 					])
 				)
@@ -203,10 +202,9 @@ describe('ICHI Angel Vaults Spell', () => {
 					iface.encodeFunctionData("closePosition", [
 						0,
 						WETH,
-						USDC, // ICHI vault lp token is collateral
+						USDC, // Debt
 						ethers.constants.MaxUint256,	// Amount of werc20
 						ethers.constants.MaxUint256,  // Amount of repay
-						0,
 						ethers.constants.MaxUint256,
 					])
 				)
@@ -227,10 +225,9 @@ describe('ICHI Angel Vaults Spell', () => {
 				iface.encodeFunctionData("closePosition", [
 					0,
 					ICHI,
-					USDC, // ICHI vault lp token is collateral
+					USDC, // Debt
 					ethers.constants.MaxUint256,	// Amount of werc20
 					ethers.constants.MaxUint256,  // Amount of repay
-					0,
 					ethers.constants.MaxUint256,
 				])
 			)
@@ -380,11 +377,10 @@ describe('ICHI Angel Vaults Spell', () => {
 				spell.address,
 				iface.encodeFunctionData("closePositionFarm", [
 					0,
-					ICHI,
-					USDC, // ICHI vault lp token is collateral
+					ICHI, // isolated coll token
+					USDC, // debt token
 					ethers.constants.MaxUint256,	// Amount of werc20
 					ethers.constants.MaxUint256,  // Amount of repay
-					0,
 					ethers.constants.MaxUint256,
 				])
 			)
