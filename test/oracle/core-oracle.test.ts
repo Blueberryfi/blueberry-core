@@ -49,122 +49,75 @@ describe('Core Oracle', () => {
   describe("Owner", () => {
     it("should be able to set routes", async () => {
       await expect(
-        coreOracle.connect(alice).setRoute(
+        coreOracle.connect(alice).setRoutes(
           [ADDRESS.USDC],
           [mockOracle.address]
         )
       ).to.be.revertedWith('Ownable: caller is not the owner');
 
       await expect(
-        coreOracle.setRoute(
+        coreOracle.setRoutes(
           [ethers.constants.AddressZero],
           [mockOracle.address]
         )
       ).to.be.revertedWith('ZERO_ADDRESS');
 
       await expect(
-        coreOracle.setRoute(
+        coreOracle.setRoutes(
           [ADDRESS.USDC],
           [ethers.constants.AddressZero],
         )
       ).to.be.revertedWith('ZERO_ADDRESS');
 
       await expect(
-        coreOracle.setRoute(
+        coreOracle.setRoutes(
           [ADDRESS.USDC, ADDRESS.USDT],
           [mockOracle.address]
         )
       ).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
 
       await expect(
-        coreOracle.setRoute([ADDRESS.USDC], [mockOracle.address])
+        coreOracle.setRoutes([ADDRESS.USDC], [mockOracle.address])
       ).to.be.emit(coreOracle, "SetRoute");
 
-      const tokenSetting = await coreOracle.tokenSettings(ADDRESS.USDC);
-      expect(tokenSetting.route).to.be.equal(mockOracle.address);
+      const route = await coreOracle.routes(ADDRESS.USDC);
+      expect(route).to.be.equal(mockOracle.address);
     })
-    it("should be able to set token settings", async () => {
-      await expect(coreOracle.connect(alice).setTokenSettings(
+    it("should be able to set liquidation thresholds", async () => {
+      await expect(coreOracle.connect(alice).setLiqThresholds(
         [ADDRESS.USDC],
-        [{
-          liqThreshold: 9000,
-          route: mockOracle.address
-        }]
+        [9000]
       )).to.be.revertedWith('Ownable: caller is not the owner');
 
-      await expect(coreOracle.setTokenSettings(
+      await expect(coreOracle.setLiqThresholds(
         [ADDRESS.USDC],
-        [{
-          liqThreshold: 10050,
-          route: mockOracle.address
-        }]
+        [10050]
       )).to.be.revertedWith('LIQ_THRESHOLD_TOO_HIGH(10050)');
 
-      await expect(coreOracle.setTokenSettings(
+      await expect(coreOracle.setLiqThresholds(
         [ADDRESS.USDC],
-        [{
-          liqThreshold: 7500,
-          route: mockOracle.address
-        }]
+        [7500]
       )).to.be.revertedWith('LIQ_THRESHOLD_TOO_LOW(7500)');
 
-      await expect(coreOracle.setTokenSettings(
-        [ADDRESS.USDC],
-        [{
-          liqThreshold: 9000,
-          route: ethers.constants.AddressZero
-        }]
-      )).to.be.revertedWith('ZERO_ADDRESS');
-
-      await expect(coreOracle.setTokenSettings(
+      await expect(coreOracle.setLiqThresholds(
         [ethers.constants.AddressZero],
-        [{
-          liqThreshold: 9000,
-          route: mockOracle.address
-        }]
+        [9000]
       )).to.be.revertedWith('ZERO_ADDRESS');
 
-      await expect(coreOracle.setTokenSettings(
+      await expect(coreOracle.setLiqThresholds(
         [ADDRESS.USDC, ADDRESS.USDT],
-        [{
-          liqThreshold: 9000,
-          route: mockOracle.address
-        }]
+        [9000]
       )).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
 
       await expect(
-        coreOracle.setTokenSettings(
+        coreOracle.setLiqThresholds(
           [ADDRESS.USDC],
-          [{
-            liqThreshold: 9000,
-            route: mockOracle.address
-          }]
+          [9000]
         )
-      ).to.be.emit(coreOracle, "SetTokenSetting");
+      ).to.be.emit(coreOracle, "SetLiqThreshold");
 
-      const tokenSetting = await coreOracle.tokenSettings(ADDRESS.USDC);
-      expect(tokenSetting.route).to.be.equal(mockOracle.address);
-      expect(tokenSetting.liqThreshold).to.be.equal(9000);
-    })
-    it("should be able to unset token settings", async () => {
-      await coreOracle.setTokenSettings(
-        [ADDRESS.USDC],
-        [{
-          liqThreshold: 9000,
-          route: mockOracle.address
-        }]
-      );
-
-      await expect(
-        coreOracle.connect(alice).removeTokenSettings([ADDRESS.USDC])
-      ).to.be.revertedWith('Ownable: caller is not the owner');
-
-      await expect(
-        coreOracle.removeTokenSettings([ADDRESS.USDC])
-      ).to.be.emit(coreOracle, 'RemoveTokenSetting');
-
-      const tokenSetting = await coreOracle.tokenSettings(ADDRESS.USDC);
-      expect(tokenSetting.route).to.be.equal(ethers.constants.AddressZero);
+      const liqThreshold = await coreOracle.liqThresholds(ADDRESS.USDC);
+      expect(liqThreshold).to.be.equal(9000);
     })
     it("should be able to whtielist erc1155 - wrapped tokens", async () => {
       await expect(
@@ -185,7 +138,7 @@ describe('Core Oracle', () => {
   })
   describe("Utils", () => {
     beforeEach(async () => {
-      await coreOracle.setRoute([ADDRESS.USDC], [mockOracle.address]);
+      await coreOracle.setRoutes([ADDRESS.USDC], [mockOracle.address]);
     })
 
     it("should to able to get if the wrapper is supported or not", async () => {
@@ -204,7 +157,7 @@ describe('Core Oracle', () => {
       expect(await coreOracle.isWrappedTokenSupported(werc20.address, collId)).to.be.false;
     })
     it("should be able to get if the token price is supported or not", async () => {
-      await coreOracle.setRoute([ADDRESS.USDT], [mockOracle.address]);
+      await coreOracle.setRoutes([ADDRESS.USDT], [mockOracle.address]);
       await mockOracle.setPrice([ADDRESS.USDC], [utils.parseEther("1")]);
 
       expect(await coreOracle.isTokenSupported(ADDRESS.USDC)).to.be.true;
@@ -215,7 +168,7 @@ describe('Core Oracle', () => {
     })
   })
   describe("Value", () => {
-    // TODO: Cover getPositionValue, getTokenValue, getLiqThreshold
+    // TODO: Cover getPositionValue, getTokenValue
     describe("Debt Value", async () => {
       it("should revert when oracle route is not set", async () => {
         await expect(

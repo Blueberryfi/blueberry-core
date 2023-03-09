@@ -159,21 +159,13 @@ export const setupProtocol = async (): Promise<Protocol> => {
   await oracle.deployed();
 
   await oracle.setWhitelistERC1155([werc20.address, ichi_USDC_ICHI_Vault.address], true);
-  await oracle.setTokenSettings(
+  await oracle.setRoutes(
     [WETH, USDC, ICHI, ichi_USDC_ICHI_Vault.address],
-    [{
-      liqThreshold: 9000,
-      route: mockOracle.address,
-    }, {
-      liqThreshold: 8000,
-      route: mockOracle.address,
-    }, {
-      liqThreshold: 9000,
-      route: mockOracle.address,
-    }, {
-      liqThreshold: 10000,
-      route: ichiOracle.address,
-    }]
+    [mockOracle.address, mockOracle.address, mockOracle.address, ichiOracle.address]
+  )
+  await oracle.setLiqThresholds(
+    [WETH, USDC, ICHI],
+    [9000, 8000, 9000]
   )
 
   // Deploy Bank

@@ -104,9 +104,15 @@
         "internalType": "address",
         "name": "token",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "liqThreshold",
+        "type": "uint256"
       }
     ],
-    "name": "RemoveTokenSetting",
+    "name": "SetLiqThreshold",
     "type": "event"
   },
   {
@@ -138,37 +144,6 @@
         "type": "address"
       },
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "route",
-            "type": "address"
-          },
-          {
-            "internalType": "uint16",
-            "name": "liqThreshold",
-            "type": "uint16"
-          }
-        ],
-        "indexed": false,
-        "internalType": "struct ICoreOracle.TokenSetting",
-        "name": "tokenFactor",
-        "type": "tuple"
-      }
-    ],
-    "name": "SetTokenSetting",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
         "indexed": false,
         "internalType": "bool",
         "name": "ok",
@@ -177,25 +152,6 @@
     ],
     "name": "SetWhitelist",
     "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "getLiqThreshold",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
@@ -320,8 +276,53 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "liqThresholds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "routes",
     "outputs": [
       {
         "internalType": "address",
@@ -338,16 +339,14 @@
         "internalType": "address[]",
         "name": "tokens",
         "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "thresholds",
+        "type": "uint256[]"
       }
     ],
-    "name": "removeTokenSettings",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "renounceOwnership",
+    "name": "setLiqThresholds",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -361,41 +360,11 @@
       },
       {
         "internalType": "address[]",
-        "name": "routes",
+        "name": "oracleRoutes",
         "type": "address[]"
       }
     ],
-    "name": "setRoute",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "tokens",
-        "type": "address[]"
-      },
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "route",
-            "type": "address"
-          },
-          {
-            "internalType": "uint16",
-            "name": "liqThreshold",
-            "type": "uint16"
-          }
-        ],
-        "internalType": "struct ICoreOracle.TokenSetting[]",
-        "name": "settings",
-        "type": "tuple[]"
-      }
-    ],
-    "name": "setTokenSettings",
+    "name": "setRoutes",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -416,30 +385,6 @@
     "name": "setWhitelistERC1155",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "tokenSettings",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "route",
-        "type": "address"
-      },
-      {
-        "internalType": "uint16",
-        "name": "liqThreshold",
-        "type": "uint16"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

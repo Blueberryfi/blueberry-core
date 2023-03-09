@@ -80,7 +80,7 @@ describe('Ichi Vault Oracle', () => {
 			[10] // timeAgo - 10 s
 		);
 
-		await coreOracle.setRoute(
+		await coreOracle.setRoutes(
 			[ADDRESS.USDC, ADDRESS.ICHI],
 			[
 				chainlinkAdapterOracle.address,

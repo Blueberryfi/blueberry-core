@@ -2,17 +2,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      }
-    ],
-    "name": "ANOTHER_COL_EXIST",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
         "name": "positionId",
         "type": "uint256"
@@ -70,8 +59,30 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "borrowAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BORROW_ZERO_SHARE",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "CTOKEN_ALREADY_ADDED",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collToken",
+        "type": "address"
+      }
+    ],
+    "name": "DIFF_COL_EXIST",
     "type": "error"
   },
   {
@@ -905,7 +916,7 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

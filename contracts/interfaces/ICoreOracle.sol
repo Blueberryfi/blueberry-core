@@ -5,10 +5,12 @@ pragma solidity 0.8.16;
 import "./IBaseOracle.sol";
 
 interface ICoreOracle is IBaseOracle {
-    struct TokenSetting {
-        address route; // Oracle Route - Aggregator | Vault Oracle | AdapterOracle ...
-        uint16 liqThreshold; // Liquidation threshold, multiplied by 1e4.
-    }
+    /// The owner sets token whitelist for an ERC1155 token.
+    event SetWhitelist(address indexed token, bool ok);
+    /// The owner sets oracle routes
+    event SetRoute(address indexed token, address route);
+    /// The owner sets liquidation threshold for a token.
+    event SetLiqThreshold(address indexed token, uint256 liqThreshold);
 
     /// @notice Return whether the oracle given ERC20 token
     /// @param token The ERC20 token to check the support
@@ -18,10 +20,10 @@ interface ICoreOracle is IBaseOracle {
     /// @dev Only validate wrappers of Blueberry protocol such as WERC20
     /// @param token ERC1155 token address to check the support
     /// @param tokenId ERC1155 token id to check the support
-    function isWrappedTokenSupported(address token, uint256 tokenId)
-        external
-        view
-        returns (bool);
+    function isWrappedTokenSupported(
+        address token,
+        uint256 tokenId
+    ) external view returns (bool);
 
     /**
      * @dev Return the USD value of the given input for collateral purpose.
@@ -40,10 +42,10 @@ interface ICoreOracle is IBaseOracle {
      * @param token ERC20 token address
      * @param amount ERC20 token amount
      */
-    function getTokenValue(address token, uint256 amount)
-        external
-        view
-        returns (uint256);
+    function getTokenValue(
+        address token,
+        uint256 amount
+    ) external view returns (uint256);
 
-    function getLiqThreshold(address token) external view returns (uint256);
+    function liqThresholds(address token) external view returns (uint256);
 }

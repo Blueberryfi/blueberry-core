@@ -67,27 +67,29 @@ error BAD_REWARD_PER_SHARE(uint256 rewardPerShare);
 // Bank
 error FEE_TOO_HIGH(uint256 feeBps);
 error NOT_UNDER_EXECUTION();
+error NOT_EOA(address from);
+error NOT_FROM_SPELL(address from);
+error NOT_FROM_OWNER(uint256 positionId, address sender);
+error SPELL_NOT_WHITELISTED(address spell);
+error TOKEN_NOT_WHITELISTED(address token);
 error BANK_NOT_LISTED(address token);
 error BANK_ALREADY_LISTED();
 error BANK_LIMIT();
 error CTOKEN_ALREADY_ADDED();
-error NOT_EOA(address from);
+error LEND_NOT_ALLOWED();
+error BORROW_NOT_ALLOWED();
+error REPAY_NOT_ALLOWED();
 error LOCKED();
-error NOT_FROM_SPELL(address from);
-error NOT_FROM_OWNER(uint256 positionId, address sender);
 error NOT_IN_EXEC();
-error ANOTHER_COL_EXIST(address collToken);
+
+error DIFF_COL_EXIST(address collToken);
 error NOT_LIQUIDATABLE(uint256 positionId);
 error BAD_POSITION(uint256 posId);
 error BAD_COLLATERAL(uint256 positionId);
 error INSUFFICIENT_COLLATERAL();
-error SPELL_NOT_WHITELISTED(address spell);
-error TOKEN_NOT_WHITELISTED(address token);
 error REPAY_EXCEEDS_DEBT(uint256 repay, uint256 debt);
-error LEND_NOT_ALLOWED();
-error BORROW_NOT_ALLOWED();
-error REPAY_NOT_ALLOWED();
 error INVALID_UTOKEN(address uToken);
+error BORROW_ZERO_SHARE(uint256 borrowAmount);
 
 // Config
 error INVALID_FEE_DISTRIBUTION();

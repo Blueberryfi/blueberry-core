@@ -1,22 +1,60 @@
 [
   {
+    "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
         "internalType": "address",
         "name": "token",
         "type": "address"
-      }
-    ],
-    "name": "getLiqThreshold",
-    "outputs": [
+      },
       {
+        "indexed": false,
         "internalType": "uint256",
-        "name": "",
+        "name": "liqThreshold",
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "name": "SetLiqThreshold",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "route",
+        "type": "address"
+      }
+    ],
+    "name": "SetRoute",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      }
+    ],
+    "name": "SetWhitelist",
+    "type": "event"
   },
   {
     "inputs": [
@@ -128,6 +166,25 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "liqThresholds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",

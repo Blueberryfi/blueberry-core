@@ -24,17 +24,12 @@ import "../interfaces/IERC20Wrapper.sol";
  * @notice Oracle contract which provides price feeds to Bank contract
  */
 contract CoreOracle is ICoreOracle, OwnableUpgradeable {
-    /// The owner sets oracle token factor for a token.
-    event SetTokenSetting(address indexed token, TokenSetting tokenFactor);
-    /// The owner unsets oracle token factor for a token.
-    event RemoveTokenSetting(address indexed token);
-    /// The owner sets token whitelist for an ERC1155 token.
-    event SetWhitelist(address indexed token, bool ok);
-    event SetRoute(address indexed token, address route);
-
-    /// @dev Mapping from token address to settings.
-    mapping(address => TokenSetting) public tokenSettings;
-    mapping(address => bool) public whitelistedERC1155; // Mapping from token address to whitelist status
+    /// @dev Mapping from token to oracle routes. => Aggregator | LP Oracle | AdapterOracle ...
+    mapping(address => address) public routes;
+    /// @dev Mapping from token to liquidation thresholds, multiplied by 1e4.
+    mapping(address => uint256) public liqThresholds; // 85% for volatile tokens, 90% for stablecoins
+    /// @dev Mapping from token address to whitelist status
+    mapping(address => bool) public whitelistedERC1155;
 
     function initialize() external initializer {
         __Ownable_init();
@@ -42,72 +37,65 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
 
     /// @notice Set oracle source routes for tokens
     /// @param tokens List of tokens
-    /// @param routes List of oracle source routes
-    function setRoute(address[] calldata tokens, address[] calldata routes)
-        external
-        onlyOwner
-    {
-        if (tokens.length != routes.length)
-            revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (tokens[idx] == address(0) || routes[idx] == address(0))
-                revert Errors.ZERO_ADDRESS();
-
-            tokenSettings[tokens[idx]].route = routes[idx];
-            emit SetRoute(tokens[idx], routes[idx]);
-        }
-    }
-
-    /// @notice Set oracle token factors for the given list of token addresses.
-    /// @param tokens List of tokens to set info
-    /// @param settings List of oracle token factors
-    function setTokenSettings(
-        address[] memory tokens,
-        TokenSetting[] memory settings
+    /// @param oracleRoutes List of oracle source routes
+    function setRoutes(
+        address[] calldata tokens,
+        address[] calldata oracleRoutes
     ) external onlyOwner {
-        if (tokens.length != settings.length)
+        if (tokens.length != oracleRoutes.length)
             revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (tokens[idx] == address(0) || settings[idx].route == address(0))
+            address token = tokens[idx];
+            address route = oracleRoutes[idx];
+            if (token == address(0) || route == address(0))
                 revert Errors.ZERO_ADDRESS();
-            if (settings[idx].liqThreshold > Constants.DENOMINATOR)
-                revert Errors.LIQ_THRESHOLD_TOO_HIGH(
-                    settings[idx].liqThreshold
-                );
-            if (settings[idx].liqThreshold < Constants.MIN_LIQ_THRESHOLD)
-                revert Errors.LIQ_THRESHOLD_TOO_LOW(settings[idx].liqThreshold);
-            tokenSettings[tokens[idx]] = settings[idx];
-            emit SetTokenSetting(tokens[idx], settings[idx]);
+
+            routes[token] = route;
+            emit SetRoute(token, route);
         }
     }
 
-    /// @notice Unset token factors for the given list of token addresses
-    /// @param tokens List of tokens to unset info
-    function removeTokenSettings(address[] memory tokens) external onlyOwner {
+    /// @notice Set token liquidation thresholds
+    /// @param tokens List of tokens to set liq thresholds
+    /// @param thresholds List of oracle token factors
+    function setLiqThresholds(
+        address[] memory tokens,
+        uint256[] memory thresholds
+    ) external onlyOwner {
+        if (tokens.length != thresholds.length)
+            revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            delete tokenSettings[tokens[idx]];
-            emit RemoveTokenSetting(tokens[idx]);
+            uint256 liqThreshold = thresholds[idx];
+            address token = tokens[idx];
+            if (token == address(0)) revert Errors.ZERO_ADDRESS();
+            if (liqThreshold > Constants.DENOMINATOR)
+                revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
+            if (liqThreshold < Constants.MIN_LIQ_THRESHOLD)
+                revert Errors.LIQ_THRESHOLD_TOO_LOW(liqThreshold);
+            liqThresholds[token] = liqThreshold;
+            emit SetLiqThreshold(token, liqThreshold);
         }
     }
 
     /// @notice Whitelist ERC1155(wrapped tokens)
     /// @param tokens List of tokens to set whitelist status
     /// @param ok Whitelist status
-    function setWhitelistERC1155(address[] memory tokens, bool ok)
-        external
-        onlyOwner
-    {
+    function setWhitelistERC1155(
+        address[] memory tokens,
+        bool ok
+    ) external onlyOwner {
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
-            whitelistedERC1155[tokens[idx]] = ok;
-            emit SetWhitelist(tokens[idx], ok);
+            address token = tokens[idx];
+            if (token == address(0)) revert Errors.ZERO_ADDRESS();
+            whitelistedERC1155[token] = ok;
+            emit SetWhitelist(token, ok);
         }
     }
 
     /// @notice Return USD price of given token, multiplied by 10**18.
     /// @param token The ERC-20 token to get the price of.
     function _getPrice(address token) internal view returns (uint256) {
-        address route = tokenSettings[token].route;
+        address route = routes[token];
         if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
         uint256 px = IBaseOracle(route).getPrice(token);
         if (px == 0) revert Errors.PRICE_FAILED(token);
@@ -124,26 +112,21 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
     /// @dev Only validate wrappers of Blueberry protocol such as WERC20
     /// @param token ERC1155 token address to check the support
     /// @param tokenId ERC1155 token id to check the support
-    function isWrappedTokenSupported(address token, uint256 tokenId)
-        external
-        view
-        override
-        returns (bool)
-    {
+    function isWrappedTokenSupported(
+        address token,
+        uint256 tokenId
+    ) external view override returns (bool) {
         if (!whitelistedERC1155[token]) return false;
         address uToken = IERC20Wrapper(token).getUnderlyingToken(tokenId);
-        return tokenSettings[uToken].route != address(0);
+        return routes[uToken] != address(0);
     }
 
     /// @notice Return whether the oracle given ERC20 token
     /// @param token The ERC20 token to check the support
-    function isTokenSupported(address token)
-        external
-        view
-        override
-        returns (bool)
-    {
-        address route = tokenSettings[token].route;
+    function isTokenSupported(
+        address token
+    ) external view override returns (bool) {
+        address route = routes[token];
         if (route == address(0)) return false;
         try IBaseOracle(route).getPrice(token) returns (uint256 price) {
             return price != 0;
@@ -176,23 +159,11 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
      * @param token ERC20 token address
      * @param amount ERC20 token amount
      */
-    function getTokenValue(address token, uint256 amount)
-        external
-        view
-        override
-        returns (uint256 debtValue)
-    {
+    function getTokenValue(
+        address token,
+        uint256 amount
+    ) external view override returns (uint256 debtValue) {
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
-        debtValue = (_getPrice(token) * amount) / 10**decimals;
-    }
-
-    /**
-     * @notice Returns the Liquidation Threshold setting of collateral token.
-     * @dev 85% for volatile tokens, 90% for stablecoins
-     * @param token Underlying token address
-     * @return liqThreshold of given token
-     */
-    function getLiqThreshold(address token) external view returns (uint256) {
-        return tokenSettings[token].liqThreshold;
+        debtValue = (_getPrice(token) * amount) / 10 ** decimals;
     }
 }

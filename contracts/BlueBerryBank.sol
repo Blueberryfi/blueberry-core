@@ -13,6 +13,7 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
@@ -64,7 +65,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// when allowContractCalls is set to false and caller is not whitelisted
     modifier onlyEOAEx() {
         if (!allowContractCalls && !whitelistedContracts[msg.sender]) {
-            if (msg.sender != tx.origin) revert Errors.NOT_EOA(msg.sender);
+            if (AddressUpgradeable.isContract(msg.sender))
+                revert Errors.NOT_EOA(msg.sender);
         }
         _;
     }
@@ -411,9 +413,14 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 ov = getDebtValue(positionId);
         uint256 cv = getIsolatedCollateralValue(positionId);
 
-        if (cv == 0) risk = 0;
-        else if (pv >= ov) risk = 0;
-        else {
+        if (
+            (cv == 0 && pv == 0 && ov == 0) || pv >= ov // Closed position or Overcollateralized position
+        ) {
+            risk = 0;
+        } else if (cv == 0) {
+            // Sth bad happened to isolated underlying token
+            risk = Constants.DENOMINATOR;
+        } else {
             risk = ((ov - pv) * Constants.DENOMINATOR) / cv;
         }
     }
@@ -425,7 +432,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     ) public view returns (bool liquidatable) {
         Position memory pos = positions[positionId];
         uint256 risk = getPositionRisk(positionId);
-        liquidatable = risk >= oracle.getLiqThreshold(pos.underlyingToken);
+        liquidatable = risk >= oracle.liqThresholds(pos.underlyingToken);
     }
 
     /// @dev Liquidate a position. Pay debt for its owner and take the collateral.
@@ -503,7 +510,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 positionId,
         address spell,
         bytes memory data
-    ) external payable lock onlyEOAEx returns (uint256) {
+    ) external lock onlyEOAEx returns (uint256) {
         if (!whitelistedSpells[spell])
             revert Errors.SPELL_NOT_WHITELISTED(spell);
         if (positionId == 0) {
@@ -518,7 +525,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         POSITION_ID = positionId;
         SPELL = spell;
 
-        (bool ok, bytes memory returndata) = SPELL.call{value: msg.value}(data);
+        (bool ok, bytes memory returndata) = SPELL.call(data);
         if (!ok) {
             if (returndata.length > 0) {
                 assembly {
@@ -647,6 +654,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 share = totalShare == 0
             ? amount
             : (amount * totalShare).divCeil(totalDebt);
+        if (share == 0) revert Errors.BORROW_ZERO_SHARE(amount);
         bank.totalShare += share;
         pos.debtShare += share;
 
@@ -716,7 +724,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             if (!oracle.isWrappedTokenSupported(collToken, collId))
                 revert Errors.ORACLE_NOT_SUPPORT_WTOKEN(collToken);
             if (pos.collateralSize > 0)
-                revert Errors.ANOTHER_COL_EXIST(pos.collToken);
+                revert Errors.DIFF_COL_EXIST(pos.collToken);
             pos.collToken = collToken;
             pos.collId = collId;
         }
