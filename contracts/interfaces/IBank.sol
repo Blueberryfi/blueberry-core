@@ -14,7 +14,6 @@ interface IBank {
         address softVault;
         address cToken; // The CToken to draw liquidity from.
         uint256 totalShare; // The total debt share count across all open positions.
-        uint256 totalLend; // The total lent amount
     }
 
     struct Position {
@@ -22,7 +21,6 @@ interface IBank {
         address collToken; // The ERC1155 token used as collateral for this position.
         address underlyingToken; // Isolated underlying collateral
         address debtToken; // Debt Token
-        uint256 underlyingAmount; // Amount of isolated underlying collateral locked in the vault
         uint256 underlyingVaultShare; // Amount of vault share for isolated underlying coll
         uint256 collId; // The token id of Wrapper.
         uint256 collateralSize; // The amount of wrapped token for this position.
@@ -86,7 +84,7 @@ interface IBank {
         uint256 amount,
         uint256 share,
         uint256 positionSize,
-        uint256 underlyingSize
+        uint256 underlyingVaultSize
     );
     event Execute(uint256 positionId, address owner);
 
@@ -116,6 +114,10 @@ interface IBank {
     function getPositionValue(
         uint256 positionId
     ) external view returns (uint256);
+
+    function getIsolatedCollateralValue(
+        uint256 positionId
+    ) external view returns (uint256 icollValue);
 
     function getPositionInfo(
         uint256 positionId

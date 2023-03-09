@@ -445,7 +445,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "underlyingSize",
+        "name": "underlyingVaultSize",
         "type": "uint256"
       }
     ],
@@ -799,11 +799,6 @@
         "internalType": "uint256",
         "name": "totalShare",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalLend",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -983,11 +978,6 @@
           },
           {
             "internalType": "uint256",
-            "name": "underlyingAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
             "name": "underlyingVaultShare",
             "type": "uint256"
           },
@@ -1103,11 +1093,6 @@
             "internalType": "address",
             "name": "debtToken",
             "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "underlyingAmount",
-            "type": "uint256"
           },
           {
             "internalType": "uint256",
@@ -1444,11 +1429,6 @@
         "internalType": "address",
         "name": "debtToken",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "underlyingAmount",
-        "type": "uint256"
       },
       {
         "internalType": "uint256",

@@ -107,11 +107,10 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     }
 
     function _validateMaxLTV(uint256 strategyId) internal view {
-        uint256 debtValue = bank.getDebtValue(bank.POSITION_ID());
-        IBank.Position memory pos = bank.getCurrentPositionInfo();
-        uint256 uPrice = bank.oracle().getPrice(pos.underlyingToken);
-        uint256 uValue = (uPrice * pos.underlyingAmount) /
-            10 ** IERC20Metadata(pos.underlyingToken).decimals();
+        uint positionId = bank.POSITION_ID();
+        IBank.Position memory pos = bank.getPositionInfo(positionId);
+        uint256 debtValue = bank.getDebtValue(positionId);
+        uint uValue = bank.getIsolatedCollateralValue(positionId);
 
         if (
             debtValue >

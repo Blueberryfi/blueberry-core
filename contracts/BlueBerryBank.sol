@@ -391,7 +391,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param positionId The position ID to query the isolated collateral value
     function getIsolatedCollateralValue(
         uint256 positionId
-    ) public view returns (uint256 icollValue) {
+    ) public view override returns (uint256 icollValue) {
         Position memory pos = positions[positionId];
         uint underlyingAmount = (ICErc20(banks[pos.debtToken].cToken)
             .exchangeRateStored() * pos.underlyingVaultShare) / 10 ** 18;
@@ -455,11 +455,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         );
 
         uint256 liqSize = (pos.collateralSize * share) / oldShare;
-        uint256 uTokenSize = (pos.underlyingAmount * share) / oldShare;
         uint256 uVaultShare = (pos.underlyingVaultShare * share) / oldShare;
 
         pos.collateralSize -= liqSize;
-        pos.underlyingAmount -= uTokenSize;
         pos.underlyingVaultShare -= uVaultShare;
 
         // Transfer position (Wrapped LP Tokens) to liquidator
@@ -493,7 +491,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             amountPaid,
             share,
             liqSize,
-            uTokenSize
+            uVaultShare
         );
     }
 
@@ -570,8 +568,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         );
         IERC20Upgradeable(token).approve(address(feeManager), amount);
         amount = feeManager.doCutDepositFee(token, amount);
-        pos.underlyingAmount += amount;
-        bank.totalLend += amount;
 
         if (_isSoftVault(token)) {
             IERC20Upgradeable(token).approve(bank.softVault, amount);
@@ -599,7 +595,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 shareAmount
     ) external override inExec poke(token) {
         Position storage pos = positions[POSITION_ID];
-        Bank storage bank = banks[token];
+        Bank memory bank = banks[token];
         if (token != pos.underlyingToken) revert Errors.INVALID_UTOKEN(token);
         if (shareAmount == type(uint256).max) {
             shareAmount = pos.underlyingVaultShare;
@@ -613,13 +609,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             wAmount = IHardVault(bank.hardVault).withdraw(token, shareAmount);
         }
 
-        wAmount = wAmount > pos.underlyingAmount
-            ? pos.underlyingAmount
-            : wAmount;
-
         pos.underlyingVaultShare -= shareAmount;
-        pos.underlyingAmount -= wAmount;
-        bank.totalLend -= wAmount;
 
         IERC20Upgradeable(token).approve(address(feeManager), wAmount);
         wAmount = feeManager.doCutWithdrawFee(token, wAmount);
