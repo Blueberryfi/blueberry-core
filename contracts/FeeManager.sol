@@ -91,7 +91,13 @@ contract FeeManager is OwnableUpgradeable {
         if (treasury == address(0)) revert Errors.NO_TREASURY_SET();
 
         uint256 fee = (amount * feeRate) / Constants.DENOMINATOR;
-        IERC20Upgradeable(token).safeTransferFrom(msg.sender, treasury, fee);
+        if (fee > 0) {
+            IERC20Upgradeable(token).safeTransferFrom(
+                msg.sender,
+                treasury,
+                fee
+            );
+        }
         return amount - fee;
     }
 }
