@@ -27,6 +27,7 @@ import { solidity } from 'ethereum-waffle'
 import { near } from './assertions/near'
 import { roughlyNear } from './assertions/roughlyNear'
 import { Protocol, setupProtocol } from './setup-test';
+import { evm_mine_blocks } from './helpers';
 
 chai.use(solidity)
 chai.use(near)
@@ -138,16 +139,18 @@ describe('Bank', () => {
 			await bank.execute(
 				0,
 				spell.address,
-				iface.encodeFunctionData("openPosition", [
+				iface.encodeFunctionData("openPositionFarm", [
 					0,
 					ICHI,
 					USDC,
 					depositAmount,
-					borrowAmount // 3x
+					borrowAmount, // 3x
+					ICHI_VAULT_PID
 				])
 			)
 		})
 		it("should be able to liquidate the position => (OV - PV)/CV = LT", async () => {
+			await evm_mine_blocks(10);
 			await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
 			let positionInfo = await bank.getPositionInfo(1);
 			let debtValue = await bank.getDebtValue(1)
@@ -157,6 +160,11 @@ describe('Bank', () => {
 			console.log("Position Value:", utils.formatUnits(positionValue));
 			console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
 			console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
+
+			const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address)
+			console.log("Pending ICHI:", utils.formatUnits(pendingIchi, 9))
+			await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(100))
+			await ichiFarm.updatePool(ICHI_VAULT_PID)
 
 			console.log('===ICHI token dumped from $5 to $1===');
 			await mockOracle.setPrice(
@@ -219,8 +227,11 @@ describe('Bank', () => {
 			console.log("Liquidator's Position Balance:", collateralBalance);
 			console.log("Liquidator's Collateral Balance:", await uVToken.balanceOf(alice.address));
 
-			console.log(await werc20.balanceOf(alice.address, positionInfo.collId))
-			await werc20.connect(alice).burn(ichiVault.address, collateralBalance)
+			let beforeIchiBalance = await ichi.balanceOf(alice.address)
+			await wichi.connect(alice).burn(positionInfo.collId, ethers.constants.MaxUint256)
+			let afterIchiBalance = await ichi.balanceOf(alice.address)
+			console.log("Liquidator's ICHI Balance:", utils.formatUnits(afterIchiBalance.sub(beforeIchiBalance), 18))
+
 			const lpBalance = await ichiVault.balanceOf(alice.address)
 			await ichiVault.connect(alice).withdraw(lpBalance, alice.address)
 		})

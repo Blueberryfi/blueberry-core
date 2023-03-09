@@ -348,7 +348,7 @@ describe('ICHI Angel Vaults Spell', () => {
 				afterTreasuryBalance.sub(beforeTreasuryBalance)
 			).to.be.equal(depositAmount.mul(50).div(10000))
 		})
-		it("should be able to return position risk ratio", async () => {
+		it("should be able to get position risk ratio", async () => {
 			let risk = await bank.getPositionRisk(2);
 			console.log('Prev Position Risk', utils.formatUnits(risk, 2), '%');
 			await mockOracle.setPrice(

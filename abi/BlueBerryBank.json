@@ -1042,6 +1042,25 @@
         "type": "uint256"
       }
     ],
+    "name": "getIsolatedCollateralValue",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "icollValue",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "positionId",
+        "type": "uint256"
+      }
+    ],
     "name": "getPositionDebt",
     "outputs": [
       {
@@ -1150,7 +1169,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "positionValue",
         "type": "uint256"
       }
     ],

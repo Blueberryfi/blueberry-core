@@ -296,7 +296,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         return getPositionDebt(positionId);
     }
 
-    /// @dev Return the debt of given position.
+    /// @notice Return the debt of given position considering the debt interest stored.
+    /// @dev Should call accrue first to get current debt
     /// @param positionId position id to get debts of
     function getPositionDebt(
         uint256 positionId
@@ -344,24 +345,38 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     }
 
     /**
-     * @dev Return the USD value of total collateral of the given position.
+     * @notice Return the USD value of total collateral of the given position considering yields generated from the collaterals.
      * @param positionId The position ID to query for the collateral value.
      */
     function getPositionValue(
         uint256 positionId
-    ) public view override returns (uint256) {
+    ) public view override returns (uint256 positionValue) {
         Position memory pos = positions[positionId];
-        uint256 size = pos.collateralSize;
-        if (size == 0) {
+        if (pos.collateralSize == 0) {
             return 0;
         } else {
             if (pos.collToken == address(0))
                 revert Errors.BAD_COLLATERAL(positionId);
-            return oracle.getPositionValue(pos.collToken, pos.collId, size);
+            uint256 collValue = oracle.getPositionValue(
+                pos.collToken,
+                pos.collId,
+                pos.collateralSize
+            );
+
+            uint rewardsValue;
+            (address[] memory tokens, uint256[] memory rewards) = IERC20Wrapper(
+                pos.collToken
+            ).pendingRewards(pos.collId, pos.collateralSize);
+            for (uint256 i; i < tokens.length; i++) {
+                rewardsValue += oracle.getTokenValue(tokens[i], rewards[i]);
+            }
+
+            return collValue + rewardsValue;
         }
     }
 
-    /// @dev Return the USD value total debt of the given position
+    /// @notice Return the USD value of total debt of the given position considering debt interest stored
+    /// @dev Should call accrue first to get current debt
     /// @param positionId The position ID to query for the debt value.
     function getDebtValue(
         uint256 positionId
@@ -371,19 +386,30 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         debtValue = oracle.getTokenValue(pos.debtToken, debt);
     }
 
+    /// @notice Return the USD value of isolated collateral of given position considering stored lending interest
+    /// @dev Should call accrue first to get current debt
+    /// @param positionId The position ID to query the isolated collateral value
+    function getIsolatedCollateralValue(
+        uint256 positionId
+    ) public view returns (uint256 icollValue) {
+        Position memory pos = positions[positionId];
+        uint underlyingAmount = (ICErc20(banks[pos.debtToken].cToken)
+            .exchangeRateStored() * pos.underlyingVaultShare) / 10 ** 18;
+        icollValue = oracle.getTokenValue(
+            pos.underlyingToken,
+            underlyingAmount
+        );
+    }
+
     /// @dev Return the risk ratio of given position, higher value, higher risk
     /// @param positionId id of position to check the risk of
     /// @return risk risk ratio, based 1e4
     function getPositionRisk(
         uint256 positionId
     ) public view returns (uint256 risk) {
-        Position memory pos = positions[positionId];
         uint256 pv = getPositionValue(positionId);
         uint256 ov = getDebtValue(positionId);
-        uint256 cv = oracle.getTokenValue(
-            pos.underlyingToken,
-            pos.underlyingAmount
-        );
+        uint256 cv = getIsolatedCollateralValue(positionId);
 
         if (cv == 0) risk = 0;
         else if (pv >= ov) risk = 0;

@@ -7,4 +7,9 @@ interface IERC20Wrapper {
     function getUnderlyingToken(
         uint256 tokenId
     ) external view returns (address);
+
+    function pendingRewards(
+        uint256 id,
+        uint amount
+    ) external view returns (address[] memory, uint256[] memory);
 }

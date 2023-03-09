@@ -52,6 +52,15 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
             revert Errors.INVALID_TOKEN_ID(tokenId);
     }
 
+    /// @notice Return pending rewards from the farming pool
+    /// @dev Reward tokens can be multiple tokens
+    /// @param tokenId Token Id
+    /// @param amount amount of share
+    function pendingRewards(
+        uint256 tokenId,
+        uint amount
+    ) public view override returns (address[] memory, uint256[] memory) {}
+
     /// @dev Return the underlying ERC20 balance for the user.
     /// @param token token address to get balance of
     /// @param user user address to get balance of

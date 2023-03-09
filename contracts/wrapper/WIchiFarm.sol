@@ -12,6 +12,7 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
@@ -58,7 +59,7 @@ contract WIchiFarm is
         ichiFarm = IIchiFarm(_ichiFarm);
     }
 
-    /// @dev Encode pid, ichiPerShare to ERC1155 token id
+    /// @notice Encode pid, ichiPerShare to ERC1155 token id
     /// @param pid Pool id (16-bit)
     /// @param ichiPerShare Ichi amount per share, multiplied by 1e18 (240-bit)
     function encodeId(
@@ -71,7 +72,7 @@ contract WIchiFarm is
         return (pid << 240) | ichiPerShare;
     }
 
-    /// @dev Decode ERC1155 token id to pid, ichiPerShare
+    /// @notice Decode ERC1155 token id to pid, ichiPerShare
     /// @param id Token id
     function decodeId(
         uint256 id
@@ -80,7 +81,7 @@ contract WIchiFarm is
         ichiPerShare = id & ((1 << 240) - 1); // Last 240 bits
     }
 
-    /// @dev Return the underlying ERC-20 for the given ERC-1155 token id.
+    /// @notice Return the underlying ERC-20 for the given ERC-1155 token id.
     /// @param id Token id
     function getUnderlyingToken(
         uint256 id
@@ -89,7 +90,34 @@ contract WIchiFarm is
         return ichiFarm.lpToken(pid);
     }
 
-    /// @dev Mint ERC1155 token for the given pool id.
+    /// @notice Return pending rewards from the farming pool
+    /// @dev Reward tokens can be multiple tokens
+    /// @param tokenId Token Id
+    /// @param amount amount of share
+    function pendingRewards(
+        uint256 tokenId,
+        uint amount
+    )
+        public
+        view
+        override
+        returns (address[] memory tokens, uint256[] memory rewards)
+    {
+        (uint256 pid, uint256 stIchiPerShare) = decodeId(tokenId);
+        (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
+        uint256 stIchi = (stIchiPerShare * amount).divCeil(1e18);
+        uint256 enIchi = (enIchiPerShare * amount) / 1e18;
+        uint256 ichiRewards = enIchi > stIchi ? enIchi - stIchi : 0;
+        // Convert rewards to ICHI(v2) => ICHI v1 decimal: 9, ICHI v2 Decimal: 18
+        ichiRewards *= 1e9;
+
+        tokens = new address[](1);
+        rewards = new uint256[](1);
+        tokens[0] = address(ICHI);
+        rewards[0] = ichiRewards;
+    }
+
+    /// @notice Mint ERC1155 token for the given pool id.
     /// @param pid Pool id
     /// @param amount Token amount to wrap
     /// @return The token id that got minted.
@@ -112,7 +140,7 @@ contract WIchiFarm is
         return id;
     }
 
-    /// @dev Burn ERC1155 token to redeem LP ERC20 token back plus ICHI rewards.
+    /// @notice Burn ERC1155 token to redeem LP ERC20 token back plus ICHI rewards.
     /// @param id Token id
     /// @param amount Token amount to burn
     /// @return The pool id that that you will receive LP token back.
@@ -123,7 +151,7 @@ contract WIchiFarm is
         if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
         }
-        (uint256 pid, uint256 stIchiPerShare) = decodeId(id);
+        (uint256 pid, ) = decodeId(id);
         _burn(msg.sender, id, amount);
 
         uint256 ichiRewards = ichiFarm.pendingIchi(pid, address(this));
@@ -141,12 +169,10 @@ contract WIchiFarm is
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
 
         // Transfer Reward Tokens
-        (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
-        uint256 stIchi = (stIchiPerShare * amount).divCeil(1e18);
-        uint256 enIchi = (enIchiPerShare * amount) / 1e18;
+        (, uint256[] memory rewards) = pendingRewards(id, amount);
 
-        if (enIchi > stIchi) {
-            ICHI.safeTransfer(msg.sender, enIchi - stIchi);
+        if (rewards[0] > 0) {
+            ICHI.safeTransfer(msg.sender, rewards[0]);
         }
         return pid;
     }
