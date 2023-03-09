@@ -235,6 +235,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
                 revert Errors.INCORRECT_COLTOKEN(posCollToken);
             bank.takeCollateral(collSize);
             wIchiFarm.burn(collId, collSize);
+            _doRefund(ICHI);
         }
 
         // 5. Deposit on farming pool, put collateral
