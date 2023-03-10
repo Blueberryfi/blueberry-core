@@ -703,7 +703,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 totalDebt = _borrowBalanceStored(token);
         uint256 oldShare = pos.debtShare;
         uint256 oldDebt = (oldShare * totalDebt).divCeil(totalShare);
-        if (amountCall == type(uint256).max) {
+        if (amountCall > oldDebt) {
             amountCall = oldDebt;
         }
         amountCall = _doERC20TransferIn(token, amountCall);

@@ -87,12 +87,17 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
 
         // Get token-USD price
         uint256 decimals = registry.decimals(token, USD);
-        (, int256 answer, , uint256 updatedAt, ) = registry.latestRoundData(
-            token,
-            USD
-        );
-        if (updatedAt < block.timestamp - maxDelayTime)
-            revert Errors.PRICE_OUTDATED(token_);
+        (
+            uint80 roundId,
+            int256 answer,
+            ,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = registry.latestRoundData(token, USD);
+        if (
+            updatedAt < block.timestamp - maxDelayTime ||
+            answeredInRound < roundId
+        ) revert Errors.PRICE_OUTDATED(token_);
         if (answer <= 0) revert Errors.PRICE_NEGATIVE(token_);
 
         return (answer.toUint256() * 1e18) / 10 ** decimals;
