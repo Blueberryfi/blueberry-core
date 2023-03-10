@@ -19,7 +19,8 @@ import {
   IUniswapV2Router02,
   MockIchiV2,
   HardVault,
-  FeeManager
+  FeeManager,
+  UniV3WrappedLib
 } from '../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../constant';
 
@@ -46,7 +47,8 @@ export interface Protocol {
   usdcSoftVault: SoftVault,
   ichiSoftVault: SoftVault,
   hardVault: HardVault,
-  feeManager: FeeManager
+  feeManager: FeeManager,
+  uniV3Lib: UniV3WrappedLib,
 }
 
 export const setupProtocol = async (): Promise<Protocol> => {
@@ -197,13 +199,19 @@ export const setupProtocol = async (): Promise<Protocol> => {
   ]);
   await wichi.deployed();
 
-  const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
+  const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell, {
+    libraries: {
+      UniV3WrappedLibMockup: LibInstance.address
+    }
+  });
   spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
     bank.address,
     werc20.address,
     WETH,
     wichi.address
-  ])
+  ], {
+    unsafeAllowLinkedLibraries: true
+  })
   await spell.deployed();
   await spell.addStrategy(ichi_USDC_ICHI_Vault.address, utils.parseUnits("2000", 18));
   await spell.setCollateralsMaxLTVs(
@@ -276,5 +284,6 @@ export const setupProtocol = async (): Promise<Protocol> => {
     usdcSoftVault,
     ichiSoftVault,
     hardVault,
+    uniV3Lib: LibInstance
   }
 }

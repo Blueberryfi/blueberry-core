@@ -13,6 +13,7 @@ import {
 	MockIchiFarm,
 	ERC20,
 	MockIchiV2,
+	UniV3WrappedLib,
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import SpellABI from '../../abi/IchiSpell.json';
@@ -53,6 +54,7 @@ describe('ICHI Angel Vaults Spell', () => {
 	let ichiFarm: MockIchiFarm;
 	let ichiVault: MockIchiVault;
 	let protocol: Protocol;
+	let uniV3Lib: UniV3WrappedLib;
 
 	before(async () => {
 		[admin, alice, treasury] = await ethers.getSigners();
@@ -69,6 +71,7 @@ describe('ICHI Angel Vaults Spell', () => {
 		wichi = protocol.wichi;
 		werc20 = protocol.werc20;
 		mockOracle = protocol.mockOracle;
+		uniV3Lib = protocol.uniV3Lib;
 	})
 
 	beforeEach(async () => {
@@ -189,6 +192,7 @@ describe('ICHI Angel Vaults Spell', () => {
 						ethers.constants.MaxUint256,	// Amount of werc20
 						ethers.constants.MaxUint256,  // Amount of repay
 						ethers.constants.MaxUint256,
+						50 // 0.5% slippage
 					])
 				)
 			).to.be.revertedWith("STRATEGY_NOT_EXIST")
@@ -206,6 +210,7 @@ describe('ICHI Angel Vaults Spell', () => {
 						ethers.constants.MaxUint256,	// Amount of werc20
 						ethers.constants.MaxUint256,  // Amount of repay
 						ethers.constants.MaxUint256,
+						50 // 0.5% slippage
 					])
 				)
 			).to.be.revertedWith("COLLATERAL_NOT_EXIST")
@@ -229,6 +234,7 @@ describe('ICHI Angel Vaults Spell', () => {
 					ethers.constants.MaxUint256,	// Amount of werc20
 					ethers.constants.MaxUint256,  // Amount of repay
 					ethers.constants.MaxUint256,
+					50 // 0.5% slippage
 				])
 			)
 
@@ -382,6 +388,7 @@ describe('ICHI Angel Vaults Spell', () => {
 					ethers.constants.MaxUint256,	// Amount of werc20
 					ethers.constants.MaxUint256,  // Amount of repay
 					ethers.constants.MaxUint256,
+					50 // 0.5% slippage
 				])
 			)
 			const afterUSDCBalance = await usdc.balanceOf(admin.address);
@@ -518,13 +525,19 @@ describe('ICHI Angel Vaults Spell', () => {
 		const maxPosSize = utils.parseEther("200000");
 
 		beforeEach(async () => {
-			const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
+			const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell, {
+				libraries: {
+					UniV3WrappedLibMockup: uniV3Lib.address
+				}
+			});
 			spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
 				bank.address,
 				werc20.address,
 				WETH,
 				wichi.address
-			])
+			], {
+				unsafeAllowLinkedLibraries: true
+			})
 			await spell.deployed();
 		})
 

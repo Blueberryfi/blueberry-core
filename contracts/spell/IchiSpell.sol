@@ -302,8 +302,12 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         address borrowToken,
         uint256 amountRepay,
         uint256 amountLpRemove,
-        uint256 amountShareWithdraw
+        uint256 amountShareWithdraw,
+        uint256 sellSlippage
     ) internal {
+        if (sellSlippage > bank.config().maxSlippageOfClose())
+            revert Errors.RATIO_TOO_HIGH(sellSlippage);
+
         Strategy memory strategy = strategies[strategyId];
         IICHIVault vault = IICHIVault(strategy.vault);
         uint256 positionId = bank.POSITION_ID();
@@ -329,14 +333,17 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
 
         if (amountToSwap > 0) {
             swapPool = IUniswapV3Pool(vault.pool());
+            uint160 sqrtRatio = UniV3WrappedLibMockup.getSqrtRatioAtTick(
+                vault.currentTick()
+            );
+            uint160 deltaSqrt = (sqrtRatio * uint160(sellSlippage)) /
+                uint160(Constants.DENOMINATOR);
             swapPool.swap(
                 address(this),
                 // if withdraw token is Token0, then swap token1 -> token0 (false)
                 !isTokenA,
                 amountToSwap.toInt256(),
-                isTokenA
-                    ? UniV3WrappedLibMockup.MAX_SQRT_RATIO - 1 // Token0 -> Token1
-                    : UniV3WrappedLibMockup.MIN_SQRT_RATIO + 1, // Token1 -> Token0
+                isTokenA ? sqrtRatio + deltaSqrt : sqrtRatio - deltaSqrt, // sell slippage
                 abi.encode(address(this))
             );
         }
@@ -368,7 +375,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         address borrowToken,
         uint256 amountLpRemove,
         uint256 amountRepay,
-        uint256 amountShareWithdraw
+        uint256 amountShareWithdraw,
+        uint256 rewardsSellSlippage
     )
         external
         existingStrategy(strategyId)
@@ -384,7 +392,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             borrowToken,
             amountRepay,
             amountLpRemove,
-            amountShareWithdraw
+            amountShareWithdraw,
+            rewardsSellSlippage
         );
     }
 
@@ -394,7 +403,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         address borrowToken,
         uint256 amountLpRemove,
         uint256 amountRepay,
-        uint256 amountShareWithdraw
+        uint256 amountShareWithdraw,
+        uint256 rewardsSellSlippage
     )
         external
         existingStrategy(strategyId)
@@ -421,7 +431,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             borrowToken,
             amountRepay,
             amountLpRemove,
-            amountShareWithdraw
+            amountShareWithdraw,
+            rewardsSellSlippage
         );
 
         // 9. Refund ichi token

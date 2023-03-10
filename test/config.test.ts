@@ -67,7 +67,7 @@ describe("HardVault", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(
       config.setDepositFee(2500)
-    ).to.be.revertedWith("FEE_TOO_HIGH");
+    ).to.be.revertedWith("RATIO_TOO_HIGH");
 
     await config.setDepositFee(100);
     expect(await config.depositFee()).to.be.equal(100);
@@ -79,7 +79,7 @@ describe("HardVault", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(
       config.setWithdrawFee(2500)
-    ).to.be.revertedWith("FEE_TOO_HIGH");
+    ).to.be.revertedWith("RATIO_TOO_HIGH");
 
     await config.setWithdrawFee(100);
     expect(await config.withdrawFee()).to.be.equal(100);

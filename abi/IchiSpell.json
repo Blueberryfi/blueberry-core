@@ -127,6 +127,17 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "ratio",
+        "type": "uint256"
+      }
+    ],
+    "name": "RATIO_TOO_HIGH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "spell",
         "type": "address"
@@ -307,6 +318,11 @@
         "internalType": "uint256",
         "name": "amountShareWithdraw",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardsSellSlippage",
+        "type": "uint256"
       }
     ],
     "name": "closePosition",
@@ -344,6 +360,11 @@
       {
         "internalType": "uint256",
         "name": "amountShareWithdraw",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardsSellSlippage",
         "type": "uint256"
       }
     ],

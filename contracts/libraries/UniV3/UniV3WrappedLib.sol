@@ -13,16 +13,17 @@ library UniV3WrappedLib {
     uint160 internal constant MAX_SQRT_RATIO =
         1461446703485210103287273052203988822378723970342;
 
-    function getSqrtRatioAtTick(int24 tick)
-        external
-        pure
-        returns (uint160 sqrtPriceX96)
-    {
+    function getSqrtRatioAtTick(
+        int24 tick
+    ) external pure returns (uint160 sqrtPriceX96) {
         sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
     }
 
     // OracleLibrary
-    function consult(address pool, uint32 secondsAgo)
+    function consult(
+        address pool,
+        uint32 secondsAgo
+    )
         external
         view
         returns (int24 arithmeticMeanTick, uint128 harmonicMeanLiquidity)

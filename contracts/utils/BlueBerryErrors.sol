@@ -64,7 +64,6 @@ error BAD_PID(uint256 pid);
 error BAD_REWARD_PER_SHARE(uint256 rewardPerShare);
 
 // Bank
-error FEE_TOO_HIGH(uint256 feeBps);
 error NOT_UNDER_EXECUTION();
 error NOT_EOA(address from);
 error NOT_FROM_SPELL(address from);
@@ -92,6 +91,7 @@ error INVALID_UTOKEN(address uToken);
 error BORROW_ZERO_SHARE(uint256 borrowAmount);
 
 // Config
+error RATIO_TOO_HIGH(uint256 ratio);
 error INVALID_FEE_DISTRIBUTION();
 error NO_TREASURY_SET();
 error FEE_WINDOW_ALREADY_STARTED();

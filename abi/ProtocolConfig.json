@@ -1,16 +1,5 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "feeBps",
-        "type": "uint256"
-      }
-    ],
-    "name": "FEE_TOO_HIGH",
-    "type": "error"
-  },
-  {
     "inputs": [],
     "name": "FEE_WINDOW_ALREADY_STARTED",
     "type": "error"
@@ -18,6 +7,17 @@
   {
     "inputs": [],
     "name": "INVALID_FEE_DISTRIBUTION",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "ratio",
+        "type": "uint256"
+      }
+    ],
+    "name": "RATIO_TOO_HIGH",
     "type": "error"
   },
   {
@@ -150,6 +150,19 @@
   },
   {
     "inputs": [],
+    "name": "maxSlippageOfClose",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "owner",
     "outputs": [
       {
@@ -252,6 +265,19 @@
       }
     ],
     "name": "setFeeManager",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "slippage_",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxSlippageOfClose",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

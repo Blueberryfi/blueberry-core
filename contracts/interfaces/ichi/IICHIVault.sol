@@ -22,6 +22,8 @@ interface IICHIVault is IERC20, IERC20Metadata {
 
     function tickSpacing() external view returns (int24);
 
+    function currentTick() external view returns (int24);
+
     function affiliate() external view returns (address);
 
     function baseLower() external view returns (int24);
@@ -42,11 +44,7 @@ interface IICHIVault is IERC20, IERC20Metadata {
 
     function getTotalAmounts() external view returns (uint256, uint256);
 
-    function deposit(
-        uint256,
-        uint256,
-        address
-    ) external returns (uint256);
+    function deposit(uint256, uint256, address) external returns (uint256);
 
     function withdraw(uint256, address) external returns (uint256, uint256);
 

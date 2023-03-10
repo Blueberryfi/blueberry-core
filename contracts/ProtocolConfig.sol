@@ -22,6 +22,9 @@ import "./interfaces/IProtocolConfig.sol";
  * @notice Hotspot of all configurable states of the protocol
  */
 contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
+    // Protocol
+    IFeeManager public feeManager;
+
     // Leveraging Fee
     uint256 public depositFee;
     uint256 public withdrawFee;
@@ -32,6 +35,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     uint256 public withdrawVaultFeeWindow;
     uint256 public withdrawVaultFeeWindowStartTime;
 
+    /// @dev Slippage of converting withdrawn reserves to debt tokens when closing position
+    uint256 public maxSlippageOfClose;
+
     uint256 public treasuryFeeRate;
     uint256 public blbStablePoolFeeRate;
     uint256 public blbIchiVaultFeeRate;
@@ -40,9 +46,6 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     address public blbUsdcIchiVault;
     /// @dev $BLB liquidity pool against stablecoins
     address public blbStabilityPool;
-
-    // Protocol
-    IFeeManager public feeManager;
 
     function initialize(address treasury_) external initializer {
         __Ownable_init();
@@ -59,6 +62,8 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
 
         withdrawVaultFee = 100; // 1% as default, base 10000
         withdrawVaultFeeWindow = 60 days;
+
+        maxSlippageOfClose = 500; // 5% of Max Slippage as default, base 10000
     }
 
     function startVaultWithdrawFee() external onlyOwner {
@@ -72,19 +77,25 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
      */
     function setDepositFee(uint256 depositFee_) external onlyOwner {
         // Cap to 20%
-        if (depositFee_ > 2000) revert Errors.FEE_TOO_HIGH(depositFee_);
+        if (depositFee_ > 2000) revert Errors.RATIO_TOO_HIGH(depositFee_);
         depositFee = depositFee_;
     }
 
     function setWithdrawFee(uint256 withdrawFee_) external onlyOwner {
         // Cap to 20%
-        if (withdrawFee_ > 2000) revert Errors.FEE_TOO_HIGH(withdrawFee_);
+        if (withdrawFee_ > 2000) revert Errors.RATIO_TOO_HIGH(withdrawFee_);
         withdrawFee = withdrawFee_;
+    }
+
+    function setMaxSlippageOfClose(uint256 slippage_) external onlyOwner {
+        // Cap to 20%
+        if (maxSlippageOfClose > 2000) revert Errors.RATIO_TOO_HIGH(slippage_);
+        maxSlippageOfClose = slippage_;
     }
 
     function setRewardFee(uint256 rewardFee_) external onlyOwner {
         // Cap to 20%
-        if (rewardFee_ > 2000) revert Errors.FEE_TOO_HIGH(rewardFee_);
+        if (rewardFee_ > 2000) revert Errors.RATIO_TOO_HIGH(rewardFee_);
         rewardFee = rewardFee_;
     }
 
