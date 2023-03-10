@@ -13,8 +13,11 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "./UsingBaseOracle.sol";
+import "../libraries/BBMath.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
+
+import "hardhat/console.sol";
 
 /**
  * @author gmspacex
@@ -32,6 +35,8 @@ import "../interfaces/ichi/IICHIVault.sol";
  *      _mint(to, shares);                                                                          MockIchiVault#L280
  */
 contract IchiVaultOracle is UsingBaseOracle, IBaseOracle {
+    using BBMath for uint256;
+
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /**
@@ -52,12 +57,9 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle {
         uint256 px1 = base.getPrice(address(token1));
         uint256 t0Decimal = IERC20Metadata(token0).decimals();
         uint256 t1Decimal = IERC20Metadata(token1).decimals();
+        uint256 sqrtK = BBMath.sqrt(r0 * r1 * 10**(36 - t0Decimal - t1Decimal));
 
-        uint256 totalReserve = (r0 * px0) /
-            10**t0Decimal +
-            (r1 * px1) /
-            10**t1Decimal;
-
-        return (totalReserve * 1e18) / totalSupply;
+        console.log(r0, r1);
+        return (2 * sqrtK * BBMath.sqrt(px0 * px1)) / totalSupply;
     }
 }

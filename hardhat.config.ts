@@ -1,91 +1,93 @@
-import '@typechain/hardhat';
-import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-etherscan';
-import 'solidity-coverage';
-import 'hardhat-abi-exporter';
+import "@typechain/hardhat";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-etherscan";
+import "solidity-coverage";
+import "hardhat-abi-exporter";
 // import 'hardhat-gas-reporter';
-import 'hardhat-contract-sizer';
-import '@openzeppelin/hardhat-upgrades'
-import { HardhatUserConfig } from 'hardhat/config';
-import dotenv from 'dotenv';
+import "hardhat-contract-sizer";
+import "@openzeppelin/hardhat-upgrades";
+import {HardhatUserConfig} from "hardhat/config";
+import dotenv from "dotenv";
 
 dotenv.config();
 
 let deployAccountKey: string;
 if (!process.env.DEPLOY_ACCOUNT_KEY) {
-  throw new Error("Please set your DEPLOY_ACCOUNT_KEY in a .env file");
+    throw new Error("Please set your DEPLOY_ACCOUNT_KEY in a .env file");
 } else {
-  deployAccountKey = process.env.DEPLOY_ACCOUNT_KEY;
+    deployAccountKey = process.env.DEPLOY_ACCOUNT_KEY;
 }
 
 let alchemyapi: string;
 if (!process.env.ALCHEMY_API_KEY) {
-  throw new Error("Please set your ALCHEMY_API_KEY in a .env file");
+    throw new Error("Please set your ALCHEMY_API_KEY in a .env file");
 } else {
-  alchemyapi = process.env.ALCHEMY_API_KEY;
+    alchemyapi = process.env.ALCHEMY_API_KEY;
 }
 
 const config: HardhatUserConfig = {
-  typechain: {
-    target: 'ethers-v5',
-  },
-  solidity: {
-    compilers: [
-      {
-        version: '0.8.16',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
+    typechain: {
+        target: "ethers-v5",
+    },
+    solidity: {
+        compilers: [
+            {
+                version: "0.8.16",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            {
+                version: "0.7.6",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+        ],
+    },
+    networks: {
+        hardhat: {
+            forking: {
+                // url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
+                url: "https://rpc.ankr.com/eth",
+                blockNumber: 16283930,
+            },
         },
-      }, {
-        version: '0.7.6',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
+        mainnet: {
+            accounts: [deployAccountKey],
+            chainId: 1,
+            url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
         },
-      },
-    ],
-  },
-  networks: {
-    hardhat: {
-      forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
-        blockNumber: 16283930,
-      },
+        goerli: {
+            accounts: [deployAccountKey],
+            url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
+        },
     },
-    mainnet: {
-      accounts: [deployAccountKey],
-      chainId: 1,
-      url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
+    abiExporter: {
+        path: "./abi",
+        runOnCompile: true,
+        clear: true,
+        flat: true,
+        spacing: 2,
     },
-    goerli: {
-      accounts: [deployAccountKey],
-      url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
+    contractSizer: {
+        alphaSort: true,
+        disambiguatePaths: false,
+        runOnCompile: true,
+        strict: false,
     },
-  },
-  abiExporter: {
-    path: "./abi",
-    runOnCompile: true,
-    clear: true,
-    flat: true,
-    spacing: 2,
-  },
-  contractSizer: {
-    alphaSort: true,
-    disambiguatePaths: false,
-    runOnCompile: true,
-    strict: false,
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
-  },
-  mocha: {
-    timeout: 100000000
-  }
+    etherscan: {
+        apiKey: process.env.ETHERSCAN_API_KEY,
+    },
+    mocha: {
+        timeout: 100000000,
+    },
 };
 
 export default config;
