@@ -29,7 +29,7 @@ contract FeeManager is OwnableUpgradeable {
         config = config_;
     }
 
-    /// @notice Cut deposit fee when lending isolated underlying assets to Compound fork
+    /// @notice Cut deposit fee when lending isolated underlying assets to Blueberry Money Market
     /// @param token underlying token address
     /// @param amount deposit amount
     function doCutDepositFee(
@@ -39,7 +39,7 @@ contract FeeManager is OwnableUpgradeable {
         return _doCutFee(token, amount, config.depositFee());
     }
 
-    /// @notice Cut withdraw fee when redeeming isolated underlying tokens from Compound fork
+    /// @notice Cut withdraw fee when redeeming isolated underlying tokens from Blueberry Money Market
     /// @param token underlying token address
     /// @param amount withdraw amount
     function doCutWithdrawFee(
@@ -59,7 +59,7 @@ contract FeeManager is OwnableUpgradeable {
         return _doCutFee(token, amount, config.rewardFee());
     }
 
-    /// @notice Cut vault withdraw fee when perform withdraw from Compound fork within the given window
+    /// @notice Cut vault withdraw fee when perform withdraw from Blueberry Money Market within the given window
     /// @param token underlying token address
     /// @param amount withdraw amount
     function doCutVaultWithdrawFee(

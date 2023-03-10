@@ -118,7 +118,7 @@ describe('Bank', () => {
 			expect(await bank.oracle()).to.be.equal(oracle.address);
 			expect(await bank.config()).to.be.equal(config.address);
 			expect(await bank.nextPositionId()).to.be.equal(1);
-			expect(await bank.bankStatus()).to.be.equal(7);
+			expect(await bank.bankStatus()).to.be.equal(15);
 		})
 	})
 
@@ -337,7 +337,7 @@ describe('Bank', () => {
 
 				await expect(
 					bank.addBank(USDC, usdcSoftVault.address, hardVault.address)
-				).to.be.revertedWith("CTOKEN_ALREADY_ADDED");
+				).to.be.revertedWith("BTOKEN_ALREADY_ADDED");
 			})
 			it("should be able to set bank status", async () => {
 				let bankStatus = await bank.bankStatus();

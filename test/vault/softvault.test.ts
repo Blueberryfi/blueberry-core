@@ -74,7 +74,7 @@ describe("SoftVault", () => {
 	})
 
 	describe("Constructor", () => {
-		it("should revert when cToken address is invalid", async () => {
+		it("should revert when bToken address is invalid", async () => {
 			const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
 			await expect(upgrades.deployProxy(SoftVault, [
 				config.address,
@@ -89,9 +89,9 @@ describe("SoftVault", () => {
 				"ibUSDC",
 			])).to.be.revertedWith('ZERO_ADDRESS');
 		})
-		it("should set cToken along with uToken in constructor", async () => {
+		it("should set bToken along with uToken in constructor", async () => {
 			expect(await vault.uToken()).to.be.equal(USDC);
-			expect(await vault.cToken()).to.be.equal(CUSDC);
+			expect(await vault.bToken()).to.be.equal(CUSDC);
 		})
 	})
 	describe("Deposit", () => {
@@ -104,7 +104,7 @@ describe("SoftVault", () => {
 			await usdc.approve(vault.address, depositAmount);
 			await expect(vault.deposit(depositAmount)).to.be.emit(vault, "Deposited");
 		})
-		it("vault should hold the cTokens on deposit", async () => {
+		it("vault should hold the bTokens on deposit", async () => {
 			await usdc.approve(vault.address, depositAmount);
 			await vault.deposit(depositAmount);
 
@@ -113,7 +113,7 @@ describe("SoftVault", () => {
 				depositAmount.mul(BigNumber.from(10).pow(18)).div(exchangeRate)
 			);
 		})
-		it("vault should mint same amount of share tokens as cTokens received", async () => {
+		it("vault should mint same amount of share tokens as bTokens received", async () => {
 			await usdc.approve(vault.address, depositAmount);
 			await vault.deposit(depositAmount);
 
@@ -158,7 +158,7 @@ describe("SoftVault", () => {
 	})
 
 	describe("Utils", () => {
-		it("should have same decimal as cToken", async () => {
+		it("should have same decimal as bToken", async () => {
 			expect(await vault.decimals()).to.be.equal(6);
 		})
 	})

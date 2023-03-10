@@ -24,8 +24,8 @@ import "../interfaces/compound/ICErc20.sol";
 /**
  * @author gmspacex
  * @title Soft Vault
- * @notice Soft Vault is a spot where users lend and borrow tokens through Blueberry Lending Protocol(Compound Fork).
- * @dev SoftVault is communicating with cTokens to lend and borrow underlying tokens from/to Compound fork.
+ * @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
+ * @dev SoftVault is communicating with bTokens to lend and borrow underlying tokens from/to Blueberry Money Market.
  *      Underlying tokens can be ERC20 tokens listed by Blueberry team, such as USDC, USDT, DAI, WETH, ...
  */
 contract SoftVault is
@@ -36,8 +36,8 @@ contract SoftVault is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    /// @dev address of cToken for underlying token
-    ICErc20 public cToken;
+    /// @dev address of bToken for underlying token
+    ICErc20 public bToken;
     /// @dev address of underlying token
     IERC20Upgradeable public uToken;
     /// @dev address of protocol config
@@ -56,7 +56,7 @@ contract SoftVault is
 
     function initialize(
         IProtocolConfig _config,
-        ICErc20 _cToken,
+        ICErc20 _bToken,
         string memory _name,
         string memory _symbol
     ) external initializer {
@@ -64,24 +64,24 @@ contract SoftVault is
         __Ownable_init();
         __ERC20_init(_name, _symbol);
 
-        if (address(_cToken) == address(0) || address(_config) == address(0))
+        if (address(_bToken) == address(0) || address(_config) == address(0))
             revert Errors.ZERO_ADDRESS();
 
-        IERC20Upgradeable _uToken = IERC20Upgradeable(_cToken.underlying());
+        IERC20Upgradeable _uToken = IERC20Upgradeable(_bToken.underlying());
         config = _config;
-        cToken = _cToken;
+        bToken = _bToken;
         uToken = _uToken;
     }
 
-    /// @dev Vault has same decimal as cToken, cToken has same decimal as underlyingToken
+    /// @dev Vault has same decimal as bToken, bToken has same decimal as underlyingToken
     function decimals() public view override returns (uint8) {
-        return cToken.decimals();
+        return bToken.decimals();
     }
 
     /**
-     * @notice Deposit underlying assets on Compound and issue share token
+     * @notice Deposit underlying assets on Blueberry Money Market and issue share token
      * @param amount Underlying token amount to deposit
-     * @return shareAmount same as cToken amount received
+     * @return shareAmount same as bToken amount received
      */
     function deposit(
         uint256 amount
@@ -91,11 +91,11 @@ contract SoftVault is
         uToken.safeTransferFrom(msg.sender, address(this), amount);
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
-        uint256 cBalanceBefore = cToken.balanceOf(address(this));
-        _ensureApprove(address(uToken), address(cToken), amount);
-        if (cToken.mint(uBalanceAfter - uBalanceBefore) != 0)
+        uint256 cBalanceBefore = bToken.balanceOf(address(this));
+        _ensureApprove(address(uToken), address(bToken), amount);
+        if (bToken.mint(uBalanceAfter - uBalanceBefore) != 0)
             revert Errors.LEND_FAILED(amount);
-        uint256 cBalanceAfter = cToken.balanceOf(address(this));
+        uint256 cBalanceAfter = bToken.balanceOf(address(this));
 
         shareAmount = cBalanceAfter - cBalanceBefore;
         _mint(msg.sender, shareAmount);
@@ -104,9 +104,9 @@ contract SoftVault is
     }
 
     /**
-     * @notice Withdraw underlying assets from Compound
+     * @notice Withdraw underlying assets from Blueberry Money Market
      * @dev It cuts vault withdraw fee when you withdraw within the vault withdraw window (2 months)
-     * @param shareAmount Amount of cTokens to redeem
+     * @param shareAmount Amount of bTokens to redeem
      * @return withdrawAmount Amount of underlying assets withdrawn
      */
     function withdraw(
@@ -117,7 +117,7 @@ contract SoftVault is
         _burn(msg.sender, shareAmount);
 
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        if (cToken.redeem(shareAmount) != 0)
+        if (bToken.redeem(shareAmount) != 0)
             revert Errors.REDEEM_FAILED(shareAmount);
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 

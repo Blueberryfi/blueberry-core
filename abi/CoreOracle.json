@@ -1,16 +1,5 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      }
-    ],
-    "name": "ERC1155_NOT_WHITELISTED",
-    "type": "error"
-  },
-  {
     "inputs": [],
     "name": "INPUT_ARRAY_MISMATCH",
     "type": "error"

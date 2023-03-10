@@ -28,7 +28,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
     mapping(address => address) public routes;
     /// @dev Mapping from token to liquidation thresholds, multiplied by 1e4.
     mapping(address => uint256) public liqThresholds; // 85% for volatile tokens, 90% for stablecoins
-    /// @dev Mapping from token address to whitelist status
+    /// @dev Mapping from wrapper address to whitelist status
     mapping(address => bool) public whitelistedERC1155;
 
     function initialize() external initializer {
@@ -137,17 +137,15 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
 
     /**
      * @notice Return the USD value of given position
-     * @param token ERC1155 token address to get collateral value
-     * @param id ERC1155 token id to get collateral value
-     * @param amount Token amount to get collateral value, based 1e18
+     * @param token ERC1155 Wrapper token address to get collateral value of
+     * @param id ERC1155 token id to get collateral value of
+     * @param amount Token amount to get collateral value of, based 1e18
      */
     function getPositionValue(
         address token,
         uint256 id,
         uint256 amount
     ) external view override returns (uint256 positionValue) {
-        if (!whitelistedERC1155[token])
-            revert Errors.ERC1155_NOT_WHITELISTED(token);
         address uToken = IERC20Wrapper(token).getUnderlyingToken(id);
         // Underlying token is LP token, and it always has 18 decimals
         // so skipped getting LP decimals

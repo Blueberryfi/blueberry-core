@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./compound/ICErc20.sol";
 
 interface ISoftVault is IERC20Upgradeable {
-    function cToken() external view returns (ICErc20);
+    function bToken() external view returns (ICErc20);
 
     function uToken() external view returns (IERC20Upgradeable);
 

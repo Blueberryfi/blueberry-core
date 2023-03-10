@@ -31,7 +31,6 @@ error LIQ_THRESHOLD_TOO_LOW(uint256 threshold);
 error ORACLE_NOT_SUPPORT(address token);
 error ORACLE_NOT_SUPPORT_LP(address lp);
 error ORACLE_NOT_SUPPORT_WTOKEN(address wToken);
-error ERC1155_NOT_WHITELISTED(address collToken);
 error NO_ORACLE_ROUTE(address token);
 
 // Spell
@@ -75,7 +74,7 @@ error TOKEN_NOT_WHITELISTED(address token);
 error BANK_NOT_LISTED(address token);
 error BANK_ALREADY_LISTED();
 error BANK_LIMIT();
-error CTOKEN_ALREADY_ADDED();
+error BTOKEN_ALREADY_ADDED();
 error LEND_NOT_ALLOWED();
 error BORROW_NOT_ALLOWED();
 error REPAY_NOT_ALLOWED();

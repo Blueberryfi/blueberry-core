@@ -11,7 +11,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "cToken",
+        "name": "bToken",
         "type": "address"
       },
       {
@@ -434,7 +434,7 @@
       },
       {
         "internalType": "address",
-        "name": "cToken",
+        "name": "bToken",
         "type": "address"
       },
       {

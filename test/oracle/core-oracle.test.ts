@@ -176,12 +176,5 @@ describe('Core Oracle', () => {
         ).to.be.revertedWith("NO_ORACLE_ROUTE");
       })
     })
-    describe("Collateral Value", async () => {
-      it("should revert when oracle route is not set", async () => {
-        await expect(
-          coreOracle.getPositionValue(ADDRESS.CRV, 0, 100)
-        ).to.be.revertedWith("ERC1155_NOT_WHITELISTED");
-      })
-    })
   })
 });

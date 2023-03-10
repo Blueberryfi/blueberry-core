@@ -98,6 +98,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "bToken",
+    "outputs": [
+      {
+        "internalType": "contract ICErc20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -111,19 +124,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "cToken",
-    "outputs": [
-      {
-        "internalType": "contract ICErc20",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",

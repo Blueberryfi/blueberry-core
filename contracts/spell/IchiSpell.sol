@@ -139,7 +139,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     ) internal {
         Strategy memory strategy = strategies[strategyId];
 
-        // 1. Lend isolated collaterals on compound
+        // 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(collToken, collAmount);
 
         // 2. Borrow specific amounts
@@ -247,12 +247,12 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     }
 
     /**
-     * @dev Increase isolated collateral of position
+     * @notice Increase isolated collateral to support the position
      * @param token Isolated collateral token address
      * @param amount Amount of token to increase position
      */
     function increasePosition(address token, uint256 amount) external {
-        // 1. Get user input amounts
+        // 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(token, amount);
     }
 
@@ -360,7 +360,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param borrowToken Token address to withdraw (e.g USDC)
      * @param amountLpRemove Amount of ICHI Vault LP token to take out from Bank
      * @param amountRepay Amount to repay the loan
-     * @param amountShareWithdraw Amount of Isolated collateral to withdraw from Compound
+     * @param amountShareWithdraw Amount of Isolated collateral to withdraw from Blueberry Money Market
      */
     function closePosition(
         uint256 strategyId,

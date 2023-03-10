@@ -12,7 +12,7 @@ interface IBank {
         uint8 index; // Reverse look up index for this bank.
         address hardVault;
         address softVault;
-        address cToken; // The CToken to draw liquidity from.
+        address bToken; // The bToken to draw liquidity from.
         uint256 totalShare; // The total debt share count across all open positions.
     }
 
@@ -30,7 +30,7 @@ interface IBank {
     /// The owner adds a new bank gets added to the system.
     event AddBank(
         address token,
-        address cToken,
+        address bToken,
         address softVault,
         address hardVault
     );
@@ -107,7 +107,7 @@ interface IBank {
 
     function getBankInfo(
         address token
-    ) external view returns (bool isListed, address cToken, uint256 totalShare);
+    ) external view returns (bool isListed, address bToken, uint256 totalShare);
 
     function getDebtValue(uint256 positionId) external view returns (uint256);
 

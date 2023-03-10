@@ -53,7 +53,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
     address[] public allBanks; // The list of all listed banks.
     mapping(address => Bank) public banks; // Mapping from token to bank data.
-    mapping(address => bool) public cTokenInBank; // Mapping from cToken to its existence in bank.
+    mapping(address => bool) public bTokenInBank; // Mapping from bToken to its existence in bank.
     mapping(uint256 => Position) public positions; // Mapping from position ID to position data.
 
     bool public allowContractCalls; // The boolean status whether to allow call from contract (false = onlyEOA)
@@ -220,23 +220,23 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         ) revert Errors.ZERO_ADDRESS();
 
         Bank storage bank = banks[token];
-        address cToken = address(ISoftVault(softVault).cToken());
+        address bToken = address(ISoftVault(softVault).bToken());
 
-        if (cTokenInBank[cToken]) revert Errors.CTOKEN_ALREADY_ADDED();
+        if (bTokenInBank[bToken]) revert Errors.BTOKEN_ALREADY_ADDED();
         if (bank.isListed) revert Errors.BANK_ALREADY_LISTED();
         if (allBanks.length >= 256) revert Errors.BANK_LIMIT();
 
-        cTokenInBank[cToken] = true;
+        bTokenInBank[bToken] = true;
         bank.isListed = true;
         bank.index = uint8(allBanks.length);
-        bank.cToken = cToken;
+        bank.bToken = bToken;
         bank.softVault = softVault;
         bank.hardVault = hardVault;
 
         IHardVault(hardVault).setApprovalForAll(hardVault, true);
         allBanks.push(token);
 
-        emit AddBank(token, cToken, softVault, hardVault);
+        emit AddBank(token, bToken, softVault, hardVault);
     }
 
     /// @dev Set bank status
@@ -274,7 +274,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     function accrue(address token) public override {
         Bank storage bank = banks[token];
         if (!bank.isListed) revert Errors.BANK_NOT_LISTED(token);
-        ICErc20(bank.cToken).borrowBalanceCurrent(address(this));
+        ICErc20(bank.bToken).borrowBalanceCurrent(address(this));
     }
 
     /// @dev Convenient function to trigger interest accrual for a list of banks.
@@ -288,7 +288,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     function _borrowBalanceStored(
         address token
     ) internal view returns (uint256) {
-        return ICErc20(banks[token].cToken).borrowBalanceStored(address(this));
+        return ICErc20(banks[token].bToken).borrowBalanceStored(address(this));
     }
 
     /// @dev Trigger interest accrual and return the current debt balance.
@@ -328,10 +328,10 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         external
         view
         override
-        returns (bool isListed, address cToken, uint256 totalShare)
+        returns (bool isListed, address bToken, uint256 totalShare)
     {
         Bank memory bank = banks[token];
-        return (bank.isListed, bank.cToken, bank.totalShare);
+        return (bank.isListed, bank.bToken, bank.totalShare);
     }
 
     /// @dev Return position info by given positionId
@@ -401,7 +401,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 positionId
     ) public view override returns (uint256 icollValue) {
         Position memory pos = positions[positionId];
-        uint underlyingAmount = (ICErc20(banks[pos.debtToken].cToken)
+        uint underlyingAmount = (ICErc20(banks[pos.debtToken].bToken)
             .exchangeRateStored() * pos.underlyingVaultShare) / 10 ** 18;
         icollValue = oracle.getTokenValue(
             pos.underlyingToken,
@@ -779,17 +779,17 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @dev Internal function to perform borrow from the bank and return the amount received.
      * @param token The token to perform borrow action.
      * @param amountCall The amount use in the transferFrom call.
-     * NOTE: Caller must ensure that cToken interest was already accrued up to this block.
+     * NOTE: Caller must ensure that bToken interest was already accrued up to this block.
      */
     function _doBorrow(
         address token,
         uint256 amountCall
     ) internal returns (uint256 borrowAmount) {
-        address cToken = banks[token].cToken;
+        address bToken = banks[token].bToken;
 
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        if (ICErc20(cToken).borrow(amountCall) != 0)
+        if (ICErc20(bToken).borrow(amountCall) != 0)
             revert Errors.BORROW_FAILED(amountCall);
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
@@ -800,16 +800,16 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
      * @dev Internal function to perform repay to the bank and return the amount actually repaid.
      * @param token The token to perform repay action.
      * @param amountCall The amount to use in the repay call.
-     * NOTE: Caller must ensure that cToken interest was already accrued up to this block.
+     * NOTE: Caller must ensure that bToken interest was already accrued up to this block.
      */
     function _doRepay(
         address token,
         uint256 amountCall
     ) internal returns (uint256 repaidAmount) {
-        address cToken = banks[token].cToken;
-        _ensureApprove(token, cToken, amountCall);
+        address bToken = banks[token].bToken;
+        _ensureApprove(token, bToken, amountCall);
         uint256 beforeDebt = _borrowBalanceStored(token);
-        if (ICErc20(cToken).repayBorrow(amountCall) != 0)
+        if (ICErc20(bToken).repayBorrow(amountCall) != 0)
             revert Errors.REPAY_FAILED(amountCall);
         uint256 newDebt = _borrowBalanceStored(token);
         repaidAmount = beforeDebt - newDebt;

@@ -9,7 +9,7 @@ interface IComptroller {
         uint256 creditLimit
     ) external;
 
-    function enterMarkets(address[] memory cTokens)
-        external
-        returns (uint256[] memory);
+    function enterMarkets(
+        address[] memory bTokens
+    ) external returns (uint256[] memory);
 }

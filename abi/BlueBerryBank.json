@@ -71,7 +71,7 @@
   },
   {
     "inputs": [],
-    "name": "CTOKEN_ALREADY_ADDED",
+    "name": "BTOKEN_ALREADY_ADDED",
     "type": "error"
   },
   {
@@ -300,7 +300,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "cToken",
+        "name": "bToken",
         "type": "address"
       },
       {
@@ -764,6 +764,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "bTokenInBank",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "bankStatus",
     "outputs": [
@@ -808,7 +827,7 @@
       },
       {
         "internalType": "address",
-        "name": "cToken",
+        "name": "bToken",
         "type": "address"
       },
       {
@@ -842,25 +861,6 @@
       }
     ],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "cTokenInBank",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -954,7 +954,7 @@
       },
       {
         "internalType": "address",
-        "name": "cToken",
+        "name": "bToken",
         "type": "address"
       },
       {
