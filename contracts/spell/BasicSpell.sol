@@ -60,10 +60,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
             address(this)
         );
         if (rewardsBalance > 0) {
-            IERC20Upgradeable(token).approve(
-                address(bank.feeManager()),
-                rewardsBalance
-            );
+            _ensureApprove(token, address(bank.feeManager()), rewardsBalance);
             bank.feeManager().doCutRewardsFee(token, rewardsBalance);
             _doRefund(token);
         }
@@ -101,7 +98,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param amount The amount to repay.
     function _doRepay(address token, uint256 amount) internal {
         if (amount > 0) {
-            IERC20Upgradeable(token).approve(address(bank), amount);
+            _ensureApprove(token, address(bank), amount);
             bank.repay(token, amount);
         }
     }
@@ -111,7 +108,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param amount The amount to put in the bank.
     function _doPutCollateral(address token, uint256 amount) internal {
         if (amount > 0) {
-            IERC20Upgradeable(token).approve(address(werc20), amount);
+            _ensureApprove(token, address(werc20), amount);
             werc20.mint(token, amount);
             bank.putCollateral(
                 address(werc20),
@@ -129,6 +126,16 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
             amount = bank.takeCollateral(amount);
             werc20.burn(token, amount);
         }
+    }
+
+    /// @dev Reset approval to zero and set again
+    function _ensureApprove(
+        address token,
+        address spender,
+        uint256 amount
+    ) internal {
+        IERC20Upgradeable(token).approve(spender, 0);
+        IERC20Upgradeable(token).approve(spender, amount);
     }
 
     /// @dev Fallback function. Can only receive ETH from WETH contract.

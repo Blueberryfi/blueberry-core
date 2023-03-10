@@ -79,6 +79,7 @@ error CTOKEN_ALREADY_ADDED();
 error LEND_NOT_ALLOWED();
 error BORROW_NOT_ALLOWED();
 error REPAY_NOT_ALLOWED();
+error WITHDRAW_LEND_NOT_ALLOWED();
 error LOCKED();
 error NOT_IN_EXEC();
 
@@ -94,6 +95,7 @@ error BORROW_ZERO_SHARE(uint256 borrowAmount);
 // Config
 error INVALID_FEE_DISTRIBUTION();
 error NO_TREASURY_SET();
+error FEE_WINDOW_ALREADY_STARTED();
 
 // Utilities
 error CAST();

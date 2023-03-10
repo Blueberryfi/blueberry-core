@@ -150,7 +150,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         if (vault.token0() != borrowToken && vault.token1() != borrowToken)
             revert Errors.INCORRECT_DEBT(borrowToken);
         bool isTokenA = vault.token0() == borrowToken;
-        IERC20Upgradeable(borrowToken).approve(address(vault), borrowBalance);
+        _ensureApprove(borrowToken, address(vault), borrowBalance);
+
         uint ichiVaultShare;
         if (isTokenA) {
             ichiVaultShare = vault.deposit(borrowBalance, 0, address(this));
@@ -239,8 +240,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         }
 
         // 5. Deposit on farming pool, put collateral
-        uint256 lpAmount = IERC20(strategy.vault).balanceOf(address(this));
-        IERC20Upgradeable(strategy.vault).approve(address(wIchiFarm), lpAmount);
+        uint256 lpAmount = IERC20(lpToken).balanceOf(address(this));
+        IERC20Upgradeable(lpToken).approve(address(wIchiFarm), lpAmount);
         uint256 id = wIchiFarm.mint(farmingPid, lpAmount);
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }

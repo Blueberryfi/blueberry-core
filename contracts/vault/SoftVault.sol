@@ -92,7 +92,7 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         uint256 cBalanceBefore = cToken.balanceOf(address(this));
-        uToken.approve(address(cToken), amount);
+        _ensureApprove(address(uToken), address(cToken), amount);
         if (cToken.mint(uBalanceAfter - uBalanceBefore) != 0)
             revert Errors.LEND_FAILED(amount);
         uint256 cBalanceAfter = cToken.balanceOf(address(this));
@@ -122,7 +122,11 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
-        uToken.approve(address(config.feeManager()), withdrawAmount);
+        _ensureApprove(
+            address(uToken),
+            address(config.feeManager()),
+            withdrawAmount
+        );
         withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
             address(uToken),
             withdrawAmount
@@ -130,5 +134,15 @@ contract SoftVault is
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);
+    }
+
+    /// @dev Reset approval to zero and set again
+    function _ensureApprove(
+        address token,
+        address spender,
+        uint256 amount
+    ) internal {
+        IERC20Upgradeable(token).approve(spender, 0);
+        IERC20Upgradeable(token).approve(spender, amount);
     }
 }

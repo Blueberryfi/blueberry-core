@@ -132,7 +132,7 @@ contract WIchiFarm is
             amount
         );
 
-        _ensureApprove(lpToken, address(ichiFarm), type(uint256).max);
+        _ensureApprove(lpToken, address(ichiFarm), amount);
         ichiFarm.deposit(pid, amount, address(this));
         (uint256 ichiPerShare, , ) = ichiFarm.poolInfo(pid);
         uint256 id = encodeId(pid, ichiPerShare);

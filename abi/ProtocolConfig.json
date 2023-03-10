@@ -12,6 +12,11 @@
   },
   {
     "inputs": [],
+    "name": "FEE_WINDOW_ALREADY_STARTED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "INVALID_FEE_DISTRIBUTION",
     "type": "error"
   },

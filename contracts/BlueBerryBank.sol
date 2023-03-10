@@ -129,7 +129,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         feeManager = feeManager_;
 
         nextPositionId = 1;
-        bankStatus = 7; // allow borrow, lend, repay
+        bankStatus = 15; // 0x1111: allow borrow, repay, lend, withdrawLend as default
 
         emit SetOracle(address(oracle_));
     }
@@ -261,6 +261,12 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @notice check last bit of bankStatus
     function isLendAllowed() public view returns (bool) {
         return (bankStatus & 0x04) > 0;
+    }
+
+    /// @dev Bank borrow status allowed or not
+    /// @notice check last bit of bankStatus
+    function isWithdrawLendAllowed() public view returns (bool) {
+        return (bankStatus & 0x08) > 0;
     }
 
     /// @dev Trigger interest accrual for the given bank.
@@ -573,16 +579,16 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             address(this),
             amount
         );
-        IERC20Upgradeable(token).approve(address(feeManager), amount);
+        _ensureApprove(token, address(feeManager), amount);
         amount = feeManager.doCutDepositFee(token, amount);
 
         if (_isSoftVault(token)) {
-            IERC20Upgradeable(token).approve(bank.softVault, amount);
+            _ensureApprove(token, bank.softVault, amount);
             pos.underlyingVaultShare += ISoftVault(bank.softVault).deposit(
                 amount
             );
         } else {
-            IERC20Upgradeable(token).approve(bank.hardVault, amount);
+            _ensureApprove(token, bank.hardVault, amount);
             pos.underlyingVaultShare += IHardVault(bank.hardVault).deposit(
                 token,
                 amount
@@ -601,6 +607,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         address token,
         uint256 shareAmount
     ) external override inExec poke(token) {
+        if (!isWithdrawLendAllowed()) revert Errors.WITHDRAW_LEND_NOT_ALLOWED();
         Position storage pos = positions[POSITION_ID];
         Bank memory bank = banks[token];
         if (token != pos.underlyingToken) revert Errors.INVALID_UTOKEN(token);
@@ -618,7 +625,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         pos.underlyingVaultShare -= shareAmount;
 
-        IERC20Upgradeable(token).approve(address(feeManager), wAmount);
+        _ensureApprove(token, address(feeManager), wAmount);
         wAmount = feeManager.doCutWithdrawFee(token, wAmount);
 
         IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
@@ -800,7 +807,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 amountCall
     ) internal returns (uint256 repaidAmount) {
         address cToken = banks[token].cToken;
-        IERC20Upgradeable(token).approve(cToken, amountCall);
+        _ensureApprove(token, cToken, amountCall);
         uint256 beforeDebt = _borrowBalanceStored(token);
         if (ICErc20(cToken).repayBorrow(amountCall) != 0)
             revert Errors.REPAY_FAILED(amountCall);
@@ -856,7 +863,20 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         return balanceAfter - balanceBefore;
     }
 
+    /// @dev Return if the given vault token is soft vault or hard vault
+    /// @param token Vault token to check
+    /// @return bool True for Soft Vault, False for Hard Vault
     function _isSoftVault(address token) internal view returns (bool) {
         return address(ISoftVault(banks[token].softVault).uToken()) == token;
+    }
+
+    /// @dev Reset approval to zero and set again
+    function _ensureApprove(
+        address token,
+        address spender,
+        uint256 amount
+    ) internal {
+        IERC20Upgradeable(token).approve(spender, 0);
+        IERC20Upgradeable(token).approve(spender, amount);
     }
 }

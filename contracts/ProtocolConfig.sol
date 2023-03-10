@@ -62,6 +62,8 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     }
 
     function startVaultWithdrawFee() external onlyOwner {
+        if (withdrawVaultFeeWindowStartTime > 0)
+            revert Errors.FEE_WINDOW_ALREADY_STARTED();
         withdrawVaultFeeWindowStartTime = block.timestamp;
     }
 
