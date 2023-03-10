@@ -63,7 +63,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         withdrawVaultFee = 100; // 1% as default, base 10000
         withdrawVaultFeeWindow = 60 days;
 
-        maxSlippageOfClose = 500; // 5% of Max Slippage as default, base 10000
+        maxSlippageOfClose = 300; // 3% of Max Slippage as default, base 10000
     }
 
     function startVaultWithdrawFee() external onlyOwner {

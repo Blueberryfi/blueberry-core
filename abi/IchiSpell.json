@@ -290,39 +290,51 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "strategyId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "borrowToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountLpRemove",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountRepay",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountShareWithdraw",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "rewardsSellSlippage",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "strategyId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountRepay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountLpRemove",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountShareWithdraw",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sellSlippage",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint160",
+            "name": "sqrtRatioLimit",
+            "type": "uint160"
+          }
+        ],
+        "internalType": "struct IchiSpell.ClosePosParam",
+        "name": "param",
+        "type": "tuple"
       }
     ],
     "name": "closePosition",
@@ -333,39 +345,51 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "strategyId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "borrowToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountLpRemove",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountRepay",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amountShareWithdraw",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "rewardsSellSlippage",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "strategyId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountRepay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountLpRemove",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountShareWithdraw",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sellSlippage",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint160",
+            "name": "sqrtRatioLimit",
+            "type": "uint160"
+          }
+        ],
+        "internalType": "struct IchiSpell.ClosePosParam",
+        "name": "param",
+        "type": "tuple"
       }
     ],
     "name": "closePositionFarm",
@@ -524,29 +548,41 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "strategyId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "borrowToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "collAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "borrowAmount",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "strategyId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "farmingPid",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IchiSpell.OpenPosParam",
+        "name": "param",
+        "type": "tuple"
       }
     ],
     "name": "openPosition",
@@ -557,34 +593,41 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "strategyId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "collToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "borrowToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "collAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "borrowAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "farmingPid",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "strategyId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "farmingPid",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IchiSpell.OpenPosParam",
+        "name": "param",
+        "type": "tuple"
       }
     ],
     "name": "openPositionFarm",

@@ -139,14 +139,14 @@ describe('Bank', () => {
 			await bank.execute(
 				0,
 				spell.address,
-				iface.encodeFunctionData("openPositionFarm", [
-					0,
-					ICHI,
-					USDC,
-					depositAmount,
-					borrowAmount, // 3x
-					ICHI_VAULT_PID
-				])
+				iface.encodeFunctionData("openPositionFarm", [{
+					strategyId: 0,
+					collToken: ICHI,
+					borrowToken: USDC,
+					collAmount: depositAmount,
+					borrowAmount: borrowAmount,
+					farmingPid: ICHI_VAULT_PID
+				}])
 			)
 		})
 		it("should be able to liquidate the position => (OV - PV)/CV = LT", async () => {
@@ -359,13 +359,14 @@ describe('Bank', () => {
 					bank.execute(
 						0,
 						spell.address,
-						iface.encodeFunctionData("openPosition", [
-							0,
-							ICHI,
-							USDC,
-							depositAmount,
-							borrowAmount // 3x
-						])
+						iface.encodeFunctionData("openPosition", [{
+							strategyId: 0,
+							collToken: ICHI,
+							borrowToken: USDC,
+							collAmount: depositAmount,
+							borrowAmount: borrowAmount,
+							farmingPid: 0
+						}])
 					)
 				).to.be.revertedWith("LEND_NOT_ALLOWED");
 
@@ -378,13 +379,14 @@ describe('Bank', () => {
 					bank.execute(
 						0,
 						spell.address,
-						iface.encodeFunctionData("openPosition", [
-							0,
-							ICHI,
-							USDC,
-							depositAmount,
-							borrowAmount // 3x
-						])
+						iface.encodeFunctionData("openPosition", [{
+							strategyId: 0,
+							collToken: ICHI,
+							borrowToken: USDC,
+							collAmount: depositAmount,
+							borrowAmount: borrowAmount,
+							farmingPid: 0
+						}])
 					)
 				).to.be.revertedWith("BORROW_NOT_ALLOWED");
 

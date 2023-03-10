@@ -17,7 +17,6 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
 
 import "./BasicSpell.sol";
-import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
@@ -29,6 +28,41 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     struct Strategy {
         address vault;
         uint256 maxPositionSize;
+    }
+
+    /**
+     * @param collToken Collateral Token address to deposit (e.g USDC)
+     * @param collAmount Amount of user's collateral (e.g USDC)
+     * @param borrowToken Address of token to borrow
+     * @param borrowAmount Amount to borrow from Bank
+     * @param farmingPid Pool Id of vault lp on ICHI Farm
+     */
+    struct OpenPosParam {
+        uint256 strategyId;
+        address collToken;
+        address borrowToken;
+        uint256 collAmount;
+        uint256 borrowAmount;
+        uint256 farmingPid;
+    }
+
+    /**
+     * @param strategyId Strategy ID
+     * @param collToken Isolated collateral token address
+     * @param borrowToken Token address of debt
+     * @param amountLpRemove Amount of ICHI Vault LP to withdraw
+     * @param amountRepay Amount of debt to repay
+     * @param amountShareWithdraw Amount of isolated collaterals to withdraw
+     */
+    struct ClosePosParam {
+        uint256 strategyId;
+        address collToken;
+        address borrowToken;
+        uint256 amountRepay;
+        uint256 amountLpRemove;
+        uint256 amountShareWithdraw;
+        uint256 sellSlippage;
+        uint160 sqrtRatioLimit;
     }
 
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
@@ -124,33 +158,27 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      * @dev Deposit isolated underlying to Blueberry Money Market,
      *      Borrow tokens from Blueberry Money Market,
      *      Then deposit borrowed tokens on ICHI vault
-     * @param strategyId Strategy ID
-     * @param collToken Isolated collateral token address
-     * @param collAmount Amount of isolated collateral
-     * @param borrowToken Token address to borrow
-     * @param borrowAmount amount to borrow from Bank
      */
-    function _deposit(
-        uint256 strategyId,
-        address collToken,
-        address borrowToken,
-        uint256 collAmount,
-        uint256 borrowAmount
-    ) internal {
-        Strategy memory strategy = strategies[strategyId];
+    function _deposit(OpenPosParam calldata param) internal {
+        Strategy memory strategy = strategies[param.strategyId];
 
         // 1. Deposit isolated collaterals on Blueberry Money Market
-        _doLend(collToken, collAmount);
+        _doLend(param.collToken, param.collAmount);
 
         // 2. Borrow specific amounts
-        uint256 borrowBalance = _doBorrow(borrowToken, borrowAmount);
+        uint256 borrowBalance = _doBorrow(
+            param.borrowToken,
+            param.borrowAmount
+        );
 
         // 3. Add liquidity - Deposit on ICHI Vault
         IICHIVault vault = IICHIVault(strategy.vault);
-        if (vault.token0() != borrowToken && vault.token1() != borrowToken)
-            revert Errors.INCORRECT_DEBT(borrowToken);
-        bool isTokenA = vault.token0() == borrowToken;
-        _ensureApprove(borrowToken, address(vault), borrowBalance);
+        if (
+            vault.token0() != param.borrowToken &&
+            vault.token1() != param.borrowToken
+        ) revert Errors.INCORRECT_DEBT(param.borrowToken);
+        bool isTokenA = vault.token0() == param.borrowToken;
+        _ensureApprove(param.borrowToken, address(vault), borrowBalance);
 
         uint ichiVaultShare;
         if (isTokenA) {
@@ -160,68 +188,50 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         }
 
         // 4. Validate MAX LTV
-        _validateMaxLTV(strategyId);
+        _validateMaxLTV(param.strategyId);
 
         // 5. Validate Max Pos Size
         uint256 lpPrice = bank.oracle().getPrice(address(vault));
         uint256 curPosSize = (lpPrice * ichiVaultShare) /
             10 ** vault.decimals();
         if (curPosSize > strategy.maxPositionSize)
-            revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
+            revert Errors.EXCEED_MAX_POS_SIZE(param.strategyId);
     }
 
     /**
      * @notice External function to deposit assets on IchiVault
-     * @param collToken Collateral Token address to deposit (e.g USDC)
-     * @param collAmount Amount of user's collateral (e.g USDC)
-     * @param borrowToken Address of token to borrow
-     * @param borrowAmount Amount to borrow from Bank
      */
     function openPosition(
-        uint256 strategyId,
-        address collToken,
-        address borrowToken,
-        uint256 collAmount,
-        uint256 borrowAmount
+        OpenPosParam calldata param
     )
         external
-        existingStrategy(strategyId)
-        existingCollateral(strategyId, collToken)
+        existingStrategy(param.strategyId)
+        existingCollateral(param.strategyId, param.collToken)
     {
         // 1-3 Deposit on ichi vault
-        _deposit(strategyId, collToken, borrowToken, collAmount, borrowAmount);
+        _deposit(param);
 
         // 4. Put collateral - ICHI Vault Lp Token
-        address vault = strategies[strategyId].vault;
+        address vault = strategies[param.strategyId].vault;
         _doPutCollateral(vault, IERC20(vault).balanceOf(address(this)));
     }
 
     /**
      * @notice External function to deposit assets on IchiVault and farm in Ichi Farm
-     * @param collToken Collateral Token address to deposit (e.g USDC)
-     * @param collAmount Amount of user's collateral (e.g USDC)
-     * @param borrowToken Address of token to borrow
-     * @param borrowAmount Amount to borrow from Bank
-     * @param farmingPid Pool Id of vault lp on ICHI Farm
      */
     function openPositionFarm(
-        uint256 strategyId,
-        address collToken,
-        address borrowToken,
-        uint256 collAmount,
-        uint256 borrowAmount,
-        uint256 farmingPid
+        OpenPosParam calldata param
     )
         external
-        existingStrategy(strategyId)
-        existingCollateral(strategyId, collToken)
+        existingStrategy(param.strategyId)
+        existingCollateral(param.strategyId, param.collToken)
     {
-        Strategy memory strategy = strategies[strategyId];
-        address lpToken = wIchiFarm.ichiFarm().lpToken(farmingPid);
+        Strategy memory strategy = strategies[param.strategyId];
+        address lpToken = wIchiFarm.ichiFarm().lpToken(param.farmingPid);
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         // 1-3 Deposit on ichi vault
-        _deposit(strategyId, collToken, borrowToken, collAmount, borrowAmount);
+        _deposit(param);
 
         // 4. Take out collateral
         IBank.Position memory pos = bank.getCurrentPositionInfo();
@@ -230,8 +240,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 collSize = pos.collateralSize;
         if (collSize > 0) {
             (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
-            if (farmingPid != decodedPid)
-                revert Errors.INCORRECT_PID(farmingPid);
+            if (param.farmingPid != decodedPid)
+                revert Errors.INCORRECT_PID(param.farmingPid);
             if (posCollToken != address(wIchiFarm))
                 revert Errors.INCORRECT_COLTOKEN(posCollToken);
             bank.takeCollateral(collSize);
@@ -242,7 +252,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         // 5. Deposit on farming pool, put collateral
         uint256 lpAmount = IERC20(lpToken).balanceOf(address(this));
         IERC20Upgradeable(lpToken).approve(address(wIchiFarm), lpAmount);
-        uint256 id = wIchiFarm.mint(farmingPid, lpAmount);
+        uint256 id = wIchiFarm.mint(param.farmingPid, lpAmount);
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }
 
@@ -289,35 +299,23 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      *      Swap withdrawn assets to debt token,
      *      Withdraw isolated collaterals from Blueberry Money Market,
      *      Repay Debt and refund rest to user
-     * @param strategyId Strategy ID
-     * @param collToken Isolated collateral token address
-     * @param borrowToken Token address of debt
-     * @param amountLpRemove Amount of ICHI Vault LP to withdraw
-     * @param amountRepay Amount of debt to repay
-     * @param amountShareWithdraw Amount of isolated collaterals to withdraw
      */
-    function _withdraw(
-        uint256 strategyId,
-        address collToken,
-        address borrowToken,
-        uint256 amountRepay,
-        uint256 amountLpRemove,
-        uint256 amountShareWithdraw,
-        uint256 sellSlippage
-    ) internal {
-        if (sellSlippage > bank.config().maxSlippageOfClose())
-            revert Errors.RATIO_TOO_HIGH(sellSlippage);
+    function _withdraw(ClosePosParam calldata param) internal {
+        if (param.sellSlippage > bank.config().maxSlippageOfClose())
+            revert Errors.RATIO_TOO_HIGH(param.sellSlippage);
 
-        Strategy memory strategy = strategies[strategyId];
+        Strategy memory strategy = strategies[param.strategyId];
         IICHIVault vault = IICHIVault(strategy.vault);
         uint256 positionId = bank.POSITION_ID();
 
         // 1. Compute repay amount if MAX_INT is supplied (max debt)
+        uint256 amountRepay = param.amountRepay;
         if (amountRepay == type(uint256).max) {
             amountRepay = bank.currentPositionDebt(positionId);
         }
 
         // 2. Calculate actual amount to remove
+        uint256 amountLpRemove = param.amountLpRemove;
         if (amountLpRemove == type(uint256).max) {
             amountLpRemove = vault.balanceOf(address(this));
         }
@@ -326,91 +324,68 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         vault.withdraw(amountLpRemove, address(this));
 
         // 4. Swap withdrawn tokens to initial deposit token
-        bool isTokenA = vault.token0() == borrowToken;
+        bool isTokenA = vault.token0() == param.borrowToken;
         uint256 amountToSwap = IERC20(
             isTokenA ? vault.token1() : vault.token0()
         ).balanceOf(address(this));
 
         if (amountToSwap > 0) {
             swapPool = IUniswapV3Pool(vault.pool());
-            uint160 sqrtRatio = UniV3WrappedLibMockup.getSqrtRatioAtTick(
-                vault.currentTick()
-            );
-            uint160 deltaSqrt = (sqrtRatio * uint160(sellSlippage)) /
-                uint160(Constants.DENOMINATOR);
+            uint160 deltaSqrt = (param.sqrtRatioLimit *
+                uint160(param.sellSlippage)) / uint160(Constants.DENOMINATOR);
             swapPool.swap(
                 address(this),
                 // if withdraw token is Token0, then swap token1 -> token0 (false)
                 !isTokenA,
                 amountToSwap.toInt256(),
-                isTokenA ? sqrtRatio + deltaSqrt : sqrtRatio - deltaSqrt, // sell slippage
+                isTokenA
+                    ? param.sqrtRatioLimit + deltaSqrt
+                    : param.sqrtRatioLimit - deltaSqrt, // slippaged price cap
                 abi.encode(address(this))
             );
         }
 
         // 5. Withdraw isolated collateral from Bank
-        _doWithdraw(collToken, amountShareWithdraw);
+        _doWithdraw(param.collToken, param.amountShareWithdraw);
 
         // 6. Repay
-        _doRepay(borrowToken, amountRepay);
+        _doRepay(param.borrowToken, amountRepay);
 
-        _validateMaxLTV(strategyId);
+        _validateMaxLTV(param.strategyId);
 
         // 7. Refund
-        _doRefund(borrowToken);
-        _doRefund(collToken);
+        _doRefund(param.borrowToken);
+        _doRefund(param.collToken);
     }
 
     /**
      * @notice External function to withdraw assets from ICHI Vault
-     * @param collToken Token address to withdraw (e.g USDC)
-     * @param borrowToken Token address to withdraw (e.g USDC)
-     * @param amountLpRemove Amount of ICHI Vault LP token to take out from Bank
-     * @param amountRepay Amount to repay the loan
-     * @param amountShareWithdraw Amount of Isolated collateral to withdraw from Blueberry Money Market
      */
     function closePosition(
-        uint256 strategyId,
-        address collToken,
-        address borrowToken,
-        uint256 amountLpRemove,
-        uint256 amountRepay,
-        uint256 amountShareWithdraw,
-        uint256 rewardsSellSlippage
+        ClosePosParam calldata param
     )
         external
-        existingStrategy(strategyId)
-        existingCollateral(strategyId, collToken)
+        existingStrategy(param.strategyId)
+        existingCollateral(param.strategyId, param.collToken)
     {
         // 1. Take out collateral
-        _doTakeCollateral(strategies[strategyId].vault, amountLpRemove);
+        _doTakeCollateral(
+            strategies[param.strategyId].vault,
+            param.amountLpRemove
+        );
 
         // 2-8. Remove liquidity
-        _withdraw(
-            strategyId,
-            collToken,
-            borrowToken,
-            amountRepay,
-            amountLpRemove,
-            amountShareWithdraw,
-            rewardsSellSlippage
-        );
+        _withdraw(param);
     }
 
     function closePositionFarm(
-        uint256 strategyId,
-        address collToken,
-        address borrowToken,
-        uint256 amountLpRemove,
-        uint256 amountRepay,
-        uint256 amountShareWithdraw,
-        uint256 rewardsSellSlippage
+        ClosePosParam calldata param
     )
         external
-        existingStrategy(strategyId)
-        existingCollateral(strategyId, collToken)
+        existingStrategy(param.strategyId)
+        existingCollateral(param.strategyId, param.collToken)
     {
-        address vault = strategies[strategyId].vault;
+        address vault = strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
@@ -420,20 +395,12 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             revert Errors.INCORRECT_COLTOKEN(posCollToken);
 
         // 1. Take out collateral
-        bank.takeCollateral(amountLpRemove);
-        wIchiFarm.burn(collId, amountLpRemove);
+        bank.takeCollateral(param.amountLpRemove);
+        wIchiFarm.burn(collId, param.amountLpRemove);
         _doRefundRewards(ICHI);
 
         // 2-8. Remove liquidity
-        _withdraw(
-            strategyId,
-            collToken,
-            borrowToken,
-            amountRepay,
-            amountLpRemove,
-            amountShareWithdraw,
-            rewardsSellSlippage
-        );
+        _withdraw(param);
 
         // 9. Refund ichi token
         _doRefund(ICHI);

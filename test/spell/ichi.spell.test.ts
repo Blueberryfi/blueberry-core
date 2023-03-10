@@ -12,8 +12,7 @@ import {
 	MockIchiVault,
 	MockIchiFarm,
 	ERC20,
-	MockIchiV2,
-	UniV3WrappedLib,
+	MockIchiV2
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import SpellABI from '../../abi/IchiSpell.json';
@@ -23,6 +22,7 @@ import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
 import { evm_mine_blocks } from '../helpers';
 import { Protocol, setupProtocol } from '../setup-test';
+import { TickMath } from '@uniswap/v3-sdk';
 
 chai.use(solidity)
 chai.use(near)
@@ -54,7 +54,6 @@ describe('ICHI Angel Vaults Spell', () => {
 	let ichiFarm: MockIchiFarm;
 	let ichiVault: MockIchiVault;
 	let protocol: Protocol;
-	let uniV3Lib: UniV3WrappedLib;
 
 	before(async () => {
 		[admin, alice, treasury] = await ethers.getSigners();
@@ -71,7 +70,6 @@ describe('ICHI Angel Vaults Spell', () => {
 		wichi = protocol.wichi;
 		werc20 = protocol.werc20;
 		mockOracle = protocol.mockOracle;
-		uniV3Lib = protocol.uniV3Lib;
 	})
 
 	beforeEach(async () => {
@@ -88,9 +86,14 @@ describe('ICHI Angel Vaults Spell', () => {
 				bank.execute(
 					0,
 					spell.address,
-					iface.encodeFunctionData("openPosition", [
-						0, ICHI, USDC, depositAmount, borrowAmount.mul(5)
-					])
+					iface.encodeFunctionData("openPosition", [{
+						strategyId: 0,
+						collToken: ICHI,
+						borrowToken: USDC,
+						collAmount: depositAmount,
+						borrowAmount: borrowAmount.mul(5),
+						farmingPid: 0
+					}])
 				)
 			).to.be.revertedWith("EXCEED_MAX_LTV")
 		})
@@ -100,9 +103,14 @@ describe('ICHI Angel Vaults Spell', () => {
 				bank.execute(
 					0,
 					spell.address,
-					iface.encodeFunctionData("openPosition", [
-						0, ICHI, USDC, depositAmount.mul(4), borrowAmount.mul(7)
-					])
+					iface.encodeFunctionData("openPosition", [{
+						strategyId: 0,
+						collToken: ICHI,
+						borrowToken: USDC,
+						collAmount: depositAmount.mul(4),
+						borrowAmount: borrowAmount.mul(7),
+						farmingPid: 0
+					}])
 				)
 			).to.be.revertedWith("EXCEED_MAX_POS_SIZE")
 		})
@@ -112,9 +120,14 @@ describe('ICHI Angel Vaults Spell', () => {
 				bank.execute(
 					0,
 					spell.address,
-					iface.encodeFunctionData("openPosition", [
-						1, ICHI, USDC, depositAmount, borrowAmount
-					])
+					iface.encodeFunctionData("openPosition", [{
+						strategyId: 1,
+						collToken: ICHI,
+						borrowToken: USDC,
+						collAmount: depositAmount,
+						borrowAmount: borrowAmount,
+						farmingPid: 0
+					}])
 				)
 			).to.be.revertedWith("STRATEGY_NOT_EXIST")
 		})
@@ -124,9 +137,14 @@ describe('ICHI Angel Vaults Spell', () => {
 				bank.execute(
 					0,
 					spell.address,
-					iface.encodeFunctionData("openPosition", [
-						0, WETH, USDC, depositAmount, borrowAmount
-					])
+					iface.encodeFunctionData("openPosition", [{
+						strategyId: 0,
+						collToken: WETH,
+						borrowToken: USDC,
+						collAmount: depositAmount,
+						borrowAmount: borrowAmount,
+						farmingPid: 0
+					}])
 				)
 			).to.be.revertedWith("COLLATERAL_NOT_EXIST")
 		})
@@ -139,9 +157,14 @@ describe('ICHI Angel Vaults Spell', () => {
 			await bank.execute(
 				0,
 				spell.address,
-				iface.encodeFunctionData("openPosition", [
-					0, ICHI, USDC, depositAmount, borrowAmount
-				])
+				iface.encodeFunctionData("openPosition", [{
+					strategyId: 0,
+					collToken: ICHI,
+					borrowToken: USDC,
+					collAmount: depositAmount,
+					borrowAmount: borrowAmount,
+					farmingPid: 0
+				}])
 			)
 
 			const fee = depositAmount.mul(50).div(10000);
@@ -179,45 +202,56 @@ describe('ICHI Angel Vaults Spell', () => {
 			risk = await bank.getPositionRisk(1);
 			console.log('Position Risk', utils.formatUnits(risk, 2), '%');
 		})
-		it("should revert when opening a position for non-existing strategy", async () => {
+		it("should revert when closing a position for non-existing strategy", async () => {
+			const tick = await ichiVault.currentTick();
+			const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
 			await ichi.approve(bank.address, ethers.constants.MaxUint256);
 			await expect(
 				bank.execute(
 					1,
 					spell.address,
-					iface.encodeFunctionData("closePosition", [
-						1,
-						ICHI,
-						USDC, // Debt
-						ethers.constants.MaxUint256,	// Amount of werc20
-						ethers.constants.MaxUint256,  // Amount of repay
-						ethers.constants.MaxUint256,
-						50 // 0.5% slippage
-					])
+					iface.encodeFunctionData("closePosition", [{
+						strategyId: 1,
+						collToken: ICHI,
+						borrowToken: USDC,
+						amountRepay: ethers.constants.MaxUint256,
+						amountLpRemove: ethers.constants.MaxUint256,
+						amountShareWithdraw: ethers.constants.MaxUint256,
+						sellSlippage: 50,
+						sqrtRatioLimit: BigNumber.from(sqrt.toString())
+					}])
 				)
 			).to.be.revertedWith("STRATEGY_NOT_EXIST")
 		})
-		it("should revert when opening a position for non-existing collateral", async () => {
+		it("should revert when closing a position for non-existing collateral", async () => {
+			const tick = await ichiVault.currentTick();
+			const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
 			await ichi.approve(bank.address, ethers.constants.MaxUint256);
 			await expect(
 				bank.execute(
 					1,
 					spell.address,
-					iface.encodeFunctionData("closePosition", [
-						0,
-						WETH,
-						USDC, // Debt
-						ethers.constants.MaxUint256,	// Amount of werc20
-						ethers.constants.MaxUint256,  // Amount of repay
-						ethers.constants.MaxUint256,
-						50 // 0.5% slippage
-					])
+					iface.encodeFunctionData("closePosition", [{
+						strategyId: 0,
+						collToken: WETH,
+						borrowToken: USDC,
+						amountRepay: ethers.constants.MaxUint256,
+						amountLpRemove: ethers.constants.MaxUint256,
+						amountShareWithdraw: ethers.constants.MaxUint256,
+						sellSlippage: 50,
+						sqrtRatioLimit: BigNumber.from(sqrt.toString())
+					}])
 				)
 			).to.be.revertedWith("COLLATERAL_NOT_EXIST")
 		})
 		it("should be able to withdraw USDC", async () => {
 			await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
 			await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
+
+			const tick = await ichiVault.currentTick();
+			const sqrt = TickMath.getSqrtRatioAtTick(tick);
 
 			const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
 			const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -227,15 +261,16 @@ describe('ICHI Angel Vaults Spell', () => {
 			await bank.execute(
 				1,
 				spell.address,
-				iface.encodeFunctionData("closePosition", [
-					0,
-					ICHI,
-					USDC, // Debt
-					ethers.constants.MaxUint256,	// Amount of werc20
-					ethers.constants.MaxUint256,  // Amount of repay
-					ethers.constants.MaxUint256,
-					50 // 0.5% slippage
-				])
+				iface.encodeFunctionData("closePosition", [{
+					strategyId: 0,
+					collToken: ICHI,
+					borrowToken: USDC,
+					amountRepay: ethers.constants.MaxUint256,
+					amountLpRemove: ethers.constants.MaxUint256,
+					amountShareWithdraw: ethers.constants.MaxUint256,
+					sellSlippage: 50,
+					sqrtRatioLimit: BigNumber.from(sqrt.toString())
+				}])
 			)
 
 			const afterUSDCBalance = await usdc.balanceOf(admin.address);
@@ -265,14 +300,14 @@ describe('ICHI Angel Vaults Spell', () => {
 			await expect(bank.execute(
 				0,
 				spell.address,
-				iface.encodeFunctionData("openPositionFarm", [
-					0,
-					ICHI,
-					USDC,
-					depositAmount,
-					borrowAmount.mul(3),
-					ICHI_VAULT_PID // ICHI/USDC Vault Pool Id
-				])
+				iface.encodeFunctionData("openPositionFarm", [{
+					strategyId: 0,
+					collToken: ICHI,
+					borrowToken: USDC,
+					collAmount: depositAmount,
+					borrowAmount: borrowAmount.mul(3),
+					farmingPid: ICHI_VAULT_PID
+				}])
 			)).to.be.revertedWith("EXCEED_MAX_LTV");
 		})
 		it("should revert when opening a position for non-existing strategy", async () => {
@@ -281,9 +316,14 @@ describe('ICHI Angel Vaults Spell', () => {
 				bank.execute(
 					0,
 					spell.address,
-					iface.encodeFunctionData("openPositionFarm", [
-						1, ICHI, USDC, depositAmount, borrowAmount, ICHI_VAULT_PID
-					])
+					iface.encodeFunctionData("openPositionFarm", [{
+						strategyId: 1,
+						collToken: ICHI,
+						borrowToken: USDC,
+						collAmount: depositAmount,
+						borrowAmount: borrowAmount,
+						farmingPid: ICHI_VAULT_PID
+					}])
 				)
 			).to.be.revertedWith("STRATEGY_NOT_EXIST")
 		})
@@ -293,9 +333,14 @@ describe('ICHI Angel Vaults Spell', () => {
 				bank.execute(
 					0,
 					spell.address,
-					iface.encodeFunctionData("openPositionFarm", [
-						0, WETH, USDC, depositAmount, borrowAmount, ICHI_VAULT_PID
-					])
+					iface.encodeFunctionData("openPositionFarm", [{
+						strategyId: 0,
+						collToken: WETH,
+						borrowToken: USDC,
+						collAmount: depositAmount,
+						borrowAmount: borrowAmount,
+						farmingPid: ICHI_VAULT_PID
+					}])
 				)
 			).to.be.revertedWith("COLLATERAL_NOT_EXIST")
 		})
@@ -305,9 +350,14 @@ describe('ICHI Angel Vaults Spell', () => {
 				bank.execute(
 					0,
 					spell.address,
-					iface.encodeFunctionData("openPositionFarm", [
-						0, ICHI, USDC, depositAmount, borrowAmount, ICHI_VAULT_PID + 1
-					])
+					iface.encodeFunctionData("openPositionFarm", [{
+						strategyId: 0,
+						collToken: ICHI,
+						borrowToken: USDC,
+						collAmount: depositAmount,
+						borrowAmount: borrowAmount,
+						farmingPid: ICHI_VAULT_PID + 1
+					}])
 				)
 			).to.be.revertedWith("INCORRECT_LP")
 		})
@@ -320,14 +370,14 @@ describe('ICHI Angel Vaults Spell', () => {
 			await bank.execute(
 				0,
 				spell.address,
-				iface.encodeFunctionData("openPositionFarm", [
-					0,
-					ICHI,
-					USDC,
-					depositAmount,
-					borrowAmount,
-					ICHI_VAULT_PID // ICHI/USDC Vault Pool Id
-				])
+				iface.encodeFunctionData("openPositionFarm", [{
+					strategyId: 0,
+					collToken: ICHI,
+					borrowToken: USDC,
+					collAmount: depositAmount,
+					borrowAmount: borrowAmount,
+					farmingPid: ICHI_VAULT_PID
+				}])
 			)
 
 			const bankInfo = await bank.getBankInfo(USDC);
@@ -369,6 +419,9 @@ describe('ICHI Angel Vaults Spell', () => {
 			await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
 			await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
 
+			const tick = await ichiVault.currentTick();
+			const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
 			const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address);
 			console.log("Pending Rewards:", pendingIchi);
 			await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(100))
@@ -381,15 +434,16 @@ describe('ICHI Angel Vaults Spell', () => {
 			await bank.execute(
 				2,
 				spell.address,
-				iface.encodeFunctionData("closePositionFarm", [
-					0,
-					ICHI, // isolated coll token
-					USDC, // debt token
-					ethers.constants.MaxUint256,	// Amount of werc20
-					ethers.constants.MaxUint256,  // Amount of repay
-					ethers.constants.MaxUint256,
-					50 // 0.5% slippage
-				])
+				iface.encodeFunctionData("closePositionFarm", [{
+					strategyId: 0,
+					collToken: ICHI,
+					borrowToken: USDC,
+					amountRepay: ethers.constants.MaxUint256,
+					amountLpRemove: ethers.constants.MaxUint256,
+					amountShareWithdraw: ethers.constants.MaxUint256,
+					sellSlippage: 50,
+					sqrtRatioLimit: BigNumber.from(sqrt.toString())
+				}])
 			)
 			const afterUSDCBalance = await usdc.balanceOf(admin.address);
 			const afterIchiBalance = await ichi.balanceOf(admin.address);
@@ -417,14 +471,14 @@ describe('ICHI Angel Vaults Spell', () => {
 			await bank.execute(
 				0,
 				spell.address,
-				iface.encodeFunctionData("openPositionFarm", [
-					0,
-					ICHI,
-					USDC,
-					depositAmount,
-					borrowAmount,
-					ICHI_VAULT_PID // ICHI/USDC Vault Pool Id
-				])
+				iface.encodeFunctionData("openPositionFarm", [{
+					strategyId: 0,
+					collToken: ICHI,
+					borrowToken: USDC,
+					collAmount: depositAmount,
+					borrowAmount: borrowAmount,
+					farmingPid: ICHI_VAULT_PID
+				}])
 			);
 		})
 
@@ -491,14 +545,14 @@ describe('ICHI Angel Vaults Spell', () => {
 			await bank.execute(
 				nextPosId.sub(1),
 				spell.address,
-				iface.encodeFunctionData("openPositionFarm", [
-					0,
-					ICHI,
-					USDC,
-					depositAmount,
-					borrowAmount,
-					ICHI_VAULT_PID // ICHI/USDC Vault Pool Id
-				])
+				iface.encodeFunctionData("openPositionFarm", [{
+					strategyId: 0,
+					collToken: ICHI,
+					borrowToken: USDC,
+					collAmount: depositAmount,
+					borrowAmount: borrowAmount,
+					farmingPid: ICHI_VAULT_PID
+				}])
 			);
 		})
 		it("should revert maintaining position when farming pool id does not match", async () => {
@@ -507,14 +561,14 @@ describe('ICHI Angel Vaults Spell', () => {
 				bank.execute(
 					nextPosId.sub(1),
 					spell.address,
-					iface.encodeFunctionData("openPositionFarm", [
-						0,
-						ICHI,
-						USDC,
-						depositAmount,
-						borrowAmount,
-						ICHI_VAULT_PID + 1 // ICHI/USDC Vault Pool Id
-					])
+					iface.encodeFunctionData("openPositionFarm", [{
+						strategyId: 0,
+						collToken: ICHI,
+						borrowToken: USDC,
+						collAmount: depositAmount,
+						borrowAmount: borrowAmount,
+						farmingPid: ICHI_VAULT_PID + 1
+					}])
 				)
 			).to.be.revertedWith("INCORRECT_LP");
 		})
@@ -525,19 +579,13 @@ describe('ICHI Angel Vaults Spell', () => {
 		const maxPosSize = utils.parseEther("200000");
 
 		beforeEach(async () => {
-			const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell, {
-				libraries: {
-					UniV3WrappedLibMockup: uniV3Lib.address
-				}
-			});
+			const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
 			spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
 				bank.address,
 				werc20.address,
 				WETH,
 				wichi.address
-			], {
-				unsafeAllowLinkedLibraries: true
-			})
+			])
 			await spell.deployed();
 		})
 
