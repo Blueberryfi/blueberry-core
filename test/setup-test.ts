@@ -152,9 +152,14 @@ export const setupProtocol = async (): Promise<Protocol> => {
     ],
   )
 
-  const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle);
+  const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle, {
+    libraries: {
+      UniV3WrappedLibMockup: LibInstance.address
+    }
+  });
   ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(mockOracle.address);
   await ichiOracle.deployed();
+  await ichiOracle.setPriceDeviation(ICHI, 500);
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);

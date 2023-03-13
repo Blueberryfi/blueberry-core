@@ -13,6 +13,7 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueBerryConst.sol" as Constants;
 import "../interfaces/IBaseOracle.sol";
 
 /**
@@ -25,17 +26,40 @@ contract AggregatorOracle is IBaseOracle, Ownable {
     mapping(address => uint256) public primarySourceCount;
     /// @dev Mapping from token to (mapping from index to oracle source)
     mapping(address => mapping(uint256 => IBaseOracle)) public primarySources;
-    /// @dev Mapping from token to max price deviation (multiplied by 1e18)
+    /// @dev Mapping from token to max price deviation (base 10000)
     mapping(address => uint256) public maxPriceDeviations;
-
-    uint256 public constant MIN_PRICE_DEVIATION = 1e18; // min price deviation
-    uint256 public constant MAX_PRICE_DEVIATION = 1.2e18; // max price deviation, 20%
 
     event SetPrimarySources(
         address indexed token,
         uint256 maxPriceDeviation,
         IBaseOracle[] oracles
     );
+
+    /// @notice Set primary oracle sources for given token
+    /// @dev Emit SetPrimarySources event when primary oracles set successfully
+    /// @param token Token to set oracle sources
+    /// @param maxPriceDeviation Max price deviation (in 1e18) of price feeds
+    /// @param sources Oracle sources for the token
+    function _setPrimarySources(
+        address token,
+        uint256 maxPriceDeviation,
+        IBaseOracle[] memory sources
+    ) internal {
+        // Validate inputs
+        if (token == address(0)) revert Errors.ZERO_ADDRESS();
+        if (maxPriceDeviation > Constants.MAX_PRICE_DEVIATION)
+            revert Errors.OUT_OF_DEVIATION_CAP(maxPriceDeviation);
+        if (sources.length > 3) revert Errors.EXCEED_SOURCE_LEN(sources.length);
+
+        primarySourceCount[token] = sources.length;
+        maxPriceDeviations[token] = maxPriceDeviation;
+        for (uint256 idx = 0; idx < sources.length; idx++) {
+            if (address(sources[idx]) == address(0))
+                revert Errors.ZERO_ADDRESS();
+            primarySources[token][idx] = sources[idx];
+        }
+        emit SetPrimarySources(token, maxPriceDeviation, sources);
+    }
 
     /// @notice Set primary oracle sources for the given token
     /// @dev Only owner can set primary sources
@@ -74,32 +98,19 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         }
     }
 
-    /// @notice Set primary oracle sources for given token
-    /// @dev Emit SetPrimarySources event when primary oracles set successfully
-    /// @param token Token to set oracle sources
-    /// @param maxPriceDeviation Max price deviation (in 1e18) of price feeds
-    /// @param sources Oracle sources for the token
-    function _setPrimarySources(
-        address token,
-        uint256 maxPriceDeviation,
-        IBaseOracle[] memory sources
-    ) internal {
-        // Validate inputs
-        if (token == address(0)) revert Errors.ZERO_ADDRESS();
-        if (
-            maxPriceDeviation < MIN_PRICE_DEVIATION ||
-            maxPriceDeviation > MAX_PRICE_DEVIATION
-        ) revert Errors.OUT_OF_DEVIATION_CAP(maxPriceDeviation);
-        if (sources.length > 3) revert Errors.EXCEED_SOURCE_LEN(sources.length);
-
-        primarySourceCount[token] = sources.length;
-        maxPriceDeviations[token] = maxPriceDeviation;
-        for (uint256 idx = 0; idx < sources.length; idx++) {
-            if (address(sources[idx]) == address(0))
-                revert Errors.ZERO_ADDRESS();
-            primarySources[token][idx] = sources[idx];
-        }
-        emit SetPrimarySources(token, maxPriceDeviation, sources);
+    /**
+     * @notice Internal function to validate deviations of 2 given prices
+     * @param price0 First price to validate, base 1e18
+     * @param price1 Second price to validate, base 1e18
+     * @param maxPriceDeviation Max price deviation of 2 prices, base 10000
+     */
+    function _isValidPrices(
+        uint256 price0,
+        uint256 price1,
+        uint256 maxPriceDeviation
+    ) internal pure returns (bool) {
+        uint256 delta = price0 > price1 ? (price0 - price1) : (price1 - price0);
+        return ((delta * Constants.DENOMINATOR) / price0) <= maxPriceDeviation;
     }
 
     /// @notice Return USD price of given token, multiplied by 10**18.
@@ -120,6 +131,7 @@ contract AggregatorOracle is IBaseOracle, Ownable {
             } catch {}
         }
         if (validSourceCount == 0) revert Errors.NO_VALID_SOURCE(token);
+        // Sort prices in ascending order
         for (uint256 i = 0; i < validSourceCount - 1; i++) {
             for (uint256 j = 0; j < validSourceCount - i - 1; j++) {
                 if (prices[j] > prices[j + 1]) {
@@ -142,12 +154,20 @@ contract AggregatorOracle is IBaseOracle, Ownable {
         if (validSourceCount == 1) {
             return prices[0]; // if 1 valid source, return
         } else if (validSourceCount == 2) {
-            if ((prices[1] * 1e18) / prices[0] > maxPriceDeviation)
+            if (!_isValidPrices(prices[0], prices[1], maxPriceDeviation))
                 revert Errors.EXCEED_DEVIATION();
             return (prices[0] + prices[1]) / 2; // if 2 valid sources, return average
         } else {
-            bool midMinOk = (prices[1] * 1e18) / prices[0] <= maxPriceDeviation;
-            bool maxMidOk = (prices[2] * 1e18) / prices[1] <= maxPriceDeviation;
+            bool midMinOk = _isValidPrices(
+                prices[0],
+                prices[1],
+                maxPriceDeviation
+            );
+            bool maxMidOk = _isValidPrices(
+                prices[1],
+                prices[2],
+                maxPriceDeviation
+            );
             if (midMinOk && maxMidOk) {
                 return prices[1]; // if 3 valid sources, and each pair is within thresh, return median
             } else if (midMinOk) {

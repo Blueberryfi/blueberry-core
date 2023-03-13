@@ -12,9 +12,9 @@ interface IICHIVault is IERC20, IERC20Metadata {
 
     function token0() external view returns (address);
 
-    function allowToken0() external view returns (bool);
-
     function token1() external view returns (address);
+
+    function allowToken0() external view returns (bool);
 
     function allowToken1() external view returns (bool);
 
@@ -23,6 +23,8 @@ interface IICHIVault is IERC20, IERC20Metadata {
     function tickSpacing() external view returns (int24);
 
     function currentTick() external view returns (int24);
+
+    function twapPeriod() external view returns (uint32);
 
     function affiliate() external view returns (address);
 
