@@ -54,7 +54,7 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
     }
 
     /**
-     * @notice Get token 0 spot price quoted in token1
+     * @notice Get token0 spot price quoted in token1
      * @dev Returns token0 price of 1e18 amount
      * @param vault ICHI Vault address
      * @return price spot price of token0 quoted in token1
@@ -72,7 +72,7 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
     }
 
     /**
-     * @notice Get token 0 twap price quoted in token1
+     * @notice Get token0 twap price quoted in token1
      * @dev Returns token0 price of 1e18 amount
      * @param vault ICHI Vault address
      * @return price spot price of token0 quoted in token1
