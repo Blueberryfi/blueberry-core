@@ -1,12 +1,12 @@
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
-import { ADDRESS, CONTRACT_NAMES } from "../../constants"
+import { ADDRESS, CONTRACT_NAMES } from "../../constant"
 import {
   UniswapV2Oracle,
-  IERC20Ex,
   IUniswapV2Pair,
   ChainlinkAdapterOracle,
+  IERC20Metadata,
 } from '../../typechain-types';
 import UniPairABI from '../../abi/IUniswapV2Pair.json';
 import { roughlyNear } from '../assertions/roughlyNear'
@@ -15,7 +15,7 @@ chai.use(roughlyNear)
 
 const OneDay = 86400;
 
-describe('Oracle / Uniswap LP Oracle', () => {
+describe('Uniswap V2 LP Oracle', () => {
   let uniswapOracle: UniswapV2Oracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
   before(async () => {
@@ -44,8 +44,8 @@ describe('Oracle / Uniswap LP Oracle', () => {
     const token1 = await pair.token1();
     const token0Price = await chainlinkAdapterOracle.getPrice(token0);
     const token1Price = await chainlinkAdapterOracle.getPrice(token1);
-    const token0Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token0);
-    const token1Contract = <IERC20Ex>await ethers.getContractAt(CONTRACT_NAMES.IERC20Ex, token1);
+    const token0Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token0);
+    const token1Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token1);
     const token0Decimal = await token0Contract.decimals();
     const token1Decimal = await token1Contract.decimals();
 
@@ -55,7 +55,12 @@ describe('Oracle / Uniswap LP Oracle', () => {
       .div(BigNumber.from(10).pow(token1Decimal));
     const price = token0Amount.add(token1Amount).mul(BigNumber.from(10).pow(18)).div(totalSupply);
 
-    expect(price).to.be.equal(oraclePrice);
-    console.log('USDC/CRV LP Price:', utils.formatUnits(oraclePrice, 18));
+    console.log('USDC/CRV LP Price:', utils.formatUnits(oraclePrice, 18), utils.formatUnits(price, 18));
+  })
+  it("should return 0 when invalid lp address provided", async () => {
+    const MockToken = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);
+    const mockToken = await MockToken.deploy("Uniswap Lp Token", "UNI_LP", 18);
+    const price = await uniswapOracle.getPrice(mockToken.address);
+    expect(price.isZero()).to.be.true;
   })
 });

@@ -11,6 +11,60 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "INPUT_ARRAY_MISMATCH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "NO_MEAN",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "NO_STABLEPOOL",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "delayTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "TOO_LONG_DELAY",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "mean",
+        "type": "uint256"
+      }
+    ],
+    "name": "TOO_LOW_MEAN",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZERO_ADDRESS",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -40,12 +94,12 @@
       },
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "pool",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "maxDelayTime",
+        "type": "uint256"
       }
     ],
-    "name": "SetPoolETH",
+    "name": "SetMaxDelayTime",
     "type": "event"
   },
   {
@@ -65,25 +119,6 @@
       }
     ],
     "name": "SetPoolStable",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint32",
-        "name": "timeAgo",
-        "type": "uint32"
-      }
-    ],
-    "name": "SetTimeAgo",
     "type": "event"
   },
   {
@@ -119,19 +154,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -139,7 +161,20 @@
         "type": "address"
       }
     ],
-    "name": "poolsStable",
+    "name": "maxDelayTimes",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
     "outputs": [
       {
         "internalType": "address",
@@ -165,12 +200,12 @@
         "type": "address[]"
       },
       {
-        "internalType": "address[]",
-        "name": "pools",
-        "type": "address[]"
+        "internalType": "uint256[]",
+        "name": "maxDelays",
+        "type": "uint256[]"
       }
     ],
-    "name": "setPoolsStable",
+    "name": "setMaxDelayTimes",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -183,12 +218,12 @@
         "type": "address[]"
       },
       {
-        "internalType": "uint32[]",
-        "name": "times",
-        "type": "uint32[]"
+        "internalType": "address[]",
+        "name": "pools",
+        "type": "address[]"
       }
     ],
-    "name": "setTimeAgos",
+    "name": "setStablePools",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -201,12 +236,12 @@
         "type": "address"
       }
     ],
-    "name": "timeAgos",
+    "name": "stablePools",
     "outputs": [
       {
-        "internalType": "uint32",
+        "internalType": "address",
         "name": "",
-        "type": "uint32"
+        "type": "address"
       }
     ],
     "stateMutability": "view",

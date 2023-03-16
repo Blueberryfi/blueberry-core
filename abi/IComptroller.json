@@ -2,8 +2,31 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "protocol",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "creditLimit",
+        "type": "uint256"
+      }
+    ],
+    "name": "_setCreditLimit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address[]",
-        "name": "cTokens",
+        "name": "bTokens",
         "type": "address[]"
       }
     ],

@@ -1,81 +1,82 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
-pragma solidity ^0.8.9;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
+import "./BaseAdapter.sol";
+import "../interfaces/IBaseOracle.sol";
+import "../interfaces/band/IStdReference.sol";
 
-import '../interfaces/IBaseOracle.sol';
-import '../interfaces/band/IStdReference.sol';
+/**
+ * @author gmspacex
+ * @title BandAdapterOracle
+ * @notice Oracle Adapter contract which provides price feeds from Band Protocol
+ */
+contract BandAdapterOracle is IBaseOracle, BaseAdapter {
+    /// @dev BandStandardRef oracle contract
+    IStdReference public ref;
 
-contract BandAdapterOracle is IBaseOracle, Ownable {
-    event SetSymbol(address token, string symbol);
+    /// @dev Mapping from token to symbol string (Band provides price feeds by token symbols)
+    mapping(address => string) public symbols;
+
     event SetRef(address ref);
-    event SetMaxDelayTime(address token, uint256 maxDelayTime);
+    event SetSymbol(address token, string symbol);
 
-    IStdReference public ref; // Standard reference
+    constructor(IStdReference ref_) {
+        if (address(ref_) == address(0)) revert Errors.ZERO_ADDRESS();
 
-    mapping(address => string) public symbols; // Mapping from token to symbol string
-    mapping(address => uint256) public maxDelayTimes; // Mapping from token address to max delay time
-
-    constructor(IStdReference _ref) {
-        ref = _ref;
+        ref = ref_;
     }
 
-    /// @dev Set standard reference source
-    /// @param _ref Standard reference source
-    function setRef(IStdReference _ref) external onlyOwner {
-        ref = _ref;
-        emit SetRef(address(_ref));
+    /// @notice Set standard reference source
+    /// @param ref_ Standard reference source
+    function setRef(IStdReference ref_) external onlyOwner {
+        if (address(ref_) == address(0)) revert Errors.ZERO_ADDRESS();
+        ref = ref_;
+        emit SetRef(address(ref_));
     }
 
-    /// @dev Set token symbols
+    /// @notice Set token symbols
     /// @param tokens List of tokens
     /// @param syms List of string symbols
-    function setSymbols(address[] memory tokens, string[] memory syms)
+    function setSymbols(address[] calldata tokens, string[] calldata syms)
         external
         onlyOwner
     {
-        require(syms.length == tokens.length, 'length mismatch');
+        if (syms.length != tokens.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < syms.length; idx++) {
+            if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
+
             symbols[tokens[idx]] = syms[idx];
             emit SetSymbol(tokens[idx], syms[idx]);
         }
     }
 
-    /// @dev Set max delay time for each token
-    /// @param tokens list of tokens to set max delay
-    /// @param maxDelays list of max delay times to set to
-    function setMaxDelayTimes(
-        address[] calldata tokens,
-        uint256[] calldata maxDelays
-    ) external onlyOwner {
-        require(tokens.length == maxDelays.length, 'length mismatch');
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            maxDelayTimes[tokens[idx]] = maxDelays[idx];
-            emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
-        }
-    }
-
-    /// @dev Return the USD based price of the given input, multiplied by 10**18.
-    /// @param token The ERC-20 token to check the value.
+    /// @notice Return the USD price of given token, multiplied by 10**18.
+    /// @dev Band protocol is already providing 1e18 precision feeds
+    /// @param token The ERC-20 token to get the price of.
     function getPrice(address token) external view override returns (uint256) {
         string memory sym = symbols[token];
         uint256 maxDelayTime = maxDelayTimes[token];
-        require(bytes(sym).length != 0, 'no mapping');
-        require(maxDelayTime != 0, 'max delay time not set');
+        if (bytes(sym).length == 0) revert Errors.NO_SYM_MAPPING(token);
+        if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
+
         IStdReference.ReferenceData memory data = ref.getReferenceData(
             sym,
-            'USD'
+            "USD"
         );
-        require(
-            data.lastUpdatedBase >= block.timestamp - maxDelayTime,
-            'delayed base data'
-        );
-        require(
-            data.lastUpdatedQuote >= block.timestamp - maxDelayTime,
-            'delayed quote data'
-        );
+        if (
+            data.lastUpdatedBase < block.timestamp - maxDelayTime ||
+            data.lastUpdatedQuote < block.timestamp - maxDelayTime
+        ) revert Errors.PRICE_OUTDATED(token);
+
         return data.rate;
     }
 }

@@ -3,6 +3,7 @@ import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import 'solidity-coverage';
 import 'hardhat-abi-exporter';
+// import 'hardhat-gas-reporter';
 import 'hardhat-contract-sizer';
 import '@openzeppelin/hardhat-upgrades'
 import { HardhatUserConfig } from 'hardhat/config';
@@ -31,7 +32,15 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.9',
+        version: '0.8.16',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      }, {
+        version: '0.7.6',
         settings: {
           optimizer: {
             enabled: true,
@@ -45,8 +54,8 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
-        blockNumber: 15542853,
-      }
+        blockNumber: 16283930,
+      },
     },
     mainnet: {
       accounts: [deployAccountKey],
@@ -73,6 +82,9 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY
+  },
+  mocha: {
+    timeout: 100000000
   }
 };
 

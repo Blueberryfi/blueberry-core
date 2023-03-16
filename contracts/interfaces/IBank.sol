@@ -1,17 +1,42 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
+
+import "./IProtocolConfig.sol";
+import "./IFeeManager.sol";
+import "./ICoreOracle.sol";
 
 interface IBank {
-    /// The governor adds a new bank gets added to the system.
-    event AddBank(address token, address cToken);
-    /// The governor sets the address of the oracle smart contract.
+    struct Bank {
+        bool isListed; // Whether this market exists.
+        uint8 index; // Reverse look up index for this bank.
+        address hardVault;
+        address softVault;
+        address bToken; // The bToken to draw liquidity from.
+        uint256 totalShare; // The total debt share count across all open positions.
+    }
+
+    struct Position {
+        address owner; // The owner of this position.
+        address collToken; // The ERC1155 token used as collateral for this position.
+        address underlyingToken; // Isolated underlying collateral
+        address debtToken; // Debt Token
+        uint256 underlyingVaultShare; // Amount of vault share for isolated underlying coll
+        uint256 collId; // The token id of Wrapper.
+        uint256 collateralSize; // The amount of wrapped token for this position.
+        uint256 debtShare; // The debt share of debt token for given bank.
+    }
+
+    /// The owner adds a new bank gets added to the system.
+    event AddBank(
+        address token,
+        address bToken,
+        address softVault,
+        address hardVault
+    );
+    /// The owner sets the address of the oracle smart contract.
     event SetOracle(address oracle);
-    /// The governor sets the basis point fee of the bank.
-    event SetFeeBps(uint256 feeBps);
-    /// The governor withdraw tokens from the reserve of a bank.
-    event WithdrawReserve(address user, address token, uint256 amount);
-    /// Someone repays tokens to a bank via a spell caller.
+    /// Someone lend tokens to a bank via a spell caller.
     event Lend(
         uint256 positionId,
         address caller,
@@ -37,6 +62,7 @@ interface IBank {
     /// Someone puts tokens as collateral via a spell caller.
     event PutCollateral(
         uint256 positionId,
+        address owner,
         address caller,
         address token,
         uint256 id,
@@ -57,8 +83,10 @@ interface IBank {
         address debtToken,
         uint256 amount,
         uint256 share,
-        uint256 bounty
+        uint256 positionSize,
+        uint256 underlyingVaultSize
     );
+    event Execute(uint256 positionId, address owner);
 
     /// @dev Return the current position while under execution.
     function POSITION_ID() external view returns (uint256);
@@ -69,40 +97,37 @@ interface IBank {
     /// @dev Return the current executor (the owner of the current position).
     function EXECUTOR() external view returns (address);
 
-    /// @dev Return bank information for the given token.
-    function getBankInfo(address token)
-        external
-        view
-        returns (
-            bool isListed,
-            address cToken,
-            uint256 reserve,
-            uint256 totalDebt,
-            uint256 totalShare
-        );
+    function nextPositionId() external view returns (uint256);
 
-    /// @dev Return position information for the given position id.
-    function getPositionInfo(uint256 positionId)
-        external
-        view
-        returns (
-            address owner,
-            address collToken,
-            uint256 collId,
-            uint256 collateralSize,
-            uint256 risk
-        );
+    function config() external view returns (IProtocolConfig);
 
-    /// @dev Return the borrow balance for given positon and token without trigger interest accrual.
-    function borrowBalanceStored(uint256 positionId, address token)
-        external
-        view
-        returns (uint256);
+    function feeManager() external view returns (IFeeManager);
+
+    function oracle() external view returns (ICoreOracle);
+
+    function getBankInfo(
+        address token
+    ) external view returns (bool isListed, address bToken, uint256 totalShare);
+
+    function getDebtValue(uint256 positionId) external view returns (uint256);
+
+    function getPositionValue(
+        uint256 positionId
+    ) external view returns (uint256);
+
+    function getIsolatedCollateralValue(
+        uint256 positionId
+    ) external view returns (uint256 icollValue);
+
+    function getPositionInfo(
+        uint256 positionId
+    ) external view returns (Position memory);
+
+    /// @dev Return current position information.
+    function getCurrentPositionInfo() external view returns (Position memory);
 
     /// @dev Trigger interest accrual and return the current borrow balance.
-    function borrowBalanceCurrent(uint256 positionId, address token)
-        external
-        returns (uint256);
+    function currentPositionDebt(uint256 positionId) external returns (uint256);
 
     /// @dev Lend tokens from the bank.
     function lend(address token, uint256 amount) external;
@@ -111,13 +136,10 @@ interface IBank {
     function withdrawLend(address token, uint256 amount) external;
 
     /// @dev Borrow tokens from the bank.
-    function borrow(address token, uint256 amount) external;
+    function borrow(address token, uint256 amount) external returns (uint256);
 
     /// @dev Repays tokens to the bank.
     function repay(address token, uint256 amountCall) external;
-
-    /// @dev Transmit user assets to the spell.
-    function transmit(address token, uint256 amount) external;
 
     /// @dev Put more collateral for users.
     function putCollateral(
@@ -127,11 +149,7 @@ interface IBank {
     ) external;
 
     /// @dev Take some collateral back.
-    function takeCollateral(
-        address collToken,
-        uint256 collId,
-        uint256 amount
-    ) external;
+    function takeCollateral(uint256 amount) external returns (uint256);
 
     /// @dev Liquidate a position.
     function liquidate(
@@ -140,28 +158,5 @@ interface IBank {
         uint256 amountCall
     ) external;
 
-    function getDebtValue(uint256 positionId) external view returns (uint256);
-
-    function getCollateralValue(uint256 positionId)
-        external
-        view
-        returns (uint256);
-
     function accrue(address token) external;
-
-    function nextPositionId() external view returns (uint256);
-
-    /// @dev Return current position information.
-    function getCurrentPositionInfo()
-        external
-        view
-        returns (
-            address owner,
-            address collToken,
-            uint256 collId,
-            uint256 collateralSize,
-            uint256 risk
-        );
-
-    function support(address token) external view returns (bool);
 }

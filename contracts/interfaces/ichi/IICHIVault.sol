@@ -1,25 +1,30 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-interface IICHIVault is IERC20 {
+interface IICHIVault is IERC20, IERC20Metadata {
     function ichiVaultFactory() external view returns (address);
 
     function pool() external view returns (address);
 
     function token0() external view returns (address);
 
-    function allowToken0() external view returns (bool);
-
     function token1() external view returns (address);
+
+    function allowToken0() external view returns (bool);
 
     function allowToken1() external view returns (bool);
 
     function fee() external view returns (uint24);
 
     function tickSpacing() external view returns (int24);
+
+    function currentTick() external view returns (int24);
+
+    function twapPeriod() external view returns (uint32);
 
     function affiliate() external view returns (address);
 
@@ -41,11 +46,7 @@ interface IICHIVault is IERC20 {
 
     function getTotalAmounts() external view returns (uint256, uint256);
 
-    function deposit(
-        uint256,
-        uint256,
-        address
-    ) external returns (uint256);
+    function deposit(uint256, uint256, address) external returns (uint256);
 
     function withdraw(uint256, address) external returns (uint256, uint256);
 

@@ -1,5 +1,72 @@
 [
   {
+    "inputs": [],
+    "name": "INPUT_ARRAY_MISMATCH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "threshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "LIQ_THRESHOLD_TOO_HIGH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "threshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "LIQ_THRESHOLD_TOO_LOW",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "NO_ORACLE_ROUTE",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "PRICE_FAILED",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZERO_ADDRESS",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -16,6 +83,25 @@
       }
     ],
     "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "liqThreshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "SetLiqThreshold",
     "type": "event"
   },
   {
@@ -47,37 +133,6 @@
         "type": "address"
       },
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "route",
-            "type": "address"
-          },
-          {
-            "internalType": "uint16",
-            "name": "liqThreshold",
-            "type": "uint16"
-          }
-        ],
-        "indexed": false,
-        "internalType": "struct CoreOracle.TokenSetting",
-        "name": "tokenFactor",
-        "type": "tuple"
-      }
-    ],
-    "name": "SetTokenFactor",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
         "indexed": false,
         "internalType": "bool",
         "name": "ok",
@@ -85,19 +140,6 @@
       }
     ],
     "name": "SetWhitelist",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "UnsetTokenFactor",
     "type": "event"
   },
   {
@@ -118,54 +160,11 @@
         "type": "uint256"
       }
     ],
-    "name": "getCollateralValue",
+    "name": "getPositionValue",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "getDebtValue",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "getLiqThreshold",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
+        "name": "positionValue",
         "type": "uint256"
       }
     ],
@@ -204,11 +203,80 @@
         "type": "uint256"
       }
     ],
-    "name": "getUnderlyingValue",
+    "name": "getTokenValue",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "collateralValue",
+        "name": "debtValue",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "isTokenSupported",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isWrappedTokenSupported",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "liqThresholds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -238,17 +306,36 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "routes",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address[]",
         "name": "tokens",
         "type": "address[]"
       },
       {
-        "internalType": "address[]",
-        "name": "routes",
-        "type": "address[]"
+        "internalType": "uint256[]",
+        "name": "thresholds",
+        "type": "uint256[]"
       }
     ],
-    "name": "setRoute",
+    "name": "setLiqThresholds",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -261,24 +348,12 @@
         "type": "address[]"
       },
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "route",
-            "type": "address"
-          },
-          {
-            "internalType": "uint16",
-            "name": "liqThreshold",
-            "type": "uint16"
-          }
-        ],
-        "internalType": "struct CoreOracle.TokenSetting[]",
-        "name": "_tokenFactors",
-        "type": "tuple[]"
+        "internalType": "address[]",
+        "name": "oracleRoutes",
+        "type": "address[]"
       }
     ],
-    "name": "setTokenSettings",
+    "name": "setRoutes",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -305,91 +380,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "support",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      }
-    ],
-    "name": "supportWrappedToken",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "tokenSettings",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "route",
-        "type": "address"
-      },
-      {
-        "internalType": "uint16",
-        "name": "liqThreshold",
-        "type": "uint16"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "newOwner",
         "type": "address"
       }
     ],
     "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "tokens",
-        "type": "address[]"
-      }
-    ],
-    "name": "unsetTokenSettings",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

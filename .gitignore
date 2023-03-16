@@ -8,4 +8,6 @@ coverage/
 coverage.json
 typechain-types
 .env
-.openzeppelin
+.openzeppelin/
+.vscode/
+.deps/

@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.16;
 
 interface IIchiFarm {
     function lpToken(uint256 pid) external view returns (address);
 
-    function poolInfo(uint256 pid)
+    function pendingIchi(
+        uint256 pid,
+        address user
+    ) external view returns (uint256);
+
+    function poolInfo(
+        uint256 pid
+    )
         external
         view
         returns (
@@ -14,15 +21,14 @@ interface IIchiFarm {
             uint256 allocPoint
         );
 
-    function deposit(
+    function userInfo(
         uint256 pid,
-        uint256 amount,
         address to
-    ) external;
+    ) external view returns (uint256 amount, int256 rewardDebt);
 
-    function withdraw(
-        uint256 pid,
-        uint256 amount,
-        address to
-    ) external;
+    function deposit(uint256 pid, uint256 amount, address to) external;
+
+    function withdraw(uint256 pid, uint256 amount, address to) external;
+
+    function harvest(uint256 pid, address to) external;
 }
