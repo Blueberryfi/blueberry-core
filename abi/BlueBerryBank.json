@@ -967,6 +967,57 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "getBankInfoAll",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isListed",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "index",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "hardVault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "softVault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "bToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalShare",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IBank.Bank",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getCurrentPositionInfo",
     "outputs": [

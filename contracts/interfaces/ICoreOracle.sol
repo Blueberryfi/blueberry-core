@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity ^0.8.0;
 
 import "./IBaseOracle.sol";
 
@@ -20,10 +20,10 @@ interface ICoreOracle is IBaseOracle {
     /// @dev Only validate wrappers of Blueberry protocol such as WERC20
     /// @param token ERC1155 token address to check the support
     /// @param tokenId ERC1155 token id to check the support
-    function isWrappedTokenSupported(
-        address token,
-        uint256 tokenId
-    ) external view returns (bool);
+    function isWrappedTokenSupported(address token, uint256 tokenId)
+        external
+        view
+        returns (bool);
 
     /**
      * @dev Return the USD value of the given input for collateral purpose.
@@ -42,10 +42,10 @@ interface ICoreOracle is IBaseOracle {
      * @param token ERC20 token address
      * @param amount ERC20 token amount
      */
-    function getTokenValue(
-        address token,
-        uint256 amount
-    ) external view returns (uint256);
+    function getTokenValue(address token, uint256 amount)
+        external
+        view
+        returns (uint256);
 
     function liqThresholds(address token) external view returns (uint256);
 }

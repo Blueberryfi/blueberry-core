@@ -405,6 +405,35 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "positionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "spell",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "execute",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "feeManager",
     "outputs": [
@@ -441,6 +470,57 @@
         "internalType": "uint256",
         "name": "totalShare",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "getBankInfoAll",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "isListed",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8",
+            "name": "index",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "hardVault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "softVault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "bToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalShare",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IBank.Bank",
+        "name": "",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -533,6 +613,25 @@
       {
         "internalType": "uint256",
         "name": "icollValue",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "positionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPositionDebt",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "debt",
         "type": "uint256"
       }
     ],

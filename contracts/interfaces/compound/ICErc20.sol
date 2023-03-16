@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity ^0.8.0;
 
 interface ICErc20 {
     function decimals() external view returns (uint8);
@@ -9,9 +9,10 @@ interface ICErc20 {
 
     function balanceOf(address user) external view returns (uint256);
 
-    function borrowBalanceStored(
-        address account
-    ) external view returns (uint256);
+    function borrowBalanceStored(address account)
+        external
+        view
+        returns (uint256);
 
     function exchangeRateStored() external view returns (uint256);
 

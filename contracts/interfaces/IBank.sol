@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity ^0.8.0;
 
 import "./IProtocolConfig.sol";
 import "./IFeeManager.sol";
@@ -105,23 +105,38 @@ interface IBank {
 
     function oracle() external view returns (ICoreOracle);
 
-    function getBankInfo(
-        address token
-    ) external view returns (bool isListed, address bToken, uint256 totalShare);
+    function getBankInfo(address token)
+        external
+        view
+        returns (
+            bool isListed,
+            address bToken,
+            uint256 totalShare
+        );
+
+    function getBankInfoAll(address token) external view returns (Bank memory);
 
     function getDebtValue(uint256 positionId) external view returns (uint256);
 
-    function getPositionValue(
-        uint256 positionId
-    ) external view returns (uint256);
+    function getPositionValue(uint256 positionId)
+        external
+        view
+        returns (uint256);
 
-    function getIsolatedCollateralValue(
-        uint256 positionId
-    ) external view returns (uint256 icollValue);
+    function getPositionDebt(uint256 positionId)
+        external
+        view
+        returns (uint256 debt);
 
-    function getPositionInfo(
-        uint256 positionId
-    ) external view returns (Position memory);
+    function getIsolatedCollateralValue(uint256 positionId)
+        external
+        view
+        returns (uint256 icollValue);
+
+    function getPositionInfo(uint256 positionId)
+        external
+        view
+        returns (Position memory);
 
     /// @dev Return current position information.
     function getCurrentPositionInfo() external view returns (Position memory);
@@ -157,6 +172,16 @@ interface IBank {
         address debtToken,
         uint256 amountCall
     ) external;
+
+    /// @dev Execute the action with the supplied data.
+    /// @param positionId The position ID to execute the action, or zero for new position.
+    /// @param spell The target spell to invoke the execution.
+    /// @param data Extra data to pass to the target for the execution.
+    function execute(
+        uint256 positionId,
+        address spell,
+        bytes memory data
+    ) external returns (uint256);
 
     function accrue(address token) external;
 }

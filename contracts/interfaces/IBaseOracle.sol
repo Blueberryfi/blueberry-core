@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity ^0.8.0;
 
 interface IBaseOracle {
     /// @dev Return the USD based price of the given input, multiplied by 10**18.
