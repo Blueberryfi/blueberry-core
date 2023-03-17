@@ -2,7 +2,11 @@ pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "@aave/core-v3/contracts/flashloan/base/FlashLoanReceiverBase.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+import "@aave/core-v3/contracts/interfaces/IPool.sol";
+import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
+
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import "../interfaces/IBank.sol";
@@ -10,13 +14,11 @@ import "../interfaces/ISoftVault.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
+import "../utils/ERC1155NaiveReceiver.sol";
 
-contract LiquidationBot is FlashLoanReceiverBase {
+contract Liquidator is OwnableUpgradeable, ERC1155NaiveReceiver {
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
     ISwapRouter private swapRouter;
-
-    /// @dev address of AAVE lending pool
-    address public lendingPoolAddress;
 
     /// @dev address of bank contract
     address public bankAddress;
@@ -30,46 +32,53 @@ contract LiquidationBot is FlashLoanReceiverBase {
     /// @dev current liquidation position ID
     uint256 public POS_ID;
 
+    /// @dev aave pool addresses provider
+    IPoolAddressesProvider public ADDRESSES_PROVIDER;
+
+    /// @dev aave pool
+    IPool public POOL;
+
+    /// @dev mapping for token name to token address
     mapping(string => address) public tokenAddrs;
 
-    constructor(
+    /// @dev Initialize the bank smart contract, using msg.sender as the first governor.
+    /// @param _poolAddressesProvider AAVE poolAdddressesProvider address
+    /// @param _bankAddress BlueBerry bank contract address
+    /// @param _swapRouter Swap Router address
+    function initialize(
         address _poolAddressesProvider,
         address _bankAddress,
         address _swapRouter,
         address _USDC,
         address _ICHI
-    ) FlashLoanReceiverBase(IPoolAddressesProvider(_poolAddressesProvider)) {
+    ) external initializer {
+        __Ownable_init();
+        ADDRESSES_PROVIDER = IPoolAddressesProvider(_poolAddressesProvider);
+        POOL = IPool(IPoolAddressesProvider(_poolAddressesProvider).getPool());
         bankAddress = _bankAddress;
         USDC = _USDC;
         ICHI = _ICHI;
         swapRouter = ISwapRouter(_swapRouter);
     }
 
+    /**
+     * @notice Liquidate position using AAVE flashloan
+     * @param _positionId position id to liquidate
+     */
     function liquidate(uint256 _positionId) external {
         IBank.Position memory posInfo = IBank(bankAddress).getPositionInfo(
             _positionId
         );
 
         // flash borrow the reserve tokens
-        address[] memory assets = new address[](1);
-        assets[0] = posInfo.debtToken;
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = IBank(bankAddress).getPositionDebt(_positionId);
-        uint256[] memory modes = new uint256[](1);
-        modes[0] = 0; // 0 = no debt, 1 = stable debt, 2 = variable debt
-        address onBehalfOf = address(this);
-        bytes memory params = "";
-        uint16 referralCode = 0;
-
         POS_ID = _positionId;
-        POOL.flashLoan(
+
+        POOL.flashLoanSimple(
             address(this),
-            assets,
-            amounts,
-            modes,
-            onBehalfOf,
-            params,
-            referralCode
+            posInfo.debtToken,
+            IBank(bankAddress).getPositionDebt(_positionId),
+            abi.encode(msg.sender),
+            0
         );
     }
 
@@ -77,18 +86,19 @@ contract LiquidationBot is FlashLoanReceiverBase {
      * @notice Executes an operation after receiving the flash-borrowed assets
      * @dev Ensure that the contract can return the debt + premium, e.g., has
      *      enough funds to repay and has approved the Pool to pull the total amount
-     * @param assets The addresses of the flash-borrowed assets
-     * @param amounts The amounts of the flash-borrowed assets
-     * @param premiums The fee of each flash-borrowed asset
+     * @param asset The addresses of the flash-borrowed assets
+     * @param amount The amounts of the flash-borrowed assets
+     * @param premium The fee of each flash-borrowed asset
      * @return True if the execution of the operation succeeds, false otherwise
      */
     function executeOperation(
-        address[] calldata assets,
-        uint256[] calldata amounts,
-        uint256[] calldata premiums,
+        address asset,
+        uint256 amount,
+        uint256 premium,
         address,
-        bytes calldata
+        bytes calldata data
     ) external returns (bool) {
+        address sender = abi.decode(data, (address));
         IBank.Position memory posInfo = IBank(bankAddress).getPositionInfo(
             POS_ID
         );
@@ -98,14 +108,14 @@ contract LiquidationBot is FlashLoanReceiverBase {
 
         // get the reserve and collateral tokens
         IERC1155 collateralToken = IERC1155(posInfo.collToken);
-        IERC20 debtToken = IERC20(assets[0]);
+        IERC20 debtToken = IERC20(asset);
 
         // liquidate from bank
         uint256 uVaultShare = IERC20(bankInfo.softVault).balanceOf(
             address(this)
         );
-        uint256 debtAmount = amounts[0];
-        uint256 fee = premiums[0];
+        uint256 debtAmount = amount;
+        uint256 fee = premium;
 
         // approve debtToken for bank and liquidate
         debtToken.approve(bankAddress, debtAmount);
@@ -150,19 +160,30 @@ contract LiquidationBot is FlashLoanReceiverBase {
         uint256 uTokenAmt = IERC20Upgradeable(
             ISoftVault(bankInfo.softVault).uToken()
         ).balanceOf(address(this));
-        _swap(USDC, address(debtToken), usdcAmt);
-        _swap(ICHI, address(debtToken), ichiAmt);
-        _swap(
-            address(ISoftVault(bankInfo.softVault).uToken()),
-            address(debtToken),
-            uTokenAmt
-        );
 
-        // send bank for flashloan
-        debtToken.transfer(address(POOL), debtAmount + fee);
+        if (USDC != address(debtToken) && usdcAmt != 0)
+            _swap(USDC, address(debtToken), usdcAmt);
+        if (ICHI != address(debtToken) && ichiAmt != 0)
+            _swap(ICHI, address(debtToken), ichiAmt);
+        if (
+            address(ISoftVault(bankInfo.softVault).uToken()) !=
+            address(debtToken) &&
+            uTokenAmt != 0
+        )
+            _swap(
+                address(ISoftVault(bankInfo.softVault).uToken()),
+                address(debtToken),
+                uTokenAmt
+            );
+
+        // approve aave pool to get back debt
+        debtToken.approve(address(POOL), debtAmount + fee);
 
         // send remained reserve token to msg.sender
-        debtToken.transfer(msg.sender, debtToken.balanceOf(address(this)));
+        debtToken.transfer(
+            sender,
+            debtToken.balanceOf(address(this)) - debtAmount - fee
+        );
 
         // reset position id
         POS_ID = 0;
@@ -175,17 +196,21 @@ contract LiquidationBot is FlashLoanReceiverBase {
         address _dstToken,
         uint256 _amount
     ) internal {
-        swapRouter.exactInputSingle(
-            ISwapRouter.ExactInputSingleParams({
-                tokenIn: _srcToken,
-                tokenOut: _dstToken,
-                fee: 1e4,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: _amount,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            })
-        );
+        if (IERC20(_srcToken).balanceOf(address(this)) >= _amount) {
+            IERC20(_srcToken).approve(address(swapRouter), _amount);
+
+            swapRouter.exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: _srcToken,
+                    tokenOut: _dstToken,
+                    fee: 1e4,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: _amount,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            );
+        }
     }
 }
