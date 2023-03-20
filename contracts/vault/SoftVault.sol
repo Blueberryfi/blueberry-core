@@ -43,17 +43,6 @@ contract SoftVault is
     /// @dev address of protocol config
     IProtocolConfig public config;
 
-    event Deposited(
-        address indexed account,
-        uint256 amount,
-        uint256 shareAmount
-    );
-    event Withdrawn(
-        address indexed account,
-        uint256 amount,
-        uint256 shareAmount
-    );
-
     function initialize(
         IProtocolConfig _config,
         ICErc20 _bToken,

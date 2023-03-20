@@ -95,20 +95,16 @@ describe('Bank', () => {
     it("should revert Bank deployment when invalid args provided", async () => {
       const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
       await expect(
-        upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, config.address, feeManager.address])
+        upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, config.address])
       ).to.be.revertedWith("ZERO_ADDRESS");
 
       await expect(
-        upgrades.deployProxy(BlueBerryBank, [oracle.address, ethers.constants.AddressZero, feeManager.address])
-      ).to.be.revertedWith("ZERO_ADDRESS");
-
-      await expect(
-        upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, ethers.constants.AddressZero])
+        upgrades.deployProxy(BlueBerryBank, [oracle.address, ethers.constants.AddressZero])
       ).to.be.revertedWith("ZERO_ADDRESS");
     })
     it("should initialize states on constructor", async () => {
       const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-      const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, feeManager.address]);
+      const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
       await bank.deployed();
 
       expect(await bank._GENERAL_LOCK()).to.be.equal(1);

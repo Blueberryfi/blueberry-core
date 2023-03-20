@@ -187,7 +187,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
   await config.setFeeManager(feeManager.address);
 
   const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-  bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address, feeManager.address]);
+  bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
   await bank.deployed();
 
   // Deploy ICHI wrapper and spell
