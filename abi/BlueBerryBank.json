@@ -1188,11 +1188,6 @@
         "internalType": "contract IProtocolConfig",
         "name": "config_",
         "type": "address"
-      },
-      {
-        "internalType": "contract IFeeManager",
-        "name": "feeManager_",
-        "type": "address"
       }
     ],
     "name": "initialize",

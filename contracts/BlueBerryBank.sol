@@ -105,18 +105,12 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Initialize the bank smart contract, using msg.sender as the first governor.
     /// @param oracle_ The oracle smart contract address.
     /// @param config_ The Protocol config address
-    /// @param feeManager_ The Fee manager address
     function initialize(
         ICoreOracle oracle_,
-        IProtocolConfig config_,
-        IFeeManager feeManager_
+        IProtocolConfig config_
     ) external initializer {
         __Ownable_init();
-        if (
-            address(oracle_) == address(0) ||
-            address(config_) == address(0) ||
-            address(feeManager_) == address(0)
-        ) {
+        if (address(oracle_) == address(0) || address(config_) == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
         _GENERAL_LOCK = _NOT_ENTERED;
@@ -126,7 +120,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         config = config_;
         oracle = oracle_;
-        feeManager = feeManager_;
+        feeManager = config_.feeManager();
 
         nextPositionId = 1;
         bankStatus = 15; // 0x1111: allow borrow, repay, lend, withdrawLend as default

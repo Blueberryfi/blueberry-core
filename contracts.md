@@ -44,10 +44,10 @@
 | ------------------ | ------------------------------------------ |
 | Protocol Config    | 0x7FC9E9f965565c09fdb5c400AFbCCDEB1d4f7dA5 |
 | Fee Manager        | 0x4a5e5cdb073C816AD9B1086eFB04736759d8b42d |
-| Blueberry Bank     | 0xcfc4aeD0a0D4713C71aE9A428030C8178ffd1c24 |
+| Blueberry Bank     | 0xa0Ec5AD16FF07C070CEF36fd2045218DA5469D9e |
 | WERC20             | 0xD9D849Cfd10B6f534DDD9744558b62d11F724f84 |
-| WIchiFarm          | 0xD94034e633F7c1Be6a3C5c7E8F519a40EBf52A5C |
-| ICHI Spell         | 0xd7361fb8a09f1644FF4CC94F0c10577F5D0a7c88 |
+| WIchiFarm          | 0xC5102ebB7f4dAc3cA7946A28887CDE715E0F34a4 |
+| ICHI Spell         | 0x983324Ef546c6298a5d23a9B4f5320a019fD8DA7 |
 | Hard Vault         | 0x6473E7994233586041BccEBCe74D90405e8bF043 |
 | Soft Vault - ALCX  | 0xDEB53FAF2a40fAE05A95C72786AC9e8f2d63210B |
 | Soft Vault - BAL   | 0xE1bcB5dCa0A810eFf9A354484316213cd1EF0e5a |
