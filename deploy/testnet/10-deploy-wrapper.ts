@@ -1,3 +1,4 @@
+import { makeForceImport } from '@openzeppelin/hardhat-upgrades/dist/force-import';
 import { utils } from 'ethers';
 import { ethers, upgrades } from "hardhat";
 import { CONTRACT_NAMES } from '../../constant';
@@ -8,16 +9,16 @@ async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
   console.log("Deployer:", deployer.address);
 
-  // Mock Ichi Farm
-  const MockIchiFarm = await ethers.getContractFactory("MockIchiFarm");
-  const ichiFarm = <MockIchiFarm>await MockIchiFarm.deploy(
-    deployment.MockIchiV1,
-    utils.parseUnits("1", 9), // 1 ICHI per block
-  )
-  await ichiFarm.deployed();
-  console.log("Mock ICHI Farm:", ichiFarm.address);
-  deployment.MockIchiFarm = ichiFarm.address;
-  writeDeployments(deployment);
+  // // Mock Ichi Farm
+  // const MockIchiFarm = await ethers.getContractFactory("MockIchiFarm");
+  // const ichiFarm = <MockIchiFarm>await MockIchiFarm.deploy(
+  //   deployment.MockIchiV1,
+  //   utils.parseUnits("1", 9), // 1 ICHI per block
+  // )
+  // await ichiFarm.deployed();
+  // console.log("Mock ICHI Farm:", ichiFarm.address);
+  // deployment.MockIchiFarm = ichiFarm.address;
+  // writeDeployments(deployment);
 
   // WIchiFarm
   const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);

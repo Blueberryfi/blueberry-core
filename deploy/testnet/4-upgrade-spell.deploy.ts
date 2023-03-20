@@ -8,7 +8,6 @@ async function main(): Promise<void> {
 	console.log("Deployer:", deployer.address);
 
 	const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
-
 	const spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
 		deployment.BlueBerryBank,
 		deployment.WERC20,

@@ -35,6 +35,7 @@ export enum CONTRACT_NAMES {
 	HardVault = 'HardVault',
 	SoftVault = 'SoftVault',
 	ProtocolConfig = 'ProtocolConfig',
+	FeeManager = 'FeeManager',
 
 	// Spell
 	UniswapV2SpellV1 = "UniswapV2SpellV1",

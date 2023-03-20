@@ -6,6 +6,17 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./compound/ICErc20.sol";
 
 interface ISoftVault is IERC20Upgradeable {
+    event Deposited(
+        address indexed account,
+        uint256 amount,
+        uint256 shareAmount
+    );
+    event Withdrawn(
+        address indexed account,
+        uint256 amount,
+        uint256 shareAmount
+    );
+
     function bToken() external view returns (ICErc20);
 
     function uToken() external view returns (IERC20Upgradeable);
