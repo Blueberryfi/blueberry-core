@@ -29,6 +29,105 @@ async function main(): Promise<void> {
 	console.log('Soft Vault-ICHI:', vault.address);
 	deployment.SoftVault_ICHI = vault.address;
 	writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bUSDC,
+	// 	"Interest Bearing USDC",
+	// 	"ibUSDC"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-USDC:', vault.address);
+	// deployment.SoftVault_USDC = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bALCX,
+	// 	"Interest Bearing ALCX",
+	// 	"ibALCX"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-ALCX:', vault.address);
+	// deployment.SoftVault_ALCX = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bBAL,
+	// 	"Interest Bearing BAL",
+	// 	"ibBAL"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-BAL:', vault.address);
+	// deployment.SoftVault_BAL = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bBLB,
+	// 	"Interest Bearing BLB",
+	// 	"ibBLB"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-BLB:', vault.address);
+	// deployment.SoftVault_BLB = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bDAI,
+	// 	"Interest Bearing DAI",
+	// 	"ibDAI"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-DAI:', vault.address);
+	// deployment.SoftVault_DAI = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bSUSHI,
+	// 	"Interest Bearing SUSHI",
+	// 	"ibSUSHI"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-SUSHI:', vault.address);
+	// deployment.SoftVault_SUSHI = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bUSDD,
+	// 	"Interest Bearing USDD",
+	// 	"ibUSDD"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-USDD:', vault.address);
+	// deployment.SoftVault_USDD = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bWBTC,
+	// 	"Interest Bearing WBTC",
+	// 	"ibWBTC"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-WBTC:', vault.address);
+	// deployment.SoftVault_WBTC = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bWETH,
+	// 	"Interest Bearing WETH",
+	// 	"ibWETH"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-WETH:', vault.address);
+	// deployment.SoftVault_WETH = vault.address;
+	// writeDeployments(deployment);
 }
 
 main()
