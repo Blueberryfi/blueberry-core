@@ -36,8 +36,8 @@
 | Chainlink Adapter Oracle  | 0x9C75022b200e77c1403541cBF4aEb28B7781656F |
 | Aggregator Oracle         | 0xA2f423d048bdA5AaC35B8b4bcbD42cd6F32Da461 |
 | Uniswap V3 Adapter Oracle | 0x1FBC7d02e39603B3D2EF5764679d461bC00ecA6E |
-| Ichi Vault Oracle         | 0x07081027E2D18Cdf388e24df7D0BB952051A2CD4 |
-| Core Oracle               | 0x7D2eC9636592254B0Af34aBB518F0e8195bc2708 |
+| Ichi Vault Oracle         | 0xd977DDa8A8042ffB2B5EA1C9ff4472945341f813 |
+| Core Oracle               | 0x459193543010abf4b0cb31f3ba1e2e1a832d8819 |
 
 ### Core
 | Contract Names     | Address                                    |
