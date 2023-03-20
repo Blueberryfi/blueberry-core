@@ -42,7 +42,8 @@
 ### Core
 | Contract Names     | Address                                    |
 | ------------------ | ------------------------------------------ |
-| Protocol Config    | 0x993a27dEd2DE5a61E2cD1E8aCB247faBfa8EA4C2 |
+| Protocol Config    | 0x7FC9E9f965565c09fdb5c400AFbCCDEB1d4f7dA5 |
+| Fee Manager        | 0x4a5e5cdb073C816AD9B1086eFB04736759d8b42d |
 | Blueberry Bank     | 0xcfc4aeD0a0D4713C71aE9A428030C8178ffd1c24 |
 | WERC20             | 0xD9D849Cfd10B6f534DDD9744558b62d11F724f84 |
 | WIchiFarm          | 0xD94034e633F7c1Be6a3C5c7E8F519a40EBf52A5C |
