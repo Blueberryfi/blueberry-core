@@ -623,6 +623,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         wAmount = feeManager.doCutWithdrawFee(token, wAmount);
 
         IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
+
+        emit WithdrawLend(POSITION_ID, msg.sender, token, wAmount);
     }
 
     /// @dev Borrow tokens from given bank. Must only be called from spell while under execution.

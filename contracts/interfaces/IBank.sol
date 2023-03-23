@@ -43,6 +43,12 @@ interface IBank {
         address token,
         uint256 amount
     );
+    event WithdrawLend(
+        uint256 positionId,
+        address caller,
+        address token,
+        uint256 amount
+    );
     /// Someone borrows tokens from a bank via a spell caller.
     event Borrow(
         uint256 positionId,
