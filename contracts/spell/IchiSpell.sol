@@ -26,7 +26,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
-    IUniswapV3Pool private swapPool;
+    IUniswapV3Pool private SWAP_POOL;
 
     /// @dev address of ICHI farm wrapper
     IWIchiFarm public wIchiFarm;
@@ -223,10 +223,10 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         ).balanceOf(address(this));
 
         if (amountToSwap > 0) {
-            swapPool = IUniswapV3Pool(vault.pool());
+            SWAP_POOL = IUniswapV3Pool(vault.pool());
             uint160 deltaSqrt = (param.sqrtRatioLimit *
                 uint160(param.sellSlippage)) / uint160(Constants.DENOMINATOR);
-            swapPool.swap(
+            SWAP_POOL.swap(
                 address(this),
                 // if withdraw token is Token0, then swap token1 -> token0 (false)
                 !isTokenA,
@@ -304,18 +304,18 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         int256 amount1Delta,
         bytes calldata data
     ) external override {
-        if (msg.sender != address(swapPool))
+        if (msg.sender != address(SWAP_POOL))
             revert Errors.NOT_FROM_UNIV3(msg.sender);
         address payer = abi.decode(data, (address));
 
         if (amount0Delta > 0) {
             if (payer == address(this)) {
-                IERC20Upgradeable(swapPool.token0()).safeTransfer(
+                IERC20Upgradeable(SWAP_POOL.token0()).safeTransfer(
                     msg.sender,
                     amount0Delta.toUint256()
                 );
             } else {
-                IERC20Upgradeable(swapPool.token0()).safeTransferFrom(
+                IERC20Upgradeable(SWAP_POOL.token0()).safeTransferFrom(
                     payer,
                     msg.sender,
                     amount0Delta.toUint256()
@@ -323,12 +323,12 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             }
         } else if (amount1Delta > 0) {
             if (payer == address(this)) {
-                IERC20Upgradeable(swapPool.token1()).safeTransfer(
+                IERC20Upgradeable(SWAP_POOL.token1()).safeTransfer(
                     msg.sender,
                     amount1Delta.toUint256()
                 );
             } else {
-                IERC20Upgradeable(swapPool.token1()).safeTransferFrom(
+                IERC20Upgradeable(SWAP_POOL.token1()).safeTransferFrom(
                     payer,
                     msg.sender,
                     amount1Delta.toUint256()
