@@ -25,78 +25,13 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    struct Strategy {
-        address vault;
-        uint256 maxPositionSize;
-    }
-
-    /**
-     * @param collToken Collateral Token address to deposit (e.g USDC)
-     * @param collAmount Amount of user's collateral (e.g USDC)
-     * @param borrowToken Address of token to borrow
-     * @param borrowAmount Amount to borrow from Bank
-     * @param farmingPid Pool Id of vault lp on ICHI Farm
-     */
-    struct OpenPosParam {
-        uint256 strategyId;
-        address collToken;
-        address borrowToken;
-        uint256 collAmount;
-        uint256 borrowAmount;
-        uint256 farmingPid;
-    }
-
-    /**
-     * @param strategyId Strategy ID
-     * @param collToken Isolated collateral token address
-     * @param borrowToken Token address of debt
-     * @param amountLpRemove Amount of ICHI Vault LP to withdraw
-     * @param amountRepay Amount of debt to repay
-     * @param amountShareWithdraw Amount of isolated collaterals to withdraw
-     */
-    struct ClosePosParam {
-        uint256 strategyId;
-        address collToken;
-        address borrowToken;
-        uint256 amountRepay;
-        uint256 amountLpRemove;
-        uint256 amountShareWithdraw;
-        uint256 sellSlippage;
-        uint160 sqrtRatioLimit;
-    }
-
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
     IUniswapV3Pool private swapPool;
 
-    /// @dev strategyId => ichi vault
-    Strategy[] public strategies;
-    /// @dev strategyId => collateral token => maxLTV
-    mapping(uint256 => mapping(address => uint256)) public maxLTV; // base 1e4
     /// @dev address of ICHI farm wrapper
     IWIchiFarm public wIchiFarm;
     /// @dev address of ICHI token
     address public ICHI;
-
-    event StrategyAdded(uint256 strategyId, address vault, uint256 maxPosSize);
-    event CollateralsMaxLTVSet(
-        uint256 strategyId,
-        address[] collaterals,
-        uint256[] maxLTVs
-    );
-
-    modifier existingStrategy(uint256 strategyId) {
-        if (strategyId >= strategies.length)
-            revert Errors.STRATEGY_NOT_EXIST(address(this), strategyId);
-
-        _;
-    }
-
-    modifier existingCollateral(uint256 strategyId, address col) {
-        if (maxLTV[strategyId][col] == 0)
-            revert Errors.COLLATERAL_NOT_EXIST(strategyId, col);
-
-        _;
-    }
 
     function initialize(
         IBank _bank,
@@ -109,48 +44,6 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         wIchiFarm = IWIchiFarm(_wichiFarm);
         ICHI = address(wIchiFarm.ICHI());
         IWIchiFarm(_wichiFarm).setApprovalForAll(address(_bank), true);
-    }
-
-    /**
-     * @notice Owner privileged function to add vault
-     * @param vault Address of ICHI angel vault
-     * @param maxPosSize, USD price based maximum size of a position for given vault, based 1e18
-     */
-    function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
-        if (vault == address(0)) revert Errors.ZERO_ADDRESS();
-        if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
-        strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));
-        emit StrategyAdded(strategies.length - 1, vault, maxPosSize);
-    }
-
-    function setCollateralsMaxLTVs(
-        uint256 strategyId,
-        address[] memory collaterals,
-        uint256[] memory maxLTVs
-    ) external existingStrategy(strategyId) onlyOwner {
-        if (collaterals.length != maxLTVs.length || collaterals.length == 0)
-            revert Errors.INPUT_ARRAY_MISMATCH();
-
-        for (uint256 i = 0; i < collaterals.length; i++) {
-            if (collaterals[i] == address(0)) revert Errors.ZERO_ADDRESS();
-            if (maxLTVs[i] == 0) revert Errors.ZERO_AMOUNT();
-            maxLTV[strategyId][collaterals[i]] = maxLTVs[i];
-        }
-
-        emit CollateralsMaxLTVSet(strategyId, collaterals, maxLTVs);
-    }
-
-    function _validateMaxLTV(uint256 strategyId) internal view {
-        uint positionId = bank.POSITION_ID();
-        IBank.Position memory pos = bank.getPositionInfo(positionId);
-        uint256 debtValue = bank.getDebtValue(positionId);
-        uint uValue = bank.getIsolatedCollateralValue(positionId);
-
-        if (
-            debtValue >
-            (uValue * maxLTV[strategyId][pos.underlyingToken]) /
-                Constants.DENOMINATOR
-        ) revert Errors.EXCEED_MAX_LTV();
     }
 
     /**
@@ -315,13 +208,13 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         }
 
         // 2. Calculate actual amount to remove
-        uint256 amountLpRemove = param.amountLpRemove;
-        if (amountLpRemove == type(uint256).max) {
-            amountLpRemove = vault.balanceOf(address(this));
+        uint256 amountPosRemove = param.amountPosRemove;
+        if (amountPosRemove == type(uint256).max) {
+            amountPosRemove = vault.balanceOf(address(this));
         }
 
         // 3. Withdraw liquidity from ICHI vault
-        vault.withdraw(amountLpRemove, address(this));
+        vault.withdraw(amountPosRemove, address(this));
 
         // 4. Swap withdrawn tokens to initial deposit token
         bool isTokenA = vault.token0() == param.borrowToken;
@@ -371,7 +264,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         // 1. Take out collateral
         _doTakeCollateral(
             strategies[param.strategyId].vault,
-            param.amountLpRemove
+            param.amountPosRemove
         );
 
         // 2-8. Remove liquidity
@@ -395,8 +288,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
             revert Errors.INCORRECT_COLTOKEN(posCollToken);
 
         // 1. Take out collateral
-        bank.takeCollateral(param.amountLpRemove);
-        wIchiFarm.burn(collId, param.amountLpRemove);
+        bank.takeCollateral(param.amountPosRemove);
+        wIchiFarm.burn(collId, param.amountPosRemove);
         _doRefundRewards(ICHI);
 
         // 2-8. Remove liquidity

@@ -216,7 +216,7 @@ describe('ICHI Angel Vaults Spell', () => {
             collToken: ICHI,
             borrowToken: USDC,
             amountRepay: ethers.constants.MaxUint256,
-            amountLpRemove: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             sellSlippage: 50,
             sqrtRatioLimit: BigNumber.from(sqrt.toString())
@@ -238,7 +238,7 @@ describe('ICHI Angel Vaults Spell', () => {
             collToken: WETH,
             borrowToken: USDC,
             amountRepay: ethers.constants.MaxUint256,
-            amountLpRemove: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             sellSlippage: 50,
             sqrtRatioLimit: BigNumber.from(sqrt.toString())
@@ -266,7 +266,7 @@ describe('ICHI Angel Vaults Spell', () => {
           collToken: ICHI,
           borrowToken: USDC,
           amountRepay: ethers.constants.MaxUint256,
-          amountLpRemove: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
           amountShareWithdraw: ethers.constants.MaxUint256,
           sellSlippage: 50,
           sqrtRatioLimit: BigNumber.from(sqrt.toString())
@@ -439,7 +439,7 @@ describe('ICHI Angel Vaults Spell', () => {
           collToken: ICHI,
           borrowToken: USDC,
           amountRepay: ethers.constants.MaxUint256,
-          amountLpRemove: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
           amountShareWithdraw: ethers.constants.MaxUint256,
           sellSlippage: 50,
           sqrtRatioLimit: BigNumber.from(sqrt.toString())
