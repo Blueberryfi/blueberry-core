@@ -244,6 +244,25 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "StrategyMaxPosSizeUpdated",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "ICHI",
     "outputs": [
@@ -710,6 +729,24 @@
       }
     ],
     "name": "setCollateralsMaxLTVs",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxPosSize",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

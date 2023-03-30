@@ -73,6 +73,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     mapping(uint256 => mapping(address => uint256)) public maxLTV; // base 1e4
 
     event StrategyAdded(uint256 strategyId, address vault, uint256 maxPosSize);
+    event StrategyMaxPosSizeUpdated(uint256 strategyId, uint256 maxPosSize);
     event CollateralsMaxLTVSet(
         uint256 strategyId,
         address[] collaterals,
@@ -120,6 +121,20 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));
         emit StrategyAdded(strategies.length - 1, vault, maxPosSize);
+    }
+
+    /**
+     * @notice Set maxPosSize of existing strategy
+     * @param strategyId Strategy ID
+     * @param maxPosSize New maxPosSize to set
+     */
+    function setMaxPosSize(
+        uint256 strategyId,
+        uint256 maxPosSize
+    ) external existingStrategy(strategyId) onlyOwner {
+        if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
+        strategies[strategyId].maxPositionSize = maxPosSize;
+        emit StrategyMaxPosSizeUpdated(strategyId, maxPosSize);
     }
 
     /**
