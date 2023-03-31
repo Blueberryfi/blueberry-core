@@ -60,6 +60,11 @@ error INCORRECT_UNDERLYING(address uToken);
 error INCORRECT_DEBT(address debtToken);
 error NOT_FROM_UNIV3(address sender);
 
+// Curve Spell
+error NO_GAUGE();
+error EXISTING_GAUGE(uint256 pid, uint256 gid);
+error NO_CURVE_POOL(uint256 pid);
+
 // Vault
 error BORROW_FAILED(uint256 amount);
 error REPAY_FAILED(uint256 amount);

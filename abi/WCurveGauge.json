@@ -1,8 +1,19 @@
 [
   {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gid",
+        "type": "uint256"
+      }
+    ],
+    "name": "EXISTING_GAUGE",
+    "type": "error"
   },
   {
     "inputs": [
@@ -12,23 +23,12 @@
         "type": "uint256"
       }
     ],
-    "name": "BAD_PID",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "rewardPerShare",
-        "type": "uint256"
-      }
-    ],
-    "name": "BAD_REWARD_PER_SHARE",
+    "name": "NO_CURVE_POOL",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ZERO_ADDRESS",
+    "name": "NO_GAUGE",
     "type": "error"
   },
   {
@@ -183,20 +183,7 @@
   },
   {
     "inputs": [],
-    "name": "ICHI",
-    "outputs": [
-      {
-        "internalType": "contract IIchiV2",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ICHIv1",
+    "name": "CRV",
     "outputs": [
       {
         "internalType": "contract IERC20Upgradeable",
@@ -296,7 +283,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "ichiPerShare",
+        "name": "gid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "crvPerShare",
         "type": "uint256"
       }
     ],
@@ -312,7 +304,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "ichiPerShare",
+        "name": "gid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "crvPerShare",
         "type": "uint256"
       }
     ],
@@ -320,11 +317,40 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "id",
+        "name": "",
         "type": "uint256"
       }
     ],
     "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "gauges",
+    "outputs": [
+      {
+        "internalType": "contract ILiquidityGauge",
+        "name": "impl",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "accCrvPerShare",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -347,11 +373,22 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "ichiFarm",
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gid",
+        "type": "uint256"
+      }
+    ],
+    "name": "getUnderlyingTokenFromIds",
     "outputs": [
       {
-        "internalType": "contract IIchiFarm",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -363,17 +400,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "ichi_",
+        "name": "crv_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "ichiV1",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "ichiFarm_",
+        "name": "crvRegistry_",
         "type": "address"
       }
     ],
@@ -411,6 +443,11 @@
       {
         "internalType": "uint256",
         "name": "pid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gid",
         "type": "uint256"
       },
       {
@@ -467,6 +504,37 @@
         "internalType": "uint256[]",
         "name": "rewards",
         "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gid",
+        "type": "uint256"
+      }
+    ],
+    "name": "registerGauge",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "registry",
+    "outputs": [
+      {
+        "internalType": "contract ICurveRegistry",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
