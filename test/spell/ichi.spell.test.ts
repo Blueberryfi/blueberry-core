@@ -141,7 +141,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount.mul(5),
-            farmingPid: 0
+            farmingPoolId: 0
           }])
         )
       ).to.be.revertedWith("EXCEED_MAX_LTV")
@@ -209,7 +209,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: 0
+            farmingPoolId: 0
           }])
         )
       ).to.be.revertedWith("STRATEGY_NOT_EXIST")
@@ -243,7 +243,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: 0
+            farmingPoolId: 0
           }])
         )
       ).to.be.revertedWith("COLLATERAL_NOT_EXIST")
@@ -263,7 +263,7 @@ describe('ICHI Angel Vaults Spell', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: 0
+          farmingPoolId: 0
         }])
       )
 
@@ -516,7 +516,7 @@ describe('ICHI Angel Vaults Spell', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount.mul(3),
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )).to.be.revertedWith("EXCEED_MAX_LTV");
     })
@@ -532,7 +532,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("STRATEGY_NOT_EXIST")
@@ -549,7 +549,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("COLLATERAL_NOT_EXIST")
@@ -566,7 +566,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID + 1
+            farmingPoolId: ICHI_VAULT_PID + 1
           }])
         )
       ).to.be.revertedWith("INCORRECT_LP")
@@ -630,7 +630,7 @@ describe('ICHI Angel Vaults Spell', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
 
@@ -750,7 +750,7 @@ describe('ICHI Angel Vaults Spell', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       );
     })
@@ -824,7 +824,7 @@ describe('ICHI Angel Vaults Spell', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       );
     })
@@ -840,7 +840,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID + 1
+            farmingPoolId: ICHI_VAULT_PID + 1
           }])
         )
       ).to.be.revertedWith("INCORRECT_LP");

@@ -1,6 +1,22 @@
 [
   {
     "inputs": [],
+    "name": "EXCEED_MAX_LTV",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
+    "name": "INCORRECT_STRATEGY_ID",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "INPUT_ARRAY_MISMATCH",
     "type": "error"
   },
@@ -189,6 +205,24 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "increasePosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
@@ -299,6 +333,29 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "collToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collShareAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "reducePosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

@@ -597,14 +597,14 @@
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "borrowToken",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "collAmount",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
           },
           {
             "internalType": "uint256",
@@ -613,7 +613,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "farmingPid",
+            "name": "farmingPoolId",
             "type": "uint256"
           }
         ],
@@ -642,14 +642,14 @@
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "borrowToken",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "collAmount",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
           },
           {
             "internalType": "uint256",
@@ -658,7 +658,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "farmingPid",
+            "name": "farmingPoolId",
             "type": "uint256"
           }
         ],

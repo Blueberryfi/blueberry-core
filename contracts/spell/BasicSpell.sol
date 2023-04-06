@@ -11,6 +11,7 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "../utils/BlueBerryConst.sol" as Constants;
@@ -42,15 +43,15 @@ abstract contract BasicSpell is
      * @param collAmount Amount of user's collateral (e.g USDC)
      * @param borrowToken Address of token to borrow
      * @param borrowAmount Amount to borrow from Bank
-     * @param farmingPid Farming Pool ID
+     * @param farmingPoolId Farming Pool ID
      */
     struct OpenPosParam {
         uint256 strategyId;
         address collToken;
-        address borrowToken;
         uint256 collAmount;
+        address borrowToken;
         uint256 borrowAmount;
-        uint256 farmingPid;
+        uint256 farmingPoolId;
     }
 
     /**
@@ -131,7 +132,10 @@ abstract contract BasicSpell is
      * @param vault Address of vault for given strategy
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address vault,
+        uint256 maxPosSize
+    ) public virtual onlyOwner {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));
@@ -192,6 +196,17 @@ abstract contract BasicSpell is
             (uValue * maxLTV[strategyId][pos.underlyingToken]) /
                 Constants.DENOMINATOR
         ) revert Errors.EXCEED_MAX_LTV();
+    }
+
+    function _validateMaxPosSize(uint256 strategyId) internal view {
+        Strategy memory strategy = strategies[strategyId];
+        IERC20Upgradeable lpToken = IERC20Upgradeable(strategy.vault);
+        uint256 lpBalance = lpToken.balanceOf(address(this));
+        uint256 lpPrice = bank.oracle().getPrice(address(lpToken));
+        uint256 curPosSize = (lpPrice * lpBalance) /
+            10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
+        if (curPosSize > strategy.maxPositionSize)
+            revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
     }
 
     /**
@@ -290,6 +305,48 @@ abstract contract BasicSpell is
             amount = bank.takeCollateral(amount);
             werc20.burn(token, amount);
         }
+    }
+
+    /// @dev Reset approval to zero and set again
+    function _ensureApprove(
+        address token,
+        address spender,
+        uint256 amount
+    ) internal {
+        IERC20Upgradeable(token).approve(spender, 0);
+        IERC20Upgradeable(token).approve(spender, amount);
+    }
+
+    /**
+     * @notice Increase isolated collateral to support the position
+     * @param token Isolated collateral token address
+     * @param amount Amount of token to increase position
+     */
+    function increasePosition(address token, uint256 amount) external {
+        // 1. Deposit isolated collaterals on Blueberry Money Market
+        _doLend(token, amount);
+    }
+
+    /**
+     * @dev Reduce isolated collateral of position
+     * @param collToken Isolated collateral token address
+     * @param collShareAmount Amount of Isolated collateral
+     */
+    function reducePosition(
+        uint256 strategyId,
+        address collToken,
+        uint256 collShareAmount
+    ) external {
+        // Validate strategy id
+        IBank.Position memory pos = bank.getCurrentPositionInfo();
+        address unwrappedCollToken = IERC20Wrapper(pos.collToken)
+            .getUnderlyingToken(pos.collId);
+        if (strategies[strategyId].vault != unwrappedCollToken)
+            revert Errors.INCORRECT_STRATEGY_ID(strategyId);
+
+        _doWithdraw(collToken, collShareAmount);
+        _doRefund(collToken);
+        _validateMaxLTV(strategyId);
     }
 
     /// @dev Fallback function. Can only receive ETH from WETH contract.

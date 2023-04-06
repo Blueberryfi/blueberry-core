@@ -527,7 +527,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
       positionId = (await bank.nextPositionId()).sub(1)
@@ -815,7 +815,7 @@ describe('Bank', () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPid: 0
+              farmingPoolId: 0
             }])
           )
         ).to.be.revertedWith("LEND_NOT_ALLOWED");
@@ -835,7 +835,7 @@ describe('Bank', () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPid: 0
+              farmingPoolId: 0
             }])
           )
         ).to.be.revertedWith("BORROW_NOT_ALLOWED");

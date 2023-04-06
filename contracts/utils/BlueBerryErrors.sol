@@ -64,6 +64,7 @@ error NOT_FROM_UNIV3(address sender);
 error NO_GAUGE();
 error EXISTING_GAUGE(uint256 pid, uint256 gid);
 error NO_CURVE_POOL(uint256 pid);
+error NO_CORRESPONDING_POOL(address crvLp);
 
 // Vault
 error BORROW_FAILED(uint256 amount);

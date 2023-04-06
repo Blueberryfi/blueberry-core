@@ -726,6 +726,72 @@
       "kind": "transparent"
     },
     {
+      "address": "0x4f42528B7bF8Da96516bECb22c1c6f53a8Ac7312",
+      "txHash": "0xdd109290ee6b254b111d1838165abd697655006f8417c72625a721726ead05c0",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x74ef2B06A1D2035C33244A4a263FF00B84504865",
+      "txHash": "0x31103a2fcbb25de64de1d185e9ce75e16ddc738f8cd14f65d0c958af1a4dbad9",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x6533158b042775e2FdFeF3cA1a782EFDbB8EB9b1",
+      "txHash": "0x7eb4737a7003c0e32a6b4e2b5ccbf5a48b07f4570f5ba50a3c4a340d62f40826",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xD2D5e508C82EFc205cAFA4Ad969a4395Babce026",
+      "txHash": "0x33f6fc3cf4ea43480b8a0527a006263e6c98989f30fc86a2f731f41fa0d2f774",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x408F924BAEC71cC3968614Cb2c58E155A35e6890",
+      "txHash": "0x0a2aee65a693ae51b2d49313c29a1cbd03b2951faed69429248d4b574b714f19",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x52173b6ac069619c206b9A0e75609fC92860AB2A",
+      "txHash": "0xa47044f33f5186d4be44e366b0c6f074368512d515641dd15918623d183d67ea",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x532802f2F9E0e3EE9d5Ba70C35E1F43C0498772D",
+      "txHash": "0xb14ceb51f53d540b4417c7933d0e0f043c526722fab3b22693dba7fe8ddc50af",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xA3f7BF5b0fa93176c260BBa57ceE85525De2BaF4",
+      "txHash": "0x306c66c64b91fc5cc5b4b28fb9ca50217a9fda9a251b44508f17cf14e319d191",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9D3DA37d36BB0B825CD319ed129c2872b893f538",
+      "txHash": "0xd525ce345ba70b4cdddcb552137dd1b62b896662c7b8a19614ebdf0185aa0440",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x59C4e2c6a6dC27c259D6d067a039c831e1ff4947",
+      "txHash": "0xbbe936a95525594da24888c035a5340ca378987ce79a0e4d4abf634b906a68e8",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9d136eEa063eDE5418A6BC7bEafF009bBb6CFa70",
+      "txHash": "0x82e1d1cd9935ef7bfe73e7bb05822bca603ded0e13520622fdcba38b24f5c5c0",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x49149a233de6E4cD6835971506F47EE5862289c1",
+      "txHash": "0xb5878ffc686397cef2cb9e5606438afda1ea3e766ebb86eaaf832c1aff5e0dbf",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x85495222Fd7069B987Ca38C2142732EbBFb7175D",
+      "txHash": "0x4df04e62f9be2023abe2b6d5388ac03dd9bf442ec82f3442e4d4de4d3f1687ca",
+>>>>>>> feat: add curve spell
+      "kind": "transparent"
+    },
+    {
       "address": "0xAaC7D4A36DAb95955ef3c641c23F1fA46416CF71",
       "txHash": "0x58a8943e553e03ee9108d4b77c6f1e52ba2a8a633c68af57ec08c8bb514a59b5",
       "kind": "transparent"
@@ -1739,6 +1805,7 @@
       "address": "0x2F94C3189edA0e357B23048aEc736F323Ac431f6",
       "txHash": "0x744ac93c8085ad8ceaba228d6a906f0c83e67b9cef3697309fde6e93b6865ac5",
       "kind": "transparent"
+<<<<<<< develop
     },
     {
       "address": "0x9118EA4a52C6c7873729c8d8702cCd85E573f9E9",
@@ -3835,6 +3902,14 @@
     "fa0f1aac856c1b9d5ee6cf5a607f1313090253a45154594d0c796e03f001dc35": {
       "address": "0xDf951d2061b12922BFbF22cb17B17f3b39183570",
       "txHash": "0x1ea2c1efc10290338629eb9d2828acd8c8d194792b131cc58b7b99acf560aa63",
+=======
+    }
+  ],
+  "impls": {
+    "8b6d217cd8e900a40556325a5eadea434b4de1efc5a2230a487d3bd3531043c2": {
+      "address": "0x01cf58e264d7578D4C67022c58A24CbC4C4a304E",
+      "txHash": "0x1d23375860957346b0c5f8231ecb1e6b9c7dd937cc73b362b3e5a09f463d4f32",
+>>>>>>> feat: add curve spell
       "layout": {
         "storage": [
           {
@@ -3863,6 +3938,7 @@
             "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
           },
           {
+<<<<<<< develop
             "label": "_owner",
             "offset": 0,
             "slot": "51",
@@ -4452,6 +4528,14 @@
             "contract": "Initializable",
             "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
             "retypedFrom": "bool"
+=======
+            "label": "__gap",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC165Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol:41"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "_initializing",
@@ -5144,6 +5228,7 @@
           {
             "label": "whitelistedContracts",
             "offset": 0,
+<<<<<<< develop
             "slot": "118",
             "type": "t_mapping(t_address,t_bool)",
             "contract": "BlueBerryBank",
@@ -5450,6 +5535,18 @@
           },
           "t_contract(IIchiV2)17339": {
             "label": "contract IIchiV2",
+=======
+          "t_contract(ICErc20)9975": {
+            "label": "contract ICErc20",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IERC20Upgradeable)2453": {
+            "label": "contract IERC20Upgradeable",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IProtocolConfig)9588": {
+            "label": "contract IProtocolConfig",
+>>>>>>> feat: add curve spell
             "numberOfBytes": "20"
           },
           "t_mapping(t_address,t_bool)": {
@@ -5737,26 +5834,47 @@
           {
             "label": "_balances",
             "offset": 0,
+<<<<<<< develop
             "slot": "151",
             "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
             "contract": "ERC1155Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol:25"
+=======
+            "slot": "105",
+            "type": "t_contract(IProtocolConfig)9588",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:59"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "_operatorApprovals",
             "offset": 0,
+<<<<<<< develop
             "slot": "152",
             "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
             "contract": "ERC1155Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol:28"
+=======
+            "slot": "106",
+            "type": "t_contract(ICoreOracle)9432",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:59"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "_uri",
             "offset": 0,
+<<<<<<< develop
             "slot": "153",
             "type": "t_string_storage",
             "contract": "ERC1155Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol:31"
+=======
+            "slot": "107",
+            "type": "t_contract(IFeeManager)9495",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:60"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "__gap",
@@ -5771,8 +5889,61 @@
             "offset": 0,
             "slot": "201",
             "type": "t_uint256",
+<<<<<<< develop
             "contract": "ReentrancyGuardUpgradeable",
             "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+=======
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:61"
+          },
+          {
+            "label": "allBanks",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:62"
+          },
+          {
+            "label": "banks",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_mapping(t_address,t_struct(Bank)9052_storage)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:64"
+          },
+          {
+            "label": "bTokenInBank",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:65"
+          },
+          {
+            "label": "positions",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_mapping(t_uint256,t_struct(Position)9069_storage)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:67"
+          },
+          {
+            "label": "allowContractCalls",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_bool",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:69"
+          },
+          {
+            "label": "whitelistedTokens",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "BlueBerryBank",
+            "src": "contracts/BlueBerryBank.sol:75"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "__gap",
@@ -5820,6 +5991,303 @@
             "label": "mapping(address => bool)",
             "numberOfBytes": "32"
           },
+<<<<<<< develop
+          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+            "label": "mapping(address => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+=======
+          "t_mapping(t_address,t_struct(Bank)9052_storage)": {
+            "label": "mapping(address => struct IBank.Bank)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Position)9069_storage)": {
+            "label": "mapping(uint256 => struct IBank.Position)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Bank)9052_storage": {
+            "label": "struct IBank.Bank",
+            "members": [
+              {
+                "label": "isListed",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "index",
+                "type": "t_uint8",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "hardVault",
+                "type": "t_address",
+                "offset": 2,
+                "slot": "0"
+              },
+              {
+                "label": "softVault",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "bToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "totalShare",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_struct(Position)9069_storage": {
+            "label": "struct IBank.Position",
+            "members": [
+              {
+                "label": "owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "collToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "underlyingToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "debtToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "underlyingVaultShare",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "collId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "collateralSize",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "debtShare",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              }
+            ],
+            "numberOfBytes": "256"
+>>>>>>> feat: add curve spell
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "889c986106a0e180a20b75143d13a8a54cf2b356398b2bf215755fab7c57b4e9": {
+      "address": "0x77AD263Cd578045105FBFC88A477CAd808d39Cf6",
+      "txHash": "0xb779b412fe56a3ab59991df07acca658efe49f64d1880c075806879c51e9c87a",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC165Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol:41"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol:25"
+          },
+          {
+            "label": "_operatorApprovals",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol:28"
+          },
+          {
+            "label": "_uri",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_string_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol:31"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_array(t_uint256)47_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol:528"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "ICHIv1",
+            "offset": 0,
+            "slot": "251",
+            "type": "t_contract(IERC20Upgradeable)2453",
+            "contract": "WIchiFarm",
+            "src": "contracts/wrapper/WIchiFarm.sol:69"
+          },
+          {
+            "label": "ICHI",
+            "offset": 0,
+            "slot": "252",
+            "type": "t_contract(IIchiV2)10681",
+            "contract": "WIchiFarm",
+            "src": "contracts/wrapper/WIchiFarm.sol:71"
+          },
+          {
+            "label": "ichiFarm",
+            "offset": 0,
+            "slot": "253",
+            "type": "t_contract(IIchiFarm)10471",
+            "contract": "WIchiFarm",
+            "src": "contracts/wrapper/WIchiFarm.sol:72"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)47_storage": {
+            "label": "uint256[47]",
+            "numberOfBytes": "1504"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IERC20Upgradeable)2453": {
+            "label": "contract IERC20Upgradeable",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IIchiFarm)10471": {
+            "label": "contract IIchiFarm",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IIchiV2)10681": {
+            "label": "contract IIchiV2",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
           "t_mapping(t_address,t_mapping(t_address,t_bool))": {
             "label": "mapping(address => mapping(address => bool))",
             "numberOfBytes": "32"
@@ -5847,9 +6315,10 @@
         }
       }
     },
-    "889c986106a0e180a20b75143d13a8a54cf2b356398b2bf215755fab7c57b4e9": {
-      "address": "0x77AD263Cd578045105FBFC88A477CAd808d39Cf6",
-      "txHash": "0xb779b412fe56a3ab59991df07acca658efe49f64d1880c075806879c51e9c87a",
+    "f8f3bb3f29abe0187fab32654ed36f29f532ab2e83953ee44e30389ac7c61c6c": {
+      "address": "0x73C68f1f41e4890D06Ba3e71b9E9DfA555f1fb46",
+      "txHash": "0x5ba93c2bf1f70b24f3db015df0cde52c46e635f0879c7e21b08c4d7b05f6e556",
+>>>>>>> feat: add curve spell
       "layout": {
         "storage": [
           {
@@ -5897,17 +6366,29 @@
             "label": "_balances",
             "offset": 0,
             "slot": "101",
+<<<<<<< develop
             "type": "t_mapping(t_address,t_uint256)",
             "contract": "ERC20Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:37"
+=======
+            "type": "t_contract(IBank)3897",
+            "contract": "BasicSpell",
+            "src": "contracts/spell/BasicSpell.sol:88"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "_allowances",
             "offset": 0,
             "slot": "102",
+<<<<<<< develop
             "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
             "contract": "ERC20Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:39"
+=======
+            "type": "t_contract(IWERC20)4130",
+            "contract": "BasicSpell",
+            "src": "contracts/spell/BasicSpell.sol:91"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "_totalSupply",
@@ -5921,14 +6402,21 @@
             "label": "_name",
             "offset": 0,
             "slot": "104",
+<<<<<<< develop
             "type": "t_string_storage",
             "contract": "ERC20Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:43"
+=======
+            "type": "t_array(t_struct(Strategy)4758_storage)dyn_storage",
+            "contract": "BasicSpell",
+            "src": "contracts/spell/BasicSpell.sol:92"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "_symbol",
             "offset": 0,
             "slot": "105",
+<<<<<<< develop
             "type": "t_string_storage",
             "contract": "ERC20Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:44"
@@ -5940,14 +6428,34 @@
             "type": "t_array(t_uint256)45_storage",
             "contract": "ERC20Upgradeable",
             "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:394"
+=======
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "BasicSpell",
+            "src": "contracts/spell/BasicSpell.sol:95"
+          },
+          {
+            "label": "SWAP_POOL",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_contract(IUniswapV3Pool)3150",
+            "contract": "IchiSpell",
+            "src": "contracts/spell/IchiSpell.sol:53"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "_status",
             "offset": 0,
+<<<<<<< develop
             "slot": "151",
             "type": "t_uint256",
             "contract": "ReentrancyGuardUpgradeable",
             "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+=======
+            "slot": "107",
+            "type": "t_contract(IWIchiFarm)4216",
+            "contract": "IchiSpell",
+            "src": "contracts/spell/IchiSpell.sol:55"
+>>>>>>> feat: add curve spell
           },
           {
             "label": "__gap",
@@ -5987,9 +6495,15 @@
             "label": "address",
             "numberOfBytes": "20"
           },
+<<<<<<< develop
           "t_array(t_uint256)45_storage": {
             "label": "uint256[45]",
             "numberOfBytes": "1440"
+=======
+          "t_array(t_struct(Strategy)4758_storage)dyn_storage": {
+            "label": "struct BasicSpell.Strategy[]",
+            "numberOfBytes": "32"
+>>>>>>> feat: add curve spell
           },
           "t_array(t_uint256)49_storage": {
             "label": "uint256[49]",
@@ -6018,6 +6532,23 @@
           "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
             "label": "mapping(address => mapping(address => uint256))",
             "numberOfBytes": "32"
+=======
+          "t_contract(IBank)3897": {
+            "label": "contract IBank",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IUniswapV3Pool)3150": {
+            "label": "contract IUniswapV3Pool",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IWERC20)4130": {
+            "label": "contract IWERC20",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IWIchiFarm)4216": {
+            "label": "contract IWIchiFarm",
+            "numberOfBytes": "20"
+>>>>>>> feat: add curve spell
           },
           "t_mapping(t_address,t_uint256)": {
             "label": "mapping(address => uint256)",
@@ -6027,6 +6558,27 @@
             "label": "string",
             "numberOfBytes": "32"
           },
+<<<<<<< develop
+=======
+          "t_struct(Strategy)4758_storage": {
+            "label": "struct BasicSpell.Strategy",
+            "members": [
+              {
+                "label": "vault",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "maxPositionSize",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+>>>>>>> feat: add curve spell
           "t_uint256": {
             "label": "uint256",
             "numberOfBytes": "32"

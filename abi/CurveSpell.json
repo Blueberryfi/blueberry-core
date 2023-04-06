@@ -1,5 +1,81 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "colToken",
+        "type": "address"
+      }
+    ],
+    "name": "COLLATERAL_NOT_EXIST",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EXCEED_MAX_LTV",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
+    "name": "EXCEED_MAX_POS_SIZE",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "colToken",
+        "type": "address"
+      }
+    ],
+    "name": "INCORRECT_COLTOKEN",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      }
+    ],
+    "name": "INCORRECT_PID",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
+    "name": "INCORRECT_STRATEGY_ID",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "uToken",
+        "type": "address"
+      }
+    ],
+    "name": "INCORRECT_UNDERLYING",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "INPUT_ARRAY_MISMATCH",
     "type": "error"
@@ -13,6 +89,17 @@
       }
     ],
     "name": "NOT_FROM_WETH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "crvLp",
+        "type": "address"
+      }
+    ],
+    "name": "NO_CORRESPONDING_POOL",
     "type": "error"
   },
   {
@@ -202,19 +289,73 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "lp",
-        "type": "address"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "strategyId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountRepay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountPosRemove",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountShareWithdraw",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sellSlippage",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint160",
+            "name": "sqrtRatioLimit",
+            "type": "uint160"
+          }
+        ],
+        "internalType": "struct BasicSpell.ClosePosParam",
+        "name": "param",
+        "type": "tuple"
       }
     ],
-    "name": "getPool",
-    "outputs": [
+    "name": "closePositionFarm",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "token",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       }
     ],
+    "name": "increasePosition",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -349,6 +490,61 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "strategyId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "farmingPoolId",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BasicSpell.OpenPosParam",
+        "name": "param",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minLPMint",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gid",
+        "type": "uint256"
+      }
+    ],
+    "name": "openPositionFarm",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -378,6 +574,29 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "collToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collShareAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "reducePosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
