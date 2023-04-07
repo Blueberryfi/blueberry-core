@@ -142,6 +142,19 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
     }
 
     /**
+     * @dev Return the USD value of the token and amount.
+     * @param token ERC20 token address
+     * @param amount ERC20 token amount
+     */
+    function _getTokenValue(
+        address token,
+        uint256 amount
+    ) internal view returns (uint256 value) {
+        uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
+        value = (_getPrice(token) * amount) / 10 ** decimals;
+    }
+
+    /**
      * @notice Return the USD value of given position
      * @param token ERC1155 Wrapper token address to get collateral value of
      * @param id ERC1155 token id to get collateral value of
@@ -155,7 +168,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
         address uToken = IERC20Wrapper(token).getUnderlyingToken(id);
         // Underlying token is LP token, and it always has 18 decimals
         // so skipped getting LP decimals
-        positionValue = (_getPrice(uToken) * amount) / 1e18;
+        positionValue = _getTokenValue(uToken, amount);
     }
 
     /**
@@ -166,8 +179,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
     function getTokenValue(
         address token,
         uint256 amount
-    ) external view override returns (uint256 debtValue) {
-        uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
-        debtValue = (_getPrice(token) * amount) / 10 ** decimals;
+    ) external view override returns (uint256) {
+        return _getTokenValue(token, amount);
     }
 }
