@@ -14,10 +14,10 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
+import "./UsingBaseOracle.sol";
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "../utils/BlueBerryConst.sol" as Constants;
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
-import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
@@ -109,8 +109,11 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
         uint256 price1,
         uint256 maxPriceDeviation
     ) internal pure returns (bool) {
-        uint256 delta = price0 > price1 ? (price0 - price1) : (price1 - price0);
-        return ((delta * Constants.DENOMINATOR) / price0) <= maxPriceDeviation;
+        uint256 maxPrice = price0 > price1 ? price0 : price1;
+        uint256 minPrice = price0 > price1 ? price1 : price0;
+        return
+            (((maxPrice - minPrice) * Constants.DENOMINATOR) / maxPrice) <=
+            maxPriceDeviation;
     }
 
     /**

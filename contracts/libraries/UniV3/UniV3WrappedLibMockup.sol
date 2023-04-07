@@ -11,7 +11,10 @@ library UniV3WrappedLibMockup {
         1461446703485210103287273052203988822378723970342;
 
     // OracleLibrary
-    function consult(address pool, uint32 secondsAgo)
+    function consult(
+        address pool,
+        uint32 secondsAgo
+    )
         external
         view
         returns (int24 arithmeticMeanTick, uint128 harmonicMeanLiquidity)
@@ -24,11 +27,9 @@ library UniV3WrappedLibMockup {
         address quoteToken
     ) external pure returns (uint256 quoteAmount) {}
 
-    function getSqrtRatioAtTick(int24 tick)
-        external
-        pure
-        returns (uint160 sqrtPriceX96)
-    {}
+    function getSqrtRatioAtTick(
+        int24 tick
+    ) external pure returns (uint160 sqrtPriceX96) {}
 
     function getAmountsForLiquidity(
         uint160 sqrtRatioX96,
