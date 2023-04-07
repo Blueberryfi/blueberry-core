@@ -26,8 +26,6 @@ import "../interfaces/IBaseOracle.sol";
  *      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
  */
 contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
-    using BBMath for uint256;
-
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /// @notice Return the USD based price of the given input, multiplied by 10**18.
@@ -46,7 +44,9 @@ contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
         uint256 px1 = base.getPrice(token1);
         uint256 t0Decimal = IERC20Metadata(token0).decimals();
         uint256 t1Decimal = IERC20Metadata(token1).decimals();
-        uint256 sqrtK = BBMath.sqrt(r0 * r1 * 10**(36 - t0Decimal - t1Decimal));
+        uint256 sqrtK = BBMath.sqrt(
+            r0 * r1 * 10 ** (36 - t0Decimal - t1Decimal)
+        );
 
         return (2 * sqrtK * BBMath.sqrt(px0 * px1)) / totalSupply;
     }
