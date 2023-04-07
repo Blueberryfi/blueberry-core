@@ -29,8 +29,6 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     mapping(address => address) public routes;
     /// @dev Mapping from token to liquidation thresholds, multiplied by 1e4.
     mapping(address => uint256) public liqThresholds; // 85% for volatile tokens, 90% for stablecoins
-    /// @dev Mapping from wrapper address to whitelist status
-    mapping(address => bool) public whitelistedERC1155;
 
     function initialize() external initializer {
         __Ownable_init();
@@ -86,21 +84,6 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
         }
     }
 
-    /// @notice Whitelist ERC1155(wrapped tokens)
-    /// @param tokens List of tokens to set whitelist status
-    /// @param ok Whitelist status
-    function setWhitelistERC1155(
-        address[] memory tokens,
-        bool ok
-    ) external onlyOwner {
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            address token = tokens[idx];
-            if (token == address(0)) revert Errors.ZERO_ADDRESS();
-            whitelistedERC1155[token] = ok;
-            emit SetWhitelist(token, ok);
-        }
-    }
-
     /// @notice Return USD price of given token, multiplied by 10**18.
     /// @param token The ERC-20 token to get the price of.
     function _getPrice(
@@ -147,7 +130,6 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
         address token,
         uint256 tokenId
     ) external view override returns (bool) {
-        if (!whitelistedERC1155[token]) return false;
         address uToken = IERC20Wrapper(token).getUnderlyingToken(tokenId);
         return _isTokenSupported(uToken);
     }

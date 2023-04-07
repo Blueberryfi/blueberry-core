@@ -5,8 +5,6 @@ pragma solidity 0.8.16;
 import "./IBaseOracle.sol";
 
 interface ICoreOracle is IBaseOracle {
-    /// The owner sets token whitelist for an ERC1155 token.
-    event SetWhitelist(address indexed token, bool ok);
     /// The owner sets oracle routes
     event SetRoute(address indexed token, address route);
     /// The owner sets liquidation threshold for a token.

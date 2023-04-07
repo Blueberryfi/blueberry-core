@@ -584,6 +584,44 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      }
+    ],
+    "name": "SetWhitelistERC1155",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      }
+    ],
+    "name": "SetWhitelistToken",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "positionId",
@@ -1656,6 +1694,24 @@
     "inputs": [
       {
         "internalType": "address[]",
+        "name": "tokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      }
+    ],
+    "name": "whitelistERC1155",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
         "name": "spells",
         "type": "address[]"
       },
@@ -1735,6 +1791,25 @@
       }
     ],
     "name": "whitelistedTokens",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "whitelistedWrappedTokens",
     "outputs": [
       {
         "internalType": "bool",

@@ -64,6 +64,7 @@ contract BlueBerryBank is
 
     bool public allowContractCalls; // The boolean status whether to allow call from contract (false = onlyEOA)
     mapping(address => bool) public whitelistedTokens; // Mapping from token to whitelist status
+    mapping(address => bool) public whitelistedWrappedTokens; // Mapping from token to whitelist status
     mapping(address => bool) public whitelistedSpells; // Mapping from spell to whitelist status
     mapping(address => bool) public whitelistedContracts; // Mapping from user to whitelist status
 
@@ -80,6 +81,13 @@ contract BlueBerryBank is
     /// @dev Ensure that the token is already whitelisted
     modifier onlyWhitelistedToken(address token) {
         if (!whitelistedTokens[token])
+            revert Errors.TOKEN_NOT_WHITELISTED(token);
+        _;
+    }
+
+    /// @dev Ensure that the wrapped ERC1155 is already whitelisted
+    modifier onlyWhitelistedERC1155(address token) {
+        if (!whitelistedWrappedTokens[token])
             revert Errors.TOKEN_NOT_WHITELISTED(token);
         _;
     }
@@ -185,7 +193,7 @@ contract BlueBerryBank is
         }
     }
 
-    /// @dev Set whitelist token status
+    /// @notice Set whitelist token status
     /// @param tokens list of tokens to change status
     /// @param statuses list of statuses to change to
     function whitelistTokens(
@@ -199,6 +207,22 @@ contract BlueBerryBank is
             if (statuses[idx] && !oracle.isTokenSupported(tokens[idx]))
                 revert Errors.ORACLE_NOT_SUPPORT(tokens[idx]);
             whitelistedTokens[tokens[idx]] = statuses[idx];
+            emit SetWhitelistToken(tokens[idx], statuses[idx]);
+        }
+    }
+
+    /// @notice Whitelist ERC1155(wrapped tokens)
+    /// @param tokens List of tokens to set whitelist status
+    /// @param ok Whitelist status
+    function whitelistERC1155(
+        address[] memory tokens,
+        bool ok
+    ) external onlyOwner {
+        for (uint256 idx = 0; idx < tokens.length; idx++) {
+            address token = tokens[idx];
+            if (token == address(0)) revert Errors.ZERO_ADDRESS();
+            whitelistedWrappedTokens[token] = ok;
+            emit SetWhitelistERC1155(token, ok);
         }
     }
 
@@ -727,7 +751,7 @@ contract BlueBerryBank is
         address collToken,
         uint256 collId,
         uint256 amountCall
-    ) external override inExec {
+    ) external override inExec onlyWhitelistedERC1155(collToken) {
         Position storage pos = positions[POSITION_ID];
         if (pos.collToken != collToken || pos.collId != collId) {
             if (!oracle.isWrappedTokenSupported(collToken, collId))

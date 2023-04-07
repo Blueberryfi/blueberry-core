@@ -38,25 +38,6 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "ok",
-        "type": "bool"
-      }
-    ],
-    "name": "SetWhitelist",
-    "type": "event"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
