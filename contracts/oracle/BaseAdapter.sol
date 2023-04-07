@@ -20,10 +20,10 @@ import "../utils/BlueBerryConst.sol" as Constants;
  * @notice Base Adapter Contract which interacts with external oracle services
  */
 abstract contract BaseAdapter is Ownable {
-    /// @dev Mapping from token address to max delay time
-    mapping(address => uint256) public maxDelayTimes;
+    /// @dev Mapping from token address to time gaps
+    mapping(address => uint256) public timeGaps;
 
-    event SetMaxDelayTime(address token, uint256 maxDelayTime);
+    event SetTimeGap(address token, uint256 maxDelayTime);
 
     /// @notice Set max delay time for each token
     /// @param tokens List of remapped tokens to set max delay
@@ -35,13 +35,13 @@ abstract contract BaseAdapter is Ownable {
         if (tokens.length != maxDelays.length)
             revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (maxDelays[idx] > Constants.MAX_TWAP_PERIOD)
+            if (maxDelays[idx] > Constants.MAX_TIME_GAP)
                 revert Errors.TOO_LONG_DELAY(maxDelays[idx]);
-            if (maxDelays[idx] < Constants.MIN_TWAP_PERIOD)
+            if (maxDelays[idx] < Constants.MIN_TIME_GAP)
                 revert Errors.TOO_LOW_MEAN(maxDelays[idx]);
             if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
-            maxDelayTimes[tokens[idx]] = maxDelays[idx];
-            emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
+            timeGaps[tokens[idx]] = maxDelays[idx];
+            emit SetTimeGap(tokens[idx], maxDelays[idx]);
         }
     }
 }

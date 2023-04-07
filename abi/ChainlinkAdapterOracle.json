@@ -100,6 +100,19 @@
       {
         "indexed": false,
         "internalType": "address",
+        "name": "registry",
+        "type": "address"
+      }
+    ],
+    "name": "SetRegistry",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
         "name": "token",
         "type": "address"
       },
@@ -110,20 +123,7 @@
         "type": "uint256"
       }
     ],
-    "name": "SetMaxDelayTime",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "registry",
-        "type": "address"
-      }
-    ],
-    "name": "SetRegistry",
+    "name": "SetTimeGap",
     "type": "event"
   },
   {
@@ -167,25 +167,6 @@
       }
     ],
     "name": "getPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "maxDelayTimes",
     "outputs": [
       {
         "internalType": "uint256",
@@ -295,6 +276,25 @@
     "name": "setTokenRemappings",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "timeGaps",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

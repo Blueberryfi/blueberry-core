@@ -82,7 +82,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         address token = remappedTokens[token_];
         if (token == address(0)) token = token_;
 
-        uint256 maxDelayTime = maxDelayTimes[token];
+        uint256 maxDelayTime = timeGaps[token];
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token_);
 
         // Get token-USD price

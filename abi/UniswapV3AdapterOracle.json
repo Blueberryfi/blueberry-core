@@ -94,12 +94,12 @@
       },
       {
         "indexed": false,
-        "internalType": "uint256",
-        "name": "maxDelayTime",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "pool",
+        "type": "address"
       }
     ],
-    "name": "SetMaxDelayTime",
+    "name": "SetPoolStable",
     "type": "event"
   },
   {
@@ -113,12 +113,12 @@
       },
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "pool",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "maxDelayTime",
+        "type": "uint256"
       }
     ],
-    "name": "SetPoolStable",
+    "name": "SetTimeGap",
     "type": "event"
   },
   {
@@ -143,25 +143,6 @@
       }
     ],
     "name": "getPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "maxDelayTimes",
     "outputs": [
       {
         "internalType": "uint256",
@@ -242,6 +223,25 @@
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "timeGaps",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",

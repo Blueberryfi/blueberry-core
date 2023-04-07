@@ -38,14 +38,18 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     /// @notice Set stablecoin pools for multiple tokens
     /// @param tokens list of tokens to set stablecoin pool references
     /// @param pools list of reference pool addresses
-    function setStablePools(address[] calldata tokens, address[] calldata pools)
-        external
-        onlyOwner
-    {
+    function setStablePools(
+        address[] calldata tokens,
+        address[] calldata pools
+    ) external onlyOwner {
         if (tokens.length != pools.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
             if (tokens[idx] == address(0) || pools[idx] == address(0))
                 revert Errors.ZERO_ADDRESS();
+            if (
+                tokens[idx] != IUniswapV3Pool(pools[idx]).token0() &&
+                tokens[idx] != IUniswapV3Pool(pools[idx]).token1()
+            ) revert Errors.NO_STABLEPOOL(pools[idx]);
             stablePools[tokens[idx]] = pools[idx];
             emit SetPoolStable(tokens[idx], pools[idx]);
         }
@@ -55,8 +59,8 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     /// @param token The vault token to get the price of.
     /// @return price USD price of token in 18 decimals.
     function getPrice(address token) external view override returns (uint256) {
-        // Maximum cap of maxDelayTime is 2 days(172,800), safe to convert
-        uint32 secondsAgo = maxDelayTimes[token].toUint32();
+        // Maximum cap of timeGap is 2 days(172,800), safe to convert
+        uint32 secondsAgo = timeGaps[token].toUint32();
         if (secondsAgo == 0) revert Errors.NO_MEAN(token);
 
         address stablePool = stablePools[token];
@@ -76,13 +80,13 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         uint256 quoteTokenAmountForStable = UniV3WrappedLibMockup
             .getQuoteAtTick(
                 arithmeticMeanTick,
-                uint256(10**tokenDecimals).toUint128(),
+                uint256(10 ** tokenDecimals).toUint128(),
                 token,
                 stablecoin
             );
 
         return
             (quoteTokenAmountForStable * base.getPrice(stablecoin)) /
-            10**stableDecimals;
+            10 ** stableDecimals;
     }
 }
