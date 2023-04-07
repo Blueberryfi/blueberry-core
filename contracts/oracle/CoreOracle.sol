@@ -108,6 +108,26 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
         return _getPrice(token);
     }
 
+    /// @notice Return whether the oracle supports given ERC20 token
+    /// @param token The ERC20 token to check the support
+    function _isTokenSupported(address token) internal view returns (bool) {
+        address route = routes[token];
+        if (route == address(0)) return false;
+        try IBaseOracle(route).getPrice(token) returns (uint256 price) {
+            return price != 0;
+        } catch {
+            return false;
+        }
+    }
+
+    /// @notice Return whether the oracle supports given ERC20 token
+    /// @param token The ERC20 token to check the support
+    function isTokenSupported(
+        address token
+    ) external view override returns (bool) {
+        return _isTokenSupported(token);
+    }
+
     /// @notice Return whether the oracle supports underlying token of given wrapper.
     /// @dev Only validate wrappers of Blueberry protocol such as WERC20
     /// @param token ERC1155 token address to check the support
@@ -118,21 +138,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
     ) external view override returns (bool) {
         if (!whitelistedERC1155[token]) return false;
         address uToken = IERC20Wrapper(token).getUnderlyingToken(tokenId);
-        return routes[uToken] != address(0);
-    }
-
-    /// @notice Return whether the oracle given ERC20 token
-    /// @param token The ERC20 token to check the support
-    function isTokenSupported(
-        address token
-    ) external view override returns (bool) {
-        address route = routes[token];
-        if (route == address(0)) return false;
-        try IBaseOracle(route).getPrice(token) returns (uint256 price) {
-            return price != 0;
-        } catch {
-            return false;
-        }
+        return _isTokenSupported(uToken);
     }
 
     /**
