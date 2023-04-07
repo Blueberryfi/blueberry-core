@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.16;
 
-interface ICurveRegistry {
-    function get_n_coins(address lp) external view returns (uint256, uint256);
+interface ICurveCryptoSwapRegistry {
+    function get_n_coins(address lp) external view returns (uint256);
 
     function pool_list(uint256 id) external view returns (address);
 
@@ -18,6 +18,4 @@ interface ICurveRegistry {
     function get_gauges(
         address pool
     ) external view returns (address[10] memory, uint128[10] memory);
-
-    function get_lp_token(address pool) external view returns (address);
 }

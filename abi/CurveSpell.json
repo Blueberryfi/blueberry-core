@@ -16,6 +16,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "lp",
+        "type": "address"
+      }
+    ],
+    "name": "CRV_LP_ALREADY_REGISTERED",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "EXCEED_MAX_LTV",
     "type": "error"
@@ -95,11 +106,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "crvLp",
+        "name": "lp",
         "type": "address"
       }
     ],
-    "name": "NO_CORRESPONDING_POOL",
+    "name": "NO_LP_REGISTERED",
     "type": "error"
   },
   {

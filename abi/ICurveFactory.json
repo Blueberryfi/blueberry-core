@@ -46,36 +46,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "pool",
-        "type": "address"
-      }
-    ],
-    "name": "get_lp_token",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "lp",
         "type": "address"
       }
     ],
     "name": "get_n_coins",
     "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
       {
         "internalType": "uint256",
         "name": "",
@@ -108,16 +84,16 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "lp",
+        "name": "pool",
         "type": "address"
       }
     ],
-    "name": "get_virtual_price_from_lp_token",
+    "name": "get_token",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "address",
         "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "stateMutability": "view",

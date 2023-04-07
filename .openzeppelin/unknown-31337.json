@@ -1806,6 +1806,7 @@
       "txHash": "0x744ac93c8085ad8ceaba228d6a906f0c83e67b9cef3697309fde6e93b6865ac5",
       "kind": "transparent"
 <<<<<<< develop
+<<<<<<< develop
     },
     {
       "address": "0x9118EA4a52C6c7873729c8d8702cCd85E573f9E9",
@@ -3903,12 +3904,20 @@
       "address": "0xDf951d2061b12922BFbF22cb17B17f3b39183570",
       "txHash": "0x1ea2c1efc10290338629eb9d2828acd8c8d194792b131cc58b7b99acf560aa63",
 =======
+=======
+    },
+    {
+      "address": "0x3de00f44ce68FC56DB0e0E33aD4015C6e78eCB39",
+      "txHash": "0x8504b61032473af5b941b1cdd48e6a5a74d86e93bfa4c09c13648ecde65d7a93",
+      "kind": "transparent"
+>>>>>>> feat: add curve oracle
     }
   ],
   "impls": {
     "8b6d217cd8e900a40556325a5eadea434b4de1efc5a2230a487d3bd3531043c2": {
       "address": "0x01cf58e264d7578D4C67022c58A24CbC4C4a304E",
       "txHash": "0x1d23375860957346b0c5f8231ecb1e6b9c7dd937cc73b362b3e5a09f463d4f32",
+<<<<<<< develop
 >>>>>>> feat: add curve spell
       "layout": {
         "storage": [

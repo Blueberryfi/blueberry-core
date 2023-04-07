@@ -55,19 +55,21 @@ contract CurveSpell is BasicSpell {
         address vault,
         uint256 maxPosSize
     ) public override onlyOwner {
-        super.addStrategy(vault, maxPosSize);
-
         // Update pool info
-        address pool = registry.get_pool_from_lp_token(vault);
-        if (pool == address(0)) revert Errors.NO_CORRESPONDING_POOL(vault);
+        address pool = poolOf[vault];
+        if (pool != address(0)) revert Errors.CRV_LP_ALREADY_REGISTERED(vault);
+
+        pool = registry.get_pool_from_lp_token(vault);
+        if (pool == address(0)) revert Errors.NO_LP_REGISTERED(vault);
 
         poolOf[vault] = pool;
         (uint256 n, ) = registry.get_n_coins(pool);
         address[8] memory tokens = registry.get_coins(pool);
-        ulTokens[vault] = new address[](n);
         for (uint256 i = 0; i < n; i++) {
-            ulTokens[vault][i] = tokens[i];
+            ulTokens[vault].push(tokens[i]);
         }
+
+        super.addStrategy(vault, maxPosSize);
     }
 
     /**

@@ -21,11 +21,11 @@ interface ICurvePool {
 
     function remove_liquidity_imbalance(uint256[4] calldata, uint256) external;
 
-    function remove_liquidity_one_coin(
-        uint256,
-        int128,
-        uint256
-    ) external;
+    function remove_liquidity_one_coin(uint256, int128, uint256) external;
 
     function get_virtual_price() external view returns (uint256);
+
+    function lp_token() external view returns (address); // v1
+
+    function token() external view returns (address); // v2
 }
