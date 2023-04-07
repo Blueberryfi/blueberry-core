@@ -80,9 +80,14 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
     function twapPrice0InToken1(
         IICHIVault vault
     ) public view returns (uint256) {
+        uint32 twapPeriod = vault.twapPeriod();
+        if (twapPeriod > Constants.MAX_TWAP_PERIOD)
+            revert Errors.TOO_LONG_DELAY(twapPeriod);
+        if (twapPeriod < Constants.MIN_TWAP_PERIOD)
+            revert Errors.TOO_LOW_MEAN(twapPeriod);
         (int256 twapTick, ) = UniV3WrappedLibMockup.consult(
             vault.pool(),
-            vault.twapPeriod()
+            twapPeriod
         );
         return
             UniV3WrappedLibMockup.getQuoteAtTick(
