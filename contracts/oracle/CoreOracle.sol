@@ -12,6 +12,7 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
 import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
@@ -23,7 +24,7 @@ import "../interfaces/IERC20Wrapper.sol";
  * @title Core Oracle
  * @notice Oracle contract which provides price feeds to Bank contract
  */
-contract CoreOracle is ICoreOracle, OwnableUpgradeable {
+contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /// @dev Mapping from token to oracle routes. => Aggregator | LP Oracle | AdapterOracle ...
     mapping(address => address) public routes;
     /// @dev Mapping from token to liquidation thresholds, multiplied by 1e4.
@@ -33,6 +34,14 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
 
     function initialize() external initializer {
         __Ownable_init();
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _pause();
     }
 
     /// @notice Set oracle source routes for tokens
@@ -94,7 +103,9 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable {
 
     /// @notice Return USD price of given token, multiplied by 10**18.
     /// @param token The ERC-20 token to get the price of.
-    function _getPrice(address token) internal view returns (uint256) {
+    function _getPrice(
+        address token
+    ) internal view whenNotPaused returns (uint256) {
         address route = routes[token];
         if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
         uint256 px = IBaseOracle(route).getPrice(token);
