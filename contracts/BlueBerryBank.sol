@@ -235,13 +235,18 @@ contract BlueBerryBank is
     function addBank(
         address token,
         address softVault,
-        address hardVault
+        address hardVault,
+        uint256 liqThreshold
     ) external onlyOwner onlyWhitelistedToken(token) {
         if (
             token == address(0) ||
             softVault == address(0) ||
             hardVault == address(0)
         ) revert Errors.ZERO_ADDRESS();
+        if (liqThreshold > Constants.DENOMINATOR)
+            revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
+        if (liqThreshold < Constants.MIN_LIQ_THRESHOLD)
+            revert Errors.LIQ_THRESHOLD_TOO_LOW(liqThreshold);
 
         Bank storage bank = banks[token];
         address bToken = address(ISoftVault(softVault).bToken());
@@ -256,6 +261,7 @@ contract BlueBerryBank is
         bank.bToken = bToken;
         bank.softVault = softVault;
         bank.hardVault = hardVault;
+        bank.liqThreshold = liqThreshold;
 
         IHardVault(hardVault).setApprovalForAll(hardVault, true);
         allBanks.push(token);
@@ -457,12 +463,10 @@ contract BlueBerryBank is
 
     /// @dev Return the possibility of liquidation
     /// @param positionId id of position to check the liquidation of
-    function isLiquidatable(
-        uint256 positionId
-    ) public view returns (bool liquidatable) {
-        Position memory pos = positions[positionId];
-        uint256 risk = getPositionRisk(positionId);
-        liquidatable = risk >= oracle.liqThresholds(pos.underlyingToken);
+    function isLiquidatable(uint256 positionId) public view returns (bool) {
+        return
+            getPositionRisk(positionId) >=
+            banks[positions[positionId].underlyingToken].liqThreshold;
     }
 
     /// @dev Liquidate a position. Pay debt for its owner and take the collateral.

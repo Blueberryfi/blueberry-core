@@ -134,6 +134,28 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "threshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "LIQ_THRESHOLD_TOO_HIGH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "threshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "LIQ_THRESHOLD_TOO_LOW",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "LOCKED",
     "type": "error"
@@ -793,6 +815,11 @@
         "internalType": "address",
         "name": "hardVault",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "liqThreshold",
+        "type": "uint256"
       }
     ],
     "name": "addBank",
@@ -902,6 +929,11 @@
       {
         "internalType": "uint256",
         "name": "totalShare",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "liqThreshold",
         "type": "uint256"
       }
     ],
@@ -1302,7 +1334,7 @@
     "outputs": [
       {
         "internalType": "bool",
-        "name": "liquidatable",
+        "name": "",
         "type": "bool"
       }
     ],

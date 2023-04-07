@@ -7,8 +7,6 @@ import "./IBaseOracle.sol";
 interface ICoreOracle is IBaseOracle {
     /// The owner sets oracle routes
     event SetRoute(address indexed token, address route);
-    /// The owner sets liquidation threshold for a token.
-    event SetLiqThreshold(address indexed token, uint256 liqThreshold);
 
     /// @notice Return whether the oracle given ERC20 token
     /// @param token The ERC20 token to check the support
@@ -44,6 +42,4 @@ interface ICoreOracle is IBaseOracle {
         address token,
         uint256 amount
     ) external view returns (uint256);
-
-    function liqThresholds(address token) external view returns (uint256);
 }

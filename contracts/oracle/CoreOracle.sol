@@ -27,8 +27,6 @@ import "../interfaces/IERC20Wrapper.sol";
 contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /// @dev Mapping from token to oracle routes. => Aggregator | LP Oracle | AdapterOracle ...
     mapping(address => address) public routes;
-    /// @dev Mapping from token to liquidation thresholds, multiplied by 1e4.
-    mapping(address => uint256) public liqThresholds; // 85% for volatile tokens, 90% for stablecoins
 
     function initialize() external initializer {
         __Ownable_init();
@@ -59,28 +57,6 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
 
             routes[token] = route;
             emit SetRoute(token, route);
-        }
-    }
-
-    /// @notice Set token liquidation thresholds
-    /// @param tokens List of tokens to set liq thresholds
-    /// @param thresholds List of oracle token factors
-    function setLiqThresholds(
-        address[] memory tokens,
-        uint256[] memory thresholds
-    ) external onlyOwner {
-        if (tokens.length != thresholds.length)
-            revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            uint256 liqThreshold = thresholds[idx];
-            address token = tokens[idx];
-            if (token == address(0)) revert Errors.ZERO_ADDRESS();
-            if (liqThreshold > Constants.DENOMINATOR)
-                revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
-            if (liqThreshold < Constants.MIN_LIQ_THRESHOLD)
-                revert Errors.LIQ_THRESHOLD_TOO_LOW(liqThreshold);
-            liqThresholds[token] = liqThreshold;
-            emit SetLiqThreshold(token, liqThreshold);
         }
     }
 

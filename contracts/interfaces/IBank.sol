@@ -14,6 +14,7 @@ interface IBank {
         address softVault;
         address bToken; // The bToken to draw liquidity from.
         uint256 totalShare; // The total debt share count across all open positions.
+        uint256 liqThreshold; // 85% for volatile tokens, 90% for stablecoins, base 1e4
     }
 
     struct Position {
