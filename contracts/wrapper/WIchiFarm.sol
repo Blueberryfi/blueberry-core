@@ -16,6 +16,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20Metadat
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/EnsureApprove.sol";
 import "../libraries/BBMath.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/IERC20Wrapper.sol";
@@ -33,6 +34,7 @@ import "../interfaces/ichi/IIchiFarm.sol";
 contract WIchiFarm is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
+    EnsureApprove,
     IERC20Wrapper,
     IWIchiFarm
 {
@@ -175,18 +177,5 @@ contract WIchiFarm is
             ICHI.safeTransfer(msg.sender, rewards[0]);
         }
         return pid;
-    }
-
-    /// @dev Ensure token approve
-    /// @param token IERC20Upgradeable token address
-    /// @param spender Token spender address
-    /// @param amount Token amount to approve
-    function _ensureApprove(
-        address token,
-        address spender,
-        uint256 amount
-    ) internal {
-        if (IERC20Upgradeable(token).allowance(address(this), spender) < amount)
-            IERC20Upgradeable(token).approve(spender, amount);
     }
 }

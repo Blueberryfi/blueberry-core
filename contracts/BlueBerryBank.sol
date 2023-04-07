@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 /*
-██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
-██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
-██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
-██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
-██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
-╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+    ██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+    ██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+    ██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+    ██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+    ██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+    ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
 pragma solidity 0.8.16;
@@ -17,6 +17,7 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
+import "./utils/EnsureApprove.sol";
 import "./utils/ERC1155NaiveReceiver.sol";
 import "./interfaces/IBank.sol";
 import "./interfaces/ICoreOracle.sol";
@@ -30,7 +31,12 @@ import "./libraries/BBMath.sol";
  * @author gmspacex
  * @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
  */
-contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
+contract BlueBerryBank is
+    OwnableUpgradeable,
+    ERC1155NaiveReceiver,
+    IBank,
+    EnsureApprove
+{
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -864,15 +870,5 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @return bool True for Soft Vault, False for Hard Vault
     function _isSoftVault(address token) internal view returns (bool) {
         return address(ISoftVault(banks[token].softVault).uToken()) == token;
-    }
-
-    /// @dev Reset approval to zero and set again
-    function _ensureApprove(
-        address token,
-        address spender,
-        uint256 amount
-    ) internal {
-        IERC20Upgradeable(token).approve(spender, 0);
-        IERC20Upgradeable(token).approve(spender, amount);
     }
 }

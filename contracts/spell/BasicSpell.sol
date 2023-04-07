@@ -15,12 +15,17 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/EnsureApprove.sol";
 import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
 import "../interfaces/IWETH.sol";
 
-abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
+abstract contract BasicSpell is
+    ERC1155NaiveReceiver,
+    OwnableUpgradeable,
+    EnsureApprove
+{
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     struct Strategy {
@@ -275,16 +280,6 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
             amount = bank.takeCollateral(amount);
             werc20.burn(token, amount);
         }
-    }
-
-    /// @dev Reset approval to zero and set again
-    function _ensureApprove(
-        address token,
-        address spender,
-        uint256 amount
-    ) internal {
-        IERC20Upgradeable(token).approve(spender, 0);
-        IERC20Upgradeable(token).approve(spender, amount);
     }
 
     /// @dev Fallback function. Can only receive ETH from WETH contract.
