@@ -52,10 +52,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         emit SetRegistry(address(registry_));
     }
 
-    /// @dev Set token remapping
+    /// @notice Set token remapping
     /// @param tokens_ List of tokens to set remapping
     /// @param remappedTokens_ List of tokens to set remapping to
-    /// @notice Token decimals of the original and remapped tokens should be the same
     function setTokenRemappings(
         address[] calldata tokens_,
         address[] calldata remappedTokens_

@@ -114,35 +114,6 @@
         "internalType": "address",
         "name": "token",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "getPositionValue",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "positionValue",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
       }
     ],
     "name": "getPrice",
@@ -174,6 +145,35 @@
       {
         "internalType": "uint256",
         "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "getWrappedTokenValue",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "positionValue",
         "type": "uint256"
       }
     ],

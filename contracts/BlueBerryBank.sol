@@ -395,7 +395,7 @@ contract BlueBerryBank is
         } else {
             if (pos.collToken == address(0))
                 revert Errors.BAD_COLLATERAL(positionId);
-            uint256 collValue = oracle.getPositionValue(
+            uint256 collValue = oracle.getWrappedTokenValue(
                 pos.collToken,
                 pos.collId,
                 pos.collateralSize

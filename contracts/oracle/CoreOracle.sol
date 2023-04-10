@@ -124,12 +124,12 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     }
 
     /**
-     * @notice Return the USD value of given position
+     * @notice Return the USD value of wrapped ERC1155 tokens
      * @param token ERC1155 Wrapper token address to get collateral value of
      * @param id ERC1155 token id to get collateral value of
      * @param amount Token amount to get collateral value of, based 1e18
      */
-    function getPositionValue(
+    function getWrappedTokenValue(
         address token,
         uint256 id,
         uint256 amount
