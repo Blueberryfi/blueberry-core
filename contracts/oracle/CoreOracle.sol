@@ -135,8 +135,6 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
         uint256 amount
     ) external view override returns (uint256 positionValue) {
         address uToken = IERC20Wrapper(token).getUnderlyingToken(id);
-        // Underlying token is LP token, and it always has 18 decimals
-        // so skipped getting LP decimals
         positionValue = _getTokenValue(uToken, amount);
     }
 

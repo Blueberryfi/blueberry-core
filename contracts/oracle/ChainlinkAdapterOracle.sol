@@ -93,6 +93,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
             revert Errors.PRICE_OUTDATED(token_);
         if (answer <= 0) revert Errors.PRICE_NEGATIVE(token_);
 
-        return (answer.toUint256() * 1e18) / 10 ** decimals;
+        return
+            (answer.toUint256() * Constants.PRICE_PRECISION) / 10 ** decimals;
     }
 }

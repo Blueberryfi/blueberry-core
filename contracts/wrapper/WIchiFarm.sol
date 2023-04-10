@@ -93,7 +93,6 @@ contract WIchiFarm is
     }
 
     /// @notice Return pending rewards from the farming pool
-    /// @dev Reward tokens can be multiple tokens
     /// @param tokenId Token Id
     /// @param amount amount of share
     function pendingRewards(
@@ -106,9 +105,11 @@ contract WIchiFarm is
         returns (address[] memory tokens, uint256[] memory rewards)
     {
         (uint256 pid, uint256 stIchiPerShare) = decodeId(tokenId);
+        uint256 lpDecimals = IERC20MetadataUpgradeable(ichiFarm.lpToken(pid))
+            .decimals();
         (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
-        uint256 stIchi = (stIchiPerShare * amount).divCeil(1e18);
-        uint256 enIchi = (enIchiPerShare * amount) / 1e18;
+        uint256 stIchi = (stIchiPerShare * amount).divCeil(10 ** lpDecimals);
+        uint256 enIchi = (enIchiPerShare * amount) / (10 ** lpDecimals);
         uint256 ichiRewards = enIchi > stIchi ? enIchi - stIchi : 0;
         // Convert rewards to ICHI(v2) => ICHI v1 decimal: 9, ICHI v2 Decimal: 18
         ichiRewards *= 1e9;
