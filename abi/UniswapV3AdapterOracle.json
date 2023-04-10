@@ -114,7 +114,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "maxDelayTime",
+        "name": "gap",
         "type": "uint256"
       }
     ],
@@ -181,12 +181,12 @@
         "type": "address[]"
       },
       {
-        "internalType": "uint256[]",
-        "name": "maxDelays",
-        "type": "uint256[]"
+        "internalType": "address[]",
+        "name": "pools",
+        "type": "address[]"
       }
     ],
-    "name": "setMaxDelayTimes",
+    "name": "setStablePools",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -199,12 +199,12 @@
         "type": "address[]"
       },
       {
-        "internalType": "address[]",
-        "name": "pools",
-        "type": "address[]"
+        "internalType": "uint256[]",
+        "name": "gaps",
+        "type": "uint256[]"
       }
     ],
-    "name": "setStablePools",
+    "name": "setTimeGap",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

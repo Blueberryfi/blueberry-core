@@ -23,25 +23,24 @@ abstract contract BaseAdapter is Ownable {
     /// @dev Mapping from token address to time gaps
     mapping(address => uint256) public timeGaps;
 
-    event SetTimeGap(address token, uint256 maxDelayTime);
+    event SetTimeGap(address token, uint256 gap);
 
-    /// @notice Set max delay time for each token
-    /// @param tokens List of remapped tokens to set max delay
-    /// @param maxDelays List of max delay times to set to
-    function setMaxDelayTimes(
+    /// @notice Set time gap of price feed for each token
+    /// @param tokens List of remapped tokens to set time gap
+    /// @param gaps List of time gaps to set to
+    function setTimeGap(
         address[] calldata tokens,
-        uint256[] calldata maxDelays
+        uint256[] calldata gaps
     ) external onlyOwner {
-        if (tokens.length != maxDelays.length)
-            revert Errors.INPUT_ARRAY_MISMATCH();
+        if (tokens.length != gaps.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (maxDelays[idx] > Constants.MAX_TIME_GAP)
-                revert Errors.TOO_LONG_DELAY(maxDelays[idx]);
-            if (maxDelays[idx] < Constants.MIN_TIME_GAP)
-                revert Errors.TOO_LOW_MEAN(maxDelays[idx]);
+            if (gaps[idx] > Constants.MAX_TIME_GAP)
+                revert Errors.TOO_LONG_DELAY(gaps[idx]);
+            if (gaps[idx] < Constants.MIN_TIME_GAP)
+                revert Errors.TOO_LOW_MEAN(gaps[idx]);
             if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
-            timeGaps[tokens[idx]] = maxDelays[idx];
-            emit SetTimeGap(tokens[idx], maxDelays[idx]);
+            timeGaps[tokens[idx]] = gaps[idx];
+            emit SetTimeGap(tokens[idx], gaps[idx]);
         }
     }
 }

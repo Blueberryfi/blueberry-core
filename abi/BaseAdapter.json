@@ -62,7 +62,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "maxDelayTime",
+        "name": "gap",
         "type": "uint256"
       }
     ],
@@ -98,11 +98,11 @@
       },
       {
         "internalType": "uint256[]",
-        "name": "maxDelays",
+        "name": "gaps",
         "type": "uint256[]"
       }
     ],
-    "name": "setMaxDelayTimes",
+    "name": "setTimeGap",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

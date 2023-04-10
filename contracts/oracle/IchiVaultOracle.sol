@@ -12,7 +12,6 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import "./UsingBaseOracle.sol";
 import "./BaseOracleExt.sol";

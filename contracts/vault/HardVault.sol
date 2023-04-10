@@ -15,7 +15,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/IHardVault.sol";

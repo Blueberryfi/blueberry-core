@@ -19,7 +19,6 @@ import "../utils/EnsureApprove.sol";
 import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
-import "../interfaces/IWETH.sol";
 
 abstract contract BasicSpell is
     ERC1155NaiveReceiver,
