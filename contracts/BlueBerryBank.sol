@@ -645,7 +645,7 @@ contract BlueBerryBank is
 
         uint256 wAmount;
         if (_isSoftVault(token)) {
-            ISoftVault(bank.softVault).approve(bank.softVault, shareAmount);
+            _ensureApprove(bank.softVault, bank.softVault, shareAmount);
             wAmount = ISoftVault(bank.softVault).withdraw(shareAmount);
         } else {
             wAmount = IHardVault(bank.hardVault).withdraw(token, shareAmount);

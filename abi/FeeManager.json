@@ -42,6 +42,19 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "config",
+    "outputs": [
+      {
+        "internalType": "contract IProtocolConfig",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",

@@ -16,6 +16,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/EnsureApprove.sol";
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/IHardVault.sol";
 
@@ -32,6 +33,7 @@ contract HardVault is
     OwnableUpgradeable,
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
+    EnsureApprove,
     IHardVault
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -125,7 +127,11 @@ contract HardVault is
         _burn(msg.sender, _encodeTokenId(token), shareAmount);
 
         // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
-        uToken.approve(address(config.feeManager()), shareAmount);
+        _ensureApprove(
+            address(uToken),
+            address(config.feeManager()),
+            shareAmount
+        );
         withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
             address(uToken),
             shareAmount
