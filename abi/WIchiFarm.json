@@ -22,6 +22,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "ZERO_ADDRESS",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -334,17 +339,17 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_ichi",
+        "name": "ichi_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_ichiv1",
+        "name": "ichiV1",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_ichiFarm",
+        "name": "ichiFarm_",
         "type": "address"
       }
     ],

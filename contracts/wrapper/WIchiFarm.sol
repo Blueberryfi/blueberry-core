@@ -50,15 +50,20 @@ contract WIchiFarm is
     IIchiFarm public ichiFarm;
 
     function initialize(
-        address _ichi,
-        address _ichiv1,
-        address _ichiFarm
+        address ichi_,
+        address ichiV1,
+        address ichiFarm_
     ) external initializer {
+        if (
+            address(ichi_) == address(0) ||
+            address(ichiV1) == address(0) ||
+            address(ichiFarm_) == address(0)
+        ) revert Errors.ZERO_ADDRESS();
         __ReentrancyGuard_init();
         __ERC1155_init("WIchiFarm");
-        ICHI = IIchiV2(_ichi);
-        ICHIv1 = IERC20Upgradeable(_ichiv1);
-        ichiFarm = IIchiFarm(_ichiFarm);
+        ICHI = IIchiV2(ichi_);
+        ICHIv1 = IERC20Upgradeable(ichiV1);
+        ichiFarm = IIchiFarm(ichiFarm_);
     }
 
     /// @notice Encode pid, ichiPerShare to ERC1155 token id

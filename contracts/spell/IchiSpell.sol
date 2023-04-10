@@ -34,16 +34,17 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     address public ICHI;
 
     function initialize(
-        IBank _bank,
-        address _werc20,
-        address _weth,
-        address _wichiFarm
+        IBank bank_,
+        address werc20_,
+        address weth_,
+        address wichiFarm_
     ) external initializer {
-        __BasicSpell_init(_bank, _werc20, _weth);
+        __BasicSpell_init(bank_, werc20_, weth_);
+        if (address(wichiFarm_) == address(0)) revert Errors.ZERO_ADDRESS();
 
-        wIchiFarm = IWIchiFarm(_wichiFarm);
+        wIchiFarm = IWIchiFarm(wichiFarm_);
         ICHI = address(wIchiFarm.ICHI());
-        IWIchiFarm(_wichiFarm).setApprovalForAll(address(_bank), true);
+        IWIchiFarm(wichiFarm_).setApprovalForAll(address(bank_), true);
     }
 
     /**

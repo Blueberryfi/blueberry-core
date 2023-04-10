@@ -102,17 +102,23 @@ abstract contract BasicSpell is
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
     function __BasicSpell_init(
-        IBank _bank,
-        address _werc20,
-        address _weth
+        IBank bank_,
+        address werc20_,
+        address weth_
     ) internal onlyInitializing {
+        if (
+            address(bank_) == address(0) ||
+            address(werc20_) == address(0) ||
+            address(weth_) == address(0)
+        ) revert Errors.ZERO_ADDRESS();
+
         __Ownable_init();
 
-        bank = _bank;
-        werc20 = IWERC20(_werc20);
-        WETH = _weth;
+        bank = bank_;
+        werc20 = IWERC20(werc20_);
+        WETH = weth_;
 
-        IWERC20(_werc20).setApprovalForAll(address(_bank), true);
+        IWERC20(werc20_).setApprovalForAll(address(bank_), true);
     }
 
     /**
