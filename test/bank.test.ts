@@ -318,21 +318,27 @@ describe('Bank', () => {
       })
       it("should be able to add bank", async () => {
         await expect(
-          bank.connect(alice).addBank(USDC, usdcSoftVault.address, hardVault.address)
+          bank.connect(alice).addBank(USDC, usdcSoftVault.address, hardVault.address, 9000)
         ).to.be.revertedWith("Ownable: caller is not the owner");
 
         await expect(
-          bank.addBank(ethers.constants.AddressZero, usdcSoftVault.address, hardVault.address)
+          bank.addBank(ethers.constants.AddressZero, usdcSoftVault.address, hardVault.address, 9000)
         ).to.be.revertedWith("TOKEN_NOT_WHITELISTED");
         await expect(
-          bank.addBank(USDC, ethers.constants.AddressZero, hardVault.address)
+          bank.addBank(USDC, ethers.constants.AddressZero, hardVault.address, 9000)
         ).to.be.revertedWith("ZERO_ADDRESS");
         await expect(
-          bank.addBank(USDC, usdcSoftVault.address, ethers.constants.AddressZero)
+          bank.addBank(USDC, usdcSoftVault.address, ethers.constants.AddressZero, 9000)
         ).to.be.revertedWith("ZERO_ADDRESS");
+        await expect(
+          bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 7000)
+        ).to.be.revertedWith("LIQ_THRESHOLD_TOO_LOW")
+        await expect(
+          bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 12000)
+        ).to.be.revertedWith("LIQ_THRESHOLD_TOO_HIGH")
 
         await expect(
-          bank.addBank(USDC, usdcSoftVault.address, hardVault.address)
+          bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000)
         ).to.be.revertedWith("BTOKEN_ALREADY_ADDED");
       })
       it("should be able to set bank status", async () => {

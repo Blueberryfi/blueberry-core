@@ -165,16 +165,10 @@ export const setupProtocol = async (): Promise<Protocol> => {
   oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
   await oracle.deployed();
 
-  await oracle.setWhitelistERC1155([werc20.address, ichi_USDC_ICHI_Vault.address], true);
   await oracle.setRoutes(
     [WETH, USDC, ICHI, ichi_USDC_ICHI_Vault.address],
     [mockOracle.address, mockOracle.address, mockOracle.address, ichiOracle.address]
   )
-  await oracle.setLiqThresholds(
-    [WETH, USDC, ICHI],
-    [9000, 8000, 9000]
-  )
-
   // Deploy Bank
   const Config = await ethers.getContractFactory("ProtocolConfig");
   config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address]);
@@ -218,7 +212,6 @@ export const setupProtocol = async (): Promise<Protocol> => {
     [USDC, ICHI],
     [30000, 30000]
   );
-  await oracle.setWhitelistERC1155([wichi.address], true);
 
   // Setup Bank
   await bank.whitelistSpells(
@@ -226,6 +219,9 @@ export const setupProtocol = async (): Promise<Protocol> => {
     [true]
   )
   await bank.whitelistTokens([USDC, ICHI], [true, true]);
+  await bank.whitelistERC1155([
+    werc20.address, wichi.address
+  ], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
   hardVault = <HardVault>await upgrades.deployProxy(HardVault, [
@@ -240,7 +236,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
     "ibUSDC"
   ])
   await usdcSoftVault.deployed();
-  await bank.addBank(USDC, usdcSoftVault.address, hardVault.address);
+  await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
 
   ichiSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
     config.address,
@@ -249,7 +245,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
     "ibICHI"
   ]);
   await ichiSoftVault.deployed();
-  await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address);
+  await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address, 9000);
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits("500", 6));

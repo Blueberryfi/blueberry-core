@@ -18,7 +18,7 @@ uint256 constant PRICE_PRECISION = 1e18;
 
 uint256 constant MAX_PRICE_DEVIATION = 1000; // max price deviation, 10%
 
-uint32 constant MIN_TIME_GAP = 3 hours;
+uint32 constant MIN_TIME_GAP = 1 hours;
 
 uint32 constant MAX_TIME_GAP = 2 days;
 

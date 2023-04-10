@@ -55,7 +55,7 @@ describe('Ichi Vault Oracle', () => {
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
     await chainlinkAdapterOracle.deployed();
-    await chainlinkAdapterOracle.setMaxDelayTimes([USDC], [86400]);
+    await chainlinkAdapterOracle.setTimeGap([USDC], [86400]);
 
     ichiVault = <IICHIVault>await ethers.getContractAt(
       CONTRACT_NAMES.IICHIVault,
@@ -77,9 +77,9 @@ describe('Ichi Vault Oracle', () => {
       [ICHI],
       [ADDRESS.UNI_V3_ICHI_USDC]
     );
-    await uniswapV3Oracle.setMaxDelayTimes(
+    await uniswapV3Oracle.setTimeGap(
       [ICHI],
-      [10] // timeAgo - 10 s
+      [3600] // timeAgo - 10 s
     );
 
     await coreOracle.setRoutes(

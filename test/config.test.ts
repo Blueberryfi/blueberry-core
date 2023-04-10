@@ -7,8 +7,6 @@ import { solidity } from 'ethereum-waffle'
 import { BigNumber, utils } from "ethers";
 import { roughlyNear } from "./assertions/roughlyNear";
 import { near } from "./assertions/near";
-import { evm_increaseTime } from "./helpers";
-import exp from "constants";
 
 chai.use(solidity);
 chai.use(roughlyNear);
