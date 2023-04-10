@@ -77,25 +77,29 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
      */
     function setDepositFee(uint256 depositFee_) external onlyOwner {
         // Cap to 20%
-        if (depositFee_ > 2000) revert Errors.RATIO_TOO_HIGH(depositFee_);
+        if (depositFee_ > Constants.MAX_FEE_RATE)
+            revert Errors.RATIO_TOO_HIGH(depositFee_);
         depositFee = depositFee_;
     }
 
     function setWithdrawFee(uint256 withdrawFee_) external onlyOwner {
         // Cap to 20%
-        if (withdrawFee_ > 2000) revert Errors.RATIO_TOO_HIGH(withdrawFee_);
+        if (withdrawFee_ > Constants.MAX_FEE_RATE)
+            revert Errors.RATIO_TOO_HIGH(withdrawFee_);
         withdrawFee = withdrawFee_;
     }
 
     function setMaxSlippageOfClose(uint256 slippage_) external onlyOwner {
         // Cap to 20%
-        if (maxSlippageOfClose > 2000) revert Errors.RATIO_TOO_HIGH(slippage_);
+        if (maxSlippageOfClose > Constants.MAX_FEE_RATE)
+            revert Errors.RATIO_TOO_HIGH(slippage_);
         maxSlippageOfClose = slippage_;
     }
 
     function setRewardFee(uint256 rewardFee_) external onlyOwner {
         // Cap to 20%
-        if (rewardFee_ > 2000) revert Errors.RATIO_TOO_HIGH(rewardFee_);
+        if (rewardFee_ > Constants.MAX_FEE_RATE)
+            revert Errors.RATIO_TOO_HIGH(rewardFee_);
         rewardFee = rewardFee_;
     }
 
