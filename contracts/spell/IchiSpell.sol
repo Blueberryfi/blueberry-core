@@ -170,14 +170,9 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 collShareAmount
     ) external {
         // Validate strategy id
-        address positionCollToken = bank
-            .getPositionInfo(bank.POSITION_ID())
-            .collToken;
-        uint256 positionCollId = bank
-            .getPositionInfo(bank.POSITION_ID())
-            .collId;
-        address unwrappedCollToken = IERC20Wrapper(positionCollToken)
-            .getUnderlyingToken(positionCollId);
+        IBank.Position memory pos = bank.getCurrentPositionInfo();
+        address unwrappedCollToken = IERC20Wrapper(pos.collToken)
+            .getUnderlyingToken(pos.collId);
         if (strategies[strategyId].vault != unwrappedCollToken)
             revert Errors.INCORRECT_STRATEGY_ID(strategyId);
 

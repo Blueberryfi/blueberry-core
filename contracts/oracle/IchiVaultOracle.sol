@@ -89,13 +89,13 @@ contract IchiVaultOracle is
             revert Errors.TOO_LONG_DELAY(twapPeriod);
         if (twapPeriod < Constants.MIN_TIME_GAP)
             revert Errors.TOO_LOW_MEAN(twapPeriod);
-        (int256 twapTick, ) = UniV3WrappedLibMockup.consult(
+        (int24 twapTick, ) = UniV3WrappedLibMockup.consult(
             vault.pool(),
             twapPeriod
         );
         return
             UniV3WrappedLibMockup.getQuoteAtTick(
-                int24(twapTick), // can assume safe being result from consult()
+                twapTick,
                 uint128(Constants.PRICE_PRECISION), // amountIn
                 vault.token0(), // tokenIn
                 vault.token1() // tokenOut
