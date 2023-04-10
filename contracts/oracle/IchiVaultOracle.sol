@@ -15,8 +15,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import "./UsingBaseOracle.sol";
+import "./BaseOracleExt.sol";
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/BlueBerryConst.sol" as Constants;
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
@@ -29,7 +29,12 @@ import "../interfaces/ichi/IICHIVault.sol";
  *      Base token prices are fetched from Chainlink or Band Protocol.
  *      To prevent flashloan price manipulations, it compares spot & twap prices from Uni V3 Pool.
  */
-contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
+contract IchiVaultOracle is
+    UsingBaseOracle,
+    IBaseOracle,
+    Ownable,
+    BaseOracleExt
+{
     mapping(address => uint256) public maxPriceDeviations;
 
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
@@ -96,24 +101,6 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
                 vault.token0(), // tokenIn
                 vault.token1() // tokenOut
             );
-    }
-
-    /**
-     * @notice Internal function to validate deviations of 2 given prices
-     * @param price0 First price to validate, base 1e18
-     * @param price1 Second price to validate, base 1e18
-     * @param maxPriceDeviation Max price deviation of 2 prices, base 10000
-     */
-    function _isValidPrices(
-        uint256 price0,
-        uint256 price1,
-        uint256 maxPriceDeviation
-    ) internal pure returns (bool) {
-        uint256 maxPrice = price0 > price1 ? price0 : price1;
-        uint256 minPrice = price0 > price1 ? price1 : price0;
-        return
-            (((maxPrice - minPrice) * Constants.DENOMINATOR) / maxPrice) <=
-            maxPriceDeviation;
     }
 
     /**
