@@ -17,6 +17,7 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
+import "./utils/EnsureApprove.sol";
 import "./utils/ERC1155NaiveReceiver.sol";
 import "./interfaces/IBank.sol";
 import "./interfaces/ICoreOracle.sol";
@@ -27,10 +28,15 @@ import "./libraries/BBMath.sol";
 
 /**
  * @title BlueberryBank
- * @author gmspacex
+ * @author BlueberryProtocol
  * @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
  */
-contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
+contract BlueBerryBank is
+    OwnableUpgradeable,
+    ERC1155NaiveReceiver,
+    IBank,
+    EnsureApprove
+{
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -58,6 +64,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
     bool public allowContractCalls; // The boolean status whether to allow call from contract (false = onlyEOA)
     mapping(address => bool) public whitelistedTokens; // Mapping from token to whitelist status
+    mapping(address => bool) public whitelistedWrappedTokens; // Mapping from token to whitelist status
     mapping(address => bool) public whitelistedSpells; // Mapping from spell to whitelist status
     mapping(address => bool) public whitelistedContracts; // Mapping from user to whitelist status
 
@@ -74,6 +81,13 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Ensure that the token is already whitelisted
     modifier onlyWhitelistedToken(address token) {
         if (!whitelistedTokens[token])
+            revert Errors.TOKEN_NOT_WHITELISTED(token);
+        _;
+    }
+
+    /// @dev Ensure that the wrapped ERC1155 is already whitelisted
+    modifier onlyWhitelistedERC1155(address token) {
+        if (!whitelistedWrappedTokens[token])
             revert Errors.TOKEN_NOT_WHITELISTED(token);
         _;
     }
@@ -100,6 +114,11 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     modifier poke(address token) {
         accrue(token);
         _;
+    }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
     /// @dev Initialize the bank smart contract, using msg.sender as the first governor.
@@ -179,7 +198,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         }
     }
 
-    /// @dev Set whitelist token status
+    /// @notice Set whitelist token status
     /// @param tokens list of tokens to change status
     /// @param statuses list of statuses to change to
     function whitelistTokens(
@@ -193,6 +212,22 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             if (statuses[idx] && !oracle.isTokenSupported(tokens[idx]))
                 revert Errors.ORACLE_NOT_SUPPORT(tokens[idx]);
             whitelistedTokens[tokens[idx]] = statuses[idx];
+            emit SetWhitelistToken(tokens[idx], statuses[idx]);
+        }
+    }
+
+    /// @notice Whitelist ERC1155(wrapped tokens)
+    /// @param tokens List of tokens to set whitelist status
+    /// @param ok Whitelist status
+    function whitelistERC1155(
+        address[] memory tokens,
+        bool ok
+    ) external onlyOwner {
+        for (uint256 idx = 0; idx < tokens.length; idx++) {
+            address token = tokens[idx];
+            if (token == address(0)) revert Errors.ZERO_ADDRESS();
+            whitelistedWrappedTokens[token] = ok;
+            emit SetWhitelistERC1155(token, ok);
         }
     }
 
@@ -205,13 +240,18 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     function addBank(
         address token,
         address softVault,
-        address hardVault
+        address hardVault,
+        uint256 liqThreshold
     ) external onlyOwner onlyWhitelistedToken(token) {
         if (
             token == address(0) ||
             softVault == address(0) ||
             hardVault == address(0)
         ) revert Errors.ZERO_ADDRESS();
+        if (liqThreshold > Constants.DENOMINATOR)
+            revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
+        if (liqThreshold < Constants.MIN_LIQ_THRESHOLD)
+            revert Errors.LIQ_THRESHOLD_TOO_LOW(liqThreshold);
 
         Bank storage bank = banks[token];
         address bToken = address(ISoftVault(softVault).bToken());
@@ -226,6 +266,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         bank.bToken = bToken;
         bank.softVault = softVault;
         bank.hardVault = hardVault;
+        bank.liqThreshold = liqThreshold;
 
         IHardVault(hardVault).setApprovalForAll(hardVault, true);
         allBanks.push(token);
@@ -347,7 +388,8 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     }
 
     /**
-     * @notice Return the USD value of total collateral of the given position considering yields generated from the collaterals.
+     * @notice Return the USD value of total collateral of the given position
+     *         considering yields generated from the collaterals.
      * @param positionId The position ID to query for the collateral value.
      */
     function getPositionValue(
@@ -359,7 +401,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         } else {
             if (pos.collToken == address(0))
                 revert Errors.BAD_COLLATERAL(positionId);
-            uint256 collValue = oracle.getPositionValue(
+            uint256 collValue = oracle.getWrappedTokenValue(
                 pos.collToken,
                 pos.collId,
                 pos.collateralSize
@@ -427,12 +469,10 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
     /// @dev Return the possibility of liquidation
     /// @param positionId id of position to check the liquidation of
-    function isLiquidatable(
-        uint256 positionId
-    ) public view returns (bool liquidatable) {
-        Position memory pos = positions[positionId];
-        uint256 risk = getPositionRisk(positionId);
-        liquidatable = risk >= oracle.liqThresholds(pos.underlyingToken);
+    function isLiquidatable(uint256 positionId) public view returns (bool) {
+        return
+            getPositionRisk(positionId) >=
+            banks[positions[positionId].underlyingToken].liqThreshold;
     }
 
     /// @dev Liquidate a position. Pay debt for its owner and take the collateral.
@@ -611,7 +651,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         uint256 wAmount;
         if (_isSoftVault(token)) {
-            ISoftVault(bank.softVault).approve(bank.softVault, shareAmount);
+            _ensureApprove(bank.softVault, bank.softVault, shareAmount);
             wAmount = ISoftVault(bank.softVault).withdraw(shareAmount);
         } else {
             wAmount = IHardVault(bank.hardVault).withdraw(token, shareAmount);
@@ -721,7 +761,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         address collToken,
         uint256 collId,
         uint256 amountCall
-    ) external override inExec {
+    ) external override inExec onlyWhitelistedERC1155(collToken) {
         Position storage pos = positions[POSITION_ID];
         if (pos.collToken != collToken || pos.collId != collId) {
             if (!oracle.isWrappedTokenSupported(collToken, collId))
@@ -864,15 +904,5 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @return bool True for Soft Vault, False for Hard Vault
     function _isSoftVault(address token) internal view returns (bool) {
         return address(ISoftVault(banks[token].softVault).uToken()) == token;
-    }
-
-    /// @dev Reset approval to zero and set again
-    function _ensureApprove(
-        address token,
-        address spender,
-        uint256 amount
-    ) internal {
-        IERC20Upgradeable(token).approve(spender, 0);
-        IERC20Upgradeable(token).approve(spender, amount);
     }
 }

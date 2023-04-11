@@ -20,8 +20,6 @@ chai.use(solidity)
 chai.use(near)
 chai.use(roughlyNear)
 
-const OneDay = 86400;
-
 describe('Core Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
@@ -83,70 +81,17 @@ describe('Core Oracle', () => {
       const route = await coreOracle.routes(ADDRESS.USDC);
       expect(route).to.be.equal(mockOracle.address);
     })
-    it("should be able to set liquidation thresholds", async () => {
-      await expect(coreOracle.connect(alice).setLiqThresholds(
-        [ADDRESS.USDC],
-        [9000]
-      )).to.be.revertedWith('Ownable: caller is not the owner');
-
-      await expect(coreOracle.setLiqThresholds(
-        [ADDRESS.USDC],
-        [10050]
-      )).to.be.revertedWith('LIQ_THRESHOLD_TOO_HIGH(10050)');
-
-      await expect(coreOracle.setLiqThresholds(
-        [ADDRESS.USDC],
-        [7500]
-      )).to.be.revertedWith('LIQ_THRESHOLD_TOO_LOW(7500)');
-
-      await expect(coreOracle.setLiqThresholds(
-        [ethers.constants.AddressZero],
-        [9000]
-      )).to.be.revertedWith('ZERO_ADDRESS');
-
-      await expect(coreOracle.setLiqThresholds(
-        [ADDRESS.USDC, ADDRESS.USDT],
-        [9000]
-      )).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
-
-      await expect(
-        coreOracle.setLiqThresholds(
-          [ADDRESS.USDC],
-          [9000]
-        )
-      ).to.be.emit(coreOracle, "SetLiqThreshold");
-
-      const liqThreshold = await coreOracle.liqThresholds(ADDRESS.USDC);
-      expect(liqThreshold).to.be.equal(9000);
-    })
-    it("should be able to whtielist erc1155 - wrapped tokens", async () => {
-      await expect(
-        coreOracle.connect(alice).setWhitelistERC1155([ADDRESS.USDC], true)
-      ).to.be.revertedWith('Ownable: caller is not the owner');
-
-      await expect(
-        coreOracle.setWhitelistERC1155([ethers.constants.AddressZero], true)
-      ).to.be.revertedWith('ZERO_ADDRESS');
-
-      await expect(
-        coreOracle.setWhitelistERC1155([ADDRESS.USDC], true)
-      ).to.be.emit(coreOracle, "SetWhitelist");
-
-      const whitelist = await coreOracle.whitelistedERC1155(ADDRESS.USDC);
-      expect(whitelist).to.be.equal(true);
-    })
   })
   describe("Utils", () => {
     beforeEach(async () => {
       await coreOracle.setRoutes([ADDRESS.USDC], [mockOracle.address]);
+      await mockOracle.setPrice([ADDRESS.USDC], [10000000])
     })
 
     it("should to able to get if the wrapper is supported or not", async () => {
-      await coreOracle.setWhitelistERC1155([werc20.address], true);
-
-      expect(
-        await coreOracle.isWrappedTokenSupported(ADDRESS.USDC, 0)
-      ).to.be.false;
+      await expect(
+        coreOracle.isWrappedTokenSupported(ADDRESS.USDC, 0)
+      ).to.be.reverted;
 
       let collId = BigNumber.from(ADDRESS.USDC);
       expect(
@@ -168,8 +113,8 @@ describe('Core Oracle', () => {
     })
   })
   describe("Value", () => {
-    // TODO: Cover getPositionValue, getTokenValue
-    describe("Debt Value", async () => {
+    // TODO: Cover getPositionValue
+    describe("Token Value", async () => {
       it("should revert when oracle route is not set", async () => {
         await expect(
           coreOracle.getTokenValue(ADDRESS.CRV, 100)

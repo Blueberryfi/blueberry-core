@@ -1,5 +1,10 @@
 [
   {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -131,6 +136,28 @@
   {
     "inputs": [],
     "name": "LEND_NOT_ALLOWED",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "threshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "LIQ_THRESHOLD_TOO_HIGH",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "threshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "LIQ_THRESHOLD_TOO_LOW",
     "type": "error"
   },
   {
@@ -584,6 +611,44 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      }
+    ],
+    "name": "SetWhitelistERC1155",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      }
+    ],
+    "name": "SetWhitelistToken",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "positionId",
@@ -755,6 +820,11 @@
         "internalType": "address",
         "name": "hardVault",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "liqThreshold",
+        "type": "uint256"
       }
     ],
     "name": "addBank",
@@ -864,6 +934,11 @@
       {
         "internalType": "uint256",
         "name": "totalShare",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "liqThreshold",
         "type": "uint256"
       }
     ],
@@ -1264,7 +1339,7 @@
     "outputs": [
       {
         "internalType": "bool",
-        "name": "liquidatable",
+        "name": "",
         "type": "bool"
       }
     ],
@@ -1656,6 +1731,24 @@
     "inputs": [
       {
         "internalType": "address[]",
+        "name": "tokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      }
+    ],
+    "name": "whitelistERC1155",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
         "name": "spells",
         "type": "address[]"
       },
@@ -1735,6 +1828,25 @@
       }
     ],
     "name": "whitelistedTokens",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "whitelistedWrappedTokens",
     "outputs": [
       {
         "internalType": "bool",

@@ -15,7 +15,7 @@ import "../interfaces/IBaseOracle.sol";
 import "../interfaces/band/IStdReference.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title BandAdapterOracle
  * @notice Oracle Adapter contract which provides price feeds from Band Protocol
  */
@@ -46,10 +46,10 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     /// @notice Set token symbols
     /// @param tokens List of tokens
     /// @param syms List of string symbols
-    function setSymbols(address[] calldata tokens, string[] calldata syms)
-        external
-        onlyOwner
-    {
+    function setSymbols(
+        address[] calldata tokens,
+        string[] calldata syms
+    ) external onlyOwner {
         if (syms.length != tokens.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < syms.length; idx++) {
             if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
@@ -64,7 +64,7 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     /// @param token The ERC-20 token to get the price of.
     function getPrice(address token) external view override returns (uint256) {
         string memory sym = symbols[token];
-        uint256 maxDelayTime = maxDelayTimes[token];
+        uint256 maxDelayTime = timeGaps[token];
         if (bytes(sym).length == 0) revert Errors.NO_SYM_MAPPING(token);
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
 

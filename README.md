@@ -58,3 +58,24 @@ Prices are determined in USD.
 - For regular assets, asset prices can be derived from Chainlink, Band, or Uniswap feeds.
 - For LP tokens, asset prices will determine the optimal reserve proportion of the underlying assets, which are then used to compoute the value of LP tokens. See `Uniswapv3AdpaterOracle.sol` for example implementation.
    
+## Getting Started
+
+Steps to run the tests:
+Hardhat version 2.12.4 Block height 16283930 Eth mainnet fork
+
+Copies all the files
+> Clone the repo
+### Installs all of the files
+> yarn install
+### Required for tests and all other actions to work  
+> Create .env file with env var DEPLOY_ACCOUNT_KEY= , ALCHEMY_API_KEY= , ETHERSCAN_API_KEY= (use http://alchemy.com)
+
+### Compiles all of the contracts
+> yarn hardhat compile
+
+### Runs all of the tests
+> yarn hardhat test
+
+### Displays the coverage of the contracts
+> yarn hardhat coverage
+

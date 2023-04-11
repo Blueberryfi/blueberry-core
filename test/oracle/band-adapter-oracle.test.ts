@@ -36,7 +36,7 @@ describe('Base Oracle / Band Adapter Oracle', () => {
     bandAdapterOracle = <BandAdapterOracle>await BandAdapterOracle.deploy(ADDRESS.BandStdRef);
     await bandAdapterOracle.deployed();
 
-    await bandAdapterOracle.setMaxDelayTimes(
+    await bandAdapterOracle.setTimeGap(
       [ADDRESS.USDC, ADDRESS.UNI],
       [OneDay, OneDay]
     );
@@ -98,32 +98,32 @@ describe('Base Oracle / Band Adapter Oracle', () => {
     })
 
     it("should allow maxDelayTimes setting only for owner", async () => {
-      await expect(bandAdapterOracle.connect(alice).setMaxDelayTimes(
+      await expect(bandAdapterOracle.connect(alice).setTimeGap(
         [ADDRESS.USDC, ADDRESS.UNI],
         [OneDay, OneDay]
       )).to.be.revertedWith('Ownable: caller is not the owner');
 
-      await expect(bandAdapterOracle.setMaxDelayTimes(
+      await expect(bandAdapterOracle.setTimeGap(
         [ADDRESS.USDC, ADDRESS.UNI],
         [OneDay, OneDay, OneDay]
       )).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
 
-      await expect(bandAdapterOracle.setMaxDelayTimes(
+      await expect(bandAdapterOracle.setTimeGap(
         [ADDRESS.USDC, ethers.constants.AddressZero],
         [OneDay, OneDay]
       )).to.be.revertedWith('ZERO_ADDRESS');
 
-      await expect(bandAdapterOracle.setMaxDelayTimes(
+      await expect(bandAdapterOracle.setTimeGap(
         [ADDRESS.USDC, ADDRESS.UNI],
         [OneDay, OneDay * 3]
       )).to.be.revertedWith('TOO_LONG_DELAY');
 
-      await expect(bandAdapterOracle.setMaxDelayTimes(
+      await expect(bandAdapterOracle.setTimeGap(
         [ADDRESS.USDC, ADDRESS.UNI],
         [OneDay, OneDay]
-      )).to.be.emit(bandAdapterOracle, 'SetMaxDelayTime');
+      )).to.be.emit(bandAdapterOracle, 'SetTimeGap');
 
-      expect(await bandAdapterOracle.maxDelayTimes(ADDRESS.USDC)).to.be.equal(OneDay);
+      expect(await bandAdapterOracle.timeGaps(ADDRESS.USDC)).to.be.equal(OneDay);
     })
   })
   describe('Price Feeds', () => {

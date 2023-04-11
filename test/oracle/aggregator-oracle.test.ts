@@ -47,7 +47,7 @@ describe('Aggregator Oracle', () => {
     chainlinkOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
     await chainlinkOracle.deployed();
 
-    await chainlinkOracle.setMaxDelayTimes(
+    await chainlinkOracle.setTimeGap(
       [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV],
       [OneDay, OneDay, OneDay]
     );
@@ -57,7 +57,7 @@ describe('Aggregator Oracle', () => {
     bandOracle = <BandAdapterOracle>await BandAdapterOracle.deploy(ADDRESS.BandStdRef);
     await bandOracle.deployed();
 
-    await bandOracle.setMaxDelayTimes(
+    await bandOracle.setTimeGap(
       [ADDRESS.USDC, ADDRESS.UNI],
       [OneDay, OneDay]
     );

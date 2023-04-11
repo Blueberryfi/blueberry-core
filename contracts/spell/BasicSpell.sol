@@ -15,12 +15,21 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/EnsureApprove.sol";
 import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
-import "../interfaces/IWETH.sol";
 
-abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
+/**
+ * @title BasicSpell
+ * @author BlueberryProtocol
+ * @notice BasicSpell is the abstract contract that other spells utilize
+ */
+abstract contract BasicSpell is
+    ERC1155NaiveReceiver,
+    OwnableUpgradeable,
+    EnsureApprove
+{
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     struct Strategy {
@@ -98,17 +107,23 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
     function __BasicSpell_init(
-        IBank _bank,
-        address _werc20,
-        address _weth
+        IBank bank_,
+        address werc20_,
+        address weth_
     ) internal onlyInitializing {
+        if (
+            address(bank_) == address(0) ||
+            address(werc20_) == address(0) ||
+            address(weth_) == address(0)
+        ) revert Errors.ZERO_ADDRESS();
+
         __Ownable_init();
 
-        bank = _bank;
-        werc20 = IWERC20(_werc20);
-        WETH = _weth;
+        bank = bank_;
+        werc20 = IWERC20(werc20_);
+        WETH = weth_;
 
-        IWERC20(_werc20).setApprovalForAll(address(_bank), true);
+        IWERC20(werc20_).setApprovalForAll(address(bank_), true);
     }
 
     /**
@@ -277,18 +292,15 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         }
     }
 
-    /// @dev Reset approval to zero and set again
-    function _ensureApprove(
-        address token,
-        address spender,
-        uint256 amount
-    ) internal {
-        IERC20Upgradeable(token).approve(spender, 0);
-        IERC20Upgradeable(token).approve(spender, amount);
-    }
-
     /// @dev Fallback function. Can only receive ETH from WETH contract.
     receive() external payable {
         if (msg.sender != WETH) revert Errors.NOT_FROM_WETH(msg.sender);
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[45] private __gap;
 }

@@ -16,6 +16,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20Metadat
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/EnsureApprove.sol";
 import "../libraries/BBMath.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/IERC20Wrapper.sol";
@@ -24,7 +25,7 @@ import "../interfaces/ichi/IIchiFarm.sol";
 
 /**
  * @title WIchiFarm
- * @author gmspacex
+ * @author BlueberryProtocol
  * @notice Wrapped IchiFarm is the wrapper of ICHI MasterChef
  * @dev Leveraged ICHI Lp Tokens will be wrapped here and be held in BlueberryBank.
  *      At the same time, Underlying LPs will be deposited to ICHI farming pools and generate yields
@@ -33,6 +34,7 @@ import "../interfaces/ichi/IIchiFarm.sol";
 contract WIchiFarm is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
+    EnsureApprove,
     IERC20Wrapper,
     IWIchiFarm
 {
@@ -47,16 +49,26 @@ contract WIchiFarm is
     /// @dev address of ICHI farming contract
     IIchiFarm public ichiFarm;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
-        address _ichi,
-        address _ichiv1,
-        address _ichiFarm
+        address ichi_,
+        address ichiV1,
+        address ichiFarm_
     ) external initializer {
+        if (
+            address(ichi_) == address(0) ||
+            address(ichiV1) == address(0) ||
+            address(ichiFarm_) == address(0)
+        ) revert Errors.ZERO_ADDRESS();
         __ReentrancyGuard_init();
         __ERC1155_init("WIchiFarm");
-        ICHI = IIchiV2(_ichi);
-        ICHIv1 = IERC20Upgradeable(_ichiv1);
-        ichiFarm = IIchiFarm(_ichiFarm);
+        ICHI = IIchiV2(ichi_);
+        ICHIv1 = IERC20Upgradeable(ichiV1);
+        ichiFarm = IIchiFarm(ichiFarm_);
     }
 
     /// @notice Encode pid, ichiPerShare to ERC1155 token id
@@ -91,7 +103,6 @@ contract WIchiFarm is
     }
 
     /// @notice Return pending rewards from the farming pool
-    /// @dev Reward tokens can be multiple tokens
     /// @param tokenId Token Id
     /// @param amount amount of share
     function pendingRewards(
@@ -104,9 +115,11 @@ contract WIchiFarm is
         returns (address[] memory tokens, uint256[] memory rewards)
     {
         (uint256 pid, uint256 stIchiPerShare) = decodeId(tokenId);
+        uint256 lpDecimals = IERC20MetadataUpgradeable(ichiFarm.lpToken(pid))
+            .decimals();
         (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
-        uint256 stIchi = (stIchiPerShare * amount).divCeil(1e18);
-        uint256 enIchi = (enIchiPerShare * amount) / 1e18;
+        uint256 stIchi = (stIchiPerShare * amount).divCeil(10 ** lpDecimals);
+        uint256 enIchi = (enIchiPerShare * amount) / (10 ** lpDecimals);
         uint256 ichiRewards = enIchi > stIchi ? enIchi - stIchi : 0;
         // Convert rewards to ICHI(v2) => ICHI v1 decimal: 9, ICHI v2 Decimal: 18
         ichiRewards *= 1e9;
@@ -175,18 +188,5 @@ contract WIchiFarm is
             ICHI.safeTransfer(msg.sender, rewards[0]);
         }
         return pid;
-    }
-
-    /// @dev Ensure token approve
-    /// @param token IERC20Upgradeable token address
-    /// @param spender Token spender address
-    /// @param amount Token amount to approve
-    function _ensureApprove(
-        address token,
-        address spender,
-        uint256 amount
-    ) internal {
-        if (IERC20Upgradeable(token).allowance(address(this), spender) < amount)
-            IERC20Upgradeable(token).approve(spender, amount);
     }
 }

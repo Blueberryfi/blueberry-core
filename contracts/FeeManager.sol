@@ -20,7 +20,12 @@ import "./utils/BlueBerryErrors.sol" as Errors;
 contract FeeManager is OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    IProtocolConfig config;
+    IProtocolConfig public config;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(IProtocolConfig config_) external initializer {
         __Ownable_init();

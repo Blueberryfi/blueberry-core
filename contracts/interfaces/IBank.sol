@@ -14,6 +14,7 @@ interface IBank {
         address softVault;
         address bToken; // The bToken to draw liquidity from.
         uint256 totalShare; // The total debt share count across all open positions.
+        uint256 liqThreshold; // 85% for volatile tokens, 90% for stablecoins, base 1e4
     }
 
     struct Position {
@@ -36,6 +37,10 @@ interface IBank {
     );
     /// The owner sets the address of the oracle smart contract.
     event SetOracle(address oracle);
+    /// The owner sets token whitelist for an Wrapped ERC1155 token.
+    event SetWhitelistERC1155(address indexed token, bool ok);
+    /// The owner sets token whitelist for an token.
+    event SetWhitelistToken(address indexed token, bool ok);
     /// Someone lend tokens to a bank via a spell caller.
     event Lend(
         uint256 positionId,

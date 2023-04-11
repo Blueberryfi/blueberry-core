@@ -12,24 +12,28 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/BlueBerryConst.sol" as Constants;
-import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 import "./UsingBaseOracle.sol";
+import "./BaseOracleExt.sol";
+import "../utils/BlueBerryErrors.sol" as Errors;
+import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Ichi Vault Oracle
  * @notice Oracle contract provides price feeds of Ichi Vault tokens
  * @dev The logic of this oracle is using legacy & traditional mathematics of Uniswap V2 Lp Oracle.
  *      Base token prices are fetched from Chainlink or Band Protocol.
  *      To prevent flashloan price manipulations, it compares spot & twap prices from Uni V3 Pool.
  */
-contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
+contract IchiVaultOracle is
+    UsingBaseOracle,
+    IBaseOracle,
+    Ownable,
+    BaseOracleExt
+{
     mapping(address => uint256) public maxPriceDeviations;
 
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
@@ -80,32 +84,22 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
     function twapPrice0InToken1(
         IICHIVault vault
     ) public view returns (uint256) {
-        (int256 twapTick, ) = UniV3WrappedLibMockup.consult(
+        uint32 twapPeriod = vault.twapPeriod();
+        if (twapPeriod > Constants.MAX_TIME_GAP)
+            revert Errors.TOO_LONG_DELAY(twapPeriod);
+        if (twapPeriod < Constants.MIN_TIME_GAP)
+            revert Errors.TOO_LOW_MEAN(twapPeriod);
+        (int24 twapTick, ) = UniV3WrappedLibMockup.consult(
             vault.pool(),
-            vault.twapPeriod()
+            twapPeriod
         );
         return
             UniV3WrappedLibMockup.getQuoteAtTick(
-                int24(twapTick), // can assume safe being result from consult()
+                twapTick,
                 uint128(Constants.PRICE_PRECISION), // amountIn
                 vault.token0(), // tokenIn
                 vault.token1() // tokenOut
             );
-    }
-
-    /**
-     * @notice Internal function to validate deviations of 2 given prices
-     * @param price0 First price to validate, base 1e18
-     * @param price1 Second price to validate, base 1e18
-     * @param maxPriceDeviation Max price deviation of 2 prices, base 10000
-     */
-    function _isValidPrices(
-        uint256 price0,
-        uint256 price1,
-        uint256 maxPriceDeviation
-    ) internal pure returns (bool) {
-        uint256 delta = price0 > price1 ? (price0 - price1) : (price1 - price0);
-        return ((delta * Constants.DENOMINATOR) / price0) <= maxPriceDeviation;
     }
 
     /**
@@ -140,6 +134,6 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable {
             (r1 * px1) /
             10 ** t1Decimal;
 
-        return (totalReserve * 1e18) / totalSupply;
+        return (totalReserve * 10 ** vault.decimals()) / totalSupply;
     }
 }

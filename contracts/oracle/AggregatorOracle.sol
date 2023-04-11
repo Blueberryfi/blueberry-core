@@ -12,16 +12,16 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "./BaseOracleExt.sol";
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/BlueBerryConst.sol" as Constants;
 import "../interfaces/IBaseOracle.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Aggregator Oracle
  * @notice Oracle contract which provides aggregated price feeds from several oracle sources
  */
-contract AggregatorOracle is IBaseOracle, Ownable {
+contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
     /// @dev Mapping from token to number of sources
     mapping(address => uint256) public primarySourceCount;
     /// @dev Mapping from token to (mapping from index to oracle source)
@@ -96,21 +96,6 @@ contract AggregatorOracle is IBaseOracle, Ownable {
                 allSources[idx]
             );
         }
-    }
-
-    /**
-     * @notice Internal function to validate deviations of 2 given prices
-     * @param price0 First price to validate, base 1e18
-     * @param price1 Second price to validate, base 1e18
-     * @param maxPriceDeviation Max price deviation of 2 prices, base 10000
-     */
-    function _isValidPrices(
-        uint256 price0,
-        uint256 price1,
-        uint256 maxPriceDeviation
-    ) internal pure returns (bool) {
-        uint256 delta = price0 > price1 ? (price0 - price1) : (price1 - price0);
-        return ((delta * Constants.DENOMINATOR) / price0) <= maxPriceDeviation;
     }
 
     /// @notice Return USD price of given token, multiplied by 10**18.

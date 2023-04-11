@@ -15,14 +15,14 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/EnsureApprove.sol";
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/ISoftVault.sol";
 import "../interfaces/compound/ICErc20.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Soft Vault
  * @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
  * @dev SoftVault is communicating with bTokens to lend and borrow underlying tokens from/to Blueberry Money Market.
@@ -32,6 +32,7 @@ contract SoftVault is
     OwnableUpgradeable,
     ERC20Upgradeable,
     ReentrancyGuardUpgradeable,
+    EnsureApprove,
     ISoftVault
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -42,6 +43,11 @@ contract SoftVault is
     IERC20Upgradeable public uToken;
     /// @dev address of protocol config
     IProtocolConfig public config;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(
         IProtocolConfig _config,
@@ -123,15 +129,5 @@ contract SoftVault is
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);
-    }
-
-    /// @dev Reset approval to zero and set again
-    function _ensureApprove(
-        address token,
-        address spender,
-        uint256 amount
-    ) internal {
-        IERC20Upgradeable(token).approve(spender, 0);
-        IERC20Upgradeable(token).approve(spender, amount);
     }
 }

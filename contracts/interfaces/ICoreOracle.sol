@@ -5,12 +5,8 @@ pragma solidity 0.8.16;
 import "./IBaseOracle.sol";
 
 interface ICoreOracle is IBaseOracle {
-    /// The owner sets token whitelist for an ERC1155 token.
-    event SetWhitelist(address indexed token, bool ok);
     /// The owner sets oracle routes
     event SetRoute(address indexed token, address route);
-    /// The owner sets liquidation threshold for a token.
-    event SetLiqThreshold(address indexed token, uint256 liqThreshold);
 
     /// @notice Return whether the oracle given ERC20 token
     /// @param token The ERC20 token to check the support
@@ -26,12 +22,12 @@ interface ICoreOracle is IBaseOracle {
     ) external view returns (bool);
 
     /**
-     * @dev Return the USD value of the given input for collateral purpose.
+     * @dev Return the USD value of wrapped ERC1155 tokens
      * @param token ERC1155 token address to get collateral value
      * @param id ERC1155 token id to get collateral value
      * @param amount Token amount to get collateral value, based 1e18
      */
-    function getPositionValue(
+    function getWrappedTokenValue(
         address token,
         uint256 id,
         uint256 amount
@@ -46,6 +42,4 @@ interface ICoreOracle is IBaseOracle {
         address token,
         uint256 amount
     ) external view returns (uint256);
-
-    function liqThresholds(address token) external view returns (uint256);
 }

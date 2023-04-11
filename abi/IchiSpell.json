@@ -1,5 +1,10 @@
 [
   {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -451,22 +456,22 @@
     "inputs": [
       {
         "internalType": "contract IBank",
-        "name": "_bank",
+        "name": "bank_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_werc20",
+        "name": "werc20_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_weth",
+        "name": "weth_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_wichiFarm",
+        "name": "wichiFarm_",
         "type": "address"
       }
     ],

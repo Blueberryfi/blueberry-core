@@ -15,13 +15,13 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/EnsureApprove.sol";
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/IHardVault.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Hard Vault
  * @notice Hard Vault is a spot to lock LP tokens as collateral.
  * @dev HardVault is just holding LP tokens deposited by users.
@@ -33,6 +33,7 @@ contract HardVault is
     OwnableUpgradeable,
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
+    EnsureApprove,
     IHardVault
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -50,6 +51,11 @@ contract HardVault is
         uint256 amount,
         uint256 shareAmount
     );
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(IProtocolConfig _config) external initializer {
         __ReentrancyGuard_init();
@@ -126,7 +132,11 @@ contract HardVault is
         _burn(msg.sender, _encodeTokenId(token), shareAmount);
 
         // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
-        uToken.approve(address(config.feeManager()), shareAmount);
+        _ensureApprove(
+            address(uToken),
+            address(config.feeManager()),
+            shareAmount
+        );
         withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
             address(uToken),
             shareAmount

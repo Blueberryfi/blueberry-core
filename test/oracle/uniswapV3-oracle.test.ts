@@ -87,41 +87,41 @@ describe('Uniswap V3 Oracle', () => {
     })
     it("should be able to set times ago", async () => {
       await expect(
-        uniswapV3Oracle.connect(alice).setMaxDelayTimes(
+        uniswapV3Oracle.connect(alice).setTimeGap(
           [ADDRESS.UNI, ADDRESS.ICHI],
-          [10, 10]
+          [3600, 3600]
         )
       ).to.be.revertedWith('Ownable: caller is not the owner');
 
       await expect(
-        uniswapV3Oracle.setMaxDelayTimes(
+        uniswapV3Oracle.setTimeGap(
           [ADDRESS.UNI, ADDRESS.ICHI],
-          [10, 10, 10]
+          [3600, 3600, 3600]
         )
       ).to.be.revertedWith('INPUT_ARRAY_MISMATCH');
 
       await expect(
-        uniswapV3Oracle.setMaxDelayTimes(
+        uniswapV3Oracle.setTimeGap(
           [ADDRESS.UNI, ethers.constants.AddressZero],
-          [10, 10]
+          [3600, 3600]
         )
       ).to.be.revertedWith('ZERO_ADDRESS');
 
       await expect(
-        uniswapV3Oracle.setMaxDelayTimes(
+        uniswapV3Oracle.setTimeGap(
           [ADDRESS.UNI, ADDRESS.ICHI],
-          [10, 5]
+          [3600, 5]
         )
       ).to.be.revertedWith('TOO_LOW_MEAN');
 
       await expect(
-        uniswapV3Oracle.setMaxDelayTimes(
+        uniswapV3Oracle.setTimeGap(
           [ADDRESS.UNI, ADDRESS.ICHI],
-          [10, 10]
+          [3600, 3600]
         )
-      ).to.be.emit(uniswapV3Oracle, "SetMaxDelayTime");
+      ).to.be.emit(uniswapV3Oracle, "SetTimeGap");
 
-      expect(await uniswapV3Oracle.maxDelayTimes(ADDRESS.UNI)).to.be.equal(10);
+      expect(await uniswapV3Oracle.timeGaps(ADDRESS.UNI)).to.be.equal(3600);
     })
   })
 
@@ -135,9 +135,9 @@ describe('Uniswap V3 Oracle', () => {
         [ADDRESS.UNI, ADDRESS.ICHI],
         [ADDRESS.UNI_V3_UNI_USDC, ADDRESS.UNI_V3_ICHI_USDC]
       );
-      await uniswapV3Oracle.setMaxDelayTimes(
+      await uniswapV3Oracle.setTimeGap(
         [ADDRESS.UNI, ADDRESS.ICHI],
-        [10, 10] // timeAgo - 10 s
+        [3600, 3600] // timeAgo - 1 hour
       );
     })
 
@@ -147,7 +147,7 @@ describe('Uniswap V3 Oracle', () => {
       ).to.be.revertedWith('NO_MEAN');
     })
     it("should revert when stable pool is not set", async () => {
-      await uniswapV3Oracle.setMaxDelayTimes([ADDRESS.USDC], [10]);
+      await uniswapV3Oracle.setTimeGap([ADDRESS.USDC], [3600]);
       await expect(
         uniswapV3Oracle.getPrice(ADDRESS.USDC)
       ).to.be.revertedWith('NO_STABLEPOOL');

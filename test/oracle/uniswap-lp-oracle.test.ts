@@ -23,7 +23,7 @@ describe('Uniswap V2 LP Oracle', () => {
     chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
     await chainlinkAdapterOracle.deployed();
 
-    await chainlinkAdapterOracle.setMaxDelayTimes(
+    await chainlinkAdapterOracle.setTimeGap(
       [ADDRESS.USDC, ADDRESS.CRV],
       [OneDay, OneDay]
     );

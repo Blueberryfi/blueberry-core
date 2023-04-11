@@ -20,6 +20,12 @@ import "./BasicSpell.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
+/**
+ * @title IchiSpell
+ * @author BlueberryProtocol
+ * @notice IchiSpell is the factory contract that 
+ * defines how Blueberry Protocol interacts with Ichi Vaults
+ */
 contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     using SafeCast for uint256;
     using SafeCast for int256;
@@ -33,17 +39,23 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     /// @dev address of ICHI token
     address public ICHI;
 
-    function initialize(
-        IBank _bank,
-        address _werc20,
-        address _weth,
-        address _wichiFarm
-    ) external initializer {
-        __BasicSpell_init(_bank, _werc20, _weth);
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
-        wIchiFarm = IWIchiFarm(_wichiFarm);
+    function initialize(
+        IBank bank_,
+        address werc20_,
+        address weth_,
+        address wichiFarm_
+    ) external initializer {
+        __BasicSpell_init(bank_, werc20_, weth_);
+        if (address(wichiFarm_) == address(0)) revert Errors.ZERO_ADDRESS();
+
+        wIchiFarm = IWIchiFarm(wichiFarm_);
         ICHI = address(wIchiFarm.ICHI());
-        IWIchiFarm(_wichiFarm).setApprovalForAll(address(_bank), true);
+        IWIchiFarm(wichiFarm_).setApprovalForAll(address(bank_), true);
     }
 
     /**
@@ -144,7 +156,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
 
         // 5. Deposit on farming pool, put collateral
         uint256 lpAmount = IERC20(lpToken).balanceOf(address(this));
-        IERC20Upgradeable(lpToken).approve(address(wIchiFarm), lpAmount);
+        _ensureApprove(lpToken, address(wIchiFarm), lpAmount);
         uint256 id = wIchiFarm.mint(param.farmingPid, lpAmount);
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }
@@ -170,14 +182,9 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         uint256 collShareAmount
     ) external {
         // Validate strategy id
-        address positionCollToken = bank
-            .getPositionInfo(bank.POSITION_ID())
-            .collToken;
-        uint256 positionCollId = bank
-            .getPositionInfo(bank.POSITION_ID())
-            .collId;
-        address unwrappedCollToken = IERC20Wrapper(positionCollToken)
-            .getUnderlyingToken(positionCollId);
+        IBank.Position memory pos = bank.getCurrentPositionInfo();
+        address unwrappedCollToken = IERC20Wrapper(pos.collToken)
+            .getUnderlyingToken(pos.collId);
         if (strategies[strategyId].vault != unwrappedCollToken)
             revert Errors.INCORRECT_STRATEGY_ID(strategyId);
 

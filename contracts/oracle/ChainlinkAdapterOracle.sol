@@ -17,7 +17,7 @@ import "../interfaces/IBaseOracle.sol";
 import "../interfaces/chainlink/IFeedRegistry.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title ChainlinkAdapterOracle
  * @notice Oracle Adapter contract which provides price feeds from Chainlink
  */
@@ -52,10 +52,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         emit SetRegistry(address(registry_));
     }
 
-    /// @dev Set token remapping
+    /// @notice Set token remapping
     /// @param tokens_ List of tokens to set remapping
     /// @param remappedTokens_ List of tokens to set remapping to
-    /// @notice Token decimals of the original and remapped tokens should be the same
     function setTokenRemappings(
         address[] calldata tokens_,
         address[] calldata remappedTokens_
@@ -63,9 +62,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         if (remappedTokens_.length != tokens_.length)
             revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 idx = 0; idx < tokens_.length; idx++) {
-            if (
-                remappedTokens_[idx] == address(0) || tokens_[idx] == address(0)
-            ) revert Errors.ZERO_ADDRESS();
+            if (tokens_[idx] == address(0)) revert Errors.ZERO_ADDRESS();
 
             remappedTokens[tokens_[idx]] = remappedTokens_[idx];
             emit SetTokenRemapping(tokens_[idx], remappedTokens_[idx]);
@@ -82,24 +79,20 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         address token = remappedTokens[token_];
         if (token == address(0)) token = token_;
 
-        uint256 maxDelayTime = maxDelayTimes[token];
+        uint256 maxDelayTime = timeGaps[token];
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token_);
 
         // Get token-USD price
         uint256 decimals = registry.decimals(token, USD);
-        (
-            uint80 roundId,
-            int256 answer,
-            ,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = registry.latestRoundData(token, USD);
-        if (
-            updatedAt < block.timestamp - maxDelayTime ||
-            answeredInRound < roundId
-        ) revert Errors.PRICE_OUTDATED(token_);
+        (, int256 answer, , uint256 updatedAt, ) = registry.latestRoundData(
+            token,
+            USD
+        );
+        if (updatedAt < block.timestamp - maxDelayTime)
+            revert Errors.PRICE_OUTDATED(token_);
         if (answer <= 0) revert Errors.PRICE_NEGATIVE(token_);
 
-        return (answer.toUint256() * 1e18) / 10 ** decimals;
+        return
+            (answer.toUint256() * Constants.PRICE_PRECISION) / 10 ** decimals;
     }
 }
