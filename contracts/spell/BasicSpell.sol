@@ -307,16 +307,6 @@ abstract contract BasicSpell is
         }
     }
 
-    /// @dev Reset approval to zero and set again
-    function _ensureApprove(
-        address token,
-        address spender,
-        uint256 amount
-    ) internal {
-        IERC20Upgradeable(token).approve(spender, 0);
-        IERC20Upgradeable(token).approve(spender, amount);
-    }
-
     /**
      * @notice Increase isolated collateral to support the position
      * @param token Isolated collateral token address

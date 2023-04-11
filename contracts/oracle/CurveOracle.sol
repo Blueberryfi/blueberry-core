@@ -15,12 +15,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "./UsingBaseOracle.sol";
-import "../interfaces/IBaseOracle.sol";
+import "../interfaces/ICurveOracle.sol";
 import "../interfaces/curve/ICurveRegistry.sol";
 import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
 import "../interfaces/curve/ICurveAddressProvider.sol";
 
-contract CurveOracle is UsingBaseOracle, IBaseOracle, Ownable {
+contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
     ICurveAddressProvider public immutable addressProvider;
 
     event CurveLpRegistered(

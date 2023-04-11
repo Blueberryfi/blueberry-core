@@ -158,7 +158,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         // 5. Deposit on farming pool, put collateral
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
         _ensureApprove(lpToken, address(wIchiFarm), lpAmount);
-        uint256 id = wIchiFarm.mint(param.farmingPid, lpAmount);
+        uint256 id = wIchiFarm.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }
 

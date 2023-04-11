@@ -14,6 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "./BasicSpell.sol";
+import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWCurveGauge.sol";
 import "../interfaces/curve/ICurvePool.sol";
 
@@ -25,51 +26,25 @@ contract CurveSpell is BasicSpell {
     IWCurveGauge public wCurveGauge;
     /// @dev address of curve registry
     ICurveRegistry public registry;
+    /// @dev address of CurveOracle
+    ICurveOracle public crvOracle;
     /// @dev address of ICHI token
     address public CRV;
-    /// @dev Mapping from LP token address -> underlying token addresses
-    mapping(address => address[]) public ulTokens;
-    /// @dev Mapping from LP token address to -> pool address
-    mapping(address => address) public poolOf;
 
     function initialize(
         IBank bank_,
         address werc20_,
         address weth_,
-        address wCurveGauge_
+        address wCurveGauge_,
+        address crvOracle_
     ) external initializer {
         __BasicSpell_init(bank_, werc20_, weth_);
 
         wCurveGauge = IWCurveGauge(wCurveGauge_);
         CRV = address(wCurveGauge.CRV());
         registry = wCurveGauge.registry();
+        crvOracle = ICurveOracle(crvOracle_);
         IWCurveGauge(wCurveGauge_).setApprovalForAll(address(bank_), true);
-    }
-
-    /**
-     * @notice Add strategy to the spell, and set pool info
-     * @param vault Address of curve lp token for given strategy
-     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
-     */
-    function addStrategy(
-        address vault,
-        uint256 maxPosSize
-    ) public override onlyOwner {
-        // Update pool info
-        address pool = poolOf[vault];
-        if (pool != address(0)) revert Errors.CRV_LP_ALREADY_REGISTERED(vault);
-
-        pool = registry.get_pool_from_lp_token(vault);
-        if (pool == address(0)) revert Errors.NO_LP_REGISTERED(vault);
-
-        poolOf[vault] = pool;
-        (uint256 n, ) = registry.get_n_coins(pool);
-        address[8] memory tokens = registry.get_coins(pool);
-        for (uint256 i = 0; i < n; i++) {
-            ulTokens[vault].push(tokens[i]);
-        }
-
-        super.addStrategy(vault, maxPosSize);
     }
 
     /**
@@ -87,8 +62,7 @@ contract CurveSpell is BasicSpell {
         existingCollateral(param.strategyId, param.collToken)
     {
         address lp = strategies[param.strategyId].vault;
-        address pool = poolOf[lp];
-        address[] memory tokens = ulTokens[lp];
+        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(lp);
         if (
             wCurveGauge.getUnderlyingTokenFromIds(param.farmingPoolId, gid) !=
             lp
@@ -167,7 +141,10 @@ contract CurveSpell is BasicSpell {
         existingCollateral(param.strategyId, param.collToken)
     {
         address crvLp = strategies[param.strategyId].vault;
-        ICurvePool crvPool = ICurvePool(poolOf[crvLp]);
+        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
+            crvLp
+        );
+        ICurvePool crvPool = ICurvePool(pool);
 
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
@@ -195,7 +172,6 @@ contract CurveSpell is BasicSpell {
         }
 
         // 4. Remove liquidity
-        address[] memory tokens = ulTokens[crvLp];
         int128 tokenIndex;
         for (uint256 i = 0; i < tokens.length; i++) {
             if (tokens[i] == pos.debtToken) {

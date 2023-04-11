@@ -16,17 +16,6 @@
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "lp",
-        "type": "address"
-      }
-    ],
-    "name": "CRV_LP_ALREADY_REGISTERED",
-    "type": "error"
-  },
-  {
     "inputs": [],
     "name": "EXCEED_MAX_LTV",
     "type": "error"
@@ -100,17 +89,6 @@
       }
     ],
     "name": "NOT_FROM_WETH",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "lp",
-        "type": "address"
-      }
-    ],
-    "name": "NO_LP_REGISTERED",
     "type": "error"
   },
   {
@@ -353,6 +331,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "crvOracle",
+    "outputs": [
+      {
+        "internalType": "contract ICurveOracle",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -390,6 +381,11 @@
       {
         "internalType": "address",
         "name": "wCurveGauge_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "crvOracle_",
         "type": "address"
       }
     ],
@@ -571,25 +567,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "poolOf",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
         "name": "strategyId",
         "type": "uint256"
@@ -725,30 +702,6 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "ulTokens",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
