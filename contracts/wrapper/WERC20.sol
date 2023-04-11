@@ -19,7 +19,7 @@ import "../interfaces/IWERC20.sol";
 
 /**
  * @title WERC20
- * @author gmspacex
+ * @author BlueberryProtocol
  * @notice Wrapped ERC20 is the wrapper of LP positions
  * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank and do not generate yields.
  *      LP Tokens are identified by tokenIds encoded from lp token address

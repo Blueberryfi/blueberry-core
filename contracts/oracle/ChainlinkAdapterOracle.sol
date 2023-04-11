@@ -17,7 +17,7 @@ import "../interfaces/IBaseOracle.sol";
 import "../interfaces/chainlink/IFeedRegistry.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title ChainlinkAdapterOracle
  * @notice Oracle Adapter contract which provides price feeds from Chainlink
  */

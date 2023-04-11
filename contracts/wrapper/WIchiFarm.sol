@@ -25,7 +25,7 @@ import "../interfaces/ichi/IIchiFarm.sol";
 
 /**
  * @title WIchiFarm
- * @author gmspacex
+ * @author BlueberryProtocol
  * @notice Wrapped IchiFarm is the wrapper of ICHI MasterChef
  * @dev Leveraged ICHI Lp Tokens will be wrapped here and be held in BlueberryBank.
  *      At the same time, Underlying LPs will be deposited to ICHI farming pools and generate yields

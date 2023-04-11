@@ -17,7 +17,7 @@ import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IBaseOracle.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Aggregator Oracle
  * @notice Oracle contract which provides aggregated price feeds from several oracle sources
  */

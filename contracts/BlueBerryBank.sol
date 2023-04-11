@@ -28,7 +28,7 @@ import "./libraries/BBMath.sol";
 
 /**
  * @title BlueberryBank
- * @author gmspacex
+ * @author BlueberryProtocol
  * @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
  */
 contract BlueBerryBank is
@@ -383,7 +383,8 @@ contract BlueBerryBank is
     }
 
     /**
-     * @notice Return the USD value of total collateral of the given position considering yields generated from the collaterals.
+     * @notice Return the USD value of total collateral of the given position
+     *         considering yields generated from the collaterals.
      * @param positionId The position ID to query for the collateral value.
      */
     function getPositionValue(

@@ -15,7 +15,7 @@ import "../utils/BlueBerryErrors.sol" as Errors;
 import "../utils/BlueBerryConst.sol" as Constants;
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title BaseAdapter
  * @notice Base Adapter Contract which interacts with external oracle services
  */

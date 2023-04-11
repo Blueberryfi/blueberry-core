@@ -18,7 +18,7 @@ import "./interfaces/IProtocolConfig.sol";
 
 /**
  * @title ProtocolConfig
- * @author gmspacex
+ * @author BlueberryProtocol
  * @notice Hotspot of all configurable states of the protocol
  */
 contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {

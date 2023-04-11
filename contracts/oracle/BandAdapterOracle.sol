@@ -15,7 +15,7 @@ import "../interfaces/IBaseOracle.sol";
 import "../interfaces/band/IStdReference.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title BandAdapterOracle
  * @notice Oracle Adapter contract which provides price feeds from Band Protocol
  */

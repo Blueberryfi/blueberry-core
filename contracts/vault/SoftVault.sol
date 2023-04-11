@@ -22,7 +22,7 @@ import "../interfaces/ISoftVault.sol";
 import "../interfaces/compound/ICErc20.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Soft Vault
  * @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
  * @dev SoftVault is communicating with bTokens to lend and borrow underlying tokens from/to Blueberry Money Market.

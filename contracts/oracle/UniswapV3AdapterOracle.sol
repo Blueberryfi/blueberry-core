@@ -20,7 +20,7 @@ import "../interfaces/IBaseOracle.sol";
 import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Uniswap V3 Adapter Oracle
  * @notice Oracle contract which provides price feeds of tokens from Uni V3 pool paired with stablecoins
  */

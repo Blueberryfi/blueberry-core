@@ -18,7 +18,7 @@ import "../libraries/BBMath.sol";
 import "../interfaces/IBaseOracle.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Uniswap V2 Oracle
  * @notice Oracle contract which privides price feeds of Uni V2 Lp tokens
  * @dev Implented Fair Lp Pricing

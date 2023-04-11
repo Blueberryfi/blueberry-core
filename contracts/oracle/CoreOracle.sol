@@ -20,7 +20,7 @@ import "../interfaces/ICoreOracle.sol";
 import "../interfaces/IERC20Wrapper.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Core Oracle
  * @notice Oracle contract which provides price feeds to Bank contract
  */

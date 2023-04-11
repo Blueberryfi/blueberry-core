@@ -21,7 +21,7 @@ import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Ichi Vault Oracle
  * @notice Oracle contract provides price feeds of Ichi Vault tokens
  * @dev The logic of this oracle is using legacy & traditional mathematics of Uniswap V2 Lp Oracle.

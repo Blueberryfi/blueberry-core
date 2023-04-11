@@ -21,7 +21,7 @@ import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/IHardVault.sol";
 
 /**
- * @author gmspacex
+ * @author BlueberryProtocol
  * @title Hard Vault
  * @notice Hard Vault is a spot to lock LP tokens as collateral.
  * @dev HardVault is just holding LP tokens deposited by users.
