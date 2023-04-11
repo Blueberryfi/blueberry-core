@@ -20,6 +20,11 @@ import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
 
+/**
+ * @title BasicSpell
+ * @author BlueberryProtocol
+ * @notice BasicSpell is the abstract contract that other spells utilize
+ */
 abstract contract BasicSpell is
     ERC1155NaiveReceiver,
     OwnableUpgradeable,

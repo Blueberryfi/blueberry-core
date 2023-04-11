@@ -20,6 +20,12 @@ import "./BasicSpell.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
+/**
+ * @title IchiSpell
+ * @author BlueberryProtocol
+ * @notice IchiSpell is the factory contract that 
+ * defines how Blueberry Protocol interacts with Ichi Vaults
+ */
 contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     using SafeCast for uint256;
     using SafeCast for int256;
