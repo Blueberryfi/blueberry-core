@@ -47,6 +47,11 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     /// @dev $BLB liquidity pool against stablecoins
     address public blbStabilityPool;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(address treasury_) external initializer {
         __Ownable_init();
         if (treasury_ == address(0)) revert Errors.ZERO_ADDRESS();

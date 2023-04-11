@@ -28,6 +28,11 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /// @dev Mapping from token to oracle routes. => Aggregator | LP Oracle | AdapterOracle ...
     mapping(address => address) public routes;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize() external initializer {
         __Ownable_init();
     }

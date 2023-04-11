@@ -33,6 +33,11 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     /// @dev address of ICHI token
     address public ICHI;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         IBank bank_,
         address werc20_,

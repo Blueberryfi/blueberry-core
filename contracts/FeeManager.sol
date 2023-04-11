@@ -22,6 +22,11 @@ contract FeeManager is OwnableUpgradeable {
 
     IProtocolConfig public config;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(IProtocolConfig config_) external initializer {
         __Ownable_init();
 

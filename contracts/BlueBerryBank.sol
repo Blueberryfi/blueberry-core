@@ -116,6 +116,11 @@ contract BlueBerryBank is
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @dev Initialize the bank smart contract, using msg.sender as the first governor.
     /// @param oracle_ The oracle smart contract address.
     /// @param config_ The Protocol config address

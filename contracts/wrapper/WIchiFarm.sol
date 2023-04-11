@@ -49,6 +49,11 @@ contract WIchiFarm is
     /// @dev address of ICHI farming contract
     IIchiFarm public ichiFarm;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         address ichi_,
         address ichiV1,

@@ -52,6 +52,11 @@ contract HardVault is
         uint256 shareAmount
     );
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(IProtocolConfig _config) external initializer {
         __ReentrancyGuard_init();
         __Ownable_init();

@@ -44,6 +44,11 @@ contract SoftVault is
     /// @dev address of protocol config
     IProtocolConfig public config;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         IProtocolConfig _config,
         ICErc20 _bToken,
