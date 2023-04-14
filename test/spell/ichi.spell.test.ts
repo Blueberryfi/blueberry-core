@@ -33,6 +33,7 @@ const CICHI = ADDRESS.bICHI;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const ICHI = ADDRESS.ICHI;
+const DAI = ADDRESS.DAI;
 const ICHIV1 = ADDRESS.ICHI_FARM;
 const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
 const ETH_PRICE = 1600;
@@ -169,7 +170,7 @@ describe('ICHI Angel Vaults Spell', () => {
           0,
           spell.address,
           iface.encodeFunctionData("openPosition", [{
-            strategyId: 1,
+            strategyId: 5,
             collToken: ICHI,
             borrowToken: USDC,
             collAmount: depositAmount,
@@ -319,7 +320,7 @@ describe('ICHI Angel Vaults Spell', () => {
           1,
           spell.address,
           iface.encodeFunctionData("closePosition", [{
-            strategyId: 1,
+            strategyId: 5,
             collToken: ICHI,
             borrowToken: USDC,
             amountRepay: ethers.constants.MaxUint256,
@@ -488,7 +489,7 @@ describe('ICHI Angel Vaults Spell', () => {
           0,
           spell.address,
           iface.encodeFunctionData("openPositionFarm", [{
-            strategyId: 1,
+            strategyId: 5,
             collToken: ICHI,
             borrowToken: USDC,
             collAmount: depositAmount,
@@ -542,7 +543,7 @@ describe('ICHI Angel Vaults Spell', () => {
           1,
           spell.address,
           iface.encodeFunctionData("closePositionFarm", [{
-            strategyId: 1,
+            strategyId: 5,
             collToken: ICHI,
             borrowToken: USDC,
             amountRepay: ethers.constants.MaxUint256,
