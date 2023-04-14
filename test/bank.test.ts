@@ -116,6 +116,11 @@ describe('Bank', () => {
       expect(await bank.nextPositionId()).to.be.equal(1);
       expect(await bank.bankStatus()).to.be.equal(15);
     })
+    it("should revert initializing twice", async () => {
+      await expect(
+        bank.initialize(oracle.address, config.address)
+      ).to.be.revertedWith("Initializable: contract is already initialized")
+    })
   })
 
   describe("Liquidation", () => {

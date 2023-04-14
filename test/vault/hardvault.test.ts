@@ -74,6 +74,11 @@ describe("HardVault", () => {
 
       expect(await vault.config()).to.be.equal(config.address);
     })
+    it("should revert initializing twice", async () => {
+      await expect(
+        vault.initialize(config.address)
+      ).to.be.revertedWith("Initializable: contract is already initialized")
+    })
   })
   describe("Deposit", () => {
     const depositAmount = utils.parseUnits("100", 6);

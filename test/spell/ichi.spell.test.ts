@@ -75,6 +75,54 @@ describe('ICHI Angel Vaults Spell', () => {
   beforeEach(async () => {
   })
 
+  describe("Constructor", () => {
+    it("should revert when zero address is provided in param", async () => {
+      const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
+      await expect(
+        upgrades.deployProxy(IchiSpell, [
+          ethers.constants.AddressZero,
+          werc20.address,
+          WETH,
+          wichi.address
+        ])
+      ).to.be.revertedWith("ZERO_ADDRESS");
+      await expect(
+        upgrades.deployProxy(IchiSpell, [
+          bank.address,
+          ethers.constants.AddressZero,
+          WETH,
+          wichi.address
+        ])
+      ).to.be.revertedWith("ZERO_ADDRESS");
+      await expect(
+        upgrades.deployProxy(IchiSpell, [
+          bank.address,
+          werc20.address,
+          ethers.constants.AddressZero,
+          wichi.address
+        ])
+      ).to.be.revertedWith("ZERO_ADDRESS");
+      await expect(
+        upgrades.deployProxy(IchiSpell, [
+          bank.address,
+          werc20.address,
+          WETH,
+          ethers.constants.AddressZero,
+        ])
+      ).to.be.revertedWith("ZERO_ADDRESS");
+    })
+    it("should revert initializing twice", async () => {
+      await expect(
+        spell.initialize(
+          bank.address,
+          werc20.address,
+          WETH,
+          ethers.constants.AddressZero,
+        )
+      ).to.be.revertedWith("Initializable: contract is already initialized")
+    })
+  })
+
   describe("ICHI Vault Position", () => {
     const depositAmount = utils.parseUnits('100', 18); // worth of $400
     const borrowAmount = utils.parseUnits('300', 6);
@@ -130,6 +178,23 @@ describe('ICHI Angel Vaults Spell', () => {
           }])
         )
       ).to.be.revertedWith("STRATEGY_NOT_EXIST")
+    })
+    it("should revert when opening a position with unsupported debt token", async () => {
+      await ichi.approve(bank.address, ethers.constants.MaxUint256);
+      await expect(
+        bank.execute(
+          0,
+          spell.address,
+          iface.encodeFunctionData("openPosition", [{
+            strategyId: 0,
+            collToken: ICHI,
+            borrowToken: ADDRESS.DAI,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPid: 0
+          }])
+        )
+      ).to.be.revertedWith("INCORRECT_DEBT")
     })
     it("should revert when opening a position for non-existing collateral", async () => {
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
@@ -202,6 +267,48 @@ describe('ICHI Angel Vaults Spell', () => {
       risk = await bank.getPositionRisk(1);
       console.log('Position Risk', utils.formatUnits(risk, 2), '%');
     })
+    // it("should be able to increase existing position", async () => {
+    //   const positionId = (await bank.nextPositionId()).sub(1);
+    //   const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
+    //   const beforeICHIBalance = await ichi.balanceOf(CICHI);
+
+    //   // Isolated collateral: ICHI
+    //   // Borrow: USDC
+    //   await bank.execute(
+    //     positionId,
+    //     spell.address,
+    //     iface.encodeFunctionData("openPosition", [{
+    //       strategyId: 0,
+    //       collToken: ICHI,
+    //       borrowToken: USDC,
+    //       collAmount: depositAmount,
+    //       borrowAmount: borrowAmount,
+    //       farmingPid: 0
+    //     }])
+    //   )
+
+    //   const fee = depositAmount.mul(50).div(10000);
+    //   const afterICHIBalance = await ichi.balanceOf(CICHI);
+    //   expect(afterICHIBalance.sub(beforeICHIBalance)).to.be.near(depositAmount.sub(fee))
+
+    //   expect(await bank.nextPositionId()).to.be.equal(BigNumber.from(2));
+    //   const pos = await bank.positions(1);
+    //   expect(pos.owner).to.be.equal(admin.address);
+    //   expect(pos.collToken).to.be.equal(werc20.address);
+    //   expect(pos.collId).to.be.equal(BigNumber.from(ichiVault.address));
+    //   expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+    //   expect(
+    //     await werc20.balanceOfERC20(ichiVault.address, bank.address)
+    //   ).to.be.equal(pos.collateralSize);
+    //   const bankInfo = await bank.banks(USDC);
+    //   console.log('Bank Info', bankInfo, await bank.banks(ICHI));
+    //   console.log('Position Info', pos);
+
+    //   const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
+    //   expect(
+    //     afterTreasuryBalance.sub(beforeTreasuryBalance)
+    //   ).to.be.equal(depositAmount.mul(50).div(10000))
+    // })
     it("should revert when closing a position for non-existing strategy", async () => {
       const tick = await ichiVault.currentTick();
       const sqrt = TickMath.getSqrtRatioAtTick(tick);
@@ -246,7 +353,30 @@ describe('ICHI Angel Vaults Spell', () => {
         )
       ).to.be.revertedWith("COLLATERAL_NOT_EXIST")
     })
-    it("should be able to withdraw USDC", async () => {
+    it("should revert closing a position with too high slippage", async () => {
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
+      await ichi.approve(bank.address, ethers.constants.MaxUint256);
+      await expect(
+        bank.execute(
+          1,
+          spell.address,
+          iface.encodeFunctionData("closePosition", [{
+            strategyId: 0,
+            collToken: ICHI,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            sellSlippage: 350,
+            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+          }])
+        )
+      ).to.be.revertedWith("RATIO_TOO_HIGH")
+    })
+    it("should be able to close portion of position", async () => {
+      const positionId = (await bank.nextPositionId()).sub(1);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
 
@@ -256,10 +386,51 @@ describe('ICHI Angel Vaults Spell', () => {
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeIchiBalance = await ichi.balanceOf(admin.address);
+      const positionInfo = await bank.getPositionInfo(positionId);
 
       const iface = new ethers.utils.Interface(SpellABI);
       await bank.execute(
-        1,
+        positionId,
+        spell.address,
+        iface.encodeFunctionData("closePosition", [{
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          amountRepay: positionInfo.debtShare.div(3),
+          amountPosRemove: positionInfo.collateralSize.div(3),
+          amountShareWithdraw: positionInfo.underlyingVaultShare.div(3),
+          sellSlippage: 50,
+          sqrtRatioLimit: BigNumber.from(sqrt.toString())
+        }])
+      )
+
+      const afterUSDCBalance = await usdc.balanceOf(admin.address);
+      const afterIchiBalance = await ichi.balanceOf(admin.address);
+      console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
+      console.log('ICHI Balance Change:', afterIchiBalance.sub(beforeIchiBalance));
+      const depositFee = depositAmount.mul(50).div(10000);
+      const withdrawFee = depositAmount.sub(depositFee).div(3).mul(50).div(10000);
+      expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.gte(depositAmount.sub(depositFee).div(3).sub(withdrawFee));
+
+      const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(withdrawFee);
+    })
+    it("should be able to withdraw USDC", async () => {
+      const positionId = (await bank.nextPositionId()).sub(1);
+      await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
+      await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
+
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
+      const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
+      const beforeUSDCBalance = await usdc.balanceOf(admin.address);
+      const beforeIchiBalance = await ichi.balanceOf(admin.address);
+      const positionInfo = await bank.getPositionInfo(positionId);
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await bank.execute(
+        positionId,
         spell.address,
         iface.encodeFunctionData("closePosition", [{
           strategyId: 0,
@@ -278,8 +449,8 @@ describe('ICHI Angel Vaults Spell', () => {
       console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
       console.log('ICHI Balance Change:', afterIchiBalance.sub(beforeIchiBalance));
       const depositFee = depositAmount.mul(50).div(10000);
-      const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
-      expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.gte(depositAmount.sub(depositFee).sub(withdrawFee));
+      const withdrawFee = depositAmount.sub(depositFee).div(3).mul(2).mul(50).div(10000);
+      expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.gte(depositAmount.sub(depositFee).div(3).mul(2).sub(withdrawFee));
 
       const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(withdrawFee);
@@ -361,6 +532,50 @@ describe('ICHI Angel Vaults Spell', () => {
         )
       ).to.be.revertedWith("INCORRECT_LP")
     })
+    it("should revert when closing a position for non-existing strategy", async () => {
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
+      await ichi.approve(bank.address, ethers.constants.MaxUint256);
+      await expect(
+        bank.execute(
+          1,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [{
+            strategyId: 1,
+            collToken: ICHI,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            sellSlippage: 50,
+            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+          }])
+        )
+      ).to.be.revertedWith("STRATEGY_NOT_EXIST")
+    })
+    it("should revert when closing a position for non-existing collateral", async () => {
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
+      await ichi.approve(bank.address, ethers.constants.MaxUint256);
+      await expect(
+        bank.execute(
+          1,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [{
+            strategyId: 0,
+            collToken: WETH,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            sellSlippage: 50,
+            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+          }])
+        )
+      ).to.be.revertedWith("COLLATERAL_NOT_EXIST")
+    })
     it("should be able to farm USDC on ICHI angel vault", async () => {
       const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
@@ -413,6 +628,25 @@ describe('ICHI Angel Vaults Spell', () => {
       );
       risk = await bank.getPositionRisk(2);
       console.log('Position Risk', utils.formatUnits(risk, 2), '%');
+    })
+    it("should revert increasing existing position when diff pos param given", async () => {
+      const positionId = (await bank.nextPositionId()).sub(1);
+      await usdc.approve(bank.address, ethers.constants.MaxUint256);
+      await ichi.approve(bank.address, ethers.constants.MaxUint256);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("openPositionFarm", [{
+            strategyId: 1,
+            collToken: ICHI,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPid: 1
+          }])
+        )
+      ).to.be.revertedWith("INCORRECT_PID")
     })
     it("should be able to harvest on ICHI farming", async () => {
       evm_mine_blocks(1000);
@@ -610,6 +844,22 @@ describe('ICHI Angel Vaults Spell', () => {
           0, ichiVault.address, maxPosSize
         )
       })
+      it("owner should be able to update max pos size", async () => {
+        await spell.addStrategy(ichiVault.address, maxPosSize);
+        await expect(
+          spell.connect(alice).setMaxPosSize(0, maxPosSize)
+        ).to.be.revertedWith("Ownable: caller is not the owner")
+        await expect(
+          spell.setMaxPosSize(10, maxPosSize)
+        ).to.be.revertedWith("STRATEGY_NOT_EXIST")
+        await expect(
+          spell.setMaxPosSize(0, 0)
+        ).to.be.revertedWith("ZERO_AMOUNT");
+
+        await expect(
+          spell.setMaxPosSize(0, maxPosSize)
+        ).to.be.emit(spell, "StrategyMaxPosSizeUpdated");
+      })
     })
 
     describe("Add Collaterals", () => {
@@ -675,6 +925,24 @@ describe('ICHI Angel Vaults Spell', () => {
           )
         ).to.be.emit(spell, "CollateralsMaxLTVSet")
       })
+    })
+  })
+
+  describe("Misc", () => {
+    beforeEach(async () => {
+      const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
+      spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
+        bank.address,
+        werc20.address,
+        WETH,
+        wichi.address
+      ])
+      await spell.deployed();
+    })
+    it("should revert direct external call of uniswapV3SwapCallback from non-swap pools", async () => {
+      await expect(
+        spell.uniswapV3SwapCallback(0, 0, ethers.constants.HashZero)
+      ).to.be.revertedWith("NOT_FROM_UNIV3");
     })
   })
 })

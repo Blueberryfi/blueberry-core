@@ -18,6 +18,14 @@ describe("Wrapped ERC20", () => {
     werc20 = <WERC20>await upgrades.deployProxy(WERC20);
   })
 
+  describe("Constructor", () => {
+    it("should revert initializing twice", async () => {
+      await expect(
+        werc20.initialize()
+      ).to.be.revertedWith("Initializable: contract is already initialized")
+    })
+  })
+
   it("should return underlying token address from tokenId", async () => {
     const tokenId = BigNumber.from(USDC);
     expect(await werc20.getUnderlyingToken(tokenId)).to.be.equal(USDC);

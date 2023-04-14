@@ -29,6 +29,42 @@ describe("Wrapped Ichi Farm", () => {
     await wichi.deployed();
   })
 
+  describe("Constructor", () => {
+    it("should revert when zero address is provided in params", async () => {
+      const WIchiFarm = await ethers.getContractFactory("WIchiFarm");
+      await expect(
+        upgrades.deployProxy(WIchiFarm, [
+          ethers.constants.AddressZero,
+          ADDRESS.ICHI_FARM,
+          ichiFarm.address
+        ])
+      ).to.be.revertedWith("ZERO_ADDRESS");
+      await expect(
+        upgrades.deployProxy(WIchiFarm, [
+          ADDRESS.ICHI,
+          ethers.constants.AddressZero,
+          ichiFarm.address
+        ])
+      ).to.be.revertedWith("ZERO_ADDRESS");
+      await expect(
+        upgrades.deployProxy(WIchiFarm, [
+          ADDRESS.ICHI,
+          ADDRESS.ICHI_FARM,
+          ethers.constants.AddressZero,
+        ])
+      ).to.be.revertedWith("ZERO_ADDRESS");
+    })
+    it("should revert initializing twice", async () => {
+      await expect(
+        wichi.initialize(
+          ADDRESS.ICHI,
+          ADDRESS.ICHI_FARM,
+          ichiFarm.address
+        )
+      ).to.be.revertedWith("Initializable: contract is already initialized")
+    })
+  })
+
   it("should encode pool id and reward per share to tokenId", async () => {
     const poolId = BigNumber.from(10);
     const rewardPerShare = BigNumber.from(10000);

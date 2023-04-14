@@ -23,7 +23,7 @@ import "../interfaces/ichi/IICHIVault.sol";
 /**
  * @title IchiSpell
  * @author BlueberryProtocol
- * @notice IchiSpell is the factory contract that 
+ * @notice IchiSpell is the factory contract that
  * defines how Blueberry Protocol interacts with Ichi Vaults
  */
 contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
@@ -71,17 +71,17 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         _doLend(param.collToken, param.collAmount);
 
         // 2. Borrow specific amounts
+        IICHIVault vault = IICHIVault(strategy.vault);
+        if (
+            vault.token0() != param.borrowToken &&
+            vault.token1() != param.borrowToken
+        ) revert Errors.INCORRECT_DEBT(param.borrowToken);
         uint256 borrowBalance = _doBorrow(
             param.borrowToken,
             param.borrowAmount
         );
 
         // 3. Add liquidity - Deposit on ICHI Vault
-        IICHIVault vault = IICHIVault(strategy.vault);
-        if (
-            vault.token0() != param.borrowToken &&
-            vault.token1() != param.borrowToken
-        ) revert Errors.INCORRECT_DEBT(param.borrowToken);
         bool isTokenA = vault.token0() == param.borrowToken;
         _ensureApprove(param.borrowToken, address(vault), borrowBalance);
 

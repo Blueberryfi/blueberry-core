@@ -437,8 +437,10 @@ contract BlueBerryBank is
         uint256 positionId
     ) public view override returns (uint256 icollValue) {
         Position memory pos = positions[positionId];
+        // NOTE: exchangeRateStored has 18 decimals.
         uint underlyingAmount = (ICErc20(banks[pos.debtToken].bToken)
-            .exchangeRateStored() * pos.underlyingVaultShare) / 10 ** 18;
+            .exchangeRateStored() * pos.underlyingVaultShare) /
+            Constants.PRICE_PRECISION;
         icollValue = oracle.getTokenValue(
             pos.underlyingToken,
             underlyingAmount
