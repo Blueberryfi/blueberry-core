@@ -7,11 +7,8 @@ import {
   AggregatorOracle,
   BandAdapterOracle,
   ChainlinkAdapterOracle,
-  IFeedRegistry,
-  IStdReference,
+  MockOracle,
 } from '../../typechain-types';
-import ChainlinkFeedABI from '../../abi/IFeedRegistry.json';
-import BandOracleABI from '../../abi/IStdReference.json';
 
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
@@ -28,8 +25,9 @@ describe('Aggregator Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
 
-  let chainlinkFeedOracle: IFeedRegistry;
-  let bandBaseOracle: IStdReference;
+  let mockOracle1: MockOracle;
+  let mockOracle2: MockOracle;
+  let mockOracle3: MockOracle;
 
   let chainlinkOracle: ChainlinkAdapterOracle;
   let bandOracle: BandAdapterOracle;
@@ -37,11 +35,7 @@ describe('Aggregator Oracle', () => {
 
   before(async () => {
     [admin, alice] = await ethers.getSigners();
-    chainlinkFeedOracle = <IFeedRegistry>await ethers.getContractAt(ChainlinkFeedABI, ADDRESS.ChainlinkRegistry);
-    bandBaseOracle = <IStdReference>await ethers.getContractAt(BandOracleABI, ADDRESS.BandStdRef);
-  });
 
-  beforeEach(async () => {
     // Chainlink Oracle
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
@@ -66,6 +60,27 @@ describe('Aggregator Oracle', () => {
       ['USDC', 'UNI']
     );
 
+    // Mock Oracle
+    const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
+    mockOracle1 = <MockOracle>await MockOracle.deploy();
+    mockOracle2 = <MockOracle>await MockOracle.deploy();
+    mockOracle3 = <MockOracle>await MockOracle.deploy();
+
+    await mockOracle1.setPrice(
+      [ADDRESS.ICHI],
+      [utils.parseEther("1")]
+    )
+    await mockOracle2.setPrice(
+      [ADDRESS.ICHI],
+      [utils.parseEther("0.5")]
+    )
+    await mockOracle3.setPrice(
+      [ADDRESS.ICHI],
+      [utils.parseEther("0.7")]
+    )
+  });
+
+  beforeEach(async () => {
     const AggregatorOracle = await ethers.getContractFactory(CONTRACT_NAMES.AggregatorOracle);
     aggregatorOracle = <AggregatorOracle>await AggregatorOracle.deploy();
     await aggregatorOracle.deployed();
@@ -104,6 +119,14 @@ describe('Aggregator Oracle', () => {
           [chainlinkOracle.address, ethers.constants.AddressZero]
         )
       ).to.be.revertedWith('ZERO_ADDRESS');
+
+      await expect(
+        aggregatorOracle.setPrimarySources(
+          ADDRESS.UNI,
+          1500,
+          [chainlinkOracle.address, bandOracle.address]
+        )
+      ).to.be.revertedWith("OUT_OF_DEVIATION_CAP")
 
       await expect(
         aggregatorOracle.setPrimarySources(
@@ -175,10 +198,10 @@ describe('Aggregator Oracle', () => {
         [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV, ADDRESS.ICHI],
         [DEVIATION, DEVIATION, DEVIATION, DEVIATION],
         [
-          [chainlinkOracle.address, bandOracle.address],
+          [bandOracle.address, chainlinkOracle.address],
           [chainlinkOracle.address, bandOracle.address, bandOracle.address],
           [chainlinkOracle.address],
-          [chainlinkOracle.address, bandOracle.address],
+          [mockOracle1.address, mockOracle2.address, mockOracle3.address],
         ]
       )
     })
@@ -188,9 +211,39 @@ describe('Aggregator Oracle', () => {
       ).to.be.revertedWith(`NO_PRIMARY_SOURCE`);
     })
     it("should revert when there is no source returning valid price", async () => {
+      await mockOracle1.setPrice([ADDRESS.ICHI], [0]);
+      await mockOracle2.setPrice([ADDRESS.ICHI], [0]);
+      await mockOracle3.setPrice([ADDRESS.ICHI], [0]);
+
       await expect(
         aggregatorOracle.getPrice(ADDRESS.ICHI)
       ).to.be.revertedWith(`NO_VALID_SOURCE`);
+    })
+    it("should revert when source prices exceed deviation", async () => {
+      await aggregatorOracle.setPrimarySources(
+        ADDRESS.ICHI,
+        DEVIATION,
+        [mockOracle1.address, mockOracle2.address],
+      );
+
+      await mockOracle1.setPrice([ADDRESS.ICHI], [utils.parseEther("0.7")]);
+      await mockOracle2.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
+
+      await expect(
+        aggregatorOracle.getPrice(ADDRESS.ICHI)
+      ).to.be.revertedWith("EXCEED_DEVIATION")
+    })
+    it("should take avgerage of valid prices within deviation", async () => {
+      await mockOracle1.setPrice([ADDRESS.ICHI], [utils.parseEther("0.7")]);
+      await mockOracle2.setPrice([ADDRESS.ICHI], [utils.parseEther("0.96")]);
+      await mockOracle3.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
+
+      expect(await aggregatorOracle.getPrice(ADDRESS.ICHI)).to.be.equal(utils.parseEther("0.98"))
+
+      await mockOracle1.setPrice([ADDRESS.ICHI], [utils.parseEther("0.68")]);
+      await mockOracle2.setPrice([ADDRESS.ICHI], [utils.parseEther("0.7")]);
+      await mockOracle3.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
+      expect(await aggregatorOracle.getPrice(ADDRESS.ICHI)).to.be.equal(utils.parseEther("0.69"))
     })
     it("CRV price feeds", async () => {
       const token = ADDRESS.CRV;

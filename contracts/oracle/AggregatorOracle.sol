@@ -112,7 +112,7 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
             try primarySources[token][idx].getPrice(token) returns (
                 uint256 px
             ) {
-                prices[validSourceCount++] = px;
+                if (px != 0) prices[validSourceCount++] = px;
             } catch {}
         }
         if (validSourceCount == 0) revert Errors.NO_VALID_SOURCE(token);

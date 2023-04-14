@@ -93,6 +93,16 @@ describe("SoftVault", () => {
       expect(await vault.uToken()).to.be.equal(USDC);
       expect(await vault.bToken()).to.be.equal(CUSDC);
     })
+    it("should revert initializing twice", async () => {
+      await expect(
+        vault.initialize(
+          config.address,
+          ethers.constants.AddressZero,
+          "Interest Bearing USDC",
+          "ibUSDC",
+        )
+      ).to.be.revertedWith("Initializable: contract is already initialized")
+    })
   })
   describe("Deposit", () => {
     const depositAmount = utils.parseUnits("100", 6);

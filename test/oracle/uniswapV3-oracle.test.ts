@@ -77,6 +77,13 @@ describe('Uniswap V3 Oracle', () => {
 
       await expect(
         uniswapV3Oracle.setStablePools(
+          [ADDRESS.CRV],
+          [ADDRESS.UNI_V3_UNI_USDC]
+        )
+      ).to.be.revertedWith('NO_STABLEPOOL');
+
+      await expect(
+        uniswapV3Oracle.setStablePools(
           [ADDRESS.UNI, ADDRESS.ICHI],
           [ADDRESS.UNI_V3_UNI_USDC, ADDRESS.UNI_V3_ICHI_USDC]
         )
@@ -132,12 +139,12 @@ describe('Uniswap V3 Oracle', () => {
         [BigNumber.from(10).pow(18)]  // $1
       )
       await uniswapV3Oracle.setStablePools(
-        [ADDRESS.UNI, ADDRESS.ICHI],
-        [ADDRESS.UNI_V3_UNI_USDC, ADDRESS.UNI_V3_ICHI_USDC]
+        [ADDRESS.UNI, ADDRESS.ICHI, ADDRESS.CRV],
+        [ADDRESS.UNI_V3_UNI_USDC, ADDRESS.UNI_V3_ICHI_USDC, ADDRESS.UNI_V3_USDC_CRV]
       );
       await uniswapV3Oracle.setTimeGap(
-        [ADDRESS.UNI, ADDRESS.ICHI],
-        [3600, 3600] // timeAgo - 1 hour
+        [ADDRESS.UNI, ADDRESS.ICHI, ADDRESS.CRV],
+        [3600, 3600, 3600] // timeAgo - 1 hour
       );
     })
 
@@ -158,6 +165,10 @@ describe('Uniswap V3 Oracle', () => {
     });
     it('$ICHI Price', async () => {
       const price = await uniswapV3Oracle.getPrice(ADDRESS.ICHI);
+      console.log(utils.formatUnits(price, 18));
+    });
+    it('$CRV Price', async () => {
+      const price = await uniswapV3Oracle.getPrice(ADDRESS.CRV);
       console.log(utils.formatUnits(price, 18));
     });
   })

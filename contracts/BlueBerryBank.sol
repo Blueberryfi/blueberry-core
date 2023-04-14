@@ -243,11 +243,8 @@ contract BlueBerryBank is
         address hardVault,
         uint256 liqThreshold
     ) external onlyOwner onlyWhitelistedToken(token) {
-        if (
-            token == address(0) ||
-            softVault == address(0) ||
-            hardVault == address(0)
-        ) revert Errors.ZERO_ADDRESS();
+        if (softVault == address(0) || hardVault == address(0))
+            revert Errors.ZERO_ADDRESS();
         if (liqThreshold > Constants.DENOMINATOR)
             revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
         if (liqThreshold < Constants.MIN_LIQ_THRESHOLD)
@@ -437,8 +434,10 @@ contract BlueBerryBank is
         uint256 positionId
     ) public view override returns (uint256 icollValue) {
         Position memory pos = positions[positionId];
+        // NOTE: exchangeRateStored has 18 decimals.
         uint underlyingAmount = (ICErc20(banks[pos.debtToken].bToken)
-            .exchangeRateStored() * pos.underlyingVaultShare) / 10 ** 18;
+            .exchangeRateStored() * pos.underlyingVaultShare) /
+            Constants.PRICE_PRECISION;
         icollValue = oracle.getTokenValue(
             pos.underlyingToken,
             underlyingAmount

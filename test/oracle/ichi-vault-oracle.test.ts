@@ -18,6 +18,7 @@ import {
 } from '../../typechain-types';
 import { roughlyNear } from '../assertions/roughlyNear';
 import { solidity } from 'ethereum-waffle'
+import { setupProtocol } from '../setup-test';
 
 chai.use(roughlyNear);
 chai.use(solidity)
@@ -42,7 +43,10 @@ describe('Ichi Vault Oracle', () => {
   let usdc: ERC20;
 
   before(async () => {
+    await setupProtocol();
     [admin, user] = await ethers.getSigners();
+
+    usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
 
     const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
     mockOracle = <MockOracle>await MockOracle.deploy();
@@ -121,6 +125,74 @@ describe('Ichi Vault Oracle', () => {
     })
   })
 
+  it("should revert price feed for empty vault", async () => {
+    const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+    const LibInstance = await LinkedLibFactory.deploy();
+
+    const IchiVault = await ethers.getContractFactory("MockIchiVault", {
+      libraries: {
+        UniV3WrappedLibMockup: LibInstance.address
+      }
+    });
+    const newVault = await IchiVault.deploy(
+      ADDRESS.UNI_V3_ICHI_USDC,
+      true,
+      true,
+      admin.address,
+      admin.address,
+      3600
+    )
+
+    const price = await ichiOracle.getPrice(newVault.address);
+    expect(price).to.be.equal(0);
+  })
+
+  it("should revert price feed for pools have too short twap period", async () => {
+    const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+    const LibInstance = await LinkedLibFactory.deploy();
+
+    const IchiVault = await ethers.getContractFactory("MockIchiVault", {
+      libraries: {
+        UniV3WrappedLibMockup: LibInstance.address
+      }
+    });
+    const newVault = await IchiVault.deploy(
+      ADDRESS.UNI_V3_ICHI_USDC,
+      true,
+      true,
+      admin.address,
+      admin.address,
+      60 // 60 seconds
+    )
+    await usdc.approve(newVault.address, ethers.constants.MaxUint256)
+    await newVault.deposit(0, utils.parseUnits("100", 6), admin.address)
+
+    await expect(ichiOracle.getPrice(newVault.address)).to.be.revertedWith("TOO_LOW_MEAN")
+  })
+
+  it("should revert price feed for pools have too long twap period", async () => {
+    const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+    const LibInstance = await LinkedLibFactory.deploy();
+
+    const IchiVault = await ethers.getContractFactory("MockIchiVault", {
+      libraries: {
+        UniV3WrappedLibMockup: LibInstance.address
+      }
+    });
+    const newVault = await IchiVault.deploy(
+      ADDRESS.UNI_V3_ICHI_USDC,
+      true,
+      true,
+      admin.address,
+      admin.address,
+      60 * 60 * 24 * 3 // 3 days
+    )
+    await usdc.approve(newVault.address, ethers.constants.MaxUint256)
+    await newVault.deposit(0, utils.parseUnits("100", 6), admin.address)
+
+    await expect(ichiOracle.getPrice(newVault.address)).to.be.revertedWith("TOO_LONG_DELAY")
+  })
+
   it('USDC/ICHI Angel Vault Price', async () => {
     const ichiPrice = await uniswapV3Oracle.getPrice(ICHI);
     console.log("ICHI Price", utils.formatUnits(ichiPrice))
@@ -147,28 +219,6 @@ describe('Ichi Vault Oracle', () => {
 
     expect(lpPrice.eq(lpPriceM)).to.be.true
   });
-
-  it("USDC/ICHI empty pool price", async () => {
-    const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
-    const LibInstance = await LinkedLibFactory.deploy();
-
-    const IchiVault = await ethers.getContractFactory("MockIchiVault", {
-      libraries: {
-        UniV3WrappedLibMockup: LibInstance.address
-      }
-    });
-    const newVault = await IchiVault.deploy(
-      ADDRESS.UNI_V3_ICHI_USDC,
-      true,
-      true,
-      admin.address,
-      admin.address,
-      3600
-    )
-
-    const price = await ichiOracle.getPrice(newVault.address);
-    expect(price).to.be.equal(0);
-  })
 
   describe("Flashloan attack test", () => {
     it("Vault Reserve manipulation", async () => {

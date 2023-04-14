@@ -42,7 +42,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     }
 
     function unpause() external onlyOwner {
-        _pause();
+        _unpause();
     }
 
     /// @notice Set oracle source routes for tokens

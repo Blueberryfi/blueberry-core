@@ -15,7 +15,7 @@ chai.use(near);
 const USDC = ADDRESS.USDC;
 const WETH = ADDRESS.WETH;
 
-describe("HardVault", () => {
+describe("Protocol Config", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let bank: SignerWithAddress;
@@ -32,23 +32,30 @@ describe("HardVault", () => {
     config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address]);
   })
 
-  it("should revert when treasury address is invalid", async () => {
-    const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
-    await expect(
-      upgrades.deployProxy(ProtocolConfig, [ethers.constants.AddressZero])
-    ).to.be.revertedWith("ZERO_ADDRESS");
+  describe("Constructor", () => {
+    it("should revert initializing twice", async () => {
+      await expect(
+        config.initialize(config.address)
+      ).to.be.revertedWith("Initializable: contract is already initialized")
+    })
+    it("should revert when treasury address is invalid", async () => {
+      const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
+      await expect(
+        upgrades.deployProxy(ProtocolConfig, [ethers.constants.AddressZero])
+      ).to.be.revertedWith("ZERO_ADDRESS");
 
-    expect(await config.treasury()).to.be.equal(treasury.address)
-  })
-  it("should set initial states on constructor", async () => {
-    expect(await config.depositFee()).to.be.equal(50);
-    expect(await config.withdrawFee()).to.be.equal(50);
-    expect(await config.treasuryFeeRate()).to.be.equal(3000);
-    expect(await config.blbStablePoolFeeRate()).to.be.equal(3500);
-    expect(await config.blbIchiVaultFeeRate()).to.be.equal(3500);
-    expect(await config.withdrawVaultFee()).to.be.equal(100);
-    expect(await config.withdrawVaultFeeWindow()).to.be.equal(60 * 60 * 24 * 60);
-    expect(await config.withdrawVaultFeeWindowStartTime()).to.be.equal(0);
+      expect(await config.treasury()).to.be.equal(treasury.address)
+    })
+    it("should set initial states on constructor", async () => {
+      expect(await config.depositFee()).to.be.equal(50);
+      expect(await config.withdrawFee()).to.be.equal(50);
+      expect(await config.treasuryFeeRate()).to.be.equal(3000);
+      expect(await config.blbStablePoolFeeRate()).to.be.equal(3500);
+      expect(await config.blbIchiVaultFeeRate()).to.be.equal(3500);
+      expect(await config.withdrawVaultFee()).to.be.equal(100);
+      expect(await config.withdrawVaultFeeWindow()).to.be.equal(60 * 60 * 24 * 60);
+      expect(await config.withdrawVaultFeeWindowStartTime()).to.be.equal(0);
+    })
   })
 
   it("owner should be able to start vault withdraw fee", async () => {
@@ -57,6 +64,10 @@ describe("HardVault", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
 
     await config.startVaultWithdrawFee();
+
+    await expect(
+      config.startVaultWithdrawFee()
+    ).to.be.revertedWith("FEE_WINDOW_ALREADY_STARTED");
   })
 
   it("owner should be able to set deposit fee", async () => {
@@ -83,6 +94,30 @@ describe("HardVault", () => {
     expect(await config.withdrawFee()).to.be.equal(100);
   })
 
+  it("owner should be able to set rewards fee", async () => {
+    await expect(
+      config.connect(alice).setRewardFee(100)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(
+      config.setRewardFee(2500)
+    ).to.be.revertedWith("RATIO_TOO_HIGH");
+
+    await config.setRewardFee(100);
+    expect(await config.rewardFee()).to.be.equal(100);
+  })
+
+  it("owner should be able to set max slippage of close", async () => {
+    await expect(
+      config.connect(alice).setMaxSlippageOfClose(100)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+    // await expect(
+    //   config.setMaxSlippageOfClose(2500)
+    // ).to.be.revertedWith("RATIO_TOO_HIGH");
+
+    await config.setMaxSlippageOfClose(100);
+    expect(await config.maxSlippageOfClose()).to.be.equal(100);
+  })
+
   it("owner should be able to set fee distribution rates", async () => {
     await expect(
       config.connect(alice).setFeeDistribution(0, 0, 0)
@@ -107,6 +142,18 @@ describe("HardVault", () => {
 
     await config.setTreasuryWallet(treasury.address);
     expect(await config.treasury()).to.be.equal(treasury.address);
+  })
+
+  it("owner should be able to set fee manager", async () => {
+    await expect(
+      config.connect(alice).setFeeManager(treasury.address)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(
+      config.setFeeManager(ethers.constants.AddressZero)
+    ).to.be.revertedWith("ZERO_ADDRESS");
+
+    await config.setFeeManager(treasury.address);
+    expect(await config.feeManager()).to.be.equal(treasury.address);
   })
 
   it("owner should be able to set BLB/USDC ichi vault", async () => {
