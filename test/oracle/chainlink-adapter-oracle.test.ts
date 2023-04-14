@@ -149,6 +149,27 @@ describe('Chainlink Adapter Oracle', () => {
       ).to.be.roughlyNear(price);
       console.log('UNI Price:', utils.formatUnits(price, 18));
     })
+    it("CRV price feeds", async () => {
+      await chainlinkAdapterOracle.setTimeGap(
+        [ADDRESS.CRV],
+        [OneDay]
+      );
+      await chainlinkAdapterOracle.setTokenRemappings(
+        [ADDRESS.CRV], [ADDRESS.CRV]
+      )
+      const price = await chainlinkAdapterOracle.getPrice(ADDRESS.CRV);
+      console.log('CRV Price:', utils.formatUnits(price, 18));
+    })
+    it("should revert for too old prices", async () => {
+      const dydx = "0x92d6c1e31e14520e676a687f0a93788b716beff5"
+      await chainlinkAdapterOracle.setTimeGap(
+        [dydx],
+        [3600]
+      );
+      await expect(
+        chainlinkAdapterOracle.getPrice(dydx)
+      ).to.be.revertedWith("PRICE_OUTDATED")
+    })
     it('should revert for invalid feeds', async () => {
       await chainlinkAdapterOracle.setTimeGap([ADDRESS.ICHI], [OneDay]);
       await expect(

@@ -90,7 +90,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
 
   // Prepare USDC
   // deposit 80 eth -> 80 WETH
-  await weth.deposit({ value: utils.parseUnits('90') });
+  await weth.deposit({ value: utils.parseUnits('100') });
 
   // swap 40 WETH -> USDC, 40 WETH -> DAI
   await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
@@ -119,7 +119,7 @@ export const setupProtocol = async (): Promise<Protocol> => {
     ADDRESS.SUSHI_ROUTER
   );
   await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits('30'),
+    utils.parseUnits('40'),
     0,
     [WETH, ICHIV1],
     admin.address,
@@ -145,9 +145,9 @@ export const setupProtocol = async (): Promise<Protocol> => {
     admin.address,
     3600
   )
-  await usdc.approve(ichi_USDC_ICHI_Vault.address, utils.parseUnits("100", 6));
-  await ichi.approve(ichi_USDC_ICHI_Vault.address, utils.parseUnits("100", 18));
-  await ichi_USDC_ICHI_Vault.deposit(utils.parseUnits("100", 18), utils.parseUnits("100", 6), admin.address)
+  await usdc.approve(ichi_USDC_ICHI_Vault.address, utils.parseUnits("1000", 6));
+  await ichi.approve(ichi_USDC_ICHI_Vault.address, utils.parseUnits("1000", 18));
+  await ichi_USDC_ICHI_Vault.deposit(utils.parseUnits("1000", 18), utils.parseUnits("1000", 6), admin.address)
 
   ichi_USDC_DAI_Vault = <MockIchiVault>await IchiVault.deploy(
     ADDRESS.UNI_V3_USDC_DAI,

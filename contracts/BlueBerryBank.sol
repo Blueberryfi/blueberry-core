@@ -243,11 +243,8 @@ contract BlueBerryBank is
         address hardVault,
         uint256 liqThreshold
     ) external onlyOwner onlyWhitelistedToken(token) {
-        if (
-            token == address(0) ||
-            softVault == address(0) ||
-            hardVault == address(0)
-        ) revert Errors.ZERO_ADDRESS();
+        if (softVault == address(0) || hardVault == address(0))
+            revert Errors.ZERO_ADDRESS();
         if (liqThreshold > Constants.DENOMINATOR)
             revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
         if (liqThreshold < Constants.MIN_LIQ_THRESHOLD)

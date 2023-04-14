@@ -234,15 +234,15 @@ describe('Aggregator Oracle', () => {
       ).to.be.revertedWith("EXCEED_DEVIATION")
     })
     it("should take avgerage of valid prices within deviation", async () => {
-      await mockOracle1.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
+      await mockOracle1.setPrice([ADDRESS.ICHI], [utils.parseEther("0.7")]);
       await mockOracle2.setPrice([ADDRESS.ICHI], [utils.parseEther("0.96")]);
-      await mockOracle3.setPrice([ADDRESS.ICHI], [utils.parseEther("0.7")]);
+      await mockOracle3.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
 
       expect(await aggregatorOracle.getPrice(ADDRESS.ICHI)).to.be.equal(utils.parseEther("0.98"))
 
-      await mockOracle1.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
+      await mockOracle1.setPrice([ADDRESS.ICHI], [utils.parseEther("0.68")]);
       await mockOracle2.setPrice([ADDRESS.ICHI], [utils.parseEther("0.7")]);
-      await mockOracle3.setPrice([ADDRESS.ICHI], [utils.parseEther("0.68")]);
+      await mockOracle3.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
       expect(await aggregatorOracle.getPrice(ADDRESS.ICHI)).to.be.equal(utils.parseEther("0.69"))
     })
     it("CRV price feeds", async () => {
