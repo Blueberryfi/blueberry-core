@@ -103,6 +103,7 @@ error RATIO_TOO_HIGH(uint256 ratio);
 error INVALID_FEE_DISTRIBUTION();
 error NO_TREASURY_SET();
 error FEE_WINDOW_ALREADY_STARTED();
+error FEE_WINDOW_TOO_LONG(uint256 windowTime);
 
 // Utilities
 error CAST();

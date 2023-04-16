@@ -30,7 +30,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     uint256 public withdrawFee;
     uint256 public rewardFee;
 
-    // Liquidity Vault (SoftVault/HardVault) Fee
+    // Liquidity Vault SoftVault Fee
     uint256 public withdrawVaultFee;
     uint256 public withdrawVaultFeeWindow;
     uint256 public withdrawVaultFeeWindowStartTime;
@@ -66,7 +66,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         blbIchiVaultFeeRate = 3500; //  35% of deposit/withdraw fee => 0.175%
 
         withdrawVaultFee = 100; // 1% as default, base 10000
-        withdrawVaultFeeWindow = 60 days;
+        withdrawVaultFeeWindow = 90 days; // Liquidity boot strapping event per vault
 
         maxSlippageOfClose = 300; // 3% of Max Slippage as default, base 10000
     }
@@ -86,7 +86,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
             revert Errors.RATIO_TOO_HIGH(depositFee_);
         depositFee = depositFee_;
     }
-
+    /**
+     *  @dev Owner priviledged function to set withdraw fee 
+     */
     function setWithdrawFee(uint256 withdrawFee_) external onlyOwner {
         // Cap to 20%
         if (withdrawFee_ > Constants.MAX_FEE_RATE)
@@ -94,6 +96,19 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         withdrawFee = withdrawFee_;
     }
 
+    /**
+     * @dev Owner priviledged function to set withdraw vault fee window 
+     */
+    function setWithdrawVaultFeeWindow(uint256 withdrawVaultFeeWindow_) external onlyOwner {
+        // Cap to 90 days
+        if (withdrawVaultFeeWindow_ > Constants.MAX_WITHDRAW_VAULT_FEE_WINDOW)
+            revert Errors.FEE_WINDOW_TOO_LONG(withdrawVaultFeeWindow_);
+        withdrawVaultFeeWindow = withdrawVaultFeeWindow_;
+    }
+
+    /**
+     * @dev Owner priviledged function to set maximum slippage to close a position 
+     */
     function setMaxSlippageOfClose(uint256 slippage_) external onlyOwner {
         // Cap to 20%
         if (maxSlippageOfClose > Constants.MAX_FEE_RATE)
@@ -101,6 +116,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         maxSlippageOfClose = slippage_;
     }
 
+    /**
+     * @dev Owner priviledged function to set reward fee 
+     */
     function setRewardFee(uint256 rewardFee_) external onlyOwner {
         // Cap to 20%
         if (rewardFee_ > Constants.MAX_FEE_RATE)
@@ -108,6 +126,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         rewardFee = rewardFee_;
     }
 
+    /**
+     * @dev Owner priviledged function to set fee distribution  
+     */
     function setFeeDistribution(
         uint256 treasuryFeeRate_,
         uint256 blbStablePoolFeeRate_,
@@ -122,11 +143,17 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         blbIchiVaultFeeRate = blbIchiVaultFeeRate_;
     }
 
+    /**
+     * @dev Owner priviledged function to set treasury wallet address
+     */
     function setTreasuryWallet(address treasury_) external onlyOwner {
         if (treasury_ == address(0)) revert Errors.ZERO_ADDRESS();
         treasury = treasury_;
     }
 
+    /**
+     * @dev Owner priviledged function to set fee manager address
+     */
     function setFeeManager(address feeManager_) external onlyOwner {
         if (feeManager_ == address(0)) revert Errors.ZERO_ADDRESS();
         feeManager = IFeeManager(feeManager_);
@@ -137,6 +164,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         blbUsdcIchiVault = vault_;
     }
 
+    /**
+     * @dev Owner priviledged function to set blb stability pool address
+     */
     function setBlbStabilityPool(address pool_) external onlyOwner {
         if (pool_ == address(0)) revert Errors.ZERO_ADDRESS();
         blbStabilityPool = pool_;

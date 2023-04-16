@@ -10,6 +10,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "windowTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "FEE_WINDOW_TOO_LONG",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "INVALID_FEE_DISTRIBUTION",
     "type": "error"
@@ -322,6 +333,19 @@
       }
     ],
     "name": "setWithdrawFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "withdrawVaultFeeWindow_",
+        "type": "uint256"
+      }
+    ],
+    "name": "setWithdrawVaultFeeWindow",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
