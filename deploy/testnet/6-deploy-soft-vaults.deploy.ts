@@ -8,27 +8,62 @@ async function main(): Promise<void> {
 	console.log("Deployer:", deployer.address);
 
 	// HardVault
-	const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-	const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [
-		deployment.ProtocolConfig,
-	])
-	await hardVault.deployed();
-	console.log("Hard Vault:", hardVault.address);
-	deployment.HardVault = hardVault.address;
-	writeDeployments(deployment);
+	// const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
+	// const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [
+	// 	deployment.ProtocolConfig,
+	// ])
+	// await hardVault.deployed();
+	// console.log("Hard Vault:", hardVault.address);
+	// deployment.HardVault = hardVault.address;
+	// writeDeployments(deployment);
 
 	// SoftVault
 	const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
+
 	const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
 		deployment.ProtocolConfig,
-		ADDRESS_GOERLI.bICHI,
-		"Interest Bearing ICHI",
-		"ibICHI"
+		ADDRESS_GOERLI.bOHM,
+		"Interest Bearing OHM",
+		"ibOHM"
 	]);
 	await vault.deployed();
-	console.log('Soft Vault-ICHI:', vault.address);
-	deployment.SoftVault_ICHI = vault.address;
+	console.log('Soft Vault-OHM:', vault.address);
+	deployment.SoftVault_OHM = vault.address;
 	writeDeployments(deployment);
+
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bMIM,
+	// 	"Interest Bearing MIM",
+	// 	"ibMIM"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-MIM:', vault.address);
+	// deployment.SoftVault_MIM = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bLINK,
+	// 	"Interest Bearing LINK",
+	// 	"ibLINK"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-LINK:', vault.address);
+	// deployment.SoftVault_LINK = vault.address;
+	// writeDeployments(deployment);
+
+	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
+	// 	deployment.ProtocolConfig,
+	// 	ADDRESS_GOERLI.bICHI,
+	// 	"Interest Bearing ICHI",
+	// 	"ibICHI"
+	// ]);
+	// await vault.deployed();
+	// console.log('Soft Vault-ICHI:', vault.address);
+	// deployment.SoftVault_ICHI = vault.address;
+	// writeDeployments(deployment);
 
 	// const vault = <SoftVault>await upgrades.deployProxy(SoftVault, [
 	// 	deployment.ProtocolConfig,
