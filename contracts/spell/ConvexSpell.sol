@@ -14,35 +14,37 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "./BasicSpell.sol";
 import "../interfaces/ICurveOracle.sol";
-import "../interfaces/IWCurveGauge.sol";
+import "../interfaces/IWConvexPools.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../interfaces/uniswap/IUniswapV2Router02.sol";
 
-contract CurveSpell is BasicSpell {
+import "hardhat/console.sol";
+
+contract ConvexSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    /// @dev address of Wrapped Curve Gauge
-    IWCurveGauge public wCurveGauge;
+    /// @dev Address to Wrapped Convex Pools
+    IWConvexPools public wConvexPools;
     /// @dev address of CurveOracle
     ICurveOracle public crvOracle;
-    /// @dev address of CRV token
-    address public CRV;
+    /// @dev address of CVX token
+    address public CVX;
 
     function initialize(
         IBank bank_,
         address werc20_,
         address weth_,
-        address wCurveGauge_,
+        address wConvexPools_,
         address crvOracle_
     ) external initializer {
         __BasicSpell_init(bank_, werc20_, weth_);
-        if (wCurveGauge_ == address(0) || crvOracle_ == address(0))
+        if (wConvexPools_ == address(0) || crvOracle_ == address(0))
             revert Errors.ZERO_ADDRESS();
 
-        wCurveGauge = IWCurveGauge(wCurveGauge_);
-        CRV = address(wCurveGauge.CRV());
+        wConvexPools = IWConvexPools(wConvexPools_);
+        CVX = address(wConvexPools.CVX());
         crvOracle = ICurveOracle(crvOracle_);
-        IWCurveGauge(wCurveGauge_).setApprovalForAll(address(bank_), true);
+        IWConvexPools(wConvexPools_).setApprovalForAll(address(bank_), true);
     }
 
     /**
@@ -66,10 +68,11 @@ contract CurveSpell is BasicSpell {
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
-        address lp = strategies[param.strategyId].vault;
-        if (wCurveGauge.getLpFromGaugeId(param.farmingPoolId) != lp)
-            revert Errors.INCORRECT_LP(lp);
-        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(lp);
+        Strategy memory strategy = strategies[param.strategyId];
+        (address lpToken, , , , , ) = wConvexPools.getPoolInfoFromPoolId(
+            param.farmingPoolId
+        );
+        if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         // 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
@@ -80,7 +83,10 @@ contract CurveSpell is BasicSpell {
             param.borrowAmount
         );
 
-        // 3. Add liquidity on curve
+        // 3. Add liquidity on curve, get crvLp
+        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
+            lpToken
+        );
         _ensureApprove(param.borrowToken, pool, borrowBalance);
         if (tokens.length == 2) {
             uint256[2] memory suppliedAmts;
@@ -114,30 +120,30 @@ contract CurveSpell is BasicSpell {
         // 5. Validate Max Pos Size
         _validateMaxPosSize(param.strategyId);
 
-        // 6. Take out collateral and burn
+        // 6. Take out existing collateral and burn
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
-            (uint256 decodedGid, ) = wCurveGauge.decodeId(pos.collId);
-            if (param.farmingPoolId != decodedGid)
+            (uint256 pid, ) = wConvexPools.decodeId(pos.collId);
+            if (param.farmingPoolId != pid)
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
-            if (pos.collToken != address(wCurveGauge))
+            if (pos.collToken != address(wConvexPools))
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
             bank.takeCollateral(pos.collateralSize);
-            wCurveGauge.burn(pos.collId, pos.collateralSize);
-            _doRefundRewards(CRV);
+            wConvexPools.burn(pos.collId, pos.collateralSize);
+            _doRefundRewards(CVX);
         }
 
-        // 7. Deposit on Curve Gauge, Put wrapped collateral tokens on Blueberry Bank
-        uint256 lpAmount = IERC20Upgradeable(lp).balanceOf(address(this));
-        _ensureApprove(lp, address(wCurveGauge), lpAmount);
-        uint256 id = wCurveGauge.mint(param.farmingPoolId, lpAmount);
-        bank.putCollateral(address(wCurveGauge), id, lpAmount);
+        // 7. Deposit on Convex Pool, Put wrapped collateral tokens on Blueberry Bank
+        uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
+        _ensureApprove(lpToken, address(wConvexPools), lpAmount);
+        uint256 id = wConvexPools.mint(param.farmingPoolId, lpAmount);
+        bank.putCollateral(address(wConvexPools), id, lpAmount);
     }
 
     function closePositionFarm(
         ClosePosParam calldata param,
         IUniswapV2Router02 swapRouter,
-        address[] calldata swapPath
+        address[][] calldata swapPath
     )
         external
         existingStrategy(param.strategyId)
@@ -145,23 +151,28 @@ contract CurveSpell is BasicSpell {
     {
         address crvLp = strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
-        if (pos.collToken != address(wCurveGauge))
+        if (pos.collToken != address(wConvexPools))
             revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-        if (wCurveGauge.getUnderlyingToken(pos.collId) != crvLp)
+        if (wConvexPools.getUnderlyingToken(pos.collId) != crvLp)
             revert Errors.INCORRECT_UNDERLYING(crvLp);
 
         // 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
         bank.takeCollateral(param.amountPosRemove);
-        wCurveGauge.burn(pos.collId, param.amountPosRemove);
+        (address[] memory rewardTokens, ) = wConvexPools.burn(
+            pos.collId,
+            param.amountPosRemove
+        );
 
-        {
-            // 2. Swap rewards tokens to debt token
-            uint256 rewards = _doCutRewardsFee(CRV);
-            _ensureApprove(CRV, address(swapRouter), rewards);
+        console.log("Here");
+
+        // 2. Swap rewards tokens to debt token
+        for (uint256 i = 0; i < rewardTokens.length; i++) {
+            uint256 rewards = _doCutRewardsFee(rewardTokens[i]);
+            _ensureApprove(rewardTokens[i], address(swapRouter), rewards);
             swapRouter.swapExactTokensForTokens(
                 rewards,
                 0,
-                swapPath,
+                swapPath[i],
                 address(this),
                 type(uint256).max
             );
@@ -213,6 +224,6 @@ contract CurveSpell is BasicSpell {
         // 7. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
-        _doRefund(CRV);
+        _doRefund(CVX);
     }
 }

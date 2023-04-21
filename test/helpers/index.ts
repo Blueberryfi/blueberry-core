@@ -17,3 +17,4 @@ export const evm_mine_blocks = async (n: number) => {
 
 export * from "./setup-ichi-protocol"
 export * from "./setup-curve-protocol"
+export * from "./setup-convex-protocol"

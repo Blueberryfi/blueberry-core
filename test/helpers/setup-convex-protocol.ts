@@ -15,9 +15,9 @@ import {
   HardVault,
   FeeManager,
   UniV3WrappedLib,
-  WCurveGauge,
   CurveOracle,
-  CurveSpell
+  WConvexPools,
+  ConvexSpell
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 
@@ -28,18 +28,20 @@ const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const USDT = ADDRESS.USDT;
 const DAI = ADDRESS.DAI;
+const FRAX = ADDRESS.FRAX;
 const CRV = ADDRESS.CRV;
+const CVX = ADDRESS.CVX;
 const ETH_PRICE = 1600;
 
-export interface CrvProtocol {
+export interface CvxProtocol {
   werc20: WERC20,
-  wgauge: WCurveGauge,
+  wconvex: WConvexPools,
   mockOracle: MockOracle,
   curveOracle: CurveOracle,
   oracle: CoreOracle,
   config: ProtocolConfig,
   bank: BlueBerryBank,
-  curveSpell: CurveSpell,
+  convexSpell: ConvexSpell,
   usdcSoftVault: SoftVault,
   crvSoftVault: SoftVault,
   daiSoftVault: SoftVault,
@@ -48,7 +50,7 @@ export interface CrvProtocol {
   uniV3Lib: UniV3WrappedLib,
 }
 
-export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
+export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
@@ -58,11 +60,11 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   let crv: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
-  let wgauge: WCurveGauge;
+  let wconvex: WConvexPools;
   let mockOracle: MockOracle;
   let curveOracle: CurveOracle;
   let oracle: CoreOracle;
-  let curveSpell: CurveSpell;
+  let convexSpell: ConvexSpell;
 
   let config: ProtocolConfig;
   let feeManager: FeeManager;
@@ -132,9 +134,11 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
   await mockOracle.setPrice(
-    [WETH, USDC, CRV, DAI, USDT],
+    [WETH, USDC, CRV, DAI, USDT, FRAX, CVX],
     [
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
+      BigNumber.from(10).pow(18), // $1
+      BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
@@ -157,7 +161,10 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
       CRV,
       DAI,
       USDT,
-      ADDRESS.CRV_3Crv
+      FRAX,
+      CVX,
+      ADDRESS.CRV_3Crv,
+      ADDRESS.CRV_FRAX3Crv
     ],
     [
       mockOracle.address,
@@ -165,6 +172,9 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
+      mockOracle.address,
+      mockOracle.address,
+      curveOracle.address,
       curveOracle.address
     ]
   )
@@ -188,33 +198,32 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   werc20 = <WERC20>await upgrades.deployProxy(WERC20);
   await werc20.deployed();
 
-  const WCurveGauge = await ethers.getContractFactory(CONTRACT_NAMES.WCurveGauge);
-  wgauge = <WCurveGauge>await upgrades.deployProxy(WCurveGauge, [
-    CRV,
-    ADDRESS.CRV_REGISTRY,
-    ADDRESS.CRV_GAUGE_CONTROLLER
+  const WConvexPools = await ethers.getContractFactory(CONTRACT_NAMES.WConvexPools);
+  wconvex = <WConvexPools>await upgrades.deployProxy(WConvexPools, [
+    CVX,
+    ADDRESS.CVX_BOOSTER
   ]);
-  await wgauge.deployed();
+  await wconvex.deployed();
 
   // Deploy CRV spell
-  const CurveSpell = await ethers.getContractFactory(CONTRACT_NAMES.CurveSpell);
-  curveSpell = <CurveSpell>await upgrades.deployProxy(CurveSpell, [
+  const ConvexSpell = await ethers.getContractFactory(CONTRACT_NAMES.ConvexSpell);
+  convexSpell = <ConvexSpell>await upgrades.deployProxy(ConvexSpell, [
     bank.address,
     werc20.address,
     WETH,
-    wgauge.address,
+    wconvex.address,
     curveOracle.address
   ])
-  await curveSpell.deployed();
+  await convexSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
-  await curveSpell.addStrategy(ADDRESS.CRV_3Crv, utils.parseUnits("2000", 18));
-  await curveSpell.addStrategy(ADDRESS.CRV_CRVETH, utils.parseUnits("2000", 18));
-  await curveSpell.setCollateralsMaxLTVs(
+  await convexSpell.addStrategy(ADDRESS.CRV_3Crv, utils.parseUnits("2000", 18));
+  await convexSpell.addStrategy(ADDRESS.CRV_FRAX3Crv, utils.parseUnits("2000", 18));
+  await convexSpell.setCollateralsMaxLTVs(
     0,
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
   );
-  await curveSpell.setCollateralsMaxLTVs(
+  await convexSpell.setCollateralsMaxLTVs(
     1,
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
@@ -222,12 +231,12 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
 
   // Setup Bank
   await bank.whitelistSpells(
-    [curveSpell.address],
+    [convexSpell.address],
     [true]
   )
   await bank.whitelistTokens([USDC, CRV, DAI], [true, true, true]);
   await bank.whitelistERC1155([
-    werc20.address, wgauge.address
+    werc20.address, wconvex.address
   ], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
@@ -287,14 +296,14 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
 
   return {
     werc20,
-    wgauge,
+    wconvex,
     mockOracle,
     curveOracle,
     oracle,
     config,
     feeManager,
     bank,
-    curveSpell,
+    convexSpell,
     usdcSoftVault,
     crvSoftVault,
     daiSoftVault,

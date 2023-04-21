@@ -16,6 +16,7 @@ export enum CONTRACT_NAMES {
 	WMasterChef = 'WMasterChef',
 	WIchiFarm = 'WIchiFarm',
 	WCurveGauge = 'WCurveGauge',
+	WConvexPools = "WConvexPools",
 	WStakingRewards = 'WStakingRewards',
 
 	// Oracles
@@ -41,6 +42,7 @@ export enum CONTRACT_NAMES {
 	UniswapV2SpellV1 = "UniswapV2SpellV1",
 	SushiswapSpellV1 = "SushiswapSpellV1",
 	BalancerSpellV1 = "BalancerSpellV1",
+	ConvexSpell = "ConvexSpell",
 	CurveSpell = "CurveSpell",
 	IchiSpell = "IchiSpell",
 
@@ -184,6 +186,7 @@ export const ADDRESS = {
 	CRV_3Crv: '0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490',
 	CRV_TriCrypto: '0xc4ad29ba4b3c580e6d59105fff484999997675ff',
 	CRV_FRAXUSDC: '0x3175df0976dfa876431c2e9ee6bc45b65d3473cc',
+	CRV_FRAX3Crv: '0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B',
 	CRV_FRXETH: '0xf43211935c781d5ca1a41d2041f397b8a7366c7a',
 	CRV_CRVETH: '0xed4064f376cb8d68f770fb1ff088a3d0f3ff5c4d',
 	CRV_CVXETH: '0x3a283d9c08e8b55966afb64c515f5143cf907611',
@@ -198,6 +201,11 @@ export const ADDRESS = {
 	// Curve Gauge
 	CRV_GAUGE_3Crv: '0xbfcf63294ad7105dea65aa58f8ae5be2d9d0952a',
 	CRV_GAUGE_3CrvId: 9,
+
+	// Convex
+	CVX_BOOSTER: '0xF403C135812408BFbE8713b5A23a04b3D48AAE31',
+	CVX_3Crv_Id: 9,
+	CVX_Frax3Crv_Id: 32,
 
 	// Wrapper
 	SUSHI_MASTERCHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
