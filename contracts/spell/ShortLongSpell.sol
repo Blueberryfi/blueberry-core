@@ -18,7 +18,6 @@ import "./BasicSpell.sol";
 import "../interfaces/ISoftVault.sol";
 import "../interfaces/IWERC20.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
-import "../libraries/Paraswap/Utils.sol";
 
 /**
  * @title Short/Long Spell
@@ -52,9 +51,6 @@ contract ShortLongSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        // require(augustusSwapper_ != address(0), Errors.ZERO_ADDRESS());
-        // require(tokenTransferProxy_ != address(0), Errors.ZERO_ADDRESS());
-
         augustusSwapper = augustusSwapper_;
         tokenTransferProxy = tokenTransferProxy_;
         wrapper = IWERC20(werc20_);
@@ -63,7 +59,7 @@ contract ShortLongSpell is BasicSpell {
     }
 
     /**
-     * @notice Internal function to swap token using paraswap assets on ICHI Vault
+     * @notice Internal function to swap token using paraswap assets
      * @dev Deposit isolated underlying to Blueberry Money Market,
      *      Borrow tokens from Blueberry Money Market,
      *      Swap borrowed token to another token
@@ -110,11 +106,11 @@ contract ShortLongSpell is BasicSpell {
     }
 
     /**
-     * @notice External function to deposit assets on IchiVault
+     * @notice External function to deposit assets
      */
     function openPosition(
         OpenPosParam calldata param,
-        Utils.MegaSwapSellData calldata swapData
+        Utils.MegaSwapSellData memory swapData
     )
         external
         existingStrategy(param.strategyId)
@@ -130,17 +126,19 @@ contract ShortLongSpell is BasicSpell {
         _deposit(param, swapData);
 
         // 4. Put collateral -
-        IBank.Position memory pos = bank.getCurrentPositionInfo();
-        address posCollToken = pos.collToken;
-        uint256 collId = pos.collId;
-        uint256 collSize = pos.collateralSize;
-        address burnToken = address(ISoftVault(strategy.vault).uToken());
-        if (collSize > 0) {
-            if (posCollToken != address(wrapper))
-                revert Errors.INCORRECT_COLTOKEN(posCollToken);
-            bank.takeCollateral(collSize);
-            wrapper.burn(burnToken, collSize);
-            _doRefund(burnToken);
+        {
+            IBank.Position memory pos = bank.getCurrentPositionInfo();
+            address posCollToken = pos.collToken;
+            uint256 collId = pos.collId;
+            uint256 collSize = pos.collateralSize;
+            address burnToken = address(ISoftVault(strategy.vault).uToken());
+            if (collSize > 0) {
+                if (posCollToken != address(wrapper))
+                    revert Errors.INCORRECT_COLTOKEN(posCollToken);
+                bank.takeCollateral(collSize);
+                wrapper.burn(burnToken, collSize);
+                _doRefund(burnToken);
+            }
         }
 
         // 5. Put collateral - strategy token
@@ -154,8 +152,8 @@ contract ShortLongSpell is BasicSpell {
     }
 
     /**
-     * @notice Internal function to withdraw assets from ICHI Vault
-     * @dev Withdraw assets from ICHI Vault,
+     * @notice Internal function to withdraw assets from SoftVault
+     * @dev Withdraw assets from Soft Vault,
      *      Swap withdrawn assets to debt token,
      *      Withdraw isolated collaterals from Blueberry Money Market,
      *      Repay Debt and refund rest to user
@@ -171,43 +169,45 @@ contract ShortLongSpell is BasicSpell {
         ISoftVault vault = ISoftVault(strategy.vault);
         uint256 positionId = bank.POSITION_ID();
 
-        // 1. Compute repay amount if MAX_INT is supplied (max debt)
-        uint256 amountRepay = param.amountRepay;
-        if (amountRepay == type(uint256).max) {
-            amountRepay = bank.currentPositionDebt(positionId);
-        }
-
-        // 2. Calculate actual amount to remove
+        // 1. Calculate actual amount to remove
         uint256 amountPosRemove = param.amountPosRemove;
         if (amountPosRemove == type(uint256).max) {
             amountPosRemove = vault.balanceOf(address(this));
         }
 
-        // 3. Withdraw from softvault
+        // 2. Withdraw from softvault
         vault.withdraw(amountPosRemove);
 
-        // 4. Swap strategy token to isolated collateral token
-        uint256 amountToSwap = IERC20Upgradeable(vault.uToken()).balanceOf(
-            address(this)
-        );
-        swapData.fromAmount = amountToSwap;
-        PSwapLib.megaSwap(augustusSwapper, tokenTransferProxy, swapData);
+        // 3. Swap strategy token to isolated collateral token
+        {
+            uint256 amountToSwap = IERC20Upgradeable(vault.uToken()).balanceOf(
+                address(this)
+            );
+            swapData.fromAmount = amountToSwap;
+            PSwapLib.megaSwap(augustusSwapper, tokenTransferProxy, swapData);
+        }
 
-        // 5. Withdraw isolated collateral from Bank
+        // 4. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 
-        // 6. Repay
-        _doRepay(param.borrowToken, amountRepay);
+        // 5. Repay
+        {
+            uint256 amountRepay = param.amountRepay;
+            if (amountRepay == type(uint256).max) {
+                amountRepay = bank.currentPositionDebt(positionId);
+            }
+            _doRepay(param.borrowToken, amountRepay);
+        }
 
         _validateMaxLTV(param.strategyId);
 
-        // 7. Refund
+        // 6. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
     }
 
     /**
-     * @notice External function to withdraw assets from ICHI Vault
+     * @notice External function to withdraw assets
      */
     function closePosition(
         ClosePosParam calldata param,
@@ -218,6 +218,7 @@ contract ShortLongSpell is BasicSpell {
         existingCollateral(param.strategyId, param.collToken)
     {
         Strategy memory strategy = strategies[param.strategyId];
+
         if (address(ISoftVault(strategy.vault).uToken()) != swapData.fromToken)
             revert Errors.INCORRECT_LP(swapData.fromToken);
 
@@ -237,7 +238,7 @@ contract ShortLongSpell is BasicSpell {
             param.amountPosRemove
         );
 
-        // 2-8. Remove liquidity
+        // 2-7. Remove liquidity
         _withdraw(param, swapData);
     }
 }

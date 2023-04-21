@@ -12,21 +12,9 @@ library PSwapLib {
         address spender,
         uint256 amount
     ) internal {
-        // approve zero before set allocation
+        // approve zero before reset allocation
         inToken.approve(spender, 0);
         inToken.approve(spender, amount);
-    }
-
-    function simpleSwap(
-        IERC20 inToken,
-        uint256 amountIn,
-        address augustusSwapper,
-        address tokenTransferProxy,
-        Utils.SimpleData calldata data
-    ) external returns (uint256 receivedAmount) {
-        _approve(inToken, tokenTransferProxy, amountIn);
-
-        return IParaswap(augustusSwapper).simpleSwap(data);
     }
 
     function megaSwap(
