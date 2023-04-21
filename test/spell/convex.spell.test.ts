@@ -16,7 +16,7 @@ import {
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { CvxProtocol, setupCvxProtocol, evm_mine_blocks } from "../helpers";
-import SpellABI from '../../abi/CurveSpell.json';
+import SpellABI from '../../abi/ConvexSpell.json';
 import chai, { expect } from "chai";
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
@@ -37,7 +37,7 @@ const CRV = ADDRESS.CRV;
 const ETH_PRICE = 1600;
 const GAUGE_ID = ADDRESS.CRV_GAUGE_3CrvId;
 
-describe("Curve Spell", () => {
+describe("Convex Spell", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
@@ -78,9 +78,9 @@ describe("Curve Spell", () => {
 
   describe("Constructor", () => {
     it("should revert when zero address is provided in param", async () => {
-      const CurveSpell = await ethers.getContractFactory(CONTRACT_NAMES.CurveSpell);
+      const ConvexSpell = await ethers.getContractFactory(CONTRACT_NAMES.ConvexSpell);
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           ethers.constants.AddressZero,
           werc20.address,
           WETH,
@@ -89,7 +89,7 @@ describe("Curve Spell", () => {
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           bank.address,
           ethers.constants.AddressZero,
           WETH,
@@ -98,7 +98,7 @@ describe("Curve Spell", () => {
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           bank.address,
           werc20.address,
           ethers.constants.AddressZero,
@@ -107,7 +107,7 @@ describe("Curve Spell", () => {
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           bank.address,
           werc20.address,
           WETH,
@@ -116,7 +116,7 @@ describe("Curve Spell", () => {
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           bank.address,
           werc20.address,
           WETH,
@@ -138,7 +138,7 @@ describe("Curve Spell", () => {
     })
   })
 
-  describe("Curve Gauge Farming Position", () => {
+  describe("Convex Pool Farming Position", () => {
     const depositAmount = utils.parseUnits('100', 18); // CRV => $100
     const borrowAmount = utils.parseUnits('250', 6);	 // USDC
     const iface = new ethers.utils.Interface(SpellABI);
@@ -323,7 +323,7 @@ describe("Curve Spell", () => {
           amountShareWithdraw: ethers.constants.MaxUint256,
           sellSlippage: 50,
           sqrtRatioLimit: 0
-        }, ADDRESS.SUSHI_ROUTER, [[CRV, WETH, USDC]]])
+        }, ADDRESS.SUSHI_ROUTER, [[CRV, WETH, USDC], [ADDRESS.FRAX, ADDRESS.SUSHI, USDC]]])
       )
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);

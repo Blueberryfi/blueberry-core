@@ -18,8 +18,6 @@ import "../interfaces/IWConvexPools.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../interfaces/uniswap/IUniswapV2Router02.sol";
 
-import "hardhat/console.sol";
-
 contract ConvexSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -162,8 +160,6 @@ contract ConvexSpell is BasicSpell {
             pos.collId,
             param.amountPosRemove
         );
-
-        console.log("Here");
 
         // 2. Swap rewards tokens to debt token
         for (uint256 i = 0; i < rewardTokens.length; i++) {

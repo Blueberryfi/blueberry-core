@@ -118,6 +118,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     ethers.constants.MaxUint256
   )
   // Try to swap some crv to usdc -> Swap router test
+  await crv.approve(ADDRESS.SUSHI_ROUTER, 0);
   await crv.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
   await sushiRouter.swapExactTokensForTokens(
     utils.parseUnits('10'),
