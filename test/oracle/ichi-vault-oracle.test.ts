@@ -18,7 +18,7 @@ import {
 } from '../../typechain-types';
 import { roughlyNear } from '../assertions/roughlyNear';
 import { solidity } from 'ethereum-waffle'
-import { setupProtocol } from '../setup-test';
+import { setupIchiProtocol } from '../helpers/setup-ichi-protocol';
 
 chai.use(roughlyNear);
 chai.use(solidity)
@@ -43,7 +43,7 @@ describe('Ichi Vault Oracle', () => {
   let usdc: ERC20;
 
   before(async () => {
-    await setupProtocol();
+    await setupIchiProtocol();
     [admin, user] = await ethers.getSigners();
 
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);

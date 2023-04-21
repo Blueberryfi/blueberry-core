@@ -26,7 +26,7 @@ import SpellABI from '../abi/IchiSpell.json';
 import { solidity } from 'ethereum-waffle'
 import { near } from './assertions/near'
 import { roughlyNear } from './assertions/roughlyNear'
-import { Protocol, setupProtocol } from './setup-test';
+import { Protocol, setupIchiProtocol } from './helpers/setup-ichi-protocol';
 import { evm_mine_blocks } from './helpers';
 import { TickMath } from '@uniswap/v3-sdk';
 
@@ -75,11 +75,11 @@ describe('Bank', () => {
     ichiV1 = <ERC20>await ethers.getContractAt("ERC20", ICHIV1);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
-    protocol = await setupProtocol();
+    protocol = await setupIchiProtocol();
     config = protocol.config;
     feeManager = protocol.feeManager;
     bank = protocol.bank;
-    spell = protocol.spell;
+    spell = protocol.ichiSpell;
     ichiFarm = protocol.ichiFarm;
     ichiVault = protocol.ichi_USDC_ICHI_Vault;
     wichi = protocol.wichi;
@@ -152,7 +152,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("SPELL_NOT_WHITELISTED")
@@ -169,7 +169,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("BAD_POSITION")
@@ -184,7 +184,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
 
@@ -199,7 +199,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("NOT_FROM_OWNER")
@@ -216,7 +216,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("TOKEN_NOT_WHITELISTED")
@@ -234,7 +234,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("TOKEN_NOT_WHITELISTED")
@@ -250,7 +250,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
 
@@ -265,7 +265,7 @@ describe('Bank', () => {
             borrowToken: DAI,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("INCORRECT_DEBT")
@@ -280,7 +280,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
 
@@ -295,7 +295,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("INCORRECT_UNDERLYING")
@@ -310,7 +310,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
 
@@ -325,7 +325,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("DIFF_COL_EXIST")
@@ -362,7 +362,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: ICHI_VAULT_PID
+            farmingPoolId: ICHI_VAULT_PID
           }])
         )
       ).to.be.revertedWith("TOKEN_NOT_WHITELISTED")
@@ -378,7 +378,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
 
@@ -413,7 +413,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
 
@@ -448,7 +448,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
 
@@ -485,7 +485,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
       const positionId = (await bank.nextPositionId()).sub(1)
@@ -498,7 +498,7 @@ describe('Bank', () => {
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPid: ICHI_VAULT_PID
+          farmingPoolId: ICHI_VAULT_PID
         }])
       )
     })
@@ -850,7 +850,7 @@ describe('Bank', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: 0
+            farmingPoolId: 0
           }])
         )
         let positionId = (await bank.nextPositionId()).sub(1);

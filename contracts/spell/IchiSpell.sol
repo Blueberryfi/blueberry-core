@@ -51,11 +51,20 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         address wichiFarm_
     ) external initializer {
         __BasicSpell_init(bank_, werc20_, weth_);
-        if (address(wichiFarm_) == address(0)) revert Errors.ZERO_ADDRESS();
+        if (wichiFarm_ == address(0)) revert Errors.ZERO_ADDRESS();
 
         wIchiFarm = IWIchiFarm(wichiFarm_);
         ICHI = address(wIchiFarm.ICHI());
-        IWIchiFarm(wichiFarm_).setApprovalForAll(address(bank_), true);
+        wIchiFarm.setApprovalForAll(address(bank_), true);
+    }
+
+    /**
+     * @notice Add strategy to the spell
+     * @param vault Address of vault for given strategy
+     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
+     */
+    function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(vault, maxPosSize);
     }
 
     /**
@@ -191,7 +200,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         // 3. Withdraw liquidity from ICHI vault
         vault.withdraw(amountPosRemove, address(this));
 
-        // 4. Swap withdrawn tokens to initial deposit token
+        // 4. Swap withdrawn tokens to debt token
         bool isTokenA = vault.token0() == param.borrowToken;
         uint256 amountToSwap = IERC20Upgradeable(
             isTokenA ? vault.token1() : vault.token0()

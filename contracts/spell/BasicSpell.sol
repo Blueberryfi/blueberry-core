@@ -132,10 +132,7 @@ abstract contract BasicSpell is
      * @param vault Address of vault for given strategy
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(
-        address vault,
-        uint256 maxPosSize
-    ) public virtual onlyOwner {
+    function _addStrategy(address vault, uint256 maxPosSize) internal {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));
@@ -221,18 +218,27 @@ abstract contract BasicSpell is
     }
 
     /**
-     * @dev Cut rewards fee and refund rewards tokens from spell to the current bank executor
-     * @param token The token to perform the refund action.
+     * @dev Cut rewards fee
+     * @param token The rewards token to cut fee.
+     * @return left Remaining amount of reward token after fee cut
      */
-    function _doRefundRewards(address token) internal {
+    function _doCutRewardsFee(address token) internal returns (uint256 left) {
         uint256 rewardsBalance = IERC20Upgradeable(token).balanceOf(
             address(this)
         );
         if (rewardsBalance > 0) {
             _ensureApprove(token, address(bank.feeManager()), rewardsBalance);
-            bank.feeManager().doCutRewardsFee(token, rewardsBalance);
-            _doRefund(token);
+            left = bank.feeManager().doCutRewardsFee(token, rewardsBalance);
         }
+    }
+
+    /**
+     * @dev Cut rewards fee and refund rewards tokens from spell to the current bank executor
+     * @param token The token to perform the refund action.
+     */
+    function _doRefundRewards(address token) internal {
+        _doCutRewardsFee(token);
+        _doRefund(token);
     }
 
     /**

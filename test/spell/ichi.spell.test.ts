@@ -21,7 +21,7 @@ import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
 import { evm_mine_blocks } from '../helpers';
-import { Protocol, setupProtocol } from '../setup-test';
+import { Protocol, setupIchiProtocol } from '../helpers/setup-ichi-protocol';
 import { TickMath } from '@uniswap/v3-sdk';
 
 chai.use(solidity)
@@ -63,9 +63,9 @@ describe('ICHI Angel Vaults Spell', () => {
     ichiV1 = <ERC20>await ethers.getContractAt("ERC20", ICHIV1);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
-    protocol = await setupProtocol();
+    protocol = await setupIchiProtocol();
     bank = protocol.bank;
-    spell = protocol.spell;
+    spell = protocol.ichiSpell;
     ichiFarm = protocol.ichiFarm;
     ichiVault = protocol.ichi_USDC_ICHI_Vault;
     wichi = protocol.wichi;
@@ -158,7 +158,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount.mul(40),
             borrowAmount: borrowAmount.mul(70),
-            farmingPid: 0
+            farmingPoolId: 0
           }])
         )
       ).to.be.revertedWith("EXCEED_MAX_POS_SIZE")
@@ -175,7 +175,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: 0,
             borrowAmount: borrowAmount,
-            farmingPid: 0
+            farmingPoolId: 0
           }])
         )
       ).to.be.revertedWith("bad cast call")
@@ -192,7 +192,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: 0,
-            farmingPid: 0
+            farmingPoolId: 0
           }])
         )
       ).to.be.reverted;
@@ -226,7 +226,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: ADDRESS.DAI,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: 0
+            farmingPoolId: 0
           }])
         )
       ).to.be.revertedWith("INCORRECT_DEBT")
@@ -681,7 +681,7 @@ describe('ICHI Angel Vaults Spell', () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPid: 1
+            farmingPoolId: 1
           }])
         )
       ).to.be.revertedWith("INCORRECT_PID")

@@ -45,6 +45,17 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "lpToken",
+        "type": "address"
+      }
+    ],
+    "name": "INCORRECT_LP",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "pid",
         "type": "uint256"
@@ -247,9 +258,9 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "vault",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "gaugeId",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -323,6 +334,16 @@
         "internalType": "struct BasicSpell.ClosePosParam",
         "name": "param",
         "type": "tuple"
+      },
+      {
+        "internalType": "contract IUniswapV2Router02",
+        "name": "swapRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "swapPath",
+        "type": "address[]"
       }
     ],
     "name": "closePositionFarm",
@@ -538,11 +559,6 @@
       {
         "internalType": "uint256",
         "name": "minLPMint",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gid",
         "type": "uint256"
       }
     ],

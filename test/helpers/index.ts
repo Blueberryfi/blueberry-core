@@ -14,3 +14,6 @@ export const evm_mine_blocks = async (n: number) => {
     await ethers.provider.send("evm_mine", []);
   }
 };
+
+export * from "./setup-ichi-protocol"
+export * from "./setup-curve-protocol"

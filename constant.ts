@@ -15,7 +15,7 @@ export enum CONTRACT_NAMES {
 	WERC20 = 'WERC20',
 	WMasterChef = 'WMasterChef',
 	WIchiFarm = 'WIchiFarm',
-	WLiquidityGauge = 'WLiquidityGauge',
+	WCurveGauge = 'WCurveGauge',
 	WStakingRewards = 'WStakingRewards',
 
 	// Oracles
@@ -41,7 +41,7 @@ export enum CONTRACT_NAMES {
 	UniswapV2SpellV1 = "UniswapV2SpellV1",
 	SushiswapSpellV1 = "SushiswapSpellV1",
 	BalancerSpellV1 = "BalancerSpellV1",
-	CurveSpellV1 = "CurveSpellV1",
+	CurveSpell = "CurveSpell",
 	IchiSpell = "IchiSpell",
 
 	// Interface
@@ -193,6 +193,11 @@ export const ADDRESS = {
 	CRV_GAUGE: '0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c',
 	CRV_REGISTRY: '0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5',
 	CRV_ADDRESS_PROVIDER: '0x0000000022d53366457f9d5e68ec105046fc4383',
+	CRV_GAUGE_CONTROLLER: '0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB',
+
+	// Curve Gauge
+	CRV_GAUGE_3Crv: '0xbfcf63294ad7105dea65aa58f8ae5be2d9d0952a',
+	CRV_GAUGE_3CrvId: 9,
 
 	// Wrapper
 	SUSHI_MASTERCHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',

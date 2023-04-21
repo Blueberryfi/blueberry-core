@@ -8,24 +8,24 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./IERC20Wrapper.sol";
 import "./curve/ICurveRegistry.sol";
 import "./curve/ILiquidityGauge.sol";
+import "./curve/ICurveGaugeController.sol";
 
 interface IWCurveGauge is IERC1155Upgradeable, IERC20Wrapper {
     function CRV() external view returns (IERC20Upgradeable);
 
     /// @dev Mint ERC1155 token for the given ERC20 token.
-    function mint(uint pid, uint gid, uint amount) external returns (uint id);
+    function mint(uint gid, uint amount) external returns (uint id);
 
     /// @dev Burn ERC1155 token to redeem ERC20 token back.
     function burn(uint id, uint amount) external returns (uint pid);
 
-    function registry() external returns (ICurveRegistry);
+    function registry() external view returns (ICurveRegistry);
 
-    function encodeId(uint, uint, uint) external pure returns (uint);
+    function gaugeController() external view returns (ICurveGaugeController);
 
-    function decodeId(uint id) external pure returns (uint, uint, uint);
+    function encodeId(uint, uint) external pure returns (uint);
 
-    function getUnderlyingTokenFromIds(
-        uint pid,
-        uint gid
-    ) external view returns (address);
+    function decodeId(uint id) external pure returns (uint, uint);
+
+    function getLpFromGaugeId(uint256 gid) external view returns (address);
 }

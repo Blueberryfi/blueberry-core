@@ -5,25 +5,20 @@
         "internalType": "uint256",
         "name": "pid",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gid",
-        "type": "uint256"
       }
     ],
-    "name": "EXISTING_GAUGE",
+    "name": "BAD_PID",
     "type": "error"
   },
   {
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "pid",
+        "name": "rewardPerShare",
         "type": "uint256"
       }
     ],
-    "name": "NO_CURVE_POOL",
+    "name": "BAD_REWARD_PER_SHARE",
     "type": "error"
   },
   {
@@ -197,6 +192,25 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "accCrvPerShares",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "account",
         "type": "address"
@@ -259,7 +273,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "rewards",
         "type": "uint256"
       }
     ],
@@ -278,11 +292,6 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
         "name": "gid",
         "type": "uint256"
       },
@@ -300,11 +309,6 @@
       {
         "internalType": "uint256",
         "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gid",
         "type": "uint256"
       },
       {
@@ -317,7 +321,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "id",
         "type": "uint256"
       }
     ],
@@ -325,29 +329,32 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "gaugeController",
+    "outputs": [
+      {
+        "internalType": "contract ICurveGaugeController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
+        "name": "gid",
         "type": "uint256"
       }
     ],
-    "name": "gauges",
+    "name": "getLpFromGaugeId",
     "outputs": [
       {
-        "internalType": "contract ILiquidityGauge",
-        "name": "impl",
+        "internalType": "address",
+        "name": "",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "accCrvPerShare",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -375,30 +382,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gid",
-        "type": "uint256"
-      }
-    ],
-    "name": "getUnderlyingTokenFromIds",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "crv_",
         "type": "address"
@@ -406,6 +389,11 @@
       {
         "internalType": "address",
         "name": "crvRegistry_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "gaugeController_",
         "type": "address"
       }
     ],
@@ -440,11 +428,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
       {
         "internalType": "uint256",
         "name": "gid",
@@ -507,24 +490,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gid",
-        "type": "uint256"
-      }
-    ],
-    "name": "registerGauge",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

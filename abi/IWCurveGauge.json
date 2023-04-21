@@ -221,11 +221,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "pure",
@@ -233,11 +228,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
       {
         "internalType": "uint256",
         "name": "",
@@ -261,14 +251,27 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "gaugeController",
+    "outputs": [
+      {
+        "internalType": "contract ICurveGaugeController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "gid",
         "type": "uint256"
       }
     ],
-    "name": "getUnderlyingToken",
+    "name": "getLpFromGaugeId",
     "outputs": [
       {
         "internalType": "address",
@@ -283,16 +286,11 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "gid",
+        "name": "tokenId",
         "type": "uint256"
       }
     ],
-    "name": "getUnderlyingTokenFromIds",
+    "name": "getUnderlyingToken",
     "outputs": [
       {
         "internalType": "address",
@@ -329,11 +327,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "pid",
-        "type": "uint256"
-      },
       {
         "internalType": "uint256",
         "name": "gid",
@@ -395,7 +388,7 @@
         "type": "address"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
