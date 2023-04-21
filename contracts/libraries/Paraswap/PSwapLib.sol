@@ -20,7 +20,7 @@ library PSwapLib {
     function megaSwap(
         address augustusSwapper,
         address tokenTransferProxy,
-        Utils.MegaSwapSellData memory data
+        Utils.MegaSwapSellData calldata data
     ) external returns (uint256) {
         _approve(IERC20(data.fromToken), tokenTransferProxy, data.fromAmount);
 

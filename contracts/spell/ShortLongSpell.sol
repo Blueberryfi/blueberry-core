@@ -68,7 +68,7 @@ contract ShortLongSpell is BasicSpell {
      */
     function _deposit(
         OpenPosParam calldata param,
-        Utils.MegaSwapSellData memory swapData
+        Utils.MegaSwapSellData calldata swapData
     ) internal {
         Strategy memory strategy = strategies[param.strategyId];
 
@@ -84,7 +84,7 @@ contract ShortLongSpell is BasicSpell {
         // 3. Swap borrowed token to strategy token
         IERC20Upgradeable swapToken = ISoftVault(strategy.vault).uToken();
         uint256 strTokenAmt = swapToken.balanceOf(address(this));
-        swapData.fromAmount = strTokenAmt;
+        // swapData.fromAmount = strTokenAmt;
         PSwapLib.megaSwap(augustusSwapper, tokenTransferProxy, swapData);
         strTokenAmt = swapToken.balanceOf(address(this)) - strTokenAmt;
         if (strTokenAmt < swapData.expectedAmount)
@@ -110,7 +110,7 @@ contract ShortLongSpell is BasicSpell {
      */
     function openPosition(
         OpenPosParam calldata param,
-        Utils.MegaSwapSellData memory swapData
+        Utils.MegaSwapSellData calldata swapData
     )
         external
         existingStrategy(param.strategyId)
@@ -160,7 +160,7 @@ contract ShortLongSpell is BasicSpell {
      */
     function _withdraw(
         ClosePosParam calldata param,
-        Utils.MegaSwapSellData memory swapData
+        Utils.MegaSwapSellData calldata swapData
     ) internal {
         if (param.sellSlippage > bank.config().maxSlippageOfClose())
             revert Errors.RATIO_TOO_HIGH(param.sellSlippage);
@@ -183,7 +183,7 @@ contract ShortLongSpell is BasicSpell {
             uint256 amountToSwap = IERC20Upgradeable(vault.uToken()).balanceOf(
                 address(this)
             );
-            swapData.fromAmount = amountToSwap;
+            // swapData.fromAmount = amountToSwap;
             PSwapLib.megaSwap(augustusSwapper, tokenTransferProxy, swapData);
         }
 
@@ -211,7 +211,7 @@ contract ShortLongSpell is BasicSpell {
      */
     function closePosition(
         ClosePosParam calldata param,
-        Utils.MegaSwapSellData memory swapData
+        Utils.MegaSwapSellData calldata swapData
     )
         external
         existingStrategy(param.strategyId)
