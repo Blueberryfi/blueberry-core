@@ -4,6 +4,7 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../../interfaces/paraswap/IParaswap.sol";
+import "./Utils.sol";
 
 library PSwapLib {
     function _approve(
@@ -29,13 +30,11 @@ library PSwapLib {
     }
 
     function megaSwap(
-        IERC20 inToken,
-        uint256 amountIn,
         address augustusSwapper,
         address tokenTransferProxy,
-        Utils.MegaSwapSellData calldata data
+        Utils.MegaSwapSellData memory data
     ) external returns (uint256) {
-        _approve(inToken, tokenTransferProxy, amountIn);
+        _approve(IERC20(data.fromToken), tokenTransferProxy, data.fromAmount);
 
         return IParaswap(augustusSwapper).megaSwap(data);
     }
