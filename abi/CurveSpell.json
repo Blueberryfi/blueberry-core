@@ -1,5 +1,21 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "colToken",
+        "type": "address"
+      }
+    ],
+    "name": "COLLATERAL_NOT_EXIST",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "EXCEED_MAX_LTV",
     "type": "error"
@@ -12,7 +28,62 @@
         "type": "uint256"
       }
     ],
+    "name": "EXCEED_MAX_POS_SIZE",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "colToken",
+        "type": "address"
+      }
+    ],
+    "name": "INCORRECT_COLTOKEN",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "lpToken",
+        "type": "address"
+      }
+    ],
+    "name": "INCORRECT_LP",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      }
+    ],
+    "name": "INCORRECT_PID",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
     "name": "INCORRECT_STRATEGY_ID",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "uToken",
+        "type": "address"
+      }
+    ],
+    "name": "INCORRECT_UNDERLYING",
     "type": "error"
   },
   {
@@ -160,7 +231,7 @@
   },
   {
     "inputs": [],
-    "name": "WETH",
+    "name": "CRV",
     "outputs": [
       {
         "internalType": "address",
@@ -173,10 +244,119 @@
   },
   {
     "inputs": [],
+    "name": "WETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "gaugeId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "addStrategy",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "bank",
     "outputs": [
       {
         "internalType": "contract IBank",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "strategyId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountRepay",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountPosRemove",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountShareWithdraw",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sellSlippage",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint160",
+            "name": "sqrtRatioLimit",
+            "type": "uint160"
+          }
+        ],
+        "internalType": "struct BasicSpell.ClosePosParam",
+        "name": "param",
+        "type": "tuple"
+      },
+      {
+        "internalType": "contract IUniswapV2Router02",
+        "name": "swapRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "swapPath",
+        "type": "address[]"
+      }
+    ],
+    "name": "closePositionFarm",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "crvOracle",
+    "outputs": [
+      {
+        "internalType": "contract ICurveOracle",
         "name": "",
         "type": "address"
       }
@@ -198,6 +378,39 @@
       }
     ],
     "name": "increasePosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IBank",
+        "name": "bank_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "werc20_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "weth_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "wCurveGauge_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "crvOracle_",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -305,6 +518,56 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "strategyId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "collToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "farmingPoolId",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BasicSpell.OpenPosParam",
+        "name": "param",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minLPMint",
+        "type": "uint256"
+      }
+    ],
+    "name": "openPositionFarm",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -338,6 +601,19 @@
     "name": "reducePosition",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "registry",
+    "outputs": [
+      {
+        "internalType": "contract ICurveRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -442,6 +718,19 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "wCurveGauge",
+    "outputs": [
+      {
+        "internalType": "contract IWCurveGauge",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

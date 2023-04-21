@@ -167,9 +167,5 @@ describe('Uniswap V3 Oracle', () => {
       const price = await uniswapV3Oracle.getPrice(ADDRESS.ICHI);
       console.log(utils.formatUnits(price, 18));
     });
-    it('$CRV Price', async () => {
-      const price = await uniswapV3Oracle.getPrice(ADDRESS.CRV);
-      console.log(utils.formatUnits(price, 18));
-    });
   })
 });

@@ -1,10 +1,5 @@
 [
   {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -28,7 +23,7 @@
   },
   {
     "inputs": [],
-    "name": "ZERO_ADDRESS",
+    "name": "NO_GAUGE",
     "type": "error"
   },
   {
@@ -183,10 +178,10 @@
   },
   {
     "inputs": [],
-    "name": "ICHI",
+    "name": "CRV",
     "outputs": [
       {
-        "internalType": "contract IIchiV2",
+        "internalType": "contract IERC20Upgradeable",
         "name": "",
         "type": "address"
       }
@@ -195,13 +190,19 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "ICHIv1",
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "accCrvPerShares",
     "outputs": [
       {
-        "internalType": "contract IERC20Upgradeable",
+        "internalType": "uint256",
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -272,7 +273,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "rewards",
         "type": "uint256"
       }
     ],
@@ -291,12 +292,12 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "pid",
+        "name": "gid",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "ichiPerShare",
+        "name": "crvPerShare",
         "type": "uint256"
       }
     ],
@@ -312,7 +313,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "ichiPerShare",
+        "name": "crvPerShare",
         "type": "uint256"
       }
     ],
@@ -325,6 +326,38 @@
       }
     ],
     "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "gaugeController",
+    "outputs": [
+      {
+        "internalType": "contract ICurveGaugeController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "gid",
+        "type": "uint256"
+      }
+    ],
+    "name": "getLpFromGaugeId",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -347,33 +380,20 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "ichiFarm",
-    "outputs": [
-      {
-        "internalType": "contract IIchiFarm",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
-        "name": "ichi_",
+        "name": "crv_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "ichiV1",
+        "name": "crvRegistry_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "ichiFarm_",
+        "name": "gaugeController_",
         "type": "address"
       }
     ],
@@ -410,7 +430,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "pid",
+        "name": "gid",
         "type": "uint256"
       },
       {
@@ -467,6 +487,19 @@
         "internalType": "uint256[]",
         "name": "rewards",
         "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "registry",
+    "outputs": [
+      {
+        "internalType": "contract ICurveRegistry",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

@@ -14,6 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "../utils/EnsureApprove.sol";
@@ -35,6 +36,7 @@ contract WIchiFarm is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
     EnsureApprove,
+    OwnableUpgradeable,
     IERC20Wrapper,
     IWIchiFarm
 {

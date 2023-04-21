@@ -41,6 +41,8 @@ error ORACLE_NOT_SUPPORT_LP(address lp);
 error ORACLE_NOT_SUPPORT_WTOKEN(address wToken);
 error NO_ORACLE_ROUTE(address token);
 
+error CRV_LP_ALREADY_REGISTERED(address lp);
+
 // Spell
 error NOT_BANK(address caller);
 error REFUND_ETH_FAILED(uint256 balance);
@@ -59,6 +61,12 @@ error INCORRECT_COLTOKEN(address colToken);
 error INCORRECT_UNDERLYING(address uToken);
 error INCORRECT_DEBT(address debtToken);
 error NOT_FROM_UNIV3(address sender);
+
+// Curve Spell
+error NO_GAUGE();
+error EXISTING_GAUGE(uint256 pid, uint256 gid);
+error NO_CURVE_POOL(uint256 pid);
+error NO_LP_REGISTERED(address lp);
 
 // Vault
 error BORROW_FAILED(uint256 amount);
