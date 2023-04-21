@@ -82,7 +82,7 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     function mint(
         address token,
         uint256 amount
-    ) external override nonReentrant {
+    ) external override nonReentrant returns (uint256 id) {
         uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(
             address(this)
         );
@@ -94,12 +94,8 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
         uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(
             address(this)
         );
-        _mint(
-            msg.sender,
-            _encodeTokenId(token),
-            balanceAfter - balanceBefore,
-            ""
-        );
+        id = _encodeTokenId(token);
+        _mint(msg.sender, id, balanceAfter - balanceBefore, "");
     }
 
     /// @dev Burn ERC1155 token to redeem ERC20 token back.
