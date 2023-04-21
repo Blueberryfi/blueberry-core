@@ -231,7 +231,7 @@
   },
   {
     "inputs": [],
-    "name": "CRV",
+    "name": "CVX",
     "outputs": [
       {
         "internalType": "address",
@@ -341,9 +341,9 @@
         "type": "address"
       },
       {
-        "internalType": "address[]",
+        "internalType": "address[][]",
         "name": "swapPath",
-        "type": "address[]"
+        "type": "address[][]"
       }
     ],
     "name": "closePositionFarm",
@@ -401,7 +401,7 @@
       },
       {
         "internalType": "address",
-        "name": "wCurveGauge_",
+        "name": "wConvexPools_",
         "type": "address"
       },
       {
@@ -709,10 +709,10 @@
   },
   {
     "inputs": [],
-    "name": "wCurveGauge",
+    "name": "wConvexPools",
     "outputs": [
       {
-        "internalType": "contract IWCurveGauge",
+        "internalType": "contract IWConvexPools",
         "name": "",
         "type": "address"
       }

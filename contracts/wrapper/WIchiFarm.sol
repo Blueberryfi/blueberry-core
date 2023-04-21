@@ -189,6 +189,6 @@ contract WIchiFarm is
         if (rewards[0] > 0) {
             ICHI.safeTransfer(msg.sender, rewards[0]);
         }
-        return pid;
+        return rewards[0];
     }
 }

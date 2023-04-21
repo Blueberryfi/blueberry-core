@@ -7,12 +7,16 @@ import {
   WCurveGauge,
   ERC20,
   CurveSpell,
-  CurveOracle
+  CurveOracle,
+  ConvexSpell,
+  WConvexPools,
+  ICvxPools,
+  IRewarder
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { CrvProtocol, evm_mine_blocks, setupCrvProtocol } from "../helpers";
-import SpellABI from '../../abi/CurveSpell.json';
+import { CvxProtocol, setupCvxProtocol, evm_mine_blocks } from "../helpers";
+import SpellABI from '../../abi/ConvexSpell.json';
 import chai, { expect } from "chai";
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
@@ -33,7 +37,7 @@ const CRV = ADDRESS.CRV;
 const ETH_PRICE = 1600;
 const GAUGE_ID = ADDRESS.CRV_GAUGE_3CrvId;
 
-describe("Curve Spell", () => {
+describe("Convex Spell", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
@@ -44,12 +48,13 @@ describe("Curve Spell", () => {
   let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
-  let spell: CurveSpell;
+  let spell: ConvexSpell;
   let curveOracle: CurveOracle;
-  let wgauge: WCurveGauge;
+  let wconvex: WConvexPools;
   let bank: BlueBerryBank;
-  let protocol: CrvProtocol;
-
+  let protocol: CvxProtocol;
+  let cvxBooster: ICvxPools;
+  let crvRewarder: IRewarder;
 
   before(async () => {
     [admin, alice, treasury] = await ethers.getSigners();
@@ -58,11 +63,14 @@ describe("Curve Spell", () => {
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
+    cvxBooster = <ICvxPools>await ethers.getContractAt("ICvxPools", ADDRESS.CVX_BOOSTER)
+    const poolInfo = await cvxBooster.poolInfo(ADDRESS.CVX_3Crv_Id)
+    crvRewarder = <IRewarder>await ethers.getContractAt("IRewarder", poolInfo.crvRewards)
 
-    protocol = await setupCrvProtocol();
+    protocol = await setupCvxProtocol();
     bank = protocol.bank;
-    spell = protocol.curveSpell;
-    wgauge = protocol.wgauge;
+    spell = protocol.convexSpell;
+    wconvex = protocol.wconvex;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
     curveOracle = protocol.curveOracle;
@@ -70,36 +78,36 @@ describe("Curve Spell", () => {
 
   describe("Constructor", () => {
     it("should revert when zero address is provided in param", async () => {
-      const CurveSpell = await ethers.getContractFactory(CONTRACT_NAMES.CurveSpell);
+      const ConvexSpell = await ethers.getContractFactory(CONTRACT_NAMES.ConvexSpell);
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           ethers.constants.AddressZero,
           werc20.address,
           WETH,
-          wgauge.address,
+          wconvex.address,
           curveOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           bank.address,
           ethers.constants.AddressZero,
           WETH,
-          wgauge.address,
+          wconvex.address,
           curveOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           bank.address,
           werc20.address,
           ethers.constants.AddressZero,
-          wgauge.address,
+          wconvex.address,
           curveOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           bank.address,
           werc20.address,
           WETH,
@@ -108,11 +116,11 @@ describe("Curve Spell", () => {
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
+        upgrades.deployProxy(ConvexSpell, [
           bank.address,
           werc20.address,
           WETH,
-          wgauge.address,
+          wconvex.address,
           ethers.constants.AddressZero
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
@@ -130,7 +138,7 @@ describe("Curve Spell", () => {
     })
   })
 
-  describe("Curve Gauge Farming Position", () => {
+  describe("Convex Pool Farming Position", () => {
     const depositAmount = utils.parseUnits('100', 18); // CRV => $100
     const borrowAmount = utils.parseUnits('250', 6);	 // USDC
     const iface = new ethers.utils.Interface(SpellABI);
@@ -202,7 +210,7 @@ describe("Curve Spell", () => {
         )
       ).to.be.revertedWith("INCORRECT_LP")
     })
-    it("should be able to farm USDC on Curve pool", async () => {
+    it("should be able to farm USDC on Convex", async () => {
       const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       await bank.execute(
@@ -225,7 +233,7 @@ describe("Curve Spell", () => {
       console.log("Position Info:", pos)
       console.log("Position Value:", await bank.getPositionValue(1));
       expect(pos.owner).to.be.equal(admin.address);
-      expect(pos.collToken).to.be.equal(wgauge.address);
+      expect(pos.collToken).to.be.equal(wconvex.address);
       expect(pos.debtToken).to.be.equal(USDC);
       expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
       // expect(
@@ -236,6 +244,9 @@ describe("Curve Spell", () => {
       expect(
         afterTreasuryBalance.sub(beforeTreasuryBalance)
       ).to.be.equal(depositAmount.mul(50).div(10000))
+
+      const rewarderBalance = await crvRewarder.balanceOf(wconvex.address);
+      expect(rewarderBalance).to.be.equal(pos.collateralSize);
     })
     it("should be able to get position risk ratio", async () => {
       let risk = await bank.getPositionRisk(1);
@@ -262,7 +273,6 @@ describe("Curve Spell", () => {
       console.log("OV:", utils.formatUnits(ov));
       console.log("CV:", utils.formatUnits(cv));
       console.log('Position Risk', utils.formatUnits(risk, 2), '%');
-
     })
     // TODO: Find another USDC curve pool
     // it("should revert increasing existing position when diff pos param given", async () => {
@@ -282,8 +292,16 @@ describe("Curve Spell", () => {
     //     )
     //   ).to.be.revertedWith("INCORRECT_PID")
     // })
-    it("should be able to harvest on Curve Gauge", async () => {
+    it("should be able to harvest on Convex", async () => {
       evm_mine_blocks(1000);
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const position = await bank.positions(positionId);
+
+      const totalEarned = await crvRewarder.earned(wconvex.address);
+      console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned))
+
+      const pendingRewardsInfo = await wconvex.pendingRewards(position.collId, position.collateralSize);
+      console.log("Pending Rewards", pendingRewardsInfo)
 
       // Manually transfer CRV rewards to spell
       await crv.transfer(spell.address, utils.parseUnits('10', 18));
@@ -292,7 +310,6 @@ describe("Curve Spell", () => {
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeCrvBalance = await crv.balanceOf(admin.address);
 
-      const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
       await bank.execute(
         positionId,
@@ -306,7 +323,7 @@ describe("Curve Spell", () => {
           amountShareWithdraw: ethers.constants.MaxUint256,
           sellSlippage: 50,
           sqrtRatioLimit: 0
-        }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC]])
+        }, ADDRESS.SUSHI_ROUTER, [[CRV, WETH, USDC], [ADDRESS.FRAX, ADDRESS.SUSHI, USDC]]])
       )
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);
