@@ -61,6 +61,7 @@ error INCORRECT_COLTOKEN(address colToken);
 error INCORRECT_UNDERLYING(address uToken);
 error INCORRECT_DEBT(address debtToken);
 error NOT_FROM_UNIV3(address sender);
+error SWAP_FAILED(address swapToken);
 
 // Curve Spell
 error NO_GAUGE();
