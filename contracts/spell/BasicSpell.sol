@@ -168,7 +168,7 @@ abstract contract BasicSpell is
         if (collaterals.length != maxLTVs.length || collaterals.length == 0)
             revert Errors.INPUT_ARRAY_MISMATCH();
 
-        for (uint256 i = 0; i < collaterals.length; ++i) {
+        for (uint256 i = 0; i < collaterals.length; i++) {
             if (collaterals[i] == address(0)) revert Errors.ZERO_ADDRESS();
             if (maxLTVs[i] == 0) revert Errors.ZERO_AMOUNT();
             maxLTV[strategyId][collaterals[i]] = maxLTVs[i];

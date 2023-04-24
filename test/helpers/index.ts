@@ -10,7 +10,7 @@ export const evm_increaseTime = async (seconds: number) => {
 };
 
 export const evm_mine_blocks = async (n: number) => {
-  for (let i = 0; i < n; ++i) {
+  for (let i = 0; i < n; i++) {
     await ethers.provider.send("evm_mine", []);
   }
 };

@@ -408,7 +408,7 @@ contract BlueBerryBank is
             (address[] memory tokens, uint256[] memory rewards) = IERC20Wrapper(
                 pos.collToken
             ).pendingRewards(pos.collId, pos.collateralSize);
-            for (uint256 i; i < tokens.length; ++i) {
+            for (uint256 i; i < tokens.length; i++) {
                 rewardsValue += oracle.getTokenValue(tokens[i], rewards[i]);
             }
 
@@ -435,9 +435,15 @@ contract BlueBerryBank is
     ) public view override returns (uint256 icollValue) {
         Position memory pos = positions[positionId];
         // NOTE: exchangeRateStored has 18 decimals.
-        uint underlyingAmount = (ICErc20(banks[pos.debtToken].bToken)
-            .exchangeRateStored() * pos.underlyingVaultShare) /
-            Constants.PRICE_PRECISION;
+        uint256 underlyingAmount;
+        if (_isSoftVault(pos.underlyingToken)) {
+            underlyingAmount =
+                (ICErc20(banks[pos.debtToken].bToken).exchangeRateStored() *
+                    pos.underlyingVaultShare) /
+                Constants.PRICE_PRECISION;
+        } else {
+            underlyingAmount = pos.underlyingVaultShare;
+        }
         icollValue = oracle.getTokenValue(
             pos.underlyingToken,
             underlyingAmount
@@ -899,7 +905,7 @@ contract BlueBerryBank is
     }
 
     /// @dev Return if the given vault token is soft vault or hard vault
-    /// @param token Vault token to check
+    /// @param token Vault underlying token to check
     /// @return bool True for Soft Vault, False for Hard Vault
     function _isSoftVault(address token) internal view returns (bool) {
         return address(ISoftVault(banks[token].softVault).uToken()) == token;
