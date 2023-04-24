@@ -259,6 +259,24 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "swapToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "addStrategy",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "augustusSwapper",
     "outputs": [
