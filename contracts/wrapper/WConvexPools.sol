@@ -22,6 +22,14 @@ import "../interfaces/IWConvexPools.sol";
 import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/convex/IRewarder.sol";
 
+/**
+ * @title WConvexPools
+ * @author BlueberryProtocol
+ * @notice Wrapped Convex Pools is the wrapper of LP positions
+ * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank 
+ *      and do not generate yields. LP Tokens are identified by tokenIds 
+ *      encoded from lp token address.
+ */
 contract WConvexPools is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,

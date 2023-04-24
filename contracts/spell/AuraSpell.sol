@@ -18,6 +18,12 @@ import "../interfaces/IWAuraPools.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/uniswap/IUniswapV2Router02.sol";
 
+/**
+ * @title AuraSpell
+ * @author BlueberryProtocol
+ * @notice AuraSpell is the factory contract that
+ * defines how Blueberry Protocol interacts with Aura pools
+ */
 contract AuraSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -133,7 +139,7 @@ contract AuraSpell is BasicSpell {
             _doRefundRewards(AURA);
         }
 
-        // 7. Deposit on Convex Pool, Put wrapped collateral tokens on Blueberry Bank
+        // 7. Deposit on Aura Pool, Put wrapped collateral tokens on Blueberry Bank
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
         _ensureApprove(lpToken, address(wAuraPools), lpAmount);
         uint256 id = wAuraPools.mint(param.farmingPoolId, lpAmount);

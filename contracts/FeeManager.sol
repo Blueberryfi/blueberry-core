@@ -17,6 +17,11 @@ import "./interfaces/IProtocolConfig.sol";
 import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
 
+/**
+ * @title FeeManager
+ * @author BlueberryProtocol
+ * @notice Hotspot of all fees of the protocol
+ */
 contract FeeManager is OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 

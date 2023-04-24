@@ -18,6 +18,12 @@ import "../interfaces/IWConvexPools.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../interfaces/uniswap/IUniswapV2Router02.sol";
 
+/**
+ * @title ConvexSpell
+ * @author BlueberryProtocol
+ * @notice ConvexSpell is the factory contract that
+ * defines how Blueberry Protocol interacts with Convex pools
+ */
 contract ConvexSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 

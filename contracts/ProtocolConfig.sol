@@ -66,7 +66,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         blbIchiVaultFeeRate = 3500; //  35% of deposit/withdraw fee => 0.175%
 
         withdrawVaultFee = 100; // 1% as default, base 10000
-        withdrawVaultFeeWindow = 90 days; // Liquidity boot strapping event per vault
+        withdrawVaultFeeWindow = 60 days; // Liquidity boot strapping event per vault
 
         maxSlippageOfClose = 300; // 3% of Max Slippage as default, base 10000
     }
@@ -100,7 +100,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
      * @dev Owner priviledged function to set withdraw vault fee window 
      */
     function setWithdrawVaultFeeWindow(uint256 withdrawVaultFeeWindow_) external onlyOwner {
-        // Cap to 90 days
+        // Cap to 60 days
         if (withdrawVaultFeeWindow_ > Constants.MAX_WITHDRAW_VAULT_FEE_WINDOW)
             revert Errors.FEE_WINDOW_TOO_LONG(withdrawVaultFeeWindow_);
         withdrawVaultFeeWindow = withdrawVaultFeeWindow_;

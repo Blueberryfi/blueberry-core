@@ -20,6 +20,11 @@ import "../interfaces/curve/ICurveRegistry.sol";
 import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
 import "../interfaces/curve/ICurveAddressProvider.sol";
 
+/**
+ * @author BlueberryProtocol
+ * @title Curve Oracle
+ * @notice Oracle contract which privides price feeds of Curve Lp tokens
+ */
 contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
     ICurveAddressProvider public immutable addressProvider;
 

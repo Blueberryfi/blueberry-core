@@ -24,5 +24,5 @@ uint32 constant MAX_TIME_GAP = 2 days;
 
 uint256 constant MAX_FEE_RATE = 2000; // max fee: 20%
 
-uint256 constant MAX_WITHDRAW_VAULT_FEE_WINDOW = 90 days;
+uint256 constant MAX_WITHDRAW_VAULT_FEE_WINDOW = 60 days;
 

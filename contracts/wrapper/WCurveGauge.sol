@@ -25,6 +25,14 @@ interface ILiquidityGaugeMinter {
     function mint(address gauge) external;
 }
 
+/**
+ * @title WCurveGauge
+ * @author BlueberryProtocol
+ * @notice Wrapped Curve Gauge is the wrapper of Gauge positions
+ * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank 
+ *      and do not generate yields. LP Tokens are identified by tokenIds 
+ *      encoded from lp token address.
+ */
 contract WCurveGauge is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,

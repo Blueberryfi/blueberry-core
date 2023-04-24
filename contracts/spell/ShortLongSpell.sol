@@ -23,7 +23,8 @@ import "../libraries/Paraswap/PSwapLib.sol";
  * @title Short/Long Spell
  * @author BlueberryProtocol
  * @notice Short/Long Spell is the factory contract that
- * defines how Blueberry Protocol interacts on short leverage
+ * defines how Blueberry Protocol interacts for leveraging
+ * an asset either long or short
  */
 contract ShortLongSpell is BasicSpell {
     using SafeCast for uint256;

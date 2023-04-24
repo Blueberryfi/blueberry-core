@@ -1,4 +1,12 @@
 // SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
 
 pragma solidity 0.8.16;
 
@@ -7,6 +15,13 @@ import "../interfaces/IBaseOracle.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/balancer/IBalancerVault.sol";
 
+/**
+ * @author BlueberryProtocol
+ * @title Balancer Pair Oracle
+ * @notice Oracle contract which privides price feeds of Balancer Pair tokens
+ * @dev Implented Fair Lp Pricing
+ *      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
+ */
 contract BalancerPairOracle is UsingBaseOracle, IBaseOracle {
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
