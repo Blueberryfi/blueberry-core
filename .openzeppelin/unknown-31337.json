@@ -1302,17 +1302,17 @@
     },
     {
       "address": "0xc1EeD9232A0A44c2463ACB83698c162966FBc78d",
-      "txHash": "0x7cf8939c1513c120061dcfe796df3e3e75192f02d33de02d0954b08073d15430",
+      "txHash": "0x16455047a842e9b036144c947a53fe4192fe0ed49f2cab7c0c42e87def1e211a",
       "kind": "transparent"
     },
     {
       "address": "0xfaE849108F2A63Abe3BaB17E21Be077d07e7a9A2",
-      "txHash": "0x96f673fc3da79604e88a701af2b7abad6a0a5ea56e13d48436fc4dfc35429dbf",
+      "txHash": "0xb15ae75a7d22d4f1604a871272e87c7f69bde5224afa462846d0c07213fdacc8",
       "kind": "transparent"
     },
     {
       "address": "0xce830DA8667097BB491A70da268b76a081211814",
-      "txHash": "0xdb9ef29e8c1ab22d4e46ebb5ab62de3ac4842b80faed83b990e02766e04698ae",
+      "txHash": "0x49da05dccbd5fad2101a5c17faf791a0b21497fb35be72c03abf637c9d9c5367",
       "kind": "transparent"
     },
     {
@@ -1879,7 +1879,7 @@
   "impls": {
     "c369dd9f8700211938c3da8ea4c0ed70f6a037b6233b09744ce1a4d20080048c": {
       "address": "0xAe2563b4315469bF6bdD41A6ea26157dE57Ed94e",
-      "txHash": "0x3ea0aadec437792c43d824d729b5ce2d8ca35e3c637a529991cf92ff9905298d",
+      "txHash": "0x8ff006db22552b11f0fa13eb1188ec43b1d3f9ef1165100cced1e4711b4c345e",
       "layout": {
         "storage": [
           {
@@ -1982,7 +1982,7 @@
     },
     "6d30a628cc72f42fad51fb27e92b616cb7c71777274f18bda85859dee94216d7": {
       "address": "0x021DBfF4A864Aa25c51F0ad2Cd73266Fde66199d",
-      "txHash": "0xa9668d7dc2cb08eea884c6c8181506f020c56ef9b4d4f040ad09c42f585a52fa",
+      "txHash": "0x31bd1bba52282c443a6725cb10d11b7369c3e6cfdb70946160ee3a9b58145a36",
       "layout": {
         "storage": [
           {
@@ -2030,7 +2030,7 @@
             "label": "feeManager",
             "offset": 0,
             "slot": "101",
-            "type": "t_contract(IFeeManager)11739",
+            "type": "t_contract(IFeeManager)10032",
             "contract": "ProtocolConfig",
             "src": "contracts/ProtocolConfig.sol:48"
           },
@@ -2156,7 +2156,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IFeeManager)11739": {
+          "t_contract(IFeeManager)10032": {
             "label": "contract IFeeManager",
             "numberOfBytes": "20"
           },
@@ -2370,7 +2370,7 @@
     },
     "34a73f49bd41915e2a1efecdf627dd378be51358e2b4bcc6a24288d8f637d3ec": {
       "address": "0x1757a98c1333B9dc8D408b194B2279b5AFDF70Cc",
-      "txHash": "0xd7314e358d833672cc8ec2b0c463a280a87971996403d3635f2279561e37bb24",
+      "txHash": "0xddc675b6297f401cb66eed9edc8e036c0d6b6ca54630c02887d1b8206974d3ac",
       "layout": {
         "storage": [
           {
@@ -2474,7 +2474,7 @@
             "label": "config",
             "offset": 0,
             "slot": "251",
-            "type": "t_contract(IProtocolConfig)11832",
+            "type": "t_contract(IProtocolConfig)10125",
             "contract": "HardVault",
             "src": "contracts/vault/HardVault.sol:70"
           }
@@ -2500,7 +2500,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IProtocolConfig)11832": {
+          "t_contract(IProtocolConfig)10125": {
             "label": "contract IProtocolConfig",
             "numberOfBytes": "20"
           },
@@ -2963,7 +2963,7 @@
     },
     "bd83d80c6c5364631f37ec9b4f030b2eb8b5fa4aa12427dbbc49735f6c0bfad2": {
       "address": "0x2498e8059929e18e2a2cED4e32ef145fa2F4a744",
-      "txHash": "0x4805d05205d6b506e7087cf99c66b2ce1e06a2232e74eb5866f9f75330d63fa6",
+      "txHash": "0x48c5cdda27570ee78b4501b4a0ec6d6af53e772968954d843ef0d1ffde45b063",
       "layout": {
         "storage": [
           {
@@ -3011,7 +3011,7 @@
             "label": "config",
             "offset": 0,
             "slot": "101",
-            "type": "t_contract(IProtocolConfig)11832",
+            "type": "t_contract(IProtocolConfig)10125",
             "contract": "FeeManager",
             "src": "contracts/FeeManager.sol:47"
           }
@@ -3033,7 +3033,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IProtocolConfig)11832": {
+          "t_contract(IProtocolConfig)10125": {
             "label": "contract IProtocolConfig",
             "numberOfBytes": "20"
           },
@@ -3050,7 +3050,7 @@
     },
     "78d184de4b99e24e661e97f3580602bfd810d5321bed547c72ebe94c90b6fb59": {
       "address": "0xf201fFeA8447AB3d43c98Da3349e0749813C9009",
-      "txHash": "0xa34e878b92a42631f94b07979c6559430b1ca07058cfa8639412d0ebb1d4017b",
+      "txHash": "0x5affd40e144f133fb6dea408b7145801d4619d6fab5e1f148a3e80ca36718d12",
       "layout": {
         "storage": [
           {
@@ -3162,7 +3162,7 @@
             "label": "bToken",
             "offset": 0,
             "slot": "201",
-            "type": "t_contract(ICErc20)12311",
+            "type": "t_contract(ICErc20)10559",
             "contract": "SoftVault",
             "src": "contracts/vault/SoftVault.sol:65"
           },
@@ -3170,7 +3170,7 @@
             "label": "uToken",
             "offset": 0,
             "slot": "202",
-            "type": "t_contract(IERC20Upgradeable)2683",
+            "type": "t_contract(IERC20Upgradeable)2580",
             "contract": "SoftVault",
             "src": "contracts/vault/SoftVault.sol:67"
           },
@@ -3178,7 +3178,7 @@
             "label": "config",
             "offset": 0,
             "slot": "203",
-            "type": "t_contract(IProtocolConfig)11832",
+            "type": "t_contract(IProtocolConfig)10125",
             "contract": "SoftVault",
             "src": "contracts/vault/SoftVault.sol:71"
           }
@@ -3204,15 +3204,15 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(ICErc20)12311": {
+          "t_contract(ICErc20)10559": {
             "label": "contract ICErc20",
             "numberOfBytes": "20"
           },
-          "t_contract(IERC20Upgradeable)2683": {
+          "t_contract(IERC20Upgradeable)2580": {
             "label": "contract IERC20Upgradeable",
             "numberOfBytes": "20"
           },
-          "t_contract(IProtocolConfig)11832": {
+          "t_contract(IProtocolConfig)10125": {
             "label": "contract IProtocolConfig",
             "numberOfBytes": "20"
           },
@@ -3450,7 +3450,7 @@
     },
     "e9bc732fd3edab64faae5906ceb4c6d4272cb0f00f79279fb36d0f7625bee215": {
       "address": "0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798",
-      "txHash": "0x8296bdcf71b4d4f38c7b01404d1584a688a3b02ffd5981d5db6c65503fef222a",
+      "txHash": "0x844663732c4d9d03dc37b7e75481506766b22601e587656dfc4263aee684037a",
       "layout": {
         "storage": [
           {
@@ -3589,7 +3589,7 @@
     },
     "3ac0dceda14c6eefe26275c5523964a30bbec927ae2df772f209a100077cc54a": {
       "address": "0x1A223F93131cD7d898c28Ee0B905C39Db474FA08",
-      "txHash": "0xabe63526b8f02ab39b0d3e6d4c1400c44df7c54e4e82387d9b523e5e7fa37851",
+      "txHash": "0xe16495ff0991fe5d4fc508150343d00cad70354ca4c712c807a3ee7444ee0def",
       "layout": {
         "storage": [
           {
@@ -3637,7 +3637,7 @@
             "label": "bank",
             "offset": 0,
             "slot": "101",
-            "type": "t_contract(IBank)3381",
+            "type": "t_contract(IBank)9887",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:97"
           },
@@ -3645,7 +3645,7 @@
             "label": "werc20",
             "offset": 0,
             "slot": "102",
-            "type": "t_contract(IWERC20)3695",
+            "type": "t_contract(IWERC20)10369",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:100"
           },
@@ -3661,7 +3661,7 @@
             "label": "strategies",
             "offset": 0,
             "slot": "104",
-            "type": "t_array(t_struct(Strategy)3979_storage)dyn_storage",
+            "type": "t_array(t_struct(Strategy)14928_storage)dyn_storage",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:101"
           },
@@ -3685,7 +3685,7 @@
             "label": "wConvexPools",
             "offset": 0,
             "slot": "151",
-            "type": "t_contract(IWConvexPools)3658",
+            "type": "t_contract(IWConvexPools)10256",
             "contract": "ConvexSpell",
             "src": "contracts/spell/ConvexSpell.sol:46"
           },
@@ -3693,7 +3693,7 @@
             "label": "crvOracle",
             "offset": 0,
             "slot": "152",
-            "type": "t_contract(ICurveOracle)3463",
+            "type": "t_contract(ICurveOracle)9969",
             "contract": "ConvexSpell",
             "src": "contracts/spell/ConvexSpell.sol:50"
           },
@@ -3711,7 +3711,7 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_array(t_struct(Strategy)3979_storage)dyn_storage": {
+          "t_array(t_struct(Strategy)14928_storage)dyn_storage": {
             "label": "struct BasicSpell.Strategy[]",
             "numberOfBytes": "32"
           },
@@ -3731,19 +3731,19 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IBank)3381": {
+          "t_contract(IBank)9887": {
             "label": "contract IBank",
             "numberOfBytes": "20"
           },
-          "t_contract(ICurveOracle)3463": {
+          "t_contract(ICurveOracle)9969": {
             "label": "contract ICurveOracle",
             "numberOfBytes": "20"
           },
-          "t_contract(IWConvexPools)3658": {
+          "t_contract(IWConvexPools)10256": {
             "label": "contract IWConvexPools",
             "numberOfBytes": "20"
           },
-          "t_contract(IWERC20)3695": {
+          "t_contract(IWERC20)10369": {
             "label": "contract IWERC20",
             "numberOfBytes": "20"
           },
@@ -3755,7 +3755,7 @@
             "label": "mapping(uint256 => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_struct(Strategy)3979_storage": {
+          "t_struct(Strategy)14928_storage": {
             "label": "struct BasicSpell.Strategy",
             "members": [
               {
@@ -3786,7 +3786,7 @@
     },
     "55281c401e8a64294fcffcc8226346771802add0f7535c1c20977d2e7b95c170": {
       "address": "0xC220Ed128102d888af857d137a54b9B7573A41b2",
-      "txHash": "0xd37b967ddf035e60d9158db1d948c62ce0150ef2e7ea29b292d3f052465c6dac",
+      "txHash": "0xf0240f807d0414365987e1113125e7ab0bb0c358fba6fa77d131ae92ff3ce9c6",
       "layout": {
         "storage": [
           {
@@ -3890,7 +3890,7 @@
             "label": "ICHIv1",
             "offset": 0,
             "slot": "251",
-            "type": "t_contract(IERC20Upgradeable)1842",
+            "type": "t_contract(IERC20Upgradeable)2580",
             "contract": "WIchiFarm",
             "src": "contracts/wrapper/WIchiFarm.sol:72"
           },
@@ -3898,7 +3898,7 @@
             "label": "ICHI",
             "offset": 0,
             "slot": "252",
-            "type": "t_contract(IIchiV2)7629",
+            "type": "t_contract(IIchiV2)11521",
             "contract": "WIchiFarm",
             "src": "contracts/wrapper/WIchiFarm.sol:76"
           },
@@ -3906,7 +3906,7 @@
             "label": "ichiFarm",
             "offset": 0,
             "slot": "253",
-            "type": "t_contract(IIchiFarm)7419",
+            "type": "t_contract(IIchiFarm)11311",
             "contract": "WIchiFarm",
             "src": "contracts/wrapper/WIchiFarm.sol:77"
           }
@@ -3932,15 +3932,15 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IERC20Upgradeable)1842": {
+          "t_contract(IERC20Upgradeable)2580": {
             "label": "contract IERC20Upgradeable",
             "numberOfBytes": "20"
           },
-          "t_contract(IIchiFarm)7419": {
+          "t_contract(IIchiFarm)11311": {
             "label": "contract IIchiFarm",
             "numberOfBytes": "20"
           },
-          "t_contract(IIchiV2)7629": {
+          "t_contract(IIchiV2)11521": {
             "label": "contract IIchiV2",
             "numberOfBytes": "20"
           },
@@ -3977,7 +3977,7 @@
     },
     "5b97712bce68c94af0c25438b54ba44b4f5fd5d85ea8290da1bf29ddad7e311e": {
       "address": "0x12456Fa31e57F91B70629c1196337074c966492a",
-      "txHash": "0x79eea8ad725ea7cc71eae3832533787b5517a456d6d754d457f67df50a1729a5",
+      "txHash": "0x8febf94a22dd349cc936f6af40cb8ed34425b49b629abd83c21f9ada5d4039b0",
       "layout": {
         "storage": [
           {
@@ -4025,7 +4025,7 @@
             "label": "bank",
             "offset": 0,
             "slot": "101",
-            "type": "t_contract(IBank)6321",
+            "type": "t_contract(IBank)9887",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:97"
           },
@@ -4033,7 +4033,7 @@
             "label": "werc20",
             "offset": 0,
             "slot": "102",
-            "type": "t_contract(IWERC20)6707",
+            "type": "t_contract(IWERC20)10369",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:100"
           },
@@ -4049,7 +4049,7 @@
             "label": "strategies",
             "offset": 0,
             "slot": "104",
-            "type": "t_array(t_struct(Strategy)7887_storage)dyn_storage",
+            "type": "t_array(t_struct(Strategy)14928_storage)dyn_storage",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:101"
           },
@@ -4073,7 +4073,7 @@
             "label": "SWAP_POOL",
             "offset": 0,
             "slot": "151",
-            "type": "t_contract(IUniswapV3Pool)5558",
+            "type": "t_contract(IUniswapV3Pool)5823",
             "contract": "IchiSpell",
             "src": "contracts/spell/IchiSpell.sol:62"
           },
@@ -4081,7 +4081,7 @@
             "label": "wIchiFarm",
             "offset": 0,
             "slot": "152",
-            "type": "t_contract(IWIchiFarm)6757",
+            "type": "t_contract(IWIchiFarm)10419",
             "contract": "IchiSpell",
             "src": "contracts/spell/IchiSpell.sol:64"
           },
@@ -4099,7 +4099,7 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_array(t_struct(Strategy)7887_storage)dyn_storage": {
+          "t_array(t_struct(Strategy)14928_storage)dyn_storage": {
             "label": "struct BasicSpell.Strategy[]",
             "numberOfBytes": "32"
           },
@@ -4119,19 +4119,19 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IBank)6321": {
+          "t_contract(IBank)9887": {
             "label": "contract IBank",
             "numberOfBytes": "20"
           },
-          "t_contract(IUniswapV3Pool)5558": {
+          "t_contract(IUniswapV3Pool)5823": {
             "label": "contract IUniswapV3Pool",
             "numberOfBytes": "20"
           },
-          "t_contract(IWERC20)6707": {
+          "t_contract(IWERC20)10369": {
             "label": "contract IWERC20",
             "numberOfBytes": "20"
           },
-          "t_contract(IWIchiFarm)6757": {
+          "t_contract(IWIchiFarm)10419": {
             "label": "contract IWIchiFarm",
             "numberOfBytes": "20"
           },
@@ -4143,7 +4143,7 @@
             "label": "mapping(uint256 => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_struct(Strategy)7887_storage": {
+          "t_struct(Strategy)14928_storage": {
             "label": "struct BasicSpell.Strategy",
             "members": [
               {
@@ -4174,7 +4174,7 @@
     },
     "0f2ec09f27603ae21a2742eab0bf9c772b0fe08e7f4fc9bfd0aff6fbf1dfb986": {
       "address": "0x2F94C3189edA0e357B23048aEc736F323Ac431f6",
-      "txHash": "0xb36ca5a75ad9bc02fac538f0aeadaeabfa32cb46a324cf853a1476ed0447e196",
+      "txHash": "0x1aad5202853f4130ea8d7986025ad1d920a72ef2d7d3aefb9a13a64a0d7fc796",
       "layout": {
         "storage": [
           {
@@ -4278,7 +4278,7 @@
             "label": "cvxPools",
             "offset": 0,
             "slot": "251",
-            "type": "t_contract(ICvxPools)3790",
+            "type": "t_contract(ICvxPools)10654",
             "contract": "WConvexPools",
             "src": "contracts/wrapper/WConvexPools.sol:55"
           },
@@ -4286,7 +4286,7 @@
             "label": "CVX",
             "offset": 0,
             "slot": "252",
-            "type": "t_contract(IERC20Upgradeable)1842",
+            "type": "t_contract(IERC20Upgradeable)2580",
             "contract": "WConvexPools",
             "src": "contracts/wrapper/WConvexPools.sol:56"
           },
@@ -4332,11 +4332,11 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(ICvxPools)3790": {
+          "t_contract(ICvxPools)10654": {
             "label": "contract ICvxPools",
             "numberOfBytes": "20"
           },
-          "t_contract(IERC20Upgradeable)1842": {
+          "t_contract(IERC20Upgradeable)2580": {
             "label": "contract IERC20Upgradeable",
             "numberOfBytes": "20"
           },
@@ -4381,7 +4381,7 @@
     },
     "23ff85052d621e7168935744feb1e93a8b784c64278ae3e4c045bdde4c54a2bd": {
       "address": "0x245e77E56b1514D77910c9303e4b44dDb44B788c",
-      "txHash": "0x8bc91fa60a2458191a5ddcdecfca753c924229a95b02f454ac04d1af3334acaa",
+      "txHash": "0x631f2c3a477f33a9f69ef7fa3f2deb00827c9c8a45a8384a2766383eab5e38b8",
       "layout": {
         "storage": [
           {
@@ -4461,7 +4461,7 @@
             "label": "config",
             "offset": 0,
             "slot": "105",
-            "type": "t_contract(IProtocolConfig)11832",
+            "type": "t_contract(IProtocolConfig)10125",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:65"
           },
@@ -4469,7 +4469,7 @@
             "label": "oracle",
             "offset": 0,
             "slot": "106",
-            "type": "t_contract(ICoreOracle)11658",
+            "type": "t_contract(ICoreOracle)9951",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:65"
           },
@@ -4477,7 +4477,7 @@
             "label": "feeManager",
             "offset": 0,
             "slot": "107",
-            "type": "t_contract(IFeeManager)11739",
+            "type": "t_contract(IFeeManager)10032",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:66"
           },
@@ -4509,7 +4509,7 @@
             "label": "banks",
             "offset": 0,
             "slot": "111",
-            "type": "t_mapping(t_address,t_struct(Bank)11285_storage)",
+            "type": "t_mapping(t_address,t_struct(Bank)9578_storage)",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:69"
           },
@@ -4525,7 +4525,7 @@
             "label": "positions",
             "offset": 0,
             "slot": "113",
-            "type": "t_mapping(t_uint256,t_struct(Position)11302_storage)",
+            "type": "t_mapping(t_uint256,t_struct(Position)9595_storage)",
             "contract": "BlueBerryBank",
             "src": "contracts/BlueBerryBank.sol:72"
           },
@@ -4591,15 +4591,15 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(ICoreOracle)11658": {
+          "t_contract(ICoreOracle)9951": {
             "label": "contract ICoreOracle",
             "numberOfBytes": "20"
           },
-          "t_contract(IFeeManager)11739": {
+          "t_contract(IFeeManager)10032": {
             "label": "contract IFeeManager",
             "numberOfBytes": "20"
           },
-          "t_contract(IProtocolConfig)11832": {
+          "t_contract(IProtocolConfig)10125": {
             "label": "contract IProtocolConfig",
             "numberOfBytes": "20"
           },
@@ -4607,15 +4607,15 @@
             "label": "mapping(address => bool)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(Bank)11285_storage)": {
+          "t_mapping(t_address,t_struct(Bank)9578_storage)": {
             "label": "mapping(address => struct IBank.Bank)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(Position)11302_storage)": {
+          "t_mapping(t_uint256,t_struct(Position)9595_storage)": {
             "label": "mapping(uint256 => struct IBank.Position)",
             "numberOfBytes": "32"
           },
-          "t_struct(Bank)11285_storage": {
+          "t_struct(Bank)9578_storage": {
             "label": "struct IBank.Bank",
             "members": [
               {
@@ -4663,7 +4663,7 @@
             ],
             "numberOfBytes": "160"
           },
-          "t_struct(Position)11302_storage": {
+          "t_struct(Position)9595_storage": {
             "label": "struct IBank.Position",
             "members": [
               {
@@ -4730,7 +4730,7 @@
     },
     "ffe8210b09987805e2e698986f13bc94a60f01d604f97c5e980b7052227a7e5d": {
       "address": "0x6d055A4babb2A0d1B3Abb32937DB437210be6161",
-      "txHash": "0x250f30da0ea4f86426e66a06df84d08aaa9597814c5aa94eaadd991b40e367f1",
+      "txHash": "0x551c3108710f4a8d3102b7a99391f82c9455ab41170b93885b3e583081636741",
       "layout": {
         "storage": [
           {
@@ -4834,7 +4834,7 @@
             "label": "registry",
             "offset": 0,
             "slot": "251",
-            "type": "t_contract(ICurveRegistry)12707",
+            "type": "t_contract(ICurveRegistry)10968",
             "contract": "WCurveGauge",
             "src": "contracts/wrapper/WCurveGauge.sol:59"
           },
@@ -4842,7 +4842,7 @@
             "label": "gaugeController",
             "offset": 0,
             "slot": "252",
-            "type": "t_contract(ICurveGaugeController)12537",
+            "type": "t_contract(ICurveGaugeController)10798",
             "contract": "WCurveGauge",
             "src": "contracts/wrapper/WCurveGauge.sol:61"
           },
@@ -4850,7 +4850,7 @@
             "label": "CRV",
             "offset": 0,
             "slot": "253",
-            "type": "t_contract(IERC20Upgradeable)2683",
+            "type": "t_contract(IERC20Upgradeable)2580",
             "contract": "WCurveGauge",
             "src": "contracts/wrapper/WCurveGauge.sol:64"
           },
@@ -4884,15 +4884,15 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(ICurveGaugeController)12537": {
+          "t_contract(ICurveGaugeController)10798": {
             "label": "contract ICurveGaugeController",
             "numberOfBytes": "20"
           },
-          "t_contract(ICurveRegistry)12707": {
+          "t_contract(ICurveRegistry)10968": {
             "label": "contract ICurveRegistry",
             "numberOfBytes": "20"
           },
-          "t_contract(IERC20Upgradeable)2683": {
+          "t_contract(IERC20Upgradeable)2580": {
             "label": "contract IERC20Upgradeable",
             "numberOfBytes": "20"
           },
@@ -4933,7 +4933,7 @@
     },
     "22c4eaa705d5cbf4761107f4f4a21f1c5c10e6d5568db026427b3118343336c6": {
       "address": "0x76a5A3a1eC8AA32d7Fc7BD7D4Cd9c779a59Ef881",
-      "txHash": "0xb14993b2323eaf319b65b3a4e34dc6396b0011b13093166ad2b61c8080647890",
+      "txHash": "0x0b66641cfbdffa6931511ac6077efd5e96579f701b9e527908388da9f54c21bf",
       "layout": {
         "storage": [
           {
@@ -4981,7 +4981,7 @@
             "label": "bank",
             "offset": 0,
             "slot": "101",
-            "type": "t_contract(IBank)1977",
+            "type": "t_contract(IBank)9887",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:97"
           },
@@ -4989,7 +4989,7 @@
             "label": "werc20",
             "offset": 0,
             "slot": "102",
-            "type": "t_contract(IWERC20)2367",
+            "type": "t_contract(IWERC20)10369",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:100"
           },
@@ -5005,7 +5005,7 @@
             "label": "strategies",
             "offset": 0,
             "slot": "104",
-            "type": "t_array(t_struct(Strategy)2707_storage)dyn_storage",
+            "type": "t_array(t_struct(Strategy)14928_storage)dyn_storage",
             "contract": "BasicSpell",
             "src": "contracts/spell/BasicSpell.sol:101"
           },
@@ -5029,7 +5029,7 @@
             "label": "wCurveGauge",
             "offset": 0,
             "slot": "151",
-            "type": "t_contract(IWCurveGauge)2330",
+            "type": "t_contract(IWCurveGauge)10332",
             "contract": "CurveSpell",
             "src": "contracts/spell/CurveSpell.sol:48"
           },
@@ -5037,7 +5037,7 @@
             "label": "crvOracle",
             "offset": 0,
             "slot": "152",
-            "type": "t_contract(ICurveOracle)2059",
+            "type": "t_contract(ICurveOracle)9969",
             "contract": "CurveSpell",
             "src": "contracts/spell/CurveSpell.sol:50"
           },
@@ -5055,7 +5055,7 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_array(t_struct(Strategy)2707_storage)dyn_storage": {
+          "t_array(t_struct(Strategy)14928_storage)dyn_storage": {
             "label": "struct BasicSpell.Strategy[]",
             "numberOfBytes": "32"
           },
@@ -5075,19 +5075,19 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IBank)1977": {
+          "t_contract(IBank)9887": {
             "label": "contract IBank",
             "numberOfBytes": "20"
           },
-          "t_contract(ICurveOracle)2059": {
+          "t_contract(ICurveOracle)9969": {
             "label": "contract ICurveOracle",
             "numberOfBytes": "20"
           },
-          "t_contract(IWCurveGauge)2330": {
+          "t_contract(IWCurveGauge)10332": {
             "label": "contract IWCurveGauge",
             "numberOfBytes": "20"
           },
-          "t_contract(IWERC20)2367": {
+          "t_contract(IWERC20)10369": {
             "label": "contract IWERC20",
             "numberOfBytes": "20"
           },
@@ -5099,7 +5099,7 @@
             "label": "mapping(uint256 => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_struct(Strategy)2707_storage": {
+          "t_struct(Strategy)14928_storage": {
             "label": "struct BasicSpell.Strategy",
             "members": [
               {
