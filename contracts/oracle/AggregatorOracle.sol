@@ -117,7 +117,7 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
         }
         if (validSourceCount == 0) revert Errors.NO_VALID_SOURCE(token);
         // Sort prices in ascending order
-        for (uint256 i = 0; i < validSourceCount - 1; i++) {
+        for (uint256 i = 0; i < validSourceCount - 1; ++i) {
             for (uint256 j = 0; j < validSourceCount - i - 1; j++) {
                 if (prices[j] > prices[j + 1]) {
                     (prices[j], prices[j + 1]) = (prices[j + 1], prices[j]);

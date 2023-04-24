@@ -100,7 +100,7 @@ contract SoftVault is
 
     /**
      * @notice Withdraw underlying assets from Blueberry Money Market
-     * @dev It cuts vault withdraw fee when you withdraw within the vault withdraw window (2 months)
+     * @dev It cuts vault withdraw fee when you withdraw within the vault withdraw window
      * @param shareAmount Amount of bTokens to redeem
      * @return withdrawAmount Amount of underlying assets withdrawn
      */

@@ -71,7 +71,7 @@ contract FeeManager is OwnableUpgradeable {
         address token,
         uint256 amount
     ) external returns (uint256) {
-        // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
+        // Cut withdraw fee if it is in withdrawVaultFee Window
         if (
             block.timestamp <
             config.withdrawVaultFeeWindowStartTime() +
