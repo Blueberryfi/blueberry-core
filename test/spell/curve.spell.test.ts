@@ -237,6 +237,41 @@ describe("Curve Spell", () => {
         afterTreasuryBalance.sub(beforeTreasuryBalance)
       ).to.be.equal(depositAmount.mul(50).div(10000))
     })
+    it("should not revert when another token exists with balance", async () => {
+      // transfer 1 wei DAI to check tx success.
+      await dai.connect(admin).transfer(spell.address, 1)
+
+      const positionId = await bank.nextPositionId();
+      const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
+      await bank.execute(
+        0,
+        spell.address,
+        iface.encodeFunctionData("openPositionFarm", [{
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: GAUGE_ID
+        }, 0])
+      )
+
+      const bankInfo = await bank.getBankInfo(USDC);
+      console.log("USDC Bank Info:", bankInfo);
+
+      const pos = await bank.positions(positionId);
+      console.log("Position Info:", pos)
+      console.log("Position Value:", await bank.getPositionValue(1));
+      expect(pos.owner).to.be.equal(admin.address);
+      expect(pos.collToken).to.be.equal(wgauge.address);
+      expect(pos.debtToken).to.be.equal(USDC);
+      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+
+      const afterTreasuryBalance = await crv.balanceOf(treasury.address);
+      expect(
+        afterTreasuryBalance.sub(beforeTreasuryBalance)
+      ).to.be.equal(depositAmount.mul(50).div(10000))
+    })
     it("should be able to get position risk ratio", async () => {
       let risk = await bank.getPositionRisk(1);
       let pv = await bank.getPositionValue(1);

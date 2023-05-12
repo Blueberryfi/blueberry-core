@@ -87,29 +87,39 @@ contract CurveSpell is BasicSpell {
         );
 
         // 3. Add liquidity on curve
+        address borrowToken = param.borrowToken;
         _ensureApprove(param.borrowToken, pool, borrowBalance);
         if (tokens.length == 2) {
             uint256[2] memory suppliedAmts;
             for (uint256 i = 0; i < 2; i++) {
-                suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                    address(this)
-                );
+                if (tokens[i] == borrowToken) {
+                    suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
+                        address(this)
+                    );
+                    break;
+                }
             }
             ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
         } else if (tokens.length == 3) {
             uint256[3] memory suppliedAmts;
             for (uint256 i = 0; i < 3; i++) {
-                suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                    address(this)
-                );
+                if (tokens[i] == borrowToken) {
+                    suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
+                        address(this)
+                    );
+                    break;
+                }
             }
             ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
         } else if (tokens.length == 4) {
             uint256[4] memory suppliedAmts;
             for (uint256 i = 0; i < 4; i++) {
-                suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                    address(this)
-                );
+                if (tokens[i] == borrowToken) {
+                    suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
+                        address(this)
+                    );
+                    break;
+                }
             }
             ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
         }
