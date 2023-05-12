@@ -149,7 +149,8 @@ contract AuraSpell is BasicSpell {
     function closePositionFarm(
         ClosePosParam calldata param,
         IUniswapV2Router02 swapRouter,
-        address[][] calldata swapPath
+        address[][] calldata swapPath,
+        uint256 minRewardOut
     )
         external
         existingStrategy(param.strategyId)
@@ -190,12 +191,12 @@ contract AuraSpell is BasicSpell {
         }
 
         // 4. Swap rewards tokens to debt token
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
+        for (uint256 i; i < rewardTokens.length; i++) {
             uint256 rewards = _doCutRewardsFee(rewardTokens[i]);
             _ensureApprove(rewardTokens[i], address(swapRouter), rewards);
             swapRouter.swapExactTokensForTokens(
                 rewards,
-                0,
+                minRewardOut,
                 swapPath[i],
                 address(this),
                 type(uint256).max
