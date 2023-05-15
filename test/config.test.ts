@@ -53,7 +53,7 @@ describe("Protocol Config", () => {
       expect(await config.blbStablePoolFeeRate()).to.be.equal(3500);
       expect(await config.blbIchiVaultFeeRate()).to.be.equal(3500);
       expect(await config.withdrawVaultFee()).to.be.equal(100);
-      expect(await config.withdrawVaultFeeWindow()).to.be.equal(60 * 60 * 24 * 90);
+      expect(await config.withdrawVaultFeeWindow()).to.be.equal(60 * 60 * 24 * 60);
       expect(await config.withdrawVaultFeeWindowStartTime()).to.be.equal(0);
     })
   })
@@ -72,14 +72,14 @@ describe("Protocol Config", () => {
 
   it("owner should be able to set vault withdraw fee window", async () => {
     await expect(
-      config.connect(alice).setWithdrawVaultFeeWindow(90)
+      config.connect(alice).setWithdrawVaultFeeWindow(60)
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(
       config.setWithdrawVaultFeeWindow(120)
     ).to.be.revertedWith("FEE_WINDOW_TOO_LONG");
 
-    await config.setWithdrawVaultFeeWindow(90);
-    expect(await config.withdrawVaultFeeWindow()).to.be.equal(90);
+    await config.setWithdrawVaultFeeWindow(60);
+    expect(await config.withdrawVaultFeeWindow()).to.be.equal(60);
   })
 
   it("owner should be able to set deposit fee", async () => {
