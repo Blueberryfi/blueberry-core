@@ -160,11 +160,13 @@ contract ConvexSpell is BasicSpell {
         if (wConvexPools.getUnderlyingToken(pos.collId) != crvLp)
             revert Errors.INCORRECT_UNDERLYING(crvLp);
 
+        uint256 amountPosRemove = param.amountPosRemove;
+
         // 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
-        bank.takeCollateral(param.amountPosRemove);
+        bank.takeCollateral(amountPosRemove);
         (address[] memory rewardTokens, ) = wConvexPools.burn(
             pos.collId,
-            param.amountPosRemove
+            amountPosRemove
         );
 
         // 2. Swap rewards tokens to debt token
@@ -185,7 +187,6 @@ contract ConvexSpell is BasicSpell {
                 crvLp
             );
             // 3. Calculate actual amount to remove
-            uint256 amountPosRemove = param.amountPosRemove;
             if (amountPosRemove == type(uint256).max) {
                 amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(
                     address(this)
@@ -201,10 +202,22 @@ contract ConvexSpell is BasicSpell {
                 }
             }
 
+            uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
+                .decimals();
+
+            uint256 sellSlippage = param.sellSlippage;
+            uint256 minOut = (amountPosRemove * sellSlippage) /
+                Constants.DENOMINATOR;
+
+            // We assume that there is no token with decimals above than 18
+            if (tokenDecimals < 18) {
+                minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
+            }
+
             ICurvePool(pool).remove_liquidity_one_coin(
                 amountPosRemove,
                 int128(tokenIndex),
-                0
+                minOut
             );
         }
 

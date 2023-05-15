@@ -292,6 +292,38 @@ describe("Convex Spell", () => {
     //     )
     //   ).to.be.revertedWith("INCORRECT_PID")
     // })
+    it("should revert if received amount is lower than slippage", async () => {
+      evm_mine_blocks(1000);
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const position = await bank.positions(positionId);
+
+      const totalEarned = await crvRewarder.earned(wconvex.address);
+      console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned))
+
+      const pendingRewardsInfo = await wconvex.pendingRewards(position.collId, position.collateralSize);
+      console.log("Pending Rewards", pendingRewardsInfo)
+
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits('10', 18));
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [{
+            strategyId: 0,
+            collToken: CRV,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            sellSlippage: 20000,
+            sqrtRatioLimit: 0
+          }, ADDRESS.SUSHI_ROUTER, [[CRV, WETH, USDC], [ADDRESS.FRAX, ADDRESS.SUSHI, USDC]]])
+        )
+      ).to.be.revertedWith("Not enough coins removed");
+    })
     it("should be able to harvest on Convex", async () => {
       evm_mine_blocks(1000);
       const positionId = (await bank.nextPositionId()).sub(1);

@@ -317,9 +317,32 @@ describe("Curve Spell", () => {
     //     )
     //   ).to.be.revertedWith("INCORRECT_PID")
     // })
-    it("should be able to harvest on Curve Gauge", async () => {
+    it("should revert if received amount is lower than slippage", async () => {
       evm_mine_blocks(1000);
 
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits('10', 18));
+
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const iface = new ethers.utils.Interface(SpellABI);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [{
+            strategyId: 0,
+            collToken: CRV,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            sellSlippage: 20000,
+            sqrtRatioLimit: 0
+          }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC]])
+        )
+      ).to.be.revertedWith("Not enough coins removed");
+    })
+    it("should be able to harvest on Curve Gauge", async () => {
       // Manually transfer CRV rewards to spell
       await crv.transfer(spell.address, utils.parseUnits('10', 18));
 
