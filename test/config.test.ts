@@ -75,7 +75,7 @@ describe("Protocol Config", () => {
       config.connect(alice).setWithdrawVaultFeeWindow(60)
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(
-      config.setWithdrawVaultFeeWindow(120)
+      config.setWithdrawVaultFeeWindow(60 * 60 * 24 * 90)
     ).to.be.revertedWith("FEE_WINDOW_TOO_LONG");
 
     await config.setWithdrawVaultFeeWindow(60);
