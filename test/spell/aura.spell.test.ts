@@ -30,12 +30,14 @@ chai.use(roughlyNear);
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
 const CCRV = ADDRESS.bCRV;
+const BAL = ADDRESS.BAL;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
-const ETH_PRICE = 1600;
-const GAUGE_ID = ADDRESS.CRV_GAUGE_3CrvId;
+const AURA = ADDRESS.AURA;
+const POOL_ID = ADDRESS.AURA_UDU_POOL_ID;
+const WPOOL_ID = ADDRESS.AURA_WETH_AURA_ID;
 
 describe("Aura Spell", () => {
   let admin: SignerWithAddress;
@@ -45,6 +47,7 @@ describe("Aura Spell", () => {
   let usdc: ERC20;
   let dai: ERC20;
   let crv: ERC20;
+  let aura: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
@@ -61,12 +64,13 @@ describe("Aura Spell", () => {
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
+    aura = <ERC20>await ethers.getContractAt("ERC20", AURA);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
     auraBooster = <ICvxPools>(
       await ethers.getContractAt("ICvxPools", ADDRESS.AURA_BOOSTER)
     );
-    const poolInfo = await auraBooster.poolInfo(ADDRESS.AURA_ETH_ID);
+    const poolInfo = await auraBooster.poolInfo(ADDRESS.AURA_UDU_POOL_ID);
     auraRewarder = <IRewarder>(
       await ethers.getContractAt("IRewarder", poolInfo.crvRewards)
     );
@@ -152,13 +156,13 @@ describe("Aura Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount.mul(4),
-              farmingPoolId: GAUGE_ID,
+              farmingPoolId: POOL_ID,
             },
-            0,
           ])
         )
       ).to.be.revertedWith("EXCEED_MAX_LTV");
     });
+
     it("should revert when opening a position for non-existing strategy", async () => {
       await expect(
         bank.execute(
@@ -171,13 +175,13 @@ describe("Aura Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: GAUGE_ID,
+              farmingPoolId: POOL_ID,
             },
-            0,
           ])
         )
       ).to.be.revertedWith("STRATEGY_NOT_EXIST");
     });
+
     it("should revert when opening a position for non-existing collateral", async () => {
       await expect(
         bank.execute(
@@ -190,13 +194,13 @@ describe("Aura Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: GAUGE_ID,
+              farmingPoolId: POOL_ID,
             },
-            0,
           ])
         )
       ).to.be.revertedWith("COLLATERAL_NOT_EXIST");
     });
+
     it("should revert when opening a position for incorrect farming pool id", async () => {
       await expect(
         bank.execute(
@@ -209,13 +213,13 @@ describe("Aura Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: GAUGE_ID + 1,
+              farmingPoolId: 0,
             },
-            0,
           ])
         )
       ).to.be.revertedWith("INCORRECT_LP");
     });
+
     it("should be able to farm USDC on Aura", async () => {
       const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
@@ -229,9 +233,8 @@ describe("Aura Spell", () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPoolId: GAUGE_ID,
+            farmingPoolId: POOL_ID,
           },
-          0,
         ])
       );
 
@@ -257,6 +260,7 @@ describe("Aura Spell", () => {
       const rewarderBalance = await auraRewarder.balanceOf(waura.address);
       expect(rewarderBalance).to.be.equal(pos.collateralSize);
     });
+
     it("should be able to get position risk ratio", async () => {
       let risk = await bank.getPositionRisk(1);
       let pv = await bank.getPositionValue(1);
@@ -301,8 +305,9 @@ describe("Aura Spell", () => {
     //     )
     //   ).to.be.revertedWith("INCORRECT_PID")
     // })
+
     it("should be able to harvest on Aura", async () => {
-      evm_mine_blocks(1000);
+      await evm_mine_blocks(10000);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
@@ -339,9 +344,11 @@ describe("Aura Spell", () => {
           },
           ADDRESS.SUSHI_ROUTER,
           [
+            [BAL, WETH, USDC],
             [CRV, WETH, USDC],
             [ADDRESS.FRAX, ADDRESS.SUSHI, USDC],
           ],
+          0,
         ])
       );
       const afterUSDCBalance = await usdc.balanceOf(admin.address);

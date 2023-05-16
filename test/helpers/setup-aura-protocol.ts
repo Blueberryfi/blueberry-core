@@ -30,7 +30,8 @@ const USDT = ADDRESS.USDT;
 const DAI = ADDRESS.DAI;
 const FRAX = ADDRESS.FRAX;
 const CRV = ADDRESS.CRV;
-const CVX = ADDRESS.CVX;
+const AURA = ADDRESS.AURA;
+const BAL = ADDRESS.BAL;
 const ETH_PRICE = 1600;
 
 export interface AuraProtocol {
@@ -139,9 +140,11 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
   await mockOracle.setPrice(
-    [WETH, USDC, CRV, DAI, USDT, FRAX, CVX],
+    [WETH, USDC, CRV, DAI, USDT, FRAX, AURA, BAL, ADDRESS.BAL_UDU],
     [
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
+      BigNumber.from(10).pow(18), // $1
+      BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
@@ -162,17 +165,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   await oracle.deployed();
 
   await oracle.setRoutes(
-    [
-      WETH,
-      USDC,
-      CRV,
-      DAI,
-      USDT,
-      FRAX,
-      CVX,
-      ADDRESS.CRV_3Crv,
-      ADDRESS.CRV_FRAX3Crv,
-    ],
+    [WETH, USDC, CRV, DAI, USDT, FRAX, AURA, BAL, ADDRESS.BAL_UDU],
     [
       mockOracle.address,
       mockOracle.address,
@@ -181,8 +174,8 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
-      curveOracle.address,
-      curveOracle.address,
+      mockOracle.address,
+      mockOracle.address,
     ]
   );
 
@@ -215,7 +208,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
 
   const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
   waura = <WAuraPools>(
-    await upgrades.deployProxy(WAuraPools, [CVX, ADDRESS.AURA_BOOSTER])
+    await upgrades.deployProxy(WAuraPools, [AURA, ADDRESS.AURA_BOOSTER])
   );
   await waura.deployed();
 
@@ -231,10 +224,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   );
   await auraSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
-  await auraSpell.addStrategy(
-    ADDRESS.BAL_ETH_AURA,
-    utils.parseUnits("2000", 18)
-  );
+  await auraSpell.addStrategy(ADDRESS.BAL_UDU, utils.parseUnits("2000", 18));
   await auraSpell.addStrategy(
     ADDRESS.BAL_AURA_STABLE,
     utils.parseUnits("2000", 18)
@@ -252,7 +242,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
 
   // Setup Bank
   await bank.whitelistSpells([auraSpell.address], [true]);
-  await bank.whitelistTokens([USDC, CRV, DAI], [true, true, true]);
+  await bank.whitelistTokens([USDC, DAI, CRV], [true, true, true]);
   await bank.whitelistERC1155([werc20.address, waura.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);

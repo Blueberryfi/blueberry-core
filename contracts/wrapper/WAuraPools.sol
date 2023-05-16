@@ -26,8 +26,8 @@ import "../interfaces/aura/IAuraRewarder.sol";
  * @title WAuraPools
  * @author BlueberryProtocol
  * @notice Wrapped Aura Pools is the wrapper of LP positions
- * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank 
- *      and do not generate yields. LP Tokens are identified by tokenIds 
+ * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank
+ *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
 contract WAuraPools is
@@ -108,13 +108,12 @@ contract WAuraPools is
         return getVault(bpt).getPoolTokens(IBalancerPool(bpt).getPoolId());
     }
 
-    function getPool(
-        address bpt,
-        uint256 pid
-    ) external view returns (address, uint256) {
-        return getVault(bpt).getPool(bytes32(pid));
+    function getBPTPoolId(address bpt) public view returns (bytes32) {
+        return IBalancerPool(bpt).getPoolId();
     }
 
+    /// @notice Get pool infor from aura booster
+    /// @param pid aura finance pool id
     function getPoolInfoFromPoolId(
         uint256 pid
     )
