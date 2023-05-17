@@ -21,13 +21,14 @@ import "../utils/EnsureApprove.sol";
 import "../interfaces/IWAuraPools.sol";
 import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/aura/IAuraRewarder.sol";
+import "../interfaces/aura/IAuraExtraRewarder.sol";
 
 /**
  * @title WAuraPools
  * @author BlueberryProtocol
  * @notice Wrapped Aura Pools is the wrapper of LP positions
- * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank 
- *      and do not generate yields. LP Tokens are identified by tokenIds 
+ * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank
+ *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
 contract WAuraPools is
@@ -48,6 +49,10 @@ contract WAuraPools is
     mapping(uint256 => uint256) public accCrvPerShares;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => uint256[]) public accExtPerShare;
+    /// @dev Aura extra rewards addresses
+    address[] public extraRewards;
+    /// @dev The index of extra rewards
+    mapping(address => uint256) public extraRewardsIdx;
 
     function initialize(
         address aura_,
@@ -163,8 +168,7 @@ contract WAuraPools is
             pid
         );
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
-        uint extraRewardsCount = IAuraRewarder(crvRewarder)
-            .extraRewardsLength();
+        uint extraRewardsCount = extraRewards.length;
         tokens = new address[](extraRewardsCount + 1);
         rewards = new uint256[](extraRewardsCount + 1);
 
@@ -177,7 +181,7 @@ contract WAuraPools is
         );
 
         for (uint i = 0; i < extraRewardsCount; i++) {
-            address rewarder = IAuraRewarder(crvRewarder).extraRewards(i);
+            address rewarder = extraRewards[i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][i];
             tokens[i + 1] = IAuraRewarder(rewarder).rewardToken();
             rewards[i + 1] = _getPendingReward(
@@ -218,6 +222,8 @@ contract WAuraPools is
             address extraRewarder = IAuraRewarder(crvRewarder).extraRewards(i);
             uint rewardPerToken = IAuraRewarder(extraRewarder).rewardPerToken();
             accExtPerShare[id].push(rewardPerToken);
+
+            _syncExtraReward(extraRewarder);
         }
     }
 
@@ -250,14 +256,38 @@ contract WAuraPools is
         // Transfer LP Tokens
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
 
+        uint extraRewardsCount = IAuraRewarder(balRewarder)
+            .extraRewardsLength();
+
+        bool hasDiffExtraRewards;
+        for (uint i = 0; i < extraRewardsCount; i++) {
+            _syncExtraReward(IAuraRewarder(balRewarder).extraRewards(i));
+        }
+        uint storedExtraRewardLength = extraRewards.length;
+        hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
+
         // Transfer Reward Tokens
         (rewardTokens, rewards) = pendingRewards(id, amount);
+
+        // Withdraw manually
+        if (hasDiffExtraRewards) {
+            for (uint i = 0; i < storedExtraRewardLength; i++) {
+                IAuraExtraRewarder(extraRewards[i]).getReward();
+            }
+        }
 
         for (uint i = 0; i < rewardTokens.length; i++) {
             IERC20Upgradeable(rewardTokens[i]).safeTransfer(
                 msg.sender,
                 rewards[i]
             );
+        }
+    }
+
+    function _syncExtraReward(address extraReward) private {
+        if (extraRewardsIdx[extraReward] == 0) {
+            extraRewards.push(extraReward);
+            extraRewardsIdx[extraReward] = extraRewards.length;
         }
     }
 }
