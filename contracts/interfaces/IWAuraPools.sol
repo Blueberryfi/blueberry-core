@@ -28,10 +28,7 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
             uint256 lastChangedBlock
         );
 
-    function getPool(
-        address vault,
-        uint256 pid
-    ) external view returns (address, uint256);
+    function getBPTPoolId(address bpt) external view returns (bytes32);
 
     function getVault(address bpt) external view returns (IBalancerVault);
 

@@ -32,6 +32,7 @@ const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const ICHI = ADDRESS.ICHI;
 const ICHIV1 = ADDRESS.ICHI_FARM;
+const UNI_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
 const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
 const ETH_PRICE = 1600;
 
@@ -235,7 +236,8 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     bank.address,
     werc20.address,
     WETH,
-    wichi.address
+    wichi.address,
+    UNI_V3_ROUTER
   ])
   await ichiSpell.deployed();
   await ichiSpell.addStrategy(ichi_USDC_ICHI_Vault.address, utils.parseUnits("2000", 18));

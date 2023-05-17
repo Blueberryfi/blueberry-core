@@ -181,7 +181,7 @@ contract CurveSpell is BasicSpell {
                 0,
                 swapPath,
                 address(this),
-                type(uint256).max
+                block.timestamp + Constants.MAX_DELAY_ON_SWAP
             );
         }
 

@@ -344,6 +344,11 @@
         "internalType": "address[][]",
         "name": "swapPath",
         "type": "address[][]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minRewardOut",
+        "type": "uint256"
       }
     ],
     "name": "closePositionFarm",
