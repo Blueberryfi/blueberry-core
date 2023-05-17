@@ -473,6 +473,11 @@
         "internalType": "address",
         "name": "wichiFarm_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "uniV3Router_",
+        "type": "address"
       }
     ],
     "name": "initialize",

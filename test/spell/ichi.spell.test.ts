@@ -35,6 +35,8 @@ const USDC = ADDRESS.USDC;
 const ICHI = ADDRESS.ICHI;
 const DAI = ADDRESS.DAI;
 const ICHIV1 = ADDRESS.ICHI_FARM;
+const UNI_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
+
 const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
 const ETH_PRICE = 1600;
 
@@ -84,7 +86,8 @@ describe('ICHI Angel Vaults Spell', () => {
           ethers.constants.AddressZero,
           werc20.address,
           WETH,
-          wichi.address
+          wichi.address,
+          UNI_V3_ROUTER
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -92,7 +95,8 @@ describe('ICHI Angel Vaults Spell', () => {
           bank.address,
           ethers.constants.AddressZero,
           WETH,
-          wichi.address
+          wichi.address,
+          UNI_V3_ROUTER
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -100,7 +104,8 @@ describe('ICHI Angel Vaults Spell', () => {
           bank.address,
           werc20.address,
           ethers.constants.AddressZero,
-          wichi.address
+          wichi.address,
+          UNI_V3_ROUTER
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -109,6 +114,7 @@ describe('ICHI Angel Vaults Spell', () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
+          UNI_V3_ROUTER
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
     })
@@ -119,6 +125,7 @@ describe('ICHI Angel Vaults Spell', () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
+          UNI_V3_ROUTER
         )
       ).to.be.revertedWith("Initializable: contract is already initialized")
     })
@@ -857,7 +864,8 @@ describe('ICHI Angel Vaults Spell', () => {
         bank.address,
         werc20.address,
         WETH,
-        wichi.address
+        wichi.address,
+        UNI_V3_ROUTER
       ])
       await spell.deployed();
     })
@@ -974,7 +982,8 @@ describe('ICHI Angel Vaults Spell', () => {
         bank.address,
         werc20.address,
         WETH,
-        wichi.address
+        wichi.address,
+        UNI_V3_ROUTER
       ])
       await spell.deployed();
     })

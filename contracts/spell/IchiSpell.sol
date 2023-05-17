@@ -19,6 +19,7 @@ import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.so
 import "./BasicSpell.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
+import "../interfaces/uniswap/IUniswapV3Router.sol";
 
 /**
  * @title IchiSpell
@@ -34,6 +35,9 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
     IUniswapV3Pool private SWAP_POOL;
 
+    /// @dev address of uniswap v3 router
+    IUniswapV3Router private uniV3Router;
+
     /// @dev address of ICHI farm wrapper
     IWIchiFarm public wIchiFarm;
     /// @dev address of ICHI token
@@ -48,7 +52,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         IBank bank_,
         address werc20_,
         address weth_,
-        address wichiFarm_
+        address wichiFarm_,
+        address uniV3Router_
     ) external initializer {
         __BasicSpell_init(bank_, werc20_, weth_);
         if (wichiFarm_ == address(0)) revert Errors.ZERO_ADDRESS();
@@ -56,6 +61,8 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         wIchiFarm = IWIchiFarm(wichiFarm_);
         ICHI = address(wIchiFarm.ICHI());
         wIchiFarm.setApprovalForAll(address(bank_), true);
+
+        uniV3Router = IUniswapV3Router(uniV3Router_);
     }
 
     /**
@@ -207,19 +214,28 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         ).balanceOf(address(this));
 
         if (amountToSwap > 0) {
-            SWAP_POOL = IUniswapV3Pool(vault.pool());
             uint160 deltaSqrt = (param.sqrtRatioLimit *
                 uint160(param.sellSlippage)) / uint160(Constants.DENOMINATOR);
-            SWAP_POOL.swap(
-                address(this),
-                // if withdraw token is Token0, then swap token1 -> token0 (false)
-                !isTokenA,
-                amountToSwap.toInt256(),
-                isTokenA
-                    ? param.sqrtRatioLimit + deltaSqrt
-                    : param.sqrtRatioLimit - deltaSqrt, // slippaged price cap
-                abi.encode(address(this))
-            );
+            address[] memory swapPath = new address[](2);
+            swapPath[0] = isTokenA ? vault.token1() : vault.token0();
+            swapPath[1] = isTokenA ? vault.token0() : vault.token1();
+
+            IUniswapV3Router.ExactInputSingleParams
+                memory params = IUniswapV3Router.ExactInputSingleParams({
+                    tokenIn: swapPath[0],
+                    tokenOut: swapPath[1],
+                    fee: IUniswapV3Pool(vault.pool()).fee(),
+                    recipient: address(this),
+                    deadline: block.timestamp + Constants.MAX_DELAY_ON_SWAP,
+                    amountIn: amountToSwap,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: isTokenA
+                        ? param.sqrtRatioLimit + deltaSqrt
+                        : param.sqrtRatioLimit - deltaSqrt
+                });
+
+            _ensureApprove(params.tokenIn, address(uniV3Router), amountToSwap);
+            uniV3Router.exactInputSingle(params);
         }
 
         // 5. Withdraw isolated collateral from Bank
