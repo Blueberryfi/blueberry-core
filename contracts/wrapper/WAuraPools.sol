@@ -45,14 +45,18 @@ contract WAuraPools is
     IAuraPools public auraPools;
     /// @dev Address to AURA token
     IERC20Upgradeable public AURA;
-    /// @dev Mapping from gauge id to accBalPerShare
-    mapping(uint256 => uint256) public accCrvPerShares;
+    /// @dev Mapping from gauge id to accAuraPerShare
+    mapping(uint256 => uint256) public auraPerShares;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => uint256[]) public accExtPerShare;
     /// @dev Aura extra rewards addresses
     address[] public extraRewards;
     /// @dev The index of extra rewards
     mapping(address => uint256) public extraRewardsIdx;
+    /// @dev accumulated aura per share
+    uint256 public accAuraPerShare;
+    /// @dev total staked lp
+    uint256 public totalStaked;
 
     function initialize(
         address aura_,
@@ -168,8 +172,8 @@ contract WAuraPools is
         );
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
         uint extraRewardsCount = extraRewards.length;
-        tokens = new address[](extraRewardsCount + 1);
-        rewards = new uint256[](extraRewardsCount + 1);
+        tokens = new address[](extraRewardsCount + 2);
+        rewards = new uint256[](extraRewardsCount + 2);
 
         tokens[0] = IAuraRewarder(crvRewarder).rewardToken();
         rewards[0] = _getPendingReward(
@@ -179,11 +183,16 @@ contract WAuraPools is
             lpDecimals
         );
 
+        tokens[1] = address(AURA);
+        rewards[1] =
+            (amount * (accAuraPerShare - auraPerShares[tokenId])) /
+            1e12;
+
         for (uint i = 0; i < extraRewardsCount; i++) {
             address rewarder = extraRewards[i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][i];
-            tokens[i + 1] = IAuraRewarder(rewarder).rewardToken();
-            rewards[i + 1] = _getPendingReward(
+            tokens[i + 2] = IAuraRewarder(rewarder).rewardToken();
+            rewards[i + 2] = _getPendingReward(
                 stRewardPerShare,
                 rewarder,
                 amount,
@@ -211,18 +220,27 @@ contract WAuraPools is
         _ensureApprove(lpToken, address(auraPools), amount);
         auraPools.deposit(pid, amount, true);
 
+        // Increase totalStaked value
+        totalStaked += amount;
+
         uint256 crvRewardPerToken = IAuraRewarder(crvRewarder).rewardPerToken();
         id = encodeId(pid, crvRewardPerToken);
         _mint(msg.sender, id, amount, "");
+        auraPerShares[id] = accAuraPerShare;
+
         // Store extra rewards info
         uint extraRewardsCount = IAuraRewarder(crvRewarder)
             .extraRewardsLength();
-        for (uint i = 0; i < extraRewardsCount; i++) {
+        for (uint i; i < extraRewardsCount; ) {
             address extraRewarder = IAuraRewarder(crvRewarder).extraRewards(i);
             uint rewardPerToken = IAuraRewarder(extraRewarder).rewardPerToken();
             accExtPerShare[id].push(rewardPerToken);
 
             _syncExtraReward(extraRewarder);
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -247,10 +265,19 @@ contract WAuraPools is
         (address lpToken, , , address balRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
+
+        uint256 auraRewards = AURA.balanceOf(address(this));
         // Claim Rewards
         IAuraRewarder(balRewarder).withdraw(amount, true);
         // Withdraw LP
         auraPools.withdraw(pid, amount);
+
+        // Calculate Aura rewards
+        auraRewards = AURA.balanceOf(address(this)) - auraRewards;
+        accAuraPerShare += (auraRewards * 1e12) / totalStaked;
+
+        // Decrease totalStaked value
+        totalStaked -= amount;
 
         // Transfer LP Tokens
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
@@ -258,28 +285,42 @@ contract WAuraPools is
         uint extraRewardsCount = IAuraRewarder(balRewarder)
             .extraRewardsLength();
 
-        bool hasDiffExtraRewards;
-        for (uint i = 0; i < extraRewardsCount; i++) {
+        for (uint i; i < extraRewardsCount; ) {
             _syncExtraReward(IAuraRewarder(balRewarder).extraRewards(i));
+
+            unchecked {
+                ++i;
+            }
         }
         uint storedExtraRewardLength = extraRewards.length;
-        hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
+        bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
 
         // Transfer Reward Tokens
         (rewardTokens, rewards) = pendingRewards(id, amount);
 
+        // Update auraPerShare for tokenId
+        auraPerShares[id] = accAuraPerShare;
+
         // Withdraw manually
         if (hasDiffExtraRewards) {
-            for (uint i = 0; i < storedExtraRewardLength; i++) {
+            for (uint i; i < storedExtraRewardLength; ) {
                 IAuraExtraRewarder(extraRewards[i]).getReward();
+
+                unchecked {
+                    ++i;
+                }
             }
         }
 
-        for (uint i = 0; i < rewardTokens.length; i++) {
+        for (uint i; i < rewardTokens.length; ) {
             IERC20Upgradeable(rewardTokens[i]).safeTransfer(
                 msg.sender,
                 rewards[i]
             );
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
