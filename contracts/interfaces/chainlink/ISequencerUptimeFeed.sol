@@ -2,16 +2,8 @@
 
 pragma solidity 0.8.16;
 
-interface IFeedRegistry {
-    function decimals(
-        address base,
-        address quote
-    ) external view returns (uint8);
-
-    function latestRoundData(
-        address base,
-        address quote
-    )
+interface ISequencerUptimeFeed {
+    function latestRoundData()
         external
         view
         returns (

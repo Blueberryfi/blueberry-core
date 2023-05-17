@@ -23,6 +23,7 @@ export enum CONTRACT_NAMES {
   // Oracles
   BandAdapterOracle = "BandAdapterOracle",
   ChainlinkAdapterOracle = "ChainlinkAdapterOracle",
+  ChainlinkAdapterOracleL2 = "ChainlinkAdapterOracleL2",
   CoreOracle = "CoreOracle",
   UniswapV2Oracle = "UniswapV2Oracle",
   BalancerPairOracle = "BalancerPairOracle",

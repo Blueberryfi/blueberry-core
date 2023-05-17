@@ -21,6 +21,8 @@ error NO_MAX_DELAY(address token);
 error PRICE_OUTDATED(address token);
 error NO_SYM_MAPPING(address token);
 error PRICE_NEGATIVE(address token);
+error SEQURENCE_DOWN(address sequence);
+error SEQURENCE_GRACE_PERIOD_NOT_OVER(address sequence);
 
 error OUT_OF_DEVIATION_CAP(uint256 deviation);
 error EXCEED_SOURCE_LEN(uint256 length);
