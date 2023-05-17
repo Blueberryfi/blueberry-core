@@ -321,7 +321,7 @@ describe("Aura Spell", () => {
       console.log("Pending Rewards", pendingRewardsInfo);
 
       // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits("10", 18));
+      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -345,7 +345,7 @@ describe("Aura Spell", () => {
           ADDRESS.SUSHI_ROUTER,
           [
             [BAL, WETH, USDC],
-            [CRV, WETH, USDC],
+            [AURA, WETH, USDC],
             [ADDRESS.FRAX, ADDRESS.SUSHI, USDC],
           ],
           0,
