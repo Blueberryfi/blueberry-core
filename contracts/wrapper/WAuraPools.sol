@@ -324,6 +324,10 @@ contract WAuraPools is
         }
     }
 
+    function extraRewardsLength() external view returns (uint) {
+        return extraRewards.length;
+    }
+
     function _syncExtraReward(address extraReward) private {
         if (extraRewardsIdx[extraReward] == 0) {
             extraRewards.push(extraReward);

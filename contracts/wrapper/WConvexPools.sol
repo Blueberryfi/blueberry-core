@@ -21,13 +21,14 @@ import "../utils/EnsureApprove.sol";
 import "../interfaces/IWConvexPools.sol";
 import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/convex/IRewarder.sol";
+import "../interfaces/convex/ICvxExtraRewarder.sol";
 
 /**
  * @title WConvexPools
  * @author BlueberryProtocol
  * @notice Wrapped Convex Pools is the wrapper of LP positions
- * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank 
- *      and do not generate yields. LP Tokens are identified by tokenIds 
+ * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank
+ *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
 contract WConvexPools is
@@ -48,6 +49,10 @@ contract WConvexPools is
     mapping(uint256 => uint256) public accCrvPerShares;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => uint256[]) public accExtPerShare;
+    /// @dev Extra rewards addresses
+    address[] public extraRewards;
+    /// @dev The index of extra rewards
+    mapping(address => uint256) public extraRewardsIdx;
 
     // /// @dev Mapping from tokenId to
     // mapping(uint256 => uint256) public
@@ -138,7 +143,7 @@ contract WConvexPools is
             pid
         );
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
-        uint extraRewardsCount = IRewarder(crvRewarder).extraRewardsLength();
+        uint extraRewardsCount = extraRewards.length;
         tokens = new address[](extraRewardsCount + 1);
         rewards = new uint256[](extraRewardsCount + 1);
 
@@ -191,6 +196,8 @@ contract WConvexPools is
             address extraRewarder = IRewarder(crvRewarder).extraRewards(i);
             uint rewardPerToken = IRewarder(extraRewarder).rewardPerToken();
             accExtPerShare[id].push(rewardPerToken);
+
+            _syncExtraReward(extraRewarder);
         }
     }
 
@@ -223,14 +230,48 @@ contract WConvexPools is
         // Transfer LP Tokens
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
 
+        uint extraRewardsCount = IRewarder(crvRewarder).extraRewardsLength();
+
+        for (uint i; i < extraRewardsCount; ) {
+            _syncExtraReward(IRewarder(crvRewarder).extraRewards(i));
+
+            unchecked {
+                ++i;
+            }
+        }
+        uint storedExtraRewardLength = extraRewards.length;
+        bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
+
         // Transfer Reward Tokens
         (rewardTokens, rewards) = pendingRewards(id, amount);
+
+        // Withdraw manually
+        if (hasDiffExtraRewards) {
+            for (uint i; i < storedExtraRewardLength; ) {
+                ICvxExtraRewarder(extraRewards[i]).getReward();
+
+                unchecked {
+                    ++i;
+                }
+            }
+        }
 
         for (uint i = 0; i < rewardTokens.length; i++) {
             IERC20Upgradeable(rewardTokens[i]).safeTransfer(
                 msg.sender,
                 rewards[i]
             );
+        }
+    }
+
+    function extraRewardsLength() external view returns (uint) {
+        return extraRewards.length;
+    }
+
+    function _syncExtraReward(address extraReward) private {
+        if (extraRewardsIdx[extraReward] == 0) {
+            extraRewards.push(extraReward);
+            extraRewardsIdx[extraReward] = extraRewards.length;
         }
     }
 }
