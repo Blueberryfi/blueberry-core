@@ -99,6 +99,7 @@ error REPAY_NOT_ALLOWED();
 error WITHDRAW_LEND_NOT_ALLOWED();
 error LOCKED();
 error NOT_IN_EXEC();
+error REPAY_ALLOW_NOT_WARMED_UP();
 
 error DIFF_COL_EXIST(address collToken);
 error NOT_LIQUIDATABLE(uint256 positionId);
