@@ -56,6 +56,7 @@ contract BlueBerryBank is
 
     uint256 public nextPositionId; // Next available position ID, starting from 1 (see initialize).
     uint256 public bankStatus; // Each bit stores certain bank status, e.g. borrow allowed, repay allowed
+    uint256 public repayResumedTimestamp; // Timestamp that repay is allowed or resumed
 
     address[] public allBanks; // The list of all listed banks.
     mapping(address => Bank) public banks; // Mapping from token to bank data.
@@ -274,7 +275,14 @@ contract BlueBerryBank is
     /// @dev Set bank status
     /// @param _bankStatus new bank status to change to
     function setBankStatus(uint256 _bankStatus) external onlyOwner {
+        bool repayAllowedStatusBefore = isRepayAllowed();
         bankStatus = _bankStatus;
+        bool repayAllowedStatusAfter = isRepayAllowed();
+
+        // Update repayResumedTimestamp when repayAllowed status is changed from "off" to "on"
+        if (!repayAllowedStatusBefore && repayAllowedStatusAfter) {
+            repayResumedTimestamp = block.timestamp;
+        }
     }
 
     /// @dev Bank borrow status allowed or not
@@ -408,7 +416,7 @@ contract BlueBerryBank is
             (address[] memory tokens, uint256[] memory rewards) = IERC20Wrapper(
                 pos.collToken
             ).pendingRewards(pos.collId, pos.collateralSize);
-            for (uint256 i; i < tokens.length; i++) {                
+            for (uint256 i; i < tokens.length; i++) {
                 if (oracle.isTokenSupported(tokens[i])) {
                     rewardsValue += oracle.getTokenValue(tokens[i], rewards[i]);
                 }
@@ -500,6 +508,12 @@ contract BlueBerryBank is
         Bank memory bank = banks[pos.underlyingToken];
         if (pos.collToken == address(0))
             revert Errors.BAD_COLLATERAL(positionId);
+
+        // Revert liquidation when repayAllowed was not warmed up
+        if (
+            block.timestamp <
+            repayResumedTimestamp + Constants.LIQUIDATION_REPAY_WARM_UP_PERIOD
+        ) revert Errors.REPAY_ALLOW_NOT_WARMED_UP();
 
         uint256 oldShare = pos.debtShare;
         (uint256 amountPaid, uint256 share) = _repay(

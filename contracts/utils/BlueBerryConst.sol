@@ -31,3 +31,5 @@ uint32 constant MAX_DELAY_ON_SWAP = 2 hours;
 uint32 constant SEQUENCE_GRACE_PERIOD_TIME = 3600;
 
 uint256 constant CHAINLINK_PRICE_FEED_PRECISION = 1e8;
+
+uint256 constant LIQUIDATION_REPAY_WARM_UP_PERIOD = 4 hours;

@@ -27,7 +27,7 @@ import { solidity } from 'ethereum-waffle'
 import { near } from './assertions/near'
 import { roughlyNear } from './assertions/roughlyNear'
 import { Protocol, setupIchiProtocol } from './helpers/setup-ichi-protocol';
-import { evm_mine_blocks } from './helpers';
+import { evm_mine_blocks, evm_increaseTime } from './helpers';
 import { TickMath } from '@uniswap/v3-sdk';
 
 chai.use(solidity)
@@ -552,7 +552,52 @@ describe('Bank', () => {
         bank.connect(alice).liquidate(1, USDC, liqAmount)
       ).to.be.revertedWith("NOT_LIQUIDATABLE")
     })
-    it("should be able to liquidate the position => (OV - PV)/CV = LT", async () => {
+    it("should revert when repayAllowed is not warmed up", async () => {
+      await evm_mine_blocks(10);
+      await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
+      let positionInfo = await bank.getPositionInfo(positionId);
+      let debtValue = await bank.getDebtValue(positionId)
+      let positionValue = await bank.getPositionValue(positionId);
+      let risk = await bank.getPositionRisk(positionId)
+      console.log("Debt Value:", utils.formatUnits(debtValue));
+      console.log("Position Value:", utils.formatUnits(positionValue));
+      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+      console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
+
+      const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address)
+      console.log("Pending ICHI:", utils.formatUnits(pendingIchi, 9))
+      await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(100))
+      await ichiFarm.updatePool(ICHI_VAULT_PID)
+
+      console.log('===ICHI token dumped from $5 to $0.1===');
+      await mockOracle.setPrice(
+        [ICHI],
+        [
+          BigNumber.from(10).pow(18).mul(1), // $0.5
+        ]
+      );
+      positionInfo = await bank.getPositionInfo(positionId);
+      debtValue = await bank.getDebtValue(positionId)
+      positionValue = await bank.getPositionValue(positionId);
+      risk = await bank.getPositionRisk(positionId)
+      console.log("Cur Pos:", positionInfo);
+      console.log("Debt Value:", utils.formatUnits(debtValue));
+      console.log("Position Value:", utils.formatUnits(positionValue));
+      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
+      console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
+
+      expect(await bank.isLiquidatable(positionId)).to.be.true;
+      console.log("Is Liquidatable:", await bank.isLiquidatable(positionId));
+
+      console.log("===Portion Liquidated===");
+      const liqAmount = utils.parseUnits("100", 6);
+      await usdc.connect(alice).approve(bank.address, liqAmount)
+      await expect(
+        bank.connect(alice).liquidate(positionId, USDC, liqAmount)
+      ).to.be.revertedWith("REPAY_ALLOW_NOT_WARMED_UP");
+    })
+    it("should be able to liquidate the position when repayAllowed is warmed up => (OV - PV)/CV = LT", async () => {
+      await evm_increaseTime(4 * 3600);
       await evm_mine_blocks(10);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       let positionInfo = await bank.getPositionInfo(positionId);
@@ -646,7 +691,7 @@ describe('Bank', () => {
       await mockOracle.setPrice(
         [ICHI],
         [
-          BigNumber.from(10).pow(17).mul(12), // $1.5
+          BigNumber.from(10).pow(17).mul(10), // $1
         ]
       );
       risk = await bank.getPositionRisk(positionId)
