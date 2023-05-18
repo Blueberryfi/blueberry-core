@@ -913,7 +913,43 @@ describe('Bank', () => {
         await expect(
           bank.getCurrentPositionInfo()
         ).to.be.revertedWith("BAD_POSITION")
-      })
+      })            
+      it("should not reverted getPositionValue view function call when reward token oracle route is set wrongly", async () => {
+        const depositAmount = utils.parseUnits('100', 18);
+        const borrowAmount = utils.parseUnits('300', 6);
+        const iface = new ethers.utils.Interface(SpellABI);
+
+        await usdc.approve(bank.address, ethers.constants.MaxUint256);
+        await ichi.approve(bank.address, ethers.constants.MaxUint256);
+        await bank.execute(
+          0,
+          spell.address,
+          iface.encodeFunctionData("openPositionFarm", [{
+            strategyId: 0,
+            collToken: ICHI,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: ICHI_VAULT_PID
+          }])
+        )
+
+        // set ICHI token oracle route wrongly
+        oracle.setRoutes(
+          [ICHI],
+          [ICHI]
+        );
+  
+        const positionId = (await bank.nextPositionId()).sub(1);
+        const positionValue = await bank.getPositionValue(positionId);
+        expect(positionValue).to.be.gte(BigNumber.from(0));
+  
+        // set ICHI token oracle route correctly
+        oracle.setRoutes(
+          [ICHI],
+          [mockOracle.address]
+        );
+      })    
     })
   })
 })
