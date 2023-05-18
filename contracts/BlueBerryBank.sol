@@ -408,8 +408,10 @@ contract BlueBerryBank is
             (address[] memory tokens, uint256[] memory rewards) = IERC20Wrapper(
                 pos.collToken
             ).pendingRewards(pos.collId, pos.collateralSize);
-            for (uint256 i; i < tokens.length; i++) {
-                rewardsValue += oracle.getTokenValue(tokens[i], rewards[i]);
+            for (uint256 i; i < tokens.length; i++) {                
+                if (oracle.isTokenSupported(tokens[i])) {
+                    rewardsValue += oracle.getTokenValue(tokens[i], rewards[i]);
+                }
             }
 
             return collValue + rewardsValue;
