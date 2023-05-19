@@ -197,12 +197,29 @@ abstract contract BasicSpell is
 
     function _validateMaxPosSize(uint256 strategyId) internal view {
         Strategy memory strategy = strategies[strategyId];
+        uint positionId = bank.POSITION_ID();
+        IBank.Position memory pos = bank.getCurrentPositionInfo();
+
+        // Get prev position size
+        uint256 prevPosSize;
+        if (pos.collToken != address(0)) {
+            prevPosSize = bank.oracle().getWrappedTokenValue(
+                pos.collToken,
+                pos.collId,
+                pos.collateralSize
+            );
+        }
+
+        // Get newly added position size
+        uint256 addedPosSize;
         IERC20Upgradeable lpToken = IERC20Upgradeable(strategy.vault);
         uint256 lpBalance = lpToken.balanceOf(address(this));
         uint256 lpPrice = bank.oracle().getPrice(address(lpToken));
-        uint256 curPosSize = (lpPrice * lpBalance) /
+        addedPosSize =
+            (lpPrice * lpBalance) /
             10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
-        if (curPosSize > strategy.maxPositionSize)
+
+        if (prevPosSize + addedPosSize > strategy.maxPositionSize)
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
     }
 

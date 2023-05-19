@@ -154,17 +154,35 @@ describe('ICHI Angel Vaults Spell', () => {
       ).to.be.revertedWith("EXCEED_MAX_LTV")
     })
     it("should revert when exceeds max pos size", async () => {
+      // Max position is set as 2,000
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
+
+      // Call openPosition with 1,500 is succeeded at the first time
+      await bank.execute(
+        0,
+        spell.address,
+        iface.encodeFunctionData("openPosition", [{
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount.mul(40),
+          borrowAmount: borrowAmount.mul(50), // 30 * 50 = 1,500 USDC
+          farmingPoolId: 0
+        }])
+      )
+
+      // Call openPosition with 1,500 is succeeded at the second time because position size is exceeded max position size
+      const positionId = (await bank.nextPositionId()).sub(1);
       await expect(
         bank.execute(
-          0,
+          positionId.toNumber(),
           spell.address,
           iface.encodeFunctionData("openPosition", [{
             strategyId: 0,
             collToken: ICHI,
             borrowToken: USDC,
             collAmount: depositAmount.mul(40),
-            borrowAmount: borrowAmount.mul(70),
+            borrowAmount: borrowAmount.mul(50), // 30 * 50 = 1,500 USDC
             farmingPoolId: 0
           }])
         )
