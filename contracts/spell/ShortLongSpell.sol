@@ -161,8 +161,11 @@ contract ShortLongSpell is BasicSpell {
         ClosePosParam calldata param,
         Utils.MegaSwapSellData calldata swapData
     ) internal {
-        if (param.sellSlippage > bank.config().maxSlippageOfClose())
-            revert Errors.RATIO_TOO_HIGH(param.sellSlippage);
+        _validateSlippage(
+            swapData.expectedAmount,
+            swapData.toAmount,
+            param.sellSlippage
+        );
 
         Strategy memory strategy = strategies[param.strategyId];
         ISoftVault vault = ISoftVault(strategy.vault);
@@ -247,5 +250,18 @@ contract ShortLongSpell is BasicSpell {
         uint256 maxPosSize
     ) external onlyOwner {
         _addStrategy(swapToken, maxPosSize);
+    }
+
+    function _validateSlippage(
+        uint256 expectedAmount,
+        uint256 toAmount,
+        uint256 slippage
+    ) internal view {
+        if (slippage > bank.config().maxSlippageOfClose())
+            revert Errors.RATIO_TOO_HIGH(slippage);
+
+        uint256 minOut = (expectedAmount * slippage) / Constants.DENOMINATOR;
+
+        if (toAmount < minOut) revert Errors.EXCEED_SLIPPAGE(slippage);
     }
 }

@@ -39,6 +39,17 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "ratio",
+        "type": "uint256"
+      }
+    ],
+    "name": "EXCEED_SLIPPAGE",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "colToken",
         "type": "address"
