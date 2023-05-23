@@ -111,6 +111,7 @@ error INVALID_UTOKEN(address uToken);
 error BORROW_ZERO_SHARE(uint256 borrowAmount);
 
 // Config
+error EXCEED_SLIPPAGE(uint256 ratio);
 error RATIO_TOO_HIGH(uint256 ratio);
 error INVALID_FEE_DISTRIBUTION();
 error NO_TREASURY_SET();
