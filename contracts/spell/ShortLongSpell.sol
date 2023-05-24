@@ -80,23 +80,24 @@ contract ShortLongSpell is BasicSpell {
         _doLend(param.collToken, param.collAmount);
 
         // 2. Borrow specific amounts
-        uint256 strTokenAmt = _doBorrow(param.borrowToken, param.borrowAmount);
+        _doBorrow(param.borrowToken, param.borrowAmount);
 
         // 3. Swap borrowed token to strategy token
         IERC20Upgradeable swapToken = ISoftVault(strategy.vault).uToken();
         // swapData.fromAmount = strTokenAmt;
+        uint256 dstTokenAmt = swapToken.balanceOf(address(this));
         PSwapLib.megaSwap(augustusSwapper, tokenTransferProxy, swapData);
-        strTokenAmt = swapToken.balanceOf(address(this)) - strTokenAmt;
-        if (strTokenAmt < swapData.expectedAmount)
+        dstTokenAmt = swapToken.balanceOf(address(this)) - dstTokenAmt;
+        if (dstTokenAmt < swapData.expectedAmount)
             revert Errors.SWAP_FAILED(address(swapToken));
 
         // 4. Deposit to SoftVault directly
         _ensureApprove(
             address(swapToken),
             address(strategy.vault),
-            strTokenAmt
+            dstTokenAmt
         );
-        ISoftVault(strategy.vault).deposit(strTokenAmt);
+        ISoftVault(strategy.vault).deposit(dstTokenAmt);
 
         // 5. Validate MAX LTV
         _validateMaxLTV(param.strategyId);
@@ -118,7 +119,7 @@ contract ShortLongSpell is BasicSpell {
     {
         Strategy memory strategy = strategies[param.strategyId];
         if (
-            address(ISoftVault(strategy.vault).uToken()) != param.borrowToken ||
+            address(ISoftVault(strategy.vault).uToken()) == param.borrowToken ||
             swapData.fromToken != param.borrowToken
         ) revert Errors.INCORRECT_LP(param.borrowToken);
 
