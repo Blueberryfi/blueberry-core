@@ -35,15 +35,15 @@ describe('Uniswap V2 LP Oracle', () => {
 
   it("USDC/CRV LP Price", async () => {
     const pair = <IUniswapV2Pair>await ethers.getContractAt(UniPairABI, ADDRESS.UNI_V2_USDC_CRV);
-    const oraclePrice = await uniswapOracle.getPrice(ADDRESS.UNI_V2_USDC_CRV);
+    const oraclePrice = await uniswapOracle.callStatic.getPrice(ADDRESS.UNI_V2_USDC_CRV);
 
     // Calculate real lp price manually
     const { reserve0, reserve1 } = await pair.getReserves();
     const totalSupply = await pair.totalSupply();
     const token0 = await pair.token0();
     const token1 = await pair.token1();
-    const token0Price = await chainlinkAdapterOracle.getPrice(token0);
-    const token1Price = await chainlinkAdapterOracle.getPrice(token1);
+    const token0Price = await chainlinkAdapterOracle.callStatic.getPrice(token0);
+    const token1Price = await chainlinkAdapterOracle.callStatic.getPrice(token1);
     const token0Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token0);
     const token1Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token1);
     const token0Decimal = await token0Contract.decimals();
@@ -60,7 +60,7 @@ describe('Uniswap V2 LP Oracle', () => {
   it("should return 0 when invalid lp address provided", async () => {
     const MockToken = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);
     const mockToken = await MockToken.deploy("Uniswap Lp Token", "UNI_LP", 18);
-    const price = await uniswapOracle.getPrice(mockToken.address);
+    const price = await uniswapOracle.callStatic.getPrice(mockToken.address);
     expect(price.isZero()).to.be.true;
   })
 });

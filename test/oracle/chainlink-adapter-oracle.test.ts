@@ -123,13 +123,13 @@ describe('Chainlink Adapter Oracle', () => {
   describe('Price Feeds', () => {
     it("should revert when max delay time is not set", async () => {
       await expect(
-        chainlinkAdapterOracle.getPrice(ADDRESS.CRV)
+        chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.CRV)
       ).to.be.revertedWith('NO_MAX_DELAY');
     })
     it('USDC price feeds / based 10^18', async () => {
       const decimals = await chainlinkFeedOracle.decimals(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);
       const { answer } = await chainlinkFeedOracle.latestRoundData(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);
-      const price = await chainlinkAdapterOracle.getPrice(ADDRESS.USDC);
+      const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.USDC);
 
       expect(
         answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(decimals))
@@ -142,7 +142,7 @@ describe('Chainlink Adapter Oracle', () => {
     it('UNI price feeds / based 10^18', async () => {
       const decimals = await chainlinkFeedOracle.decimals(ADDRESS.UNI, ADDRESS.CHAINLINK_USD);
       const uniData = await chainlinkFeedOracle.latestRoundData(ADDRESS.UNI, ADDRESS.CHAINLINK_USD);
-      const price = await chainlinkAdapterOracle.getPrice(ADDRESS.UNI);
+      const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.UNI);
 
       expect(
         uniData.answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(decimals))
@@ -157,7 +157,7 @@ describe('Chainlink Adapter Oracle', () => {
       await chainlinkAdapterOracle.setTokenRemappings(
         [ADDRESS.CRV], [ADDRESS.CRV]
       )
-      const price = await chainlinkAdapterOracle.getPrice(ADDRESS.CRV);
+      const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.CRV);
       console.log('CRV Price:', utils.formatUnits(price, 18));
     })
     it("should revert for too old prices", async () => {
@@ -167,13 +167,13 @@ describe('Chainlink Adapter Oracle', () => {
         [3600]
       );
       await expect(
-        chainlinkAdapterOracle.getPrice(dydx)
+        chainlinkAdapterOracle.callStatic.getPrice(dydx)
       ).to.be.revertedWith("PRICE_OUTDATED")
     })
     it('should revert for invalid feeds', async () => {
       await chainlinkAdapterOracle.setTimeGap([ADDRESS.ICHI], [OneDay]);
       await expect(
-        chainlinkAdapterOracle.getPrice(ADDRESS.ICHI)
+        chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.ICHI)
       ).to.be.revertedWith('Feed not found');
     })
   })

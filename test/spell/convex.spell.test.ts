@@ -231,7 +231,7 @@ describe("Convex Spell", () => {
 
       const pos = await bank.positions(positionId);
       console.log("Position Info:", pos)
-      console.log("Position Value:", await bank.getPositionValue(1));
+      console.log("Position Value:", await bank.callStatic.getPositionValue(1));
       expect(pos.owner).to.be.equal(admin.address);
       expect(pos.collToken).to.be.equal(wconvex.address);
       expect(pos.debtToken).to.be.equal(USDC);
@@ -249,10 +249,10 @@ describe("Convex Spell", () => {
       expect(rewarderBalance).to.be.equal(pos.collateralSize);
     })
     it("should be able to get position risk ratio", async () => {
-      let risk = await bank.getPositionRisk(1);
-      let pv = await bank.getPositionValue(1);
-      let ov = await bank.getDebtValue(1);
-      let cv = await bank.getIsolatedCollateralValue(1);
+      let risk = await bank.callStatic.getPositionRisk(1);
+      let pv = await bank.callStatic.getPositionValue(1);
+      let ov = await bank.callStatic.getDebtValue(1);
+      let cv = await bank.callStatic.getIsolatedCollateralValue(1);
       console.log("PV:", utils.formatUnits(pv));
       console.log("OV:", utils.formatUnits(ov));
       console.log("CV:", utils.formatUnits(cv));
@@ -264,10 +264,10 @@ describe("Convex Spell", () => {
           BigNumber.from(10).pow(17).mul(5), // $0.4
         ]
       );
-      risk = await bank.getPositionRisk(1);
-      pv = await bank.getPositionValue(1);
-      ov = await bank.getDebtValue(1);
-      cv = await bank.getIsolatedCollateralValue(1);
+      risk = await bank.callStatic.getPositionRisk(1);
+      pv = await bank.callStatic.getPositionValue(1);
+      ov = await bank.callStatic.getDebtValue(1);
+      cv = await bank.callStatic.getIsolatedCollateralValue(1);
       console.log("=======")
       console.log("PV:", utils.formatUnits(pv));
       console.log("OV:", utils.formatUnits(ov));

@@ -74,7 +74,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
      * @param token_ Token address to get price of
      * @return price USD price of token in 18 decimal
      */
-    function getPrice(address token_) external view override returns (uint256) {
+    function getPrice(address token_) external override returns (uint256) {
         // remap token if possible
         address token = remappedTokens[token_];
         if (token == address(0)) token = token_;

@@ -101,7 +101,7 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
     /// @notice Return USD price of given token, multiplied by 10**18.
     /// @dev Support at most 3 oracle sources per token
     /// @param token Token to get price of
-    function getPrice(address token) external view override returns (uint256) {
+    function getPrice(address token) external override returns (uint256) {
         uint256 candidateSourceCount = primarySourceCount[token];
         if (candidateSourceCount == 0) revert Errors.NO_PRIMARY_SOURCE(token);
         uint256[] memory prices = new uint256[](candidateSourceCount);

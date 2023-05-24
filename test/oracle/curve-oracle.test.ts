@@ -110,22 +110,22 @@ describe('Curve LP Oracle', () => {
       console.log("ALCX/FRAXBP Crypto Factory Pool", await oracle.getPoolInfo(ADDRESS.CRV_ALCX_FRAXBP))
     })
     it("Crv Lp Price", async () => {
-      let price = await oracle.getPrice(ADDRESS.CRV_3Crv)
+      let price = await oracle.callStatic.getPrice(ADDRESS.CRV_3Crv)
       console.log("3CrvPool Price:", utils.formatUnits(price, 18))
 
-      price = await oracle.getPrice(ADDRESS.CRV_TriCrypto)
+      price = await oracle.callStatic.getPrice(ADDRESS.CRV_TriCrypto)
       console.log("TriCrypto Price:", utils.formatUnits(price, 18))
 
-      price = await oracle.getPrice(ADDRESS.CRV_FRAXUSDC)
+      price = await oracle.callStatic.getPrice(ADDRESS.CRV_FRAXUSDC)
       console.log("FRAX/USDC Price:", utils.formatUnits(price, 18))
 
-      price = await oracle.getPrice(ADDRESS.CRV_CVXETH)
+      price = await oracle.callStatic.getPrice(ADDRESS.CRV_CVXETH)
       console.log("CVX/ETH Price:", utils.formatUnits(price, 18))
 
-      price = await oracle.getPrice(ADDRESS.CRV_CRVETH)
+      price = await oracle.callStatic.getPrice(ADDRESS.CRV_CRVETH)
       console.log("CRV/ETH Price:", utils.formatUnits(price, 18))
 
-      price = await oracle.getPrice(ADDRESS.CRV_FRXETH)
+      price = await oracle.callStatic.getPrice(ADDRESS.CRV_FRXETH)
       console.log("frxETH/ETH Price:", utils.formatUnits(price, 18))
     })
   })

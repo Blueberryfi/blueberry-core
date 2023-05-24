@@ -399,7 +399,7 @@ contract BlueBerryBank is
      */
     function getPositionValue(
         uint256 positionId
-    ) public view override returns (uint256 positionValue) {
+    ) public override returns (uint256 positionValue) {
         Position memory pos = positions[positionId];
         if (pos.collateralSize == 0) {
             return 0;
@@ -431,7 +431,7 @@ contract BlueBerryBank is
     /// @param positionId The position ID to query for the debt value.
     function getDebtValue(
         uint256 positionId
-    ) public view override returns (uint256 debtValue) {
+    ) public override returns (uint256 debtValue) {
         Position memory pos = positions[positionId];
         uint256 debt = getPositionDebt(positionId);
         debtValue = oracle.getTokenValue(pos.debtToken, debt);
@@ -442,7 +442,7 @@ contract BlueBerryBank is
     /// @param positionId The position ID to query the isolated collateral value
     function getIsolatedCollateralValue(
         uint256 positionId
-    ) public view override returns (uint256 icollValue) {
+    ) public override returns (uint256 icollValue) {
         Position memory pos = positions[positionId];
         // NOTE: exchangeRateStored has 18 decimals.
         uint256 underlyingAmount;
@@ -463,9 +463,7 @@ contract BlueBerryBank is
     /// @dev Return the risk ratio of given position, higher value, higher risk
     /// @param positionId id of position to check the risk of
     /// @return risk risk ratio, based 1e4
-    function getPositionRisk(
-        uint256 positionId
-    ) public view returns (uint256 risk) {
+    function getPositionRisk(uint256 positionId) public returns (uint256 risk) {
         uint256 pv = getPositionValue(positionId);
         uint256 ov = getDebtValue(positionId);
         uint256 cv = getIsolatedCollateralValue(positionId);
@@ -484,7 +482,7 @@ contract BlueBerryBank is
 
     /// @dev Return the possibility of liquidation
     /// @param positionId id of position to check the liquidation of
-    function isLiquidatable(uint256 positionId) public view returns (bool) {
+    function isLiquidatable(uint256 positionId) public returns (bool) {
         return
             getPositionRisk(positionId) >=
             banks[positions[positionId].underlyingToken].liqThreshold;

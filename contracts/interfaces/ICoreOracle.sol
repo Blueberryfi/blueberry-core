@@ -10,7 +10,7 @@ interface ICoreOracle is IBaseOracle {
 
     /// @notice Return whether the oracle given ERC20 token
     /// @param token The ERC20 token to check the support
-    function isTokenSupported(address token) external view returns (bool);
+    function isTokenSupported(address token) external returns (bool);
 
     /// @notice Return whether the oracle supports underlying token of given wrapper.
     /// @dev Only validate wrappers of Blueberry protocol such as WERC20
@@ -19,7 +19,7 @@ interface ICoreOracle is IBaseOracle {
     function isWrappedTokenSupported(
         address token,
         uint256 tokenId
-    ) external view returns (bool);
+    ) external returns (bool);
 
     /**
      * @dev Return the USD value of wrapped ERC1155 tokens
@@ -31,7 +31,7 @@ interface ICoreOracle is IBaseOracle {
         address token,
         uint256 id,
         uint256 amount
-    ) external view returns (uint256);
+    ) external returns (uint256);
 
     /**
      * @dev Return the USD value of the token and amount.
@@ -41,5 +41,5 @@ interface ICoreOracle is IBaseOracle {
     function getTokenValue(
         address token,
         uint256 amount
-    ) external view returns (uint256);
+    ) external returns (uint256);
 }

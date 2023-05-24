@@ -80,7 +80,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
      * @param token_ Token address to get price of
      * @return price USD price of token in 18 decimal
      */
-    function getPrice(address token_) external view override returns (uint256) {
+    function getPrice(address token_) external override returns (uint256) {
         // 1. Check max delay time
         uint256 maxDelayTime = timeGaps[token_];
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token_);
