@@ -207,7 +207,7 @@ describe('Aggregator Oracle', () => {
     })
     it("should revert when there is no source", async () => {
       await expect(
-        aggregatorOracle.getPrice(ADDRESS.BLB_COMPTROLLER)
+        aggregatorOracle.callStatic.getPrice(ADDRESS.BLB_COMPTROLLER)
       ).to.be.revertedWith(`NO_PRIMARY_SOURCE`);
     })
     it("should revert when there is no source returning valid price", async () => {
@@ -216,7 +216,7 @@ describe('Aggregator Oracle', () => {
       await mockOracle3.setPrice([ADDRESS.ICHI], [0]);
 
       await expect(
-        aggregatorOracle.getPrice(ADDRESS.ICHI)
+        aggregatorOracle.callStatic.getPrice(ADDRESS.ICHI)
       ).to.be.revertedWith(`NO_VALID_SOURCE`);
     })
     it("should revert when source prices exceed deviation", async () => {
@@ -230,7 +230,7 @@ describe('Aggregator Oracle', () => {
       await mockOracle2.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
 
       await expect(
-        aggregatorOracle.getPrice(ADDRESS.ICHI)
+        aggregatorOracle.callStatic.getPrice(ADDRESS.ICHI)
       ).to.be.revertedWith("EXCEED_DEVIATION")
     })
     it("should take avgerage of valid prices within deviation", async () => {
@@ -238,39 +238,39 @@ describe('Aggregator Oracle', () => {
       await mockOracle2.setPrice([ADDRESS.ICHI], [utils.parseEther("0.96")]);
       await mockOracle3.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
 
-      expect(await aggregatorOracle.getPrice(ADDRESS.ICHI)).to.be.equal(utils.parseEther("0.98"))
+      expect(await aggregatorOracle.callStatic.getPrice(ADDRESS.ICHI)).to.be.equal(utils.parseEther("0.98"))
 
       await mockOracle1.setPrice([ADDRESS.ICHI], [utils.parseEther("0.68")]);
       await mockOracle2.setPrice([ADDRESS.ICHI], [utils.parseEther("0.7")]);
       await mockOracle3.setPrice([ADDRESS.ICHI], [utils.parseEther("1")]);
-      expect(await aggregatorOracle.getPrice(ADDRESS.ICHI)).to.be.equal(utils.parseEther("0.69"))
+      expect(await aggregatorOracle.callStatic.getPrice(ADDRESS.ICHI)).to.be.equal(utils.parseEther("0.69"))
     })
     it("CRV price feeds", async () => {
       const token = ADDRESS.CRV;
-      const chainlinkPrice = await chainlinkOracle.getPrice(token);
+      const chainlinkPrice = await chainlinkOracle.callStatic.getPrice(token);
       console.log('CRV Price (Chainlink):', utils.formatUnits(chainlinkPrice, 18));
 
-      const aggregatorPrice = await aggregatorOracle.getPrice(token);
+      const aggregatorPrice = await aggregatorOracle.callStatic.getPrice(token);
       console.log('CRV Price (Oracle):', utils.formatUnits(aggregatorPrice, 18))
       expect(chainlinkPrice).to.be.equal(aggregatorPrice);
     })
     it("UNI price feeds", async () => {
       const token = ADDRESS.UNI;
-      const chainlinkPrice = await chainlinkOracle.getPrice(token);
-      const bandPrice = await bandOracle.getPrice(token);
+      const chainlinkPrice = await chainlinkOracle.callStatic.getPrice(token);
+      const bandPrice = await bandOracle.callStatic.getPrice(token);
       console.log('UNI Price (Chainlink / Band):', utils.formatUnits(chainlinkPrice, 18), '/', utils.formatUnits(bandPrice, 18));
 
-      const aggregatorPrice = await aggregatorOracle.getPrice(token);
+      const aggregatorPrice = await aggregatorOracle.callStatic.getPrice(token);
       console.log('USDC Price (Oracle):', utils.formatUnits(aggregatorPrice, 18))
       expect(bandPrice).to.be.equal(aggregatorPrice);
     })
     it("USDC price feeds", async () => {
       const token = ADDRESS.USDC;
-      const chainlinkPrice = await chainlinkOracle.getPrice(token);
-      const bandPrice = await bandOracle.getPrice(token);
+      const chainlinkPrice = await chainlinkOracle.callStatic.getPrice(token);
+      const bandPrice = await bandOracle.callStatic.getPrice(token);
       console.log('USDC Price (Chainlink / Band):', utils.formatUnits(chainlinkPrice, 18), '/', utils.formatUnits(bandPrice, 18));
 
-      const aggregatorPrice = await aggregatorOracle.getPrice(token);
+      const aggregatorPrice = await aggregatorOracle.callStatic.getPrice(token);
       console.log('USDC Price (Oracle):', utils.formatUnits(aggregatorPrice, 18))
       expect(chainlinkPrice.add(bandPrice).div(2)).to.be.equal(aggregatorPrice);
     })

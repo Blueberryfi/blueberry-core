@@ -547,7 +547,7 @@ describe('Bank', () => {
     })
     it("should revert liquidation when the pos is not liquidatable", async () => {
       const liqAmount = utils.parseUnits("100", 6);
-      expect(await bank.isLiquidatable(1)).to.be.false;
+      expect(await bank.callStatic.isLiquidatable(1)).to.be.false;
       await expect(
         bank.connect(alice).liquidate(1, USDC, liqAmount)
       ).to.be.revertedWith("NOT_LIQUIDATABLE")
@@ -556,9 +556,9 @@ describe('Bank', () => {
       await evm_mine_blocks(10);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       let positionInfo = await bank.getPositionInfo(positionId);
-      let debtValue = await bank.getDebtValue(positionId)
-      let positionValue = await bank.getPositionValue(positionId);
-      let risk = await bank.getPositionRisk(positionId)
+      let debtValue = await bank.callStatic.getDebtValue(positionId)
+      let positionValue = await bank.callStatic.getPositionValue(positionId);
+      let risk = await bank.callStatic.getPositionRisk(positionId)
       console.log("Debt Value:", utils.formatUnits(debtValue));
       console.log("Position Value:", utils.formatUnits(positionValue));
       console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
@@ -577,17 +577,17 @@ describe('Bank', () => {
         ]
       );
       positionInfo = await bank.getPositionInfo(positionId);
-      debtValue = await bank.getDebtValue(positionId)
-      positionValue = await bank.getPositionValue(positionId);
-      risk = await bank.getPositionRisk(positionId)
+      debtValue = await bank.callStatic.getDebtValue(positionId)
+      positionValue = await bank.callStatic.getPositionValue(positionId);
+      risk = await bank.callStatic.getPositionRisk(positionId)
       console.log("Cur Pos:", positionInfo);
       console.log("Debt Value:", utils.formatUnits(debtValue));
       console.log("Position Value:", utils.formatUnits(positionValue));
       console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
       console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
 
-      expect(await bank.isLiquidatable(positionId)).to.be.true;
-      console.log("Is Liquidatable:", await bank.isLiquidatable(positionId));
+      expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
+      console.log("Is Liquidatable:", await bank.callStatic.isLiquidatable(positionId));
 
       console.log("===Portion Liquidated===");
       const liqAmount = utils.parseUnits("100", 6);
@@ -601,9 +601,9 @@ describe('Bank', () => {
       await evm_mine_blocks(10);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       let positionInfo = await bank.getPositionInfo(positionId);
-      let debtValue = await bank.getDebtValue(positionId)
-      let positionValue = await bank.getPositionValue(positionId);
-      let risk = await bank.getPositionRisk(positionId)
+      let debtValue = await bank.callStatic.getDebtValue(positionId)
+      let positionValue = await bank.callStatic.getPositionValue(positionId);
+      let risk = await bank.callStatic.getPositionRisk(positionId)
       console.log("Debt Value:", utils.formatUnits(debtValue));
       console.log("Position Value:", utils.formatUnits(positionValue));
       console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
@@ -622,17 +622,17 @@ describe('Bank', () => {
         ]
       );
       positionInfo = await bank.getPositionInfo(positionId);
-      debtValue = await bank.getDebtValue(positionId)
-      positionValue = await bank.getPositionValue(positionId);
-      risk = await bank.getPositionRisk(positionId)
+      debtValue = await bank.callStatic.getDebtValue(positionId)
+      positionValue = await bank.callStatic.getPositionValue(positionId);
+      risk = await bank.callStatic.getPositionRisk(positionId)
       console.log("Cur Pos:", positionInfo);
       console.log("Debt Value:", utils.formatUnits(debtValue));
       console.log("Position Value:", utils.formatUnits(positionValue));
       console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
       console.log("Position Size:", utils.formatUnits(positionInfo.collateralSize));
 
-      expect(await bank.isLiquidatable(positionId)).to.be.true;
-      console.log("Is Liquidatable:", await bank.isLiquidatable(positionId));
+      expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
+      console.log("Is Liquidatable:", await bank.callStatic.isLiquidatable(positionId));
 
       console.log("===Portion Liquidated===");
       const liqAmount = utils.parseUnits("100", 6);
@@ -642,9 +642,9 @@ describe('Bank', () => {
       ).to.be.emit(bank, "Liquidate");
 
       positionInfo = await bank.getPositionInfo(positionId);
-      debtValue = await bank.getDebtValue(positionId)
-      positionValue = await bank.getPositionValue(positionId);
-      risk = await bank.getPositionRisk(positionId)
+      debtValue = await bank.callStatic.getDebtValue(positionId)
+      positionValue = await bank.callStatic.getPositionValue(positionId);
+      risk = await bank.callStatic.getPositionRisk(positionId)
       console.log("Cur Pos:", positionInfo);
       console.log("Debt Value:", utils.formatUnits(debtValue));
       console.log("Position Value:", utils.formatUnits(positionValue));
@@ -663,9 +663,9 @@ describe('Bank', () => {
       ).to.be.emit(bank, "Liquidate");
 
       positionInfo = await bank.getPositionInfo(positionId);
-      debtValue = await bank.getDebtValue(positionId)
-      positionValue = await bank.getPositionValue(positionId);
-      risk = await bank.getPositionRisk(positionId)
+      debtValue = await bank.callStatic.getDebtValue(positionId)
+      positionValue = await bank.callStatic.getPositionValue(positionId);
+      risk = await bank.callStatic.getPositionRisk(positionId)
       const collateralBalance = await colToken.balanceOf(alice.address, positionInfo.collId)
       console.log("Cur Pos:", positionInfo);
       console.log("Debt Value:", utils.formatUnits(debtValue));
@@ -685,7 +685,7 @@ describe('Bank', () => {
     })
     it("should be able to maintain the position to get rid of liquidation", async () => {
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
-      let risk = await bank.getPositionRisk(positionId)
+      let risk = await bank.callStatic.getPositionRisk(positionId)
       console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
 
       await mockOracle.setPrice(
@@ -694,9 +694,9 @@ describe('Bank', () => {
           BigNumber.from(10).pow(17).mul(10), // $1
         ]
       );
-      risk = await bank.getPositionRisk(positionId)
+      risk = await bank.callStatic.getPositionRisk(positionId)
       console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      expect(await bank.isLiquidatable(positionId)).to.be.true;
+      expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
 
       await bank.execute(
         positionId,
@@ -706,9 +706,9 @@ describe('Bank', () => {
           depositAmount.div(3)
         ])
       )
-      risk = await bank.getPositionRisk(positionId)
+      risk = await bank.callStatic.getPositionRisk(positionId)
       console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      expect(await bank.isLiquidatable(positionId)).to.be.false;
+      expect(await bank.callStatic.isLiquidatable(positionId)).to.be.false;
     })
     it("should revert execution when it is liquidateable after execution", async () => {
       await mockOracle.setPrice(
@@ -952,7 +952,7 @@ describe('Bank', () => {
         await expect(bank.EXECUTOR()).to.be.revertedWith("NOT_UNDER_EXECUTION");
       })
       it("should be able to check if the oracle support the token", async () => {
-        expect(await oracle.isTokenSupported(ADDRESS.CRV)).to.be.false;
+        expect(await oracle.callStatic.isTokenSupported(ADDRESS.CRV)).to.be.false;
       })
       it("should revert getCurrentPositionInfo when not in exec", async () => {
         await expect(
@@ -986,7 +986,7 @@ describe('Bank', () => {
         );
   
         const positionId = (await bank.nextPositionId()).sub(1);
-        const positionValue = await bank.getPositionValue(positionId);
+        const positionValue = await bank.callStatic.getPositionValue(positionId);
         expect(positionValue).to.be.gte(BigNumber.from(0));
   
         // set ICHI token oracle route correctly

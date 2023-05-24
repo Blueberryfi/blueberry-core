@@ -107,7 +107,7 @@ contract IchiVaultOracle is
      * @param token The vault token to get the price of.
      * @return price USD price of token in 18 decimal
      */
-    function getPrice(address token) external view override returns (uint256) {
+    function getPrice(address token) external override returns (uint256) {
         IICHIVault vault = IICHIVault(token);
         uint256 totalSupply = vault.totalSupply();
         if (totalSupply == 0) return 0;

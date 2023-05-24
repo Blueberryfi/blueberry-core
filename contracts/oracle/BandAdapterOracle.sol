@@ -62,7 +62,7 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     /// @notice Return the USD price of given token, multiplied by 10**18.
     /// @dev Band protocol is already providing 1e18 precision feeds
     /// @param token The ERC-20 token to get the price of.
-    function getPrice(address token) external view override returns (uint256) {
+    function getPrice(address token) external override returns (uint256) {
         string memory sym = symbols[token];
         uint256 maxDelayTime = timeGaps[token];
         if (bytes(sym).length == 0) revert Errors.NO_SYM_MAPPING(token);

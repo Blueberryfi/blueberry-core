@@ -98,29 +98,29 @@ describe('Core Oracle', () => {
 
     it("should to able to get if the wrapper is supported or not", async () => {
       await expect(
-        coreOracle.isWrappedTokenSupported(ADDRESS.USDC, 0)
+        coreOracle.callStatic.isWrappedTokenSupported(ADDRESS.USDC, 0)
       ).to.be.reverted;
 
       let collId = BigNumber.from(ADDRESS.USDC);
       expect(
-        await coreOracle.isWrappedTokenSupported(werc20.address, collId)
+        await coreOracle.callStatic.isWrappedTokenSupported(werc20.address, collId)
       ).to.be.true;
 
       collId = BigNumber.from(ADDRESS.USDT);
-      expect(await coreOracle.isWrappedTokenSupported(werc20.address, collId)).to.be.false;
+      expect(await coreOracle.callStatic.isWrappedTokenSupported(werc20.address, collId)).to.be.false;
     })
     it("should be able to get if the token price is supported or not", async () => {
       await coreOracle.setRoutes([ADDRESS.USDT], [mockOracle.address]);
       await mockOracle.setPrice([ADDRESS.USDC], [utils.parseEther("1")]);
 
-      expect(await coreOracle.isTokenSupported(ADDRESS.USDC)).to.be.true;
+      expect(await coreOracle.callStatic.isTokenSupported(ADDRESS.USDC)).to.be.true;
 
       await expect(
-        coreOracle.getPrice(ADDRESS.USDT)
+        coreOracle.callStatic.getPrice(ADDRESS.USDT)
       ).to.be.revertedWith("PRICE_FAILED");
 
       await coreOracle.setRoutes([ADDRESS.ICHI], [chainlinkOracle.address]);
-      expect(await coreOracle.isTokenSupported(ADDRESS.ICHI)).to.be.false;
+      expect(await coreOracle.callStatic.isTokenSupported(ADDRESS.ICHI)).to.be.false;
     })
   })
   describe("Value", () => {
@@ -128,7 +128,7 @@ describe('Core Oracle', () => {
     describe("Token Value", async () => {
       it("should revert when oracle route is not set", async () => {
         await expect(
-          coreOracle.getTokenValue(ADDRESS.CRV, 100)
+          coreOracle.callStatic.getTokenValue(ADDRESS.CRV, 100)
         ).to.be.revertedWith("NO_ORACLE_ROUTE");
       })
     })
@@ -155,7 +155,7 @@ describe('Core Oracle', () => {
     it("should revert price feed when paused", async () => {
       await coreOracle.pause();
       await expect(
-        coreOracle.getPrice(ADDRESS.USDC)
+        coreOracle.callStatic.getPrice(ADDRESS.USDC)
       ).to.be.revertedWith("Pausable: paused")
     })
   })

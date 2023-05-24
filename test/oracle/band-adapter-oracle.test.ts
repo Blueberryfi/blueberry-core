@@ -129,18 +129,18 @@ describe('Base Oracle / Band Adapter Oracle', () => {
   describe('Price Feeds', () => {
     it("should revert when symbol map is not set", async () => {
       await expect(
-        bandAdapterOracle.getPrice(ADDRESS.CRV)
+        bandAdapterOracle.callStatic.getPrice(ADDRESS.CRV)
       ).to.be.revertedWith('NO_SYM_MAPPING');
     })
     it("should revert when max delay time is not set", async () => {
       await bandAdapterOracle.setSymbols([ADDRESS.CRV], ['CRV']);
       await expect(
-        bandAdapterOracle.getPrice(ADDRESS.CRV)
+        bandAdapterOracle.callStatic.getPrice(ADDRESS.CRV)
       ).to.be.revertedWith('NO_MAX_DELAY');
     })
     it('USDC price feeds / based 10^18', async () => {
       const { rate } = await bandBaseOracle.getReferenceData('USDC', 'USD');
-      const price = await bandAdapterOracle.getPrice(ADDRESS.USDC);
+      const price = await bandAdapterOracle.callStatic.getPrice(ADDRESS.USDC);
 
       expect(rate).to.be.equal(price);
       // real usdc price should be closed to $1
@@ -149,7 +149,7 @@ describe('Base Oracle / Band Adapter Oracle', () => {
     })
     it('UNI price feeds / based 10^18', async () => {
       const { rate } = await bandBaseOracle.getReferenceData('UNI', 'USD');
-      const price = await bandAdapterOracle.getPrice(ADDRESS.UNI);
+      const price = await bandAdapterOracle.callStatic.getPrice(ADDRESS.UNI);
 
       expect(rate).to.be.equal(price);
       console.log('UNI Price:', utils.formatUnits(price, 18));

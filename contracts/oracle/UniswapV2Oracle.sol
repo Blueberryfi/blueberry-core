@@ -30,7 +30,7 @@ contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
     /// @notice Return the USD based price of the given input, multiplied by 10**18.
     /// @dev Fair LP Price Formula => Price = 2 * (sqrt(r0 x r1) x sqrt(p0 x p1)) / total supply
     /// @param pair The Uniswap pair to check the value.
-    function getPrice(address pair) external view override returns (uint256) {
+    function getPrice(address pair) external override returns (uint256) {
         IUniswapV2Pair pool = IUniswapV2Pair(pair);
         uint256 totalSupply = pool.totalSupply();
         if (totalSupply == 0) return 0;

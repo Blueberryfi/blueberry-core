@@ -150,21 +150,21 @@ describe('Uniswap V3 Oracle', () => {
 
     it("should revert when mean time is not set", async () => {
       await expect(
-        uniswapV3Oracle.getPrice(ADDRESS.USDC)
+        uniswapV3Oracle.callStatic.getPrice(ADDRESS.USDC)
       ).to.be.revertedWith('NO_MEAN');
     })
     it("should revert when stable pool is not set", async () => {
       await uniswapV3Oracle.setTimeGap([ADDRESS.USDC], [3600]);
       await expect(
-        uniswapV3Oracle.getPrice(ADDRESS.USDC)
+        uniswapV3Oracle.callStatic.getPrice(ADDRESS.USDC)
       ).to.be.revertedWith('NO_STABLEPOOL');
     })
     it('$UNI Price', async () => {
-      const price = await uniswapV3Oracle.getPrice(ADDRESS.UNI);
+      const price = await uniswapV3Oracle.callStatic.getPrice(ADDRESS.UNI);
       console.log(utils.formatUnits(price, 18));
     });
     it('$ICHI Price', async () => {
-      const price = await uniswapV3Oracle.getPrice(ADDRESS.ICHI);
+      const price = await uniswapV3Oracle.callStatic.getPrice(ADDRESS.ICHI);
       console.log(utils.formatUnits(price, 18));
     });
   })

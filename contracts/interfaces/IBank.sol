@@ -120,15 +120,13 @@ interface IBank {
         address token
     ) external view returns (bool isListed, address bToken, uint256 totalShare);
 
-    function getDebtValue(uint256 positionId) external view returns (uint256);
+    function getDebtValue(uint256 positionId) external returns (uint256);
 
-    function getPositionValue(
-        uint256 positionId
-    ) external view returns (uint256);
+    function getPositionValue(uint256 positionId) external returns (uint256);
 
     function getIsolatedCollateralValue(
         uint256 positionId
-    ) external view returns (uint256 icollValue);
+    ) external returns (uint256 icollValue);
 
     function getPositionInfo(
         uint256 positionId

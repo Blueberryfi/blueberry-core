@@ -182,7 +182,7 @@ abstract contract BasicSpell is
      * @dev Only check current pos in execution and revert when it exceeds maxLTV
      * @param strategyId Strategy ID to check
      */
-    function _validateMaxLTV(uint256 strategyId) internal view {
+    function _validateMaxLTV(uint256 strategyId) internal {
         uint positionId = bank.POSITION_ID();
         IBank.Position memory pos = bank.getPositionInfo(positionId);
         uint256 debtValue = bank.getDebtValue(positionId);
@@ -195,7 +195,7 @@ abstract contract BasicSpell is
         ) revert Errors.EXCEED_MAX_LTV();
     }
 
-    function _validateMaxPosSize(uint256 strategyId) internal view {
+    function _validateMaxPosSize(uint256 strategyId) internal {
         Strategy memory strategy = strategies[strategyId];
         uint positionId = bank.POSITION_ID();
         IBank.Position memory pos = bank.getCurrentPositionInfo();

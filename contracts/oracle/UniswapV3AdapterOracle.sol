@@ -57,7 +57,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     /// @notice Return USD price of given token, multiplied by 10**18.
     /// @param token The vault token to get the price of.
     /// @return price USD price of token in 18 decimals.
-    function getPrice(address token) external view override returns (uint256) {
+    function getPrice(address token) external override returns (uint256) {
         // Maximum cap of timeGap is 2 days(172,800), safe to convert
         uint32 secondsAgo = timeGaps[token].toUint32();
         if (secondsAgo == 0) revert Errors.NO_MEAN(token);

@@ -2,7 +2,28 @@
 
 pragma solidity 0.8.16;
 
+import {IAsset} from "./IAsset.sol";
+
 interface IBalancerVault {
+    enum UserBalanceOpKind {
+        DEPOSIT_INTERNAL,
+        WITHDRAW_INTERNAL,
+        TRANSFER_INTERNAL,
+        TRANSFER_EXTERNAL
+    }
+
+    /**
+     * @dev Data for `manageUserBalance` operations, which include the possibility for ETH to be sent and received
+     without manual WETH wrapping or unwrapping.
+     */
+    struct UserBalanceOp {
+        UserBalanceOpKind kind;
+        IAsset asset;
+        uint256 amount;
+        address sender;
+        address payable recipient;
+    }
+
     struct JoinPoolRequest {
         address[] assets;
         uint256[] maxAmountsIn;
@@ -45,4 +66,6 @@ interface IBalancerVault {
     function getPool(
         bytes32 pid
     ) external view returns (address pool, uint256 poolType);
+
+    function manageUserBalance(UserBalanceOp[] memory ops) external;
 }

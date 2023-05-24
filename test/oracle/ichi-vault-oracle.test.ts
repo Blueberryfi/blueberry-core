@@ -143,7 +143,7 @@ describe('Ichi Vault Oracle', () => {
       3600
     )
 
-    const price = await ichiOracle.getPrice(newVault.address);
+    const price = await ichiOracle.callStatic.getPrice(newVault.address);
     expect(price).to.be.equal(0);
   })
 
@@ -167,7 +167,7 @@ describe('Ichi Vault Oracle', () => {
     await usdc.approve(newVault.address, ethers.constants.MaxUint256)
     await newVault.deposit(0, utils.parseUnits("100", 6), admin.address)
 
-    await expect(ichiOracle.getPrice(newVault.address)).to.be.revertedWith("TOO_LOW_MEAN")
+    await expect(ichiOracle.callStatic.getPrice(newVault.address)).to.be.revertedWith("TOO_LOW_MEAN")
   })
 
   it("should revert price feed for pools have too long twap period", async () => {
@@ -190,14 +190,14 @@ describe('Ichi Vault Oracle', () => {
     await usdc.approve(newVault.address, ethers.constants.MaxUint256)
     await newVault.deposit(0, utils.parseUnits("100", 6), admin.address)
 
-    await expect(ichiOracle.getPrice(newVault.address)).to.be.revertedWith("TOO_LONG_DELAY")
+    await expect(ichiOracle.callStatic.getPrice(newVault.address)).to.be.revertedWith("TOO_LONG_DELAY")
   })
 
   it('USDC/ICHI Angel Vault Price', async () => {
-    const ichiPrice = await uniswapV3Oracle.getPrice(ICHI);
+    const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
     console.log("ICHI Price", utils.formatUnits(ichiPrice))
 
-    const lpPrice = await ichiOracle.getPrice(ADDRESS.ICHI_VAULT_USDC);
+    const lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
     console.log('USDC/ICHI Vault Price: \t', utils.formatUnits(lpPrice, 18));
 
     // calculate lp price manually.
@@ -205,7 +205,7 @@ describe('Ichi Vault Oracle', () => {
     const token0 = await ichiVault.token0();
     const token1 = await ichiVault.token1();
     const totalSupply = await ichiVault.totalSupply();
-    const usdcPrice = await coreOracle.getPrice(ADDRESS.USDC);
+    const usdcPrice = await coreOracle.callStatic.getPrice(ADDRESS.USDC);
     const token0Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token0);
     const token1Contract = <IERC20Metadata>await ethers.getContractAt(CONTRACT_NAMES.IERC20Metadata, token1);
     const token0Decimal = await token0Contract.decimals();
@@ -243,21 +243,21 @@ describe('Ichi Vault Oracle', () => {
       )
       console.log("USDC Balance: ", utils.formatUnits(await usdc.balanceOf(admin.address), 6))
       console.log("\n=== Before ===");
-      const ichiPrice = await uniswapV3Oracle.getPrice(ICHI);
+      const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
       console.log("ICHI Price", utils.formatUnits(ichiPrice))
 
-      let lpPrice = await ichiOracle.getPrice(ADDRESS.ICHI_VAULT_USDC);
+      let lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
       console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
 
       console.log("\n=== Deposit $1,000 USDC on the ICHI Vault ===")
       await usdc.approve(ichiVault.address, ethers.constants.MaxUint256)
       await ichiVault.deposit(0, utils.parseUnits('1000', 6), admin.address)
-      lpPrice = await ichiOracle.getPrice(ADDRESS.ICHI_VAULT_USDC);
+      lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
       console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
 
       console.log("\n=== Deposit $1,000,000 USDC on the ICHI Vault ===")
       await ichiVault.deposit(0, utils.parseUnits('1000000', 6), admin.address)
-      lpPrice = await ichiOracle.getPrice(ADDRESS.ICHI_VAULT_USDC);
+      lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
       console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
     })
 
@@ -284,10 +284,10 @@ describe('Ichi Vault Oracle', () => {
       console.log("USDC Balance: ", utils.formatUnits(await usdc.balanceOf(admin.address), 6))
 
       console.log("\n=== Before ===");
-      const ichiPrice = await uniswapV3Oracle.getPrice(ICHI);
+      const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
       console.log("ICHI Price", utils.formatUnits(ichiPrice))
 
-      let lpPrice = await ichiOracle.getPrice(ADDRESS.ICHI_VAULT_USDC);
+      let lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
       console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
 
       // Swap $1K USDC to ICHI on Uni V3
@@ -306,7 +306,7 @@ describe('Ichi Vault Oracle', () => {
         amountOutMinimum: 0,
         sqrtPriceLimitX96: 0,
       });
-      lpPrice = await ichiOracle.getPrice(ADDRESS.ICHI_VAULT_USDC);
+      lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
       console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
 
       // Swap $10K USDC to ICHI on Uni V3
@@ -323,7 +323,7 @@ describe('Ichi Vault Oracle', () => {
         sqrtPriceLimitX96: 0,
       });
       await expect(
-        ichiOracle.getPrice(ADDRESS.ICHI_VAULT_USDC)
+        ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC)
       ).to.be.revertedWith("EXCEED_DEVIATION");
     })
   })
