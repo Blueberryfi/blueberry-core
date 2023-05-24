@@ -67,9 +67,12 @@ contract BalancerPairOracle is UsingBaseOracle, IBaseOracle {
 
     /// @notice Return the USD value of given Curve Lp, with 18 decimals of precision.
     /// @param token The ERC-20 token to check the value.
-    function getPrice(address token) external view override returns (uint256) {
+    function getPrice(address token) external override returns (uint256) {
         IBalancerPool pool = IBalancerPool(token);
         IBalancerVault vault = IBalancerVault(pool.getVault());
+
+        checkReentrancy(vault);
+
         (address[] memory tokens, uint256[] memory balances, ) = vault
             .getPoolTokens(pool.getPoolId());
         uint256[] memory weights = pool.getNormalizedWeights();
@@ -89,5 +92,9 @@ contract BalancerPairOracle is UsingBaseOracle, IBaseOracle {
         // use fairReserveA and fairReserveB to compute LP token price
         // LP price = (fairResA * pxA + fairResB * pxB) / totalLPSupply
         return (fairResA * price0 + fairResB * price1) / pool.totalSupply();
+    }
+
+    function checkReentrancy(IBalancerVault vault) internal {
+        vault.manageUserBalance(new IBalancerVault.UserBalanceOp[](0));
     }
 }
