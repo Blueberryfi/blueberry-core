@@ -11,5 +11,5 @@ interface IERC20Wrapper {
     function pendingRewards(
         uint256 id,
         uint amount
-    ) external view returns (address[] memory, uint256[] memory);
+    ) external returns (address[] memory, uint256[] memory);
 }

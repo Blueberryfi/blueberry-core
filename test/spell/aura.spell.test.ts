@@ -314,7 +314,7 @@ describe("Aura Spell", () => {
       const totalEarned = await auraRewarder.earned(waura.address);
       console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
 
-      const pendingRewardsInfo = await waura.pendingRewards(
+      const pendingRewardsInfo = await waura.callStatic.pendingRewards(
         position.collId,
         position.collateralSize
       );

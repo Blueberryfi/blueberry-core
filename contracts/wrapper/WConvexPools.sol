@@ -134,7 +134,6 @@ contract WConvexPools is
         uint256 amount
     )
         public
-        view
         override
         returns (address[] memory tokens, uint256[] memory rewards)
     {

@@ -29,8 +29,8 @@ interface ILiquidityGaugeMinter {
  * @title WCurveGauge
  * @author BlueberryProtocol
  * @notice Wrapped Curve Gauge is the wrapper of Gauge positions
- * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank 
- *      and do not generate yields. LP Tokens are identified by tokenIds 
+ * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank
+ *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
 contract WCurveGauge is
@@ -108,10 +108,26 @@ contract WCurveGauge is
         uint256 amount
     )
         public
-        view
         override
         returns (address[] memory tokens, uint256[] memory rewards)
-    {}
+    {
+        (uint256 gid, uint256 stCrvPerShare) = decodeId(tokenId);
+
+        ILiquidityGauge gauge = ILiquidityGauge(gaugeController.gauges(gid));
+        uint256 claimableCrv = gauge.claimable_tokens(address(this));
+        uint256 supply = gauge.balanceOf(address(this));
+        uint256 enCrvPerShare = accCrvPerShares[gid] +
+            ((claimableCrv * 1e18) / supply);
+
+        uint256 crvRewards = enCrvPerShare > stCrvPerShare
+            ? ((enCrvPerShare - stCrvPerShare) * amount) / 1e18
+            : 0;
+
+        tokens = new address[](1);
+        rewards = new uint256[](1);
+        tokens[0] = address(CRV);
+        rewards[0] = crvRewards;
+    }
 
     /// @notice Mint ERC1155 token for the given LP token
     /// @param gid Gauge id

@@ -272,6 +272,22 @@ describe("Curve Spell", () => {
         afterTreasuryBalance.sub(beforeTreasuryBalance)
       ).to.be.equal(depositAmount.mul(50).div(10000))
     })
+
+    it("should be able to get pendingReward info", async () => {
+      evm_mine_blocks(1000);
+
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const position = await bank.positions(positionId);
+
+      const pendingRewardsInfo = await wgauge.callStatic.pendingRewards(
+        position.collId,
+        position.collateralSize
+      );
+
+      expect((pendingRewardsInfo[0][0]).toLowerCase()).to.be.equal(CRV);
+      expect(pendingRewardsInfo[1][0]).to.be.gte(0);
+    })
+
     it("should be able to get position risk ratio", async () => {
       let risk = await bank.callStatic.getPositionRisk(1);
       let pv = await bank.callStatic.getPositionValue(1);
