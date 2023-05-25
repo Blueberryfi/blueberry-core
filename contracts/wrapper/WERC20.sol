@@ -64,7 +64,7 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     function pendingRewards(
         uint256 tokenId,
         uint amount
-    ) public view override returns (address[] memory, uint256[] memory) {}
+    ) public override returns (address[] memory, uint256[] memory) {}
 
     /// @dev Return the underlying ERC20 balance for the user.
     /// @param token token address to get balance of

@@ -300,7 +300,7 @@ describe("Convex Spell", () => {
       const totalEarned = await crvRewarder.earned(wconvex.address);
       console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned))
 
-      const pendingRewardsInfo = await wconvex.pendingRewards(position.collId, position.collateralSize);
+      const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
       console.log("Pending Rewards", pendingRewardsInfo)
 
       // Manually transfer CRV rewards to spell
@@ -332,7 +332,7 @@ describe("Convex Spell", () => {
       const totalEarned = await crvRewarder.earned(wconvex.address);
       console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned))
 
-      const pendingRewardsInfo = await wconvex.pendingRewards(position.collId, position.collateralSize);
+      const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
       console.log("Pending Rewards", pendingRewardsInfo)
 
       // Manually transfer CRV rewards to spell
