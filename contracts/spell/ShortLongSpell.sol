@@ -126,22 +126,7 @@ contract ShortLongSpell is BasicSpell {
         // 1-3 Swap to strategy underlying token, deposit to softvault
         _deposit(param, swapData);
 
-        // 4. Put collateral -
-        {
-            IBank.Position memory pos = bank.getCurrentPositionInfo();
-            address posCollToken = pos.collToken;
-            uint256 collSize = pos.collateralSize;
-            address burnToken = address(ISoftVault(strategy.vault).uToken());
-            if (collSize > 0) {
-                if (posCollToken != address(wrapper))
-                    revert Errors.INCORRECT_COLTOKEN(posCollToken);
-                bank.takeCollateral(collSize);
-                wrapper.burn(burnToken, collSize);
-                _doRefund(burnToken);
-            }
-        }
-
-        // 5. Put collateral - strategy token
+        // 4. Put collateral - strategy token
         address vault = strategies[param.strategyId].vault;
         _doPutCollateral(
             vault,
