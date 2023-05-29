@@ -369,6 +369,12 @@ describe('Bank', () => {
       await bank.whitelistERC1155([wichi.address], true);
     })
     it("should revert close execution for existing position with different isolated token", async () => {
+      await mockOracle.setPrice(
+        [ICHI],
+        [
+          BigNumber.from(10).pow(16).mul(326), // $3.26
+        ]
+      );
       await bank.execute(
         0,
         spell.address,
@@ -421,6 +427,13 @@ describe('Bank', () => {
       const tick = await ichiVault.currentTick();
       const sqrt = TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
+      await mockOracle.setPrice(
+        [ICHI],
+        [
+          BigNumber.from(10).pow(16).mul(350), // $3.5
+        ]
+      );
+
       await expect(
         bank.execute(
           positionId,
@@ -439,6 +452,12 @@ describe('Bank', () => {
       ).to.be.revertedWith("INCORRECT_DEBT")
     })
     it("should revert close execution for for not whitelisted debt token", async () => {
+      await mockOracle.setPrice(
+        [ICHI],
+        [
+          BigNumber.from(10).pow(16).mul(326), // $3.26
+        ]
+      );
       await bank.execute(
         0,
         spell.address,
@@ -902,6 +921,13 @@ describe('Bank', () => {
         const tick = await ichiVault.currentTick();
         const sqrt = TickMath.getSqrtRatioAtTick(tick);
         await ichi.approve(bank.address, ethers.constants.MaxUint256);
+
+        await mockOracle.setPrice(
+          [ICHI],
+          [
+            BigNumber.from(10).pow(16).mul(326), // $3.26
+          ]
+        );
         await expect(
           bank.execute(
             positionId,
