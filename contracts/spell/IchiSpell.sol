@@ -209,16 +209,23 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
 
         // 4. Swap withdrawn tokens to debt token
         bool isTokenA = vault.token0() == param.borrowToken;
-        uint256 amountToSwap = IERC20Upgradeable(
+        uint256 amountIn = IERC20Upgradeable(
             isTokenA ? vault.token1() : vault.token0()
         ).balanceOf(address(this));
 
-        if (amountToSwap > 0) {
+        if (amountIn > 0) {
             uint160 deltaSqrt = (param.sqrtRatioLimit *
                 uint160(param.sellSlippage)) / uint160(Constants.DENOMINATOR);
             address[] memory swapPath = new address[](2);
             swapPath[0] = isTokenA ? vault.token1() : vault.token0();
             swapPath[1] = isTokenA ? vault.token0() : vault.token1();
+
+            uint256 amountOutMin = _getMinOutAmount(
+                swapPath[0],
+                swapPath[1],
+                amountIn,
+                param.sellSlippage
+            );
 
             IUniswapV3Router.ExactInputSingleParams
                 memory params = IUniswapV3Router.ExactInputSingleParams({
@@ -227,14 +234,14 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
                     fee: IUniswapV3Pool(vault.pool()).fee(),
                     recipient: address(this),
                     deadline: block.timestamp + Constants.MAX_DELAY_ON_SWAP,
-                    amountIn: amountToSwap,
-                    amountOutMinimum: 0,
+                    amountIn: amountIn,
+                    amountOutMinimum: amountOutMin,
                     sqrtPriceLimitX96: isTokenA
                         ? param.sqrtRatioLimit + deltaSqrt
                         : param.sqrtRatioLimit - deltaSqrt
                 });
 
-            _ensureApprove(params.tokenIn, address(uniV3Router), amountToSwap);
+            _ensureApprove(params.tokenIn, address(uniV3Router), amountIn);
             uniV3Router.exactInputSingle(params);
         }
 
@@ -249,6 +256,35 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         // 7. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
+    }
+
+    /**
+     * @notice Internal function to get outToken amount based on inToken amount
+     * @param inToken Address of inToken
+     * @param outToken Address of outToken
+     * @param amountIn Amount of inToken
+     * @param slippage Swap slippage
+     */
+    function _getMinOutAmount(
+        address inToken,
+        address outToken,
+        uint256 amountIn,
+        uint256 slippage
+    ) internal returns (uint256) {
+        uint256 inTokenPrice = bank.oracle().getPrice(inToken);
+        uint256 outTokenPrice = bank.oracle().getPrice(outToken);
+        uint256 inTokenDecimal = IERC20MetadataUpgradeable(inToken).decimals();
+        uint256 outTokenDecimal = IERC20MetadataUpgradeable(outToken)
+            .decimals();
+
+        // calculate amountOut based on this formular. token0 blance * token0 price = token1 balance * token1 price
+        // decimal should be considered
+        uint256 amountOut = ((amountIn * inTokenPrice) *
+            (10 ** outTokenDecimal)) / (outTokenPrice * (10 ** inTokenDecimal));
+
+        return
+            (amountOut * (Constants.DENOMINATOR - slippage)) /
+            Constants.DENOMINATOR;
     }
 
     /**
