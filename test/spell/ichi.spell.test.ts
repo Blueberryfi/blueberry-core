@@ -320,7 +320,7 @@ describe('ICHI Angel Vaults Spell', () => {
         [USDC, ICHI],
         [
           BigNumber.from(10).pow(18), // $1
-          BigNumber.from(10).pow(17).mul(40), // $4
+          BigNumber.from(10).pow(16).mul(400), // $4
         ]
       );
       risk = await bank.callStatic.getPositionRisk(1);
@@ -414,7 +414,39 @@ describe('ICHI Angel Vaults Spell', () => {
         )
       ).to.be.revertedWith("RATIO_TOO_HIGH")
     })
+    it("should revert when token price is changed and outToken amount is out of slippage range", async () => {
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionInfo = await bank.getPositionInfo(positionId);
+      await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
+      await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
+
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePosition", [{
+            strategyId: 0,
+            collToken: ICHI,
+            borrowToken: USDC,
+            amountRepay: 0,
+            amountPosRemove: positionInfo.collateralSize.div(3),
+            amountShareWithdraw: 0,
+            sellSlippage: 50,
+            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+          }])
+        )
+      ).to.be.revertedWith("Too little received");
+    })
     it("should be able to close portion of position without withdrawing isolated collaterals", async () => {
+      await mockOracle.setPrice(
+        [USDC, ICHI],
+        [
+          BigNumber.from(10).pow(18), // $1
+          BigNumber.from(10).pow(16).mul(326), // $3.26
+        ]
+      );
       const positionId = (await bank.nextPositionId()).sub(1);
       const positionInfo = await bank.getPositionInfo(positionId);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
@@ -686,7 +718,7 @@ describe('ICHI Angel Vaults Spell', () => {
         [USDC, ICHI],
         [
           BigNumber.from(10).pow(18), // $1
-          BigNumber.from(10).pow(17).mul(40), // $4
+          BigNumber.from(10).pow(16).mul(326), // $3.26
         ]
       );
       risk = await bank.callStatic.getPositionRisk(2);
@@ -853,6 +885,7 @@ describe('ICHI Angel Vaults Spell', () => {
         }])
       );
     })
+
     it("should revert maintaining position when farming pool id does not match", async () => {
       const nextPosId = await bank.nextPositionId();
       await expect(
