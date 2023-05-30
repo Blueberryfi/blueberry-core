@@ -153,20 +153,28 @@ contract CurveSpell is BasicSpell {
     function closePositionFarm(
         ClosePosParam calldata param,
         IUniswapV2Router02 swapRouter,
-        address[] calldata swapPath
+        address[] calldata swapPath,
+        bool isKilled,
+        address[][] calldata poolTokensSwapPath
     )
         external
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
-        address crvLp = strategies[param.strategyId].vault;
+        ClosePosParam memory _param = param;
+        IUniswapV2Router02 _swapRouter = swapRouter;
+        address[] memory _swapPath = swapPath;
+        bool _isKilled = isKilled;
+        address[][] memory _poolTokensSwapPath = poolTokensSwapPath;
+
+        address crvLp = strategies[_param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collToken != address(wCurveGauge))
             revert Errors.INCORRECT_COLTOKEN(pos.collToken);
         if (wCurveGauge.getUnderlyingToken(pos.collId) != crvLp)
             revert Errors.INCORRECT_UNDERLYING(crvLp);
 
-        uint256 amountPosRemove = param.amountPosRemove;
+        uint256 amountPosRemove = _param.amountPosRemove;
 
         // 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
         bank.takeCollateral(amountPosRemove);
@@ -175,73 +183,128 @@ contract CurveSpell is BasicSpell {
         {
             // 2. Swap rewards tokens to debt token
             uint256 rewards = _doCutRewardsFee(CRV);
-            _ensureApprove(CRV, address(swapRouter), rewards);
-            swapRouter.swapExactTokensForTokens(
-                rewards,
-                0,
-                swapPath,
-                address(this),
-                block.timestamp + Constants.MAX_DELAY_ON_SWAP
-            );
+            _swapOnUniV2(_swapRouter, CRV, rewards, _swapPath);
         }
 
-        {
-            (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
-                crvLp
-            );
-            // 3. Calculate actual amount to remove
-            if (amountPosRemove == type(uint256).max) {
-                amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(
-                    address(this)
-                );
-            }
+        _swapToDebt(
+            _param,
+            pos,
+            crvLp,
+            amountPosRemove,
+            _isKilled,
+            _swapRouter,
+            _poolTokensSwapPath
+        );
 
-            // 4. Remove liquidity
-            int128 tokenIndex;
-            for (uint256 i = 0; i < tokens.length; i++) {
-                if (tokens[i] == pos.debtToken) {
-                    tokenIndex = int128(uint128(i));
-                    break;
+        // 5. Withdraw isolated collateral from Bank
+        _doWithdraw(_param.collToken, _param.amountShareWithdraw);
+
+        // 6. Repay
+        {
+            // Compute repay amount if MAX_INT is supplied (max debt)
+            uint256 amountRepay = _param.amountRepay;
+            if (amountRepay == type(uint256).max) {
+                amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
+            }
+            _doRepay(_param.borrowToken, amountRepay);
+        }
+
+        _validateMaxLTV(_param.strategyId);
+
+        // 7. Refund
+        _doRefund(_param.borrowToken);
+        _doRefund(_param.collToken);
+        _doRefund(CRV);
+    }
+
+    function _swapToDebt(
+        ClosePosParam memory _param,
+        IBank.Position memory pos,
+        address crvLp,
+        uint amountPosRemove,
+        bool isKilled,
+        IUniswapV2Router02 swapRouter,
+        address[][] memory poolTokensSwapPath
+    ) internal {
+        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
+            crvLp
+        );
+        // 3. Calculate actual amount to remove
+        if (amountPosRemove == type(uint256).max) {
+            amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(address(this));
+        }
+
+        // 4. Remove liquidity
+        int128 tokenIndex;
+        uint len = tokens.length;
+        for (uint256 i = 0; i < len; i++) {
+            if (tokens[i] == pos.debtToken) {
+                tokenIndex = int128(uint128(i));
+                break;
+            }
+        }
+
+        uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
+            .decimals();
+
+        uint256 sellSlippage = _param.sellSlippage;
+        uint256 minOut = (amountPosRemove * sellSlippage) /
+            Constants.DENOMINATOR;
+
+        // We assume that there is no token with decimals above than 18
+        if (tokenDecimals < 18) {
+            minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
+        }
+
+        if (isKilled) {
+            if (len == 2) {
+                uint[2] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else if (len == 3) {
+                uint[3] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else if (len == 4) {
+                uint[4] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else {
+                revert("Invalid pool length");
+            }
+            for (uint i = 0; i < len; i++) {
+                if (i != uint(uint128(tokenIndex))) {
+                    address token = tokens[i];
+                    uint tokenAmount = IERC20Upgradeable(token).balanceOf(
+                        address(this)
+                    );
+                    _swapOnUniV2(
+                        swapRouter,
+                        token,
+                        tokenAmount,
+                        poolTokensSwapPath[i]
+                    );
                 }
             }
-
-            uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
-                .decimals();
-
-            uint256 sellSlippage = param.sellSlippage;
-            uint256 minOut = (amountPosRemove * sellSlippage) /
-                Constants.DENOMINATOR;
-
-            // We assume that there is no token with decimals above than 18
-            if (tokenDecimals < 18) {
-                minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
-            }
-
+        } else {
             ICurvePool(pool).remove_liquidity_one_coin(
                 amountPosRemove,
                 int128(tokenIndex),
                 minOut
             );
         }
+    }
 
-        // 5. Withdraw isolated collateral from Bank
-        _doWithdraw(param.collToken, param.amountShareWithdraw);
-
-        // 6. Repay
-        {
-            // Compute repay amount if MAX_INT is supplied (max debt)
-            uint256 amountRepay = param.amountRepay;
-            if (amountRepay == type(uint256).max) {
-                amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
-            }
-            _doRepay(param.borrowToken, amountRepay);
-        }
-
-        _validateMaxLTV(param.strategyId);
-
-        // 7. Refund
-        _doRefund(param.borrowToken);
-        _doRefund(param.collToken);
-        _doRefund(CRV);
+    function _swapOnUniV2(
+        IUniswapV2Router02 swapRouter,
+        address token,
+        uint amount,
+        address[] memory path
+    ) internal {
+        _ensureApprove(token, address(swapRouter), amount);
+        swapRouter.swapExactTokensForTokens(
+            amount,
+            0,
+            path,
+            address(this),
+            block.timestamp
+        );
     }
 }
