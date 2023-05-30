@@ -344,6 +344,16 @@
         "internalType": "address[]",
         "name": "swapPath",
         "type": "address[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "isKilled",
+        "type": "bool"
+      },
+      {
+        "internalType": "address[][]",
+        "name": "poolTokensSwapPath",
+        "type": "address[][]"
       }
     ],
     "name": "closePositionFarm",
