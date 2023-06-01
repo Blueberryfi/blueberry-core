@@ -119,11 +119,13 @@ contract WIchiFarm is
         uint256 lpDecimals = IERC20MetadataUpgradeable(ichiFarm.lpToken(pid))
             .decimals();
         (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
-        uint256 stIchi = (stIchiPerShare * amount).divCeil(10 ** lpDecimals);
-        uint256 enIchi = (enIchiPerShare * amount) / (10 ** lpDecimals);
+
+        // Multiple by 1e9 because reward token should be converted from ICHI v1 to ICHI v2
+        // ICHI v1 decimal: 9, ICHI v2 Decimal: 18
+        uint256 stIchi = 1e9 *
+            (stIchiPerShare * amount).divCeil(10 ** lpDecimals);
+        uint256 enIchi = (1e9 * (enIchiPerShare * amount)) / (10 ** lpDecimals);
         uint256 ichiRewards = enIchi > stIchi ? enIchi - stIchi : 0;
-        // Convert rewards to ICHI(v2) => ICHI v1 decimal: 9, ICHI v2 Decimal: 18
-        ichiRewards *= 1e9;
 
         tokens = new address[](1);
         rewards = new uint256[](1);
@@ -186,7 +188,13 @@ contract WIchiFarm is
         (, uint256[] memory rewards) = pendingRewards(id, amount);
 
         if (rewards[0] > 0) {
-            ICHI.safeTransfer(msg.sender, rewards[0]);
+            // Transfer minimum amount to prevent reverted tx
+            ICHI.safeTransfer(
+                msg.sender,
+                ICHI.balanceOf(address(this)) >= rewards[0]
+                    ? rewards[0]
+                    : ICHI.balanceOf(address(this))
+            );
         }
         return rewards[0];
     }
