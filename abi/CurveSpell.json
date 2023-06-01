@@ -189,13 +189,13 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "strategyId",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "vault",
         "type": "address"
@@ -259,7 +259,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "crvLp",
+        "name": "vault",
         "type": "address"
       },
       {

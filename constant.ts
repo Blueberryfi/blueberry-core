@@ -10,6 +10,9 @@ export enum CONTRACT_NAMES {
   MockCErc20_2 = "MockCErc20_2",
   MockFeedRegistry = "MockFeedRegistry",
   MockOracle = "MockOracle",
+  MockBank = "MockBank",
+  MockParaswap = "MockParaswap",
+  MockParaswapTransferProxy = "MockParaswapTransferProxy",
 
   // Wrapper
   WERC20 = "WERC20",
@@ -48,6 +51,7 @@ export enum CONTRACT_NAMES {
   CurveSpell = "CurveSpell",
   IchiSpell = "IchiSpell",
   AuraSpell = "AuraSpell",
+  ShortLongSpell = "ShortLongSpell",
 
   // Interface
   IWETH = "IWETH",

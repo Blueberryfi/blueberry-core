@@ -66,15 +66,6 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     }
 
     /**
-     * @notice Add strategy to the spell
-     * @param vault Address of vault for given strategy
-     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
-     */
-    function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(vault, maxPosSize);
-    }
-
-    /**
      * @notice Internal function to deposit assets on ICHI Vault
      * @dev Deposit isolated underlying to Blueberry Money Market,
      *      Borrow tokens from Blueberry Money Market,

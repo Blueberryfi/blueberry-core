@@ -21,7 +21,7 @@ library PSwapLib {
         address augustusSwapper,
         address tokenTransferProxy,
         Utils.MegaSwapSellData calldata data
-    ) external returns (uint256) {
+    ) internal returns (uint256) {
         _approve(IERC20(data.fromToken), tokenTransferProxy, data.fromAmount);
 
         return IParaswap(augustusSwapper).megaSwap(data);

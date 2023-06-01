@@ -31,9 +31,6 @@ contract ShortLongSpell is BasicSpell {
     using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    /// @dev WERC20
-    IWERC20 public wrapper;
-
     /// @dev paraswap AugustusSwapper address
     address public augustusSwapper;
 
@@ -57,7 +54,6 @@ contract ShortLongSpell is BasicSpell {
 
         augustusSwapper = augustusSwapper_;
         tokenTransferProxy = tokenTransferProxy_;
-        wrapper = IWERC20(werc20_);
 
         __BasicSpell_init(bank_, werc20_, weth_);
     }
@@ -224,18 +220,6 @@ contract ShortLongSpell is BasicSpell {
 
         // 2-7. Remove liquidity
         _withdraw(param, swapData);
-    }
-
-    /**
-     * @notice Add strategy to the spell
-     * @param swapToken Address of token for given strategy
-     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
-     */
-    function addStrategy(
-        address swapToken,
-        uint256 maxPosSize
-    ) external onlyOwner {
-        _addStrategy(swapToken, maxPosSize);
     }
 
     function _validateSlippage(
