@@ -82,11 +82,7 @@ abstract contract BasicSpell is
     /// @dev strategyId => collateral token => maxLTV
     mapping(uint256 => mapping(address => uint256)) public maxLTV; // base 1e4
 
-    event StrategyAdded(
-        uint256 indexed strategyId,
-        address indexed vault,
-        uint256 maxPosSize
-    );
+    event StrategyAdded(uint256 strategyId, address vault, uint256 maxPosSize);
     event StrategyMaxPosSizeUpdated(uint256 strategyId, uint256 maxPosSize);
     event CollateralsMaxLTVSet(
         uint256 strategyId,
@@ -136,7 +132,7 @@ abstract contract BasicSpell is
      * @param vault Address of vault for given strategy
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
+    function _addStrategy(address vault, uint256 maxPosSize) internal {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));

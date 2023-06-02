@@ -222,6 +222,18 @@ contract ShortLongSpell is BasicSpell {
         _withdraw(param, swapData);
     }
 
+    /**
+     * @notice Add strategy to the spell
+     * @param swapToken Address of token for given strategy
+     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
+     */
+    function addStrategy(
+        address swapToken,
+        uint256 maxPosSize
+    ) external onlyOwner {
+        _addStrategy(swapToken, maxPosSize);
+    }
+
     function _validateSlippage(
         uint256 expectedAmount,
         uint256 toAmount,

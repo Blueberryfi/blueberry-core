@@ -49,6 +49,15 @@ contract AuraSpell is BasicSpell {
     }
 
     /**
+     * @notice Add strategy to the spell
+     * @param bpt Address of Balaner Pool Token
+     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
+     */
+    function addStrategy(address bpt, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(bpt, maxPosSize);
+    }
+
+    /**
      * @notice Add liquidity to Balancer pool, with staking to Aura
      */
     function openPositionFarm(

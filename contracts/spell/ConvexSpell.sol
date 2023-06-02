@@ -52,6 +52,15 @@ contract ConvexSpell is BasicSpell {
     }
 
     /**
+     * @notice Add strategy to the spell
+     * @param crvLp Address of crv lp token for given strategy
+     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
+     */
+    function addStrategy(address crvLp, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(crvLp, maxPosSize);
+    }
+
+    /**
      * @notice Add liquidity to Curve pool with 2 underlying tokens, with staking to Curve gauge
      * @param minLPMint Desired LP token amount (slippage control)
      */
