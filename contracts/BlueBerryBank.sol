@@ -52,7 +52,6 @@ contract BlueBerryBank is
 
     IProtocolConfig public config;
     ICoreOracle public oracle; // The oracle address for determining prices.
-    IFeeManager public feeManager;
 
     uint256 public nextPositionId; // Next available position ID, starting from 1 (see initialize).
     uint256 public bankStatus; // Each bit stores certain bank status, e.g. borrow allowed, repay allowed
@@ -140,7 +139,6 @@ contract BlueBerryBank is
 
         config = config_;
         oracle = oracle_;
-        feeManager = config_.feeManager();
 
         nextPositionId = 1;
         bankStatus = 15; // 0x1111: allow borrow, repay, lend, withdrawLend as default
@@ -307,6 +305,11 @@ contract BlueBerryBank is
     /// @notice check last bit of bankStatus
     function isWithdrawLendAllowed() public view returns (bool) {
         return (bankStatus & 0x08) > 0;
+    }
+
+    /// @dev FeeManager
+    function feeManager() public view returns (IFeeManager) {
+        return config.feeManager();
     }
 
     /// @dev Trigger interest accrual for the given bank.
@@ -632,8 +635,8 @@ contract BlueBerryBank is
             address(this),
             amount
         );
-        _ensureApprove(token, address(feeManager), amount);
-        amount = feeManager.doCutDepositFee(token, amount);
+        _ensureApprove(token, address(feeManager()), amount);
+        amount = feeManager().doCutDepositFee(token, amount);
 
         if (_isSoftVault(token)) {
             _ensureApprove(token, bank.softVault, amount);
@@ -678,8 +681,8 @@ contract BlueBerryBank is
 
         pos.underlyingVaultShare -= shareAmount;
 
-        _ensureApprove(token, address(feeManager), wAmount);
-        wAmount = feeManager.doCutWithdrawFee(token, wAmount);
+        _ensureApprove(token, address(feeManager()), wAmount);
+        wAmount = feeManager().doCutWithdrawFee(token, wAmount);
 
         IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
 
