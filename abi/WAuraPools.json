@@ -475,7 +475,7 @@
       },
       {
         "internalType": "address",
-        "name": "crvRewards",
+        "name": "auraRewards",
         "type": "address"
       },
       {
