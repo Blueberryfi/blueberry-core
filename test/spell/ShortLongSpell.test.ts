@@ -3,76 +3,37 @@ import {
   MockBank,
   MockParaswap,
   MockParaswapTransferProxy,
-  BlueBerryBank,
   IWETH,
-  MockOracle,
   WERC20,
-  MockWETH,
-  WCurveGauge,
-  ERC20,
-  CurveSpell,
-  CurveOracle,
-  WAuraPools,
-  ICvxPools,
-  IRewarder,
-  AuraSpell,
   ShortLongSpell__factory,
   ShortLongSpell,
 } from "../../typechain-types";
 import { ethers, upgrades } from "hardhat";
 import { constants } from "ethers";
-import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { AuraProtocol, evm_mine_blocks, setupAuraProtocol } from "../helpers";
-import SpellABI from "../../abi/AuraSpell.json";
+import { CONTRACT_NAMES } from "../../constant";
+import { AuraProtocol } from "../helpers";
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
-import { BigNumber, Contract, utils } from "ethers";
 
 chai.use(solidity);
 chai.use(near);
 chai.use(roughlyNear);
 
-const CUSDC = ADDRESS.bUSDC;
-const CDAI = ADDRESS.bDAI;
-const CCRV = ADDRESS.bCRV;
-const BAL = ADDRESS.BAL;
-const WETH = ADDRESS.WETH;
-const USDC = ADDRESS.USDC;
-const DAI = ADDRESS.DAI;
-const CRV = ADDRESS.CRV;
-const AURA = ADDRESS.AURA;
-const POOL_ID = ADDRESS.AURA_UDU_POOL_ID;
-const WPOOL_ID = ADDRESS.AURA_WETH_AURA_ID;
-
 describe("ShortLongSpell", () => {
   let owner: SignerWithAddress;
   let alice: SignerWithAddress;
-  let treasury: SignerWithAddress;
 
-  let usdc: ERC20;
-  let dai: ERC20;
-  let crv: ERC20;
-  let aura: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
-  let mockOracle: MockOracle;
   let spell: ShortLongSpell;
-  let curveOracle: CurveOracle;
-  let waura: WAuraPools;
   let bank: MockBank;
-  let protocol: AuraProtocol;
-  let auraBooster: ICvxPools;
-  let auraRewarder: IRewarder;
   let tokenTransferProxy: MockParaswapTransferProxy;
   let augustusSwapper: MockParaswap;
 
   beforeEach(async () => {
-    [owner, alice, treasury] = await ethers.getSigners();
-    const ShortLongSpell = await ethers.getContractFactory(
-      CONTRACT_NAMES.ShortLongSpell
-    );
+    [owner, alice] = await ethers.getSigners();
 
     const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
     werc20 = <WERC20>await upgrades.deployProxy(WERC20);
@@ -114,28 +75,6 @@ describe("ShortLongSpell", () => {
         tokenTransferProxy.address,
       ])
     );
-
-    // usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
-    // dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
-    // crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
-    // aura = <ERC20>await ethers.getContractAt("ERC20", AURA);
-    // usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
-    // weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-    // auraBooster = <ICvxPools>(
-    //   await ethers.getContractAt("ICvxPools", ADDRESS.AURA_BOOSTER)
-    // );
-    // const poolInfo = await auraBooster.poolInfo(ADDRESS.AURA_UDU_POOL_ID);
-    // auraRewarder = <IRewarder>(
-    //   await ethers.getContractAt("IRewarder", poolInfo.crvRewards)
-    // );
-
-    // protocol = await setupAuraProtocol();
-    // bank = protocol.bank;
-    // spell = protocol.auraSpell;
-    // waura = protocol.waura;
-    // werc20 = protocol.werc20;
-    // mockOracle = protocol.mockOracle;
-    // curveOracle = protocol.curveOracle;
   });
 
   describe("Constructor", () => {
@@ -233,7 +172,6 @@ describe("ShortLongSpell", () => {
     });
   });
 
-  // TODO: move to BasicSpell unit test
   describe("#addStrategy", () => {
     it("should revert when msg.sender is not owner", async () => {
       await expect(
