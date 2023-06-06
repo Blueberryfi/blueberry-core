@@ -10,6 +10,9 @@ export enum CONTRACT_NAMES {
   MockCErc20_2 = "MockCErc20_2",
   MockFeedRegistry = "MockFeedRegistry",
   MockOracle = "MockOracle",
+  MockBank = "MockBank",
+  MockParaswap = "MockParaswap",
+  MockParaswapTransferProxy = "MockParaswapTransferProxy",
 
   // Wrapper
   WERC20 = "WERC20",
@@ -48,6 +51,7 @@ export enum CONTRACT_NAMES {
   CurveSpell = "CurveSpell",
   IchiSpell = "IchiSpell",
   AuraSpell = "AuraSpell",
+  ShortLongSpell = "ShortLongSpell",
 
   // Interface
   IWETH = "IWETH",
@@ -119,7 +123,7 @@ export const ADDRESS_GOERLI = {
 
 export const ADDRESS = {
   // Tokens
-  CRV: "0xd533a949740bb3306d119cc777fa900ba034cd52",
+  CRV: "0xD533a949740bb3306d119CC777fa900bA034cd52",
   AURA: "0xc0c293ce456ff0ed870add98a0828dd4d2903dbf",
   BAL: "0xba100000625a3754423978a60c9317c58a424e3D",
   CVX: "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B",
@@ -239,4 +243,8 @@ export const ADDRESS = {
   // ICHI
   ICHI_VAULT_USDC: "0x683F081DBC729dbD34AbaC708Fa0B390d49F1c39",
   ICHI_FARMING: "0x275dfe03bc036257cd0a713ee819dbd4529739c8",
+
+  // Paraswap
+  AUGUSTUS_SWAPPER: "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57",
+  TOKEN_TRANSFER_PROXY: "0x216B4B4Ba9F3e719726886d34a177484278Bfcae",
 };

@@ -284,7 +284,7 @@ describe("Curve Spell", () => {
         position.collateralSize
       );
 
-      expect((pendingRewardsInfo[0][0]).toLowerCase()).to.be.equal(CRV);
+      expect((pendingRewardsInfo[0][0])).to.be.equal(CRV);
       expect(pendingRewardsInfo[1][0]).to.be.gte(0);
     })
 
