@@ -132,7 +132,7 @@ contract WAuraPools is
             address lptoken,
             address token,
             address gauge,
-            address crvRewards,
+            address auraRewards,
             address stash,
             bool shutdown
         )
@@ -165,8 +165,8 @@ contract WAuraPools is
         override
         returns (address[] memory tokens, uint256[] memory rewards)
     {
-        (uint256 pid, uint256 stCrvPerShare) = decodeId(tokenId);
-        (address lpToken, , , address crvRewarder, , ) = getPoolInfoFromPoolId(
+        (uint256 pid, uint256 stAuraPerShare) = decodeId(tokenId);
+        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
@@ -174,10 +174,10 @@ contract WAuraPools is
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
 
-        tokens[0] = IAuraRewarder(crvRewarder).rewardToken();
+        tokens[0] = IAuraRewarder(auraRewarder).rewardToken();
         rewards[0] = _getPendingReward(
-            stCrvPerShare,
-            crvRewarder,
+            stAuraPerShare,
+            auraRewarder,
             amount,
             lpDecimals
         );
@@ -207,7 +207,7 @@ contract WAuraPools is
         uint256 pid,
         uint256 amount
     ) external nonReentrant returns (uint256 id) {
-        (address lpToken, , , address crvRewarder, , ) = getPoolInfoFromPoolId(
+        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
         IERC20Upgradeable(lpToken).safeTransferFrom(
@@ -222,16 +222,16 @@ contract WAuraPools is
         // Increase totalStaked value
         totalStaked += amount;
 
-        uint256 crvRewardPerToken = IAuraRewarder(crvRewarder).rewardPerToken();
-        id = encodeId(pid, crvRewardPerToken);
+        uint256 auraRewardPerToken = IAuraRewarder(auraRewarder).rewardPerToken();
+        id = encodeId(pid, auraRewardPerToken);
         _mint(msg.sender, id, amount, "");
         auraPerShares[id] = accAuraPerShare;
 
         // Store extra rewards info
-        uint extraRewardsCount = IAuraRewarder(crvRewarder)
+        uint extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();
         for (uint i; i < extraRewardsCount; ) {
-            address extraRewarder = IAuraRewarder(crvRewarder).extraRewards(i);
+            address extraRewarder = IAuraRewarder(auraRewarder).extraRewards(i);
             uint rewardPerToken = IAuraRewarder(extraRewarder).rewardPerToken();
             accExtPerShare[id].push(rewardPerToken);
 
@@ -261,13 +261,13 @@ contract WAuraPools is
         (uint256 pid, ) = decodeId(id);
         _burn(msg.sender, id, amount);
 
-        (address lpToken, , , address balRewarder, , ) = getPoolInfoFromPoolId(
+        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
 
         uint256 auraRewards = AURA.balanceOf(address(this));
         // Claim Rewards
-        IAuraRewarder(balRewarder).withdraw(amount, true);
+        IAuraRewarder(auraRewarder).withdraw(amount, true);
         // Withdraw LP
         auraPools.withdraw(pid, amount);
 
@@ -281,11 +281,11 @@ contract WAuraPools is
         // Transfer LP Tokens
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
 
-        uint extraRewardsCount = IAuraRewarder(balRewarder)
+        uint extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();
 
         for (uint i; i < extraRewardsCount; ) {
-            _syncExtraReward(IAuraRewarder(balRewarder).extraRewards(i));
+            _syncExtraReward(IAuraRewarder(auraRewarder).extraRewards(i));
 
             unchecked {
                 ++i;

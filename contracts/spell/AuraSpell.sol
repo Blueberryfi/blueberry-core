@@ -123,9 +123,14 @@ contract AuraSpell is BasicSpell {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             if (pos.collToken != address(wAuraPools))
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            (address[] memory rewardTokens, ) = IERC20Wrapper(pos.collToken)
+                .pendingRewards(pos.collId, pos.collateralSize);
             bank.takeCollateral(pos.collateralSize);
             wAuraPools.burn(pos.collId, pos.collateralSize);
-            _doRefundRewards(AURA);
+            // distribute multiple rewards to users
+            for (uint256 i; i < rewardTokens.length; i++) {
+                _doRefundRewards(rewardTokens[i]);
+            }
         }
 
         // 7. Deposit on Aura Pool, Put wrapped collateral tokens on Blueberry Bank

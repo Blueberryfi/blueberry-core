@@ -48,6 +48,7 @@ describe("Aura Spell", () => {
   let dai: ERC20;
   let crv: ERC20;
   let aura: ERC20;
+  let bal: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
@@ -65,6 +66,7 @@ describe("Aura Spell", () => {
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
     aura = <ERC20>await ethers.getContractAt("ERC20", AURA);
+    bal = <ERC20>await ethers.getContractAt("ERC20", BAL);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
     auraBooster = <ICvxPools>(
@@ -139,8 +141,9 @@ describe("Aura Spell", () => {
     const borrowAmount = utils.parseUnits("250", 6); // USDC
     const iface = new ethers.utils.Interface(SpellABI);
 
-    before(async () => {
+    beforeEach(async () => {
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
+      await crv.approve(bank.address, 0);
       await crv.approve(bank.address, ethers.constants.MaxUint256);
     });
 
@@ -261,6 +264,35 @@ describe("Aura Spell", () => {
       expect(rewarderBalance).to.be.equal(pos.collateralSize);
     });
 
+    it("should be able to get multiple rewards", async () => {
+      let positionId = await bank.nextPositionId();
+      positionId = positionId.sub(1);
+
+      const beforeSenderBalBalance = await bal.balanceOf(admin.address);
+      const beforeTreasuryAuraBalance = await aura.balanceOf(admin.address);
+
+      await evm_mine_blocks(10);
+      await bank.execute(
+        positionId,
+        spell.address,
+        iface.encodeFunctionData("openPositionFarm", [
+          {
+            strategyId: 0,
+            collToken: CRV,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: POOL_ID,
+          },
+        ])
+      );
+
+      const afterSenderBalBalance = await bal.balanceOf(admin.address);
+      const afterSenderAuraBalance = await aura.balanceOf(admin.address);
+      expect(afterSenderBalBalance).to.be.gte(beforeSenderBalBalance);
+      expect(afterSenderAuraBalance).to.be.gte(beforeTreasuryAuraBalance);
+    });
+
     it("should be able to get position risk ratio", async () => {
       let risk = await bank.callStatic.getPositionRisk(1);
       let pv = await bank.callStatic.getPositionValue(1);
@@ -307,7 +339,7 @@ describe("Aura Spell", () => {
     // })
 
     it("should be able to harvest on Aura", async () => {
-      await evm_mine_blocks(10000);
+      await evm_mine_blocks(1000);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
