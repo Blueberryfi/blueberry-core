@@ -34,6 +34,17 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
+    "name": "EXCEED_MIN_POS_SIZE",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "colToken",
         "type": "address"
@@ -89,6 +100,11 @@
   {
     "inputs": [],
     "name": "INPUT_ARRAY_MISMATCH",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "INVALID_POS_SIZE",
     "type": "error"
   },
   {
@@ -203,6 +219,12 @@
       {
         "indexed": false,
         "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
         "name": "maxPosSize",
         "type": "uint256"
       }
@@ -222,11 +244,17 @@
       {
         "indexed": false,
         "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
         "name": "maxPosSize",
         "type": "uint256"
       }
     ],
-    "name": "StrategyMaxPosSizeUpdated",
+    "name": "StrategyPosSizeUpdated",
     "type": "event"
   },
   {
@@ -261,6 +289,11 @@
         "internalType": "address",
         "name": "crvLp",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -652,11 +685,16 @@
       },
       {
         "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "maxPosSize",
         "type": "uint256"
       }
     ],
-    "name": "setMaxPosSize",
+    "name": "setPosSize",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -675,6 +713,11 @@
         "internalType": "address",
         "name": "vault",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minPositionSize",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",

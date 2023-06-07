@@ -240,8 +240,8 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     UNI_V3_ROUTER
   ])
   await ichiSpell.deployed();
-  await ichiSpell.addStrategy(ichi_USDC_ICHI_Vault.address, utils.parseUnits("2000", 18));
-  await ichiSpell.addStrategy(ichi_USDC_DAI_Vault.address, utils.parseUnits("2000", 18));
+  await ichiSpell.addStrategy(ichi_USDC_ICHI_Vault.address, utils.parseUnits("10", 18), utils.parseUnits("2000", 18));
+  await ichiSpell.addStrategy(ichi_USDC_DAI_Vault.address, utils.parseUnits("10", 18), utils.parseUnits("2000", 18));
   await ichiSpell.setCollateralsMaxLTVs(
     0,
     [USDC, ICHI, DAI],

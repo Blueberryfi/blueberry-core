@@ -35,6 +35,7 @@ abstract contract BasicSpell is
 
     struct Strategy {
         address vault;
+        uint256 minPositionSize;
         uint256 maxPositionSize;
     }
 
@@ -82,8 +83,8 @@ abstract contract BasicSpell is
     /// @dev strategyId => collateral token => maxLTV
     mapping(uint256 => mapping(address => uint256)) public maxLTV; // base 1e4
 
-    event StrategyAdded(uint256 strategyId, address vault, uint256 maxPosSize);
-    event StrategyMaxPosSizeUpdated(uint256 strategyId, uint256 maxPosSize);
+    event StrategyAdded(uint256 strategyId, address vault, uint256 minPosSize, uint256 maxPosSize);
+    event StrategyPosSizeUpdated(uint256 strategyId, uint256 minPosSize, uint256 maxPosSize);
     event CollateralsMaxLTVSet(
         uint256 strategyId,
         address[] collaterals,
@@ -130,27 +131,33 @@ abstract contract BasicSpell is
     /**
      * @notice Add strategy to the spell
      * @param vault Address of vault for given strategy
+     * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function _addStrategy(address vault, uint256 maxPosSize) internal {
+    function _addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) internal {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
-        strategies.push(Strategy({vault: vault, maxPositionSize: maxPosSize}));
-        emit StrategyAdded(strategies.length - 1, vault, maxPosSize);
+        if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
+        strategies.push(Strategy({vault: vault, minPositionSize: minPosSize, maxPositionSize: maxPosSize}));
+        emit StrategyAdded(strategies.length - 1, vault, minPosSize, maxPosSize);
     }
 
     /**
-     * @notice Set maxPosSize of existing strategy
+     * @notice Set minPosZie, maxPosSize of existing strategy
      * @param strategyId Strategy ID
+     * @param minPosSize New minPosSize to set
      * @param maxPosSize New maxPosSize to set
      */
-    function setMaxPosSize(
+    function setPosSize(
         uint256 strategyId,
+        uint256 minPosSize,
         uint256 maxPosSize
     ) external existingStrategy(strategyId) onlyOwner {
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
+        if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
+        strategies[strategyId].minPositionSize = minPosSize;
         strategies[strategyId].maxPositionSize = maxPosSize;
-        emit StrategyMaxPosSizeUpdated(strategyId, maxPosSize);
+        emit StrategyPosSizeUpdated(strategyId, minPosSize, maxPosSize);
     }
 
     /**
@@ -195,9 +202,8 @@ abstract contract BasicSpell is
         ) revert Errors.EXCEED_MAX_LTV();
     }
 
-    function _validateMaxPosSize(uint256 strategyId) internal {
+    function _validatePosSize(uint256 strategyId) internal {
         Strategy memory strategy = strategies[strategyId];
-        uint positionId = bank.POSITION_ID();
         IBank.Position memory pos = bank.getCurrentPositionInfo();
 
         // Get prev position size
@@ -221,6 +227,8 @@ abstract contract BasicSpell is
 
         if (prevPosSize + addedPosSize > strategy.maxPositionSize)
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
+        if (prevPosSize + addedPosSize < strategy.minPositionSize)
+            revert Errors.EXCEED_MIN_POS_SIZE(strategyId);
     }
 
     /**

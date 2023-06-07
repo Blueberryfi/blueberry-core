@@ -153,6 +153,26 @@ describe('ICHI Angel Vaults Spell', () => {
         )
       ).to.be.revertedWith("EXCEED_MAX_LTV")
     })
+    it("should revert when exceeds min pos size", async () => {
+      // Max position is set as 2,000
+      await ichi.approve(bank.address, ethers.constants.MaxUint256);
+
+      // Call openPosition with 5 is fail because is below min position size
+      await expect(
+        bank.execute(
+          0,
+          spell.address,
+          iface.encodeFunctionData("openPosition", [{
+            strategyId: 0,
+            collToken: ICHI,
+            borrowToken: USDC,
+            collAmount: depositAmount.mul(40),
+            borrowAmount: utils.parseUnits('5', 6),
+            farmingPoolId: 0
+          }])
+        )
+      ).to.be.revertedWith("EXCEED_MIN_POS_SIZE")
+    })
     it("should revert when exceeds max pos size", async () => {
       // Max position is set as 2,000
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
@@ -814,7 +834,7 @@ describe('ICHI Angel Vaults Spell', () => {
 
     it("should revert when another strategyId provided", async () => {
       const nextPosId = await bank.nextPositionId();
-      await spell.addStrategy(alice.address, utils.parseUnits("2000", 18));
+      await spell.addStrategy(alice.address, utils.parseUnits("50", 18), utils.parseUnits("2000", 18));
       await expect(bank.execute(
         nextPosId.sub(1),
         spell.address,
@@ -907,6 +927,7 @@ describe('ICHI Angel Vaults Spell', () => {
 
   describe("Owner Functions", () => {
     let spell: IchiSpell;
+    const minPosSize = utils.parseEther("100");
     const maxPosSize = utils.parseEther("200000");
 
     beforeEach(async () => {
@@ -924,45 +945,51 @@ describe('ICHI Angel Vaults Spell', () => {
     describe("Add Strategy", () => {
       it("only owner should be able to add new strategies to the spell", async () => {
         await expect(
-          spell.connect(alice).addStrategy(ichiVault.address, maxPosSize)
+          spell.connect(alice).addStrategy(ichiVault.address, minPosSize, maxPosSize)
         ).to.be.revertedWith("Ownable: caller is not the owner")
       })
       it("should revert when vault address or maxPosSize is zero", async () => {
         await expect(
-          spell.addStrategy(ethers.constants.AddressZero, maxPosSize)
+          spell.addStrategy(ethers.constants.AddressZero, minPosSize, maxPosSize)
         ).to.be.revertedWith("ZERO_ADDRESS")
         await expect(
-          spell.addStrategy(ichiVault.address, 0)
+          spell.addStrategy(ichiVault.address, minPosSize, 0)
         ).to.be.revertedWith("ZERO_AMOUNT")
+        await expect(
+          spell.addStrategy(ichiVault.address, maxPosSize, maxPosSize)
+        ).to.be.revertedWith("INVALID_POS_SIZE")
       })
       it("owner should be able to add strategy", async () => {
         await expect(
-          spell.addStrategy(ichiVault.address, maxPosSize)
+          spell.addStrategy(ichiVault.address, minPosSize, maxPosSize)
         ).to.be.emit(spell, "StrategyAdded").withArgs(
-          0, ichiVault.address, maxPosSize
+          0, ichiVault.address, minPosSize, maxPosSize
         )
       })
       it("owner should be able to update max pos size", async () => {
-        await spell.addStrategy(ichiVault.address, maxPosSize);
+        await spell.addStrategy(ichiVault.address, minPosSize, maxPosSize);
         await expect(
-          spell.connect(alice).setMaxPosSize(0, maxPosSize)
+          spell.connect(alice).setPosSize(0, minPosSize, maxPosSize)
         ).to.be.revertedWith("Ownable: caller is not the owner")
         await expect(
-          spell.setMaxPosSize(10, maxPosSize)
+          spell.setPosSize(10, minPosSize, maxPosSize)
         ).to.be.revertedWith("STRATEGY_NOT_EXIST")
         await expect(
-          spell.setMaxPosSize(0, 0)
+          spell.setPosSize(0, minPosSize, 0)
         ).to.be.revertedWith("ZERO_AMOUNT");
+        await expect(
+          spell.setPosSize(0, maxPosSize, maxPosSize)
+        ).to.be.revertedWith("INVALID_POS_SIZE");
 
         await expect(
-          spell.setMaxPosSize(0, maxPosSize)
-        ).to.be.emit(spell, "StrategyMaxPosSizeUpdated");
+          spell.setPosSize(0, minPosSize, maxPosSize)
+        ).to.be.emit(spell, "StrategyPosSizeUpdated");
       })
     })
 
     describe("Add Collaterals", () => {
       beforeEach(async () => {
-        await spell.addStrategy(ichiVault.address, maxPosSize);
+        await spell.addStrategy(ichiVault.address, minPosSize, maxPosSize);
       })
       it("only owner should be able to add collaterals", async () => {
         await expect(
