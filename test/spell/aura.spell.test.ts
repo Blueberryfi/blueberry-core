@@ -12,6 +12,7 @@ import {
   ICvxPools,
   IRewarder,
   AuraSpell,
+  ProtocolConfig,
 } from "../../typechain-types";
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
@@ -22,11 +23,14 @@ import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { BigNumber, utils } from "ethers";
+import { getParaswaCalldata } from "../helpers/paraswap";
 
 chai.use(solidity);
 chai.use(near);
 chai.use(roughlyNear);
 
+const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
+const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
 const CCRV = ADDRESS.bCRV;
@@ -59,6 +63,7 @@ describe("Aura Spell", () => {
   let protocol: AuraProtocol;
   let auraBooster: ICvxPools;
   let auraRewarder: IRewarder;
+  let config: ProtocolConfig;
 
   before(async () => {
     [admin, alice, treasury] = await ethers.getSigners();
@@ -84,6 +89,7 @@ describe("Aura Spell", () => {
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
     curveOracle = protocol.curveOracle;
+    config = protocol.config;
   });
 
   describe("Constructor", () => {
@@ -97,6 +103,8 @@ describe("Aura Spell", () => {
           werc20.address,
           WETH,
           waura.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -105,6 +113,8 @@ describe("Aura Spell", () => {
           ethers.constants.AddressZero,
           WETH,
           waura.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -113,6 +123,8 @@ describe("Aura Spell", () => {
           werc20.address,
           ethers.constants.AddressZero,
           waura.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -121,6 +133,8 @@ describe("Aura Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
     });
@@ -130,7 +144,9 @@ describe("Aura Spell", () => {
           bank.address,
           werc20.address,
           WETH,
-          ethers.constants.AddressZero
+          ethers.constants.AddressZero,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY
         )
       ).to.be.revertedWith("Initializable: contract is already initialized");
     });
@@ -350,6 +366,30 @@ describe("Aura Spell", () => {
         position.collId,
         position.collateralSize
       );
+
+      const rewardFeeRatio = await config.rewardFee();
+
+      const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
+        reward.sub(reward.mul(rewardFeeRatio).div(10000))
+      );
+
+      const swapDatas = await Promise.all(
+        pendingRewardsInfo.tokens.map((token, idx) => {
+          if (expectedAmounts[idx].gt(0)) {
+            return getParaswaCalldata(
+              token,
+              USDC,
+              expectedAmounts[idx],
+              spell.address
+            );
+          } else {
+            return {
+              data: "0x00",
+            };
+          }
+        })
+      );
+
       console.log("Pending Rewards", pendingRewardsInfo);
 
       // Manually transfer CRV rewards to spell
@@ -374,13 +414,15 @@ describe("Aura Spell", () => {
             sellSlippage: 50,
             sqrtRatioLimit: 0,
           },
-          ADDRESS.SUSHI_ROUTER,
-          [
-            [BAL, WETH, USDC],
-            [AURA, WETH, USDC],
-            [ADDRESS.FRAX, ADDRESS.SUSHI, USDC],
-          ],
-          0,
+          expectedAmounts,
+          swapDatas.map((item) => item.data),
+          // ADDRESS.SUSHI_ROUTER,
+          // [
+          //   [BAL, WETH, USDC],
+          //   [AURA, WETH, USDC],
+          //   [ADDRESS.FRAX, ADDRESS.SUSHI, USDC],
+          // ],
+          // 0,
         ])
       );
       const afterUSDCBalance = await usdc.balanceOf(admin.address);

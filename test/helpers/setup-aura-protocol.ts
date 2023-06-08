@@ -21,6 +21,8 @@ import {
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 
+const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
+const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
 const CCRV = ADDRESS.bCRV;
@@ -220,6 +222,8 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
       werc20.address,
       WETH,
       waura.address,
+      AUGUSTUS_SWAPPER,
+      TOKEN_TRANSFER_PROXY,
     ])
   );
   await auraSpell.deployed();

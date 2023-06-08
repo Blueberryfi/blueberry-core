@@ -17,6 +17,7 @@ import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWAuraPools.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/uniswap/IUniswapV2Router02.sol";
+import "../libraries/Paraswap/PSwapLib.sol";
 
 /**
  * @title AuraSpell
@@ -34,11 +35,18 @@ contract AuraSpell is BasicSpell {
     /// @dev address of AURA token
     address public AURA;
 
+    /// @dev paraswap AugustusSwapper address
+    address public augustusSwapper;
+    /// @dev paraswap TokenTransferProxy address
+    address public tokenTransferProxy;
+
     function initialize(
         IBank bank_,
         address werc20_,
         address weth_,
-        address wAuraPools_
+        address wAuraPools_,
+        address augustusSwapper_,
+        address tokenTransferProxy_
     ) external initializer {
         __BasicSpell_init(bank_, werc20_, weth_);
         if (wAuraPools_ == address(0)) revert Errors.ZERO_ADDRESS();
@@ -46,6 +54,9 @@ contract AuraSpell is BasicSpell {
         wAuraPools = IWAuraPools(wAuraPools_);
         AURA = address(wAuraPools.AURA());
         IWAuraPools(wAuraPools_).setApprovalForAll(address(bank_), true);
+
+        augustusSwapper = augustusSwapper_;
+        tokenTransferProxy = tokenTransferProxy_;
     }
 
     /**
@@ -142,9 +153,8 @@ contract AuraSpell is BasicSpell {
 
     function closePositionFarm(
         ClosePosParam calldata param,
-        IUniswapV2Router02 swapRouter,
-        address[][] calldata swapPath,
-        uint256 minRewardOut
+        uint256[] calldata expectedRewards,
+        bytes[] calldata swapDatas
     )
         external
         existingStrategy(param.strategyId)
@@ -195,15 +205,22 @@ contract AuraSpell is BasicSpell {
 
         // 4. Swap rewards tokens to debt token
         for (uint256 i; i < rewardTokens.length; i++) {
-            uint256 rewards = _doCutRewardsFee(rewardTokens[i]);
-            _ensureApprove(rewardTokens[i], address(swapRouter), rewards);
-            swapRouter.swapExactTokensForTokens(
-                rewards,
-                minRewardOut,
-                swapPath[i],
-                address(this),
-                block.timestamp
-            );
+            address sellToken = rewardTokens[i];
+
+            _doCutRewardsFee(sellToken);
+            if (expectedRewards[i] == 0) continue;
+            if (
+                !PSwapLib.swap(
+                    augustusSwapper,
+                    tokenTransferProxy,
+                    sellToken,
+                    expectedRewards[i],
+                    swapDatas[i]
+                )
+            ) revert Errors.SWAP_FAILED(sellToken);
+
+            // Refund rest amount to owner
+            _doRefund(sellToken);
         }
 
         // 5. Withdraw isolated collateral from Bank
