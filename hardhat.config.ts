@@ -54,7 +54,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://mainnet.infura.io/v3/d0a028b0b6a246148000c255d2636f0c`,
+        url: `http://127.0.0.1:8545`,
         blockNumber: 17089048,
       },
     },
