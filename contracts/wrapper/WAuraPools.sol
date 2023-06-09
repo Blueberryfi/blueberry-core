@@ -52,8 +52,6 @@ contract WAuraPools is
     address[] public extraRewards;
     /// @dev The index of extra rewards
     mapping(address => uint256) public extraRewardsIdx;
-    /// @dev total staked lp
-    uint256 public totalStaked;
 
     function initialize(
         address aura_,
@@ -118,7 +116,7 @@ contract WAuraPools is
         return IBalancerPool(bpt).getPoolId();
     }
 
-    /// @notice Get pool infor from aura booster
+    /// @notice Get pool info from aura booster
     /// @param pid aura finance pool id
     function getPoolInfoFromPoolId(
         uint256 pid
@@ -137,13 +135,11 @@ contract WAuraPools is
         return auraPools.poolInfo(pid);
     }
 
-
     /// @notice Get pending reward amount
     /// @param stRewardPerShare reward per share
     /// @param rewarder Address of rewarder contract
     /// @param amount lp amount
     /// @param lpDecimals lp decimals
-    /// @dev AURA token is minted in Booster contract following the mint logic in the below
     function _getPendingReward(
         uint stRewardPerShare,
         address rewarder,
@@ -270,9 +266,6 @@ contract WAuraPools is
         _ensureApprove(lpToken, address(auraPools), amount);
         auraPools.deposit(pid, amount, true);
 
-        // Increase totalStaked value
-        totalStaked += amount;
-
         // BAL reward handle logic
         uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
             .rewardPerToken();
@@ -317,24 +310,10 @@ contract WAuraPools is
             pid
         );
 
-        IERC20Upgradeable BAL = IERC20Upgradeable(
-            0xba100000625a3754423978a60c9317c58a424e3D
-        );
-
-        uint256 auraRewards = AURA.balanceOf(address(this));
-        uint256 balRewards = BAL.balanceOf(address(this));
-
         // Claim Rewards
         IAuraRewarder(auraRewarder).withdraw(amount, true);
         // Withdraw LP
         auraPools.withdraw(pid, amount);
-
-        // Calculate Aura rewards
-        auraRewards = AURA.balanceOf(address(this)) - auraRewards;
-        balRewards = BAL.balanceOf(address(this)) - balRewards;
-
-        // Decrease totalStaked value
-        totalStaked -= amount;
 
         // Transfer LP Tokens
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
