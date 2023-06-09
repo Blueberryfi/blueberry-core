@@ -22,6 +22,7 @@ import "../interfaces/IWAuraPools.sol";
 import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/aura/IAuraRewarder.sol";
 import "../interfaces/aura/IAuraExtraRewarder.sol";
+import "../interfaces/aura/IAura.sol";
 
 /**
  * @title WAuraPools
@@ -44,17 +45,13 @@ contract WAuraPools is
     /// @dev Address to Aura Pools contract
     IAuraPools public auraPools;
     /// @dev Address to AURA token
-    IERC20Upgradeable public AURA;
-    /// @dev Mapping from gauge id to accAuraPerShare
-    mapping(uint256 => uint256) public auraPerShares;
+    IAura public AURA;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => uint256[]) public accExtPerShare;
     /// @dev Aura extra rewards addresses
     address[] public extraRewards;
     /// @dev The index of extra rewards
     mapping(address => uint256) public extraRewardsIdx;
-    /// @dev accumulated aura per share
-    uint256 public accAuraPerShare;
     /// @dev total staked lp
     uint256 public totalStaked;
 
@@ -64,7 +61,7 @@ contract WAuraPools is
     ) external initializer {
         __ReentrancyGuard_init();
         __ERC1155_init("WAuraPools");
-        AURA = IERC20Upgradeable(aura_);
+        AURA = IAura(aura_);
         auraPools = IAuraPools(auraPools_);
     }
 
@@ -140,6 +137,13 @@ contract WAuraPools is
         return auraPools.poolInfo(pid);
     }
 
+
+    /// @notice Get pending reward amount
+    /// @param stRewardPerShare reward per share
+    /// @param rewarder Address of rewarder contract
+    /// @param amount lp amount
+    /// @param lpDecimals lp decimals
+    /// @dev AURA token is minted in Booster contract following the mint logic in the below
     function _getPendingReward(
         uint stRewardPerShare,
         address rewarder,
@@ -151,6 +155,52 @@ contract WAuraPools is
             ? enRewardPerShare - stRewardPerShare
             : 0;
         rewards = (share * amount) / (10 ** lpDecimals);
+    }
+
+    /// @notice Get AURA pending reward
+    /// @param auraRewarder Address of Aura rewarder contract
+    /// @param balAmount Amount of BAL reward
+    /// @dev AURA token is minted in booster contract following the mint logic in the below
+    function _getAuraPendingReward(
+        address auraRewarder,
+        uint256 balAmount
+    ) internal view returns (uint256 mintAmount) {
+        // AURA mint request amount = amount * reward_multiplier / reward_multiplier_denominator
+        uint256 mintRequestAmount = (balAmount *
+            auraPools.getRewardMultipliers(auraRewarder)) /
+            auraPools.REWARD_MULTIPLIER_DENOMINATOR();
+
+        // AURA token mint logic
+        // e.g. emissionsMinted = 6e25 - 5e25 - 0 = 1e25;
+        uint256 totalSupply = AURA.totalSupply();
+        uint256 initAmount = AURA.INIT_MINT_AMOUNT();
+        uint256 minterMinted = 0;
+        uint256 reductionPerCliff = AURA.reductionPerCliff();
+        uint256 totalCliffs = AURA.totalCliffs();
+        uint256 emissionMaxSupply = AURA.EMISSIONS_MAX_SUPPLY();
+
+        uint256 emissionsMinted = totalSupply - initAmount - minterMinted;
+        // e.g. reductionPerCliff = 5e25 / 500 = 1e23
+        // e.g. cliff = 1e25 / 1e23 = 100
+        uint256 cliff = emissionsMinted / reductionPerCliff;
+
+        // e.g. 100 < 500
+        if (cliff < totalCliffs) {
+            // e.g. (new) reduction = (500 - 100) * 2.5 + 700 = 1700;
+            // e.g. (new) reduction = (500 - 250) * 2.5 + 700 = 1325;
+            // e.g. (new) reduction = (500 - 400) * 2.5 + 700 = 950;
+            uint256 reduction = ((totalCliffs - cliff) * 5) / 2 + 700;
+            // e.g. (new) amount = 1e19 * 1700 / 500 =  34e18;
+            // e.g. (new) amount = 1e19 * 1325 / 500 =  26.5e18;
+            // e.g. (new) amount = 1e19 * 950 / 500  =  19e17;
+            mintAmount = (mintRequestAmount * reduction) / totalCliffs;
+
+            // e.g. amtTillMax = 5e25 - 1e25 = 4e25
+            uint256 amtTillMax = emissionMaxSupply - emissionsMinted;
+            if (mintAmount > amtTillMax) {
+                mintAmount = amtTillMax;
+            }
+        }
     }
 
     /// @notice Return pending rewards from the farming pool
@@ -174,6 +224,7 @@ contract WAuraPools is
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
 
+        // BAL reward
         tokens[0] = IAuraRewarder(auraRewarder).rewardToken();
         rewards[0] = _getPendingReward(
             stAuraPerShare,
@@ -182,11 +233,11 @@ contract WAuraPools is
             lpDecimals
         );
 
+        // AURA reward
         tokens[1] = address(AURA);
-        rewards[1] =
-            (amount * (accAuraPerShare - auraPerShares[tokenId])) /
-            1e12;
+        rewards[1] = _getAuraPendingReward(auraRewarder, rewards[0]);
 
+        // Additional rewards
         for (uint i = 0; i < extraRewardsCount; i++) {
             address rewarder = extraRewards[i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][i];
@@ -222,10 +273,11 @@ contract WAuraPools is
         // Increase totalStaked value
         totalStaked += amount;
 
-        uint256 auraRewardPerToken = IAuraRewarder(auraRewarder).rewardPerToken();
-        id = encodeId(pid, auraRewardPerToken);
+        // BAL reward handle logic
+        uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
+            .rewardPerToken();
+        id = encodeId(pid, balRewardPerToken);
         _mint(msg.sender, id, amount, "");
-        auraPerShares[id] = accAuraPerShare;
 
         // Store extra rewards info
         uint extraRewardsCount = IAuraRewarder(auraRewarder)
@@ -265,7 +317,13 @@ contract WAuraPools is
             pid
         );
 
+        IERC20Upgradeable BAL = IERC20Upgradeable(
+            0xba100000625a3754423978a60c9317c58a424e3D
+        );
+
         uint256 auraRewards = AURA.balanceOf(address(this));
+        uint256 balRewards = BAL.balanceOf(address(this));
+
         // Claim Rewards
         IAuraRewarder(auraRewarder).withdraw(amount, true);
         // Withdraw LP
@@ -273,7 +331,7 @@ contract WAuraPools is
 
         // Calculate Aura rewards
         auraRewards = AURA.balanceOf(address(this)) - auraRewards;
-        accAuraPerShare += (auraRewards * 1e12) / totalStaked;
+        balRewards = BAL.balanceOf(address(this)) - balRewards;
 
         // Decrease totalStaked value
         totalStaked -= amount;
@@ -296,9 +354,6 @@ contract WAuraPools is
 
         // Transfer Reward Tokens
         (rewardTokens, rewards) = pendingRewards(id, amount);
-
-        // Update auraPerShare for tokenId
-        auraPerShares[id] = accAuraPerShare;
 
         // Withdraw manually
         if (hasDiffExtraRewards) {
@@ -323,6 +378,7 @@ contract WAuraPools is
         }
     }
 
+    /// @notice Get length of extra rewards
     function extraRewardsLength() external view returns (uint) {
         return extraRewards.length;
     }

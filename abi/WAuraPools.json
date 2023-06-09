@@ -176,22 +176,9 @@
     "name": "AURA",
     "outputs": [
       {
-        "internalType": "contract IERC20Upgradeable",
+        "internalType": "contract IAura",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "accAuraPerShare",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -211,25 +198,6 @@
       }
     ],
     "name": "accExtPerShare",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "auraPerShares",
     "outputs": [
       {
         "internalType": "uint256",

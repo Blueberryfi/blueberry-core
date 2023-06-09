@@ -283,11 +283,17 @@ describe("Aura Spell", () => {
     it("should be able to get multiple rewards", async () => {
       let positionId = await bank.nextPositionId();
       positionId = positionId.sub(1);
+      const position = await bank.positions(positionId);
 
       const beforeSenderBalBalance = await bal.balanceOf(admin.address);
       const beforeTreasuryAuraBalance = await aura.balanceOf(admin.address);
 
       await evm_mine_blocks(10);
+
+      const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
+      const balPendingReward = pendingRewardsInfo.rewards[0];
+      const auraPendingReward = pendingRewardsInfo.rewards[1];
+
       await bank.execute(
         positionId,
         spell.address,
@@ -305,8 +311,9 @@ describe("Aura Spell", () => {
 
       const afterSenderBalBalance = await bal.balanceOf(admin.address);
       const afterSenderAuraBalance = await aura.balanceOf(admin.address);
-      expect(afterSenderBalBalance).to.be.gte(beforeSenderBalBalance);
-      expect(afterSenderAuraBalance).to.be.gte(beforeTreasuryAuraBalance);
+
+      expect(afterSenderBalBalance.sub(beforeSenderBalBalance)).to.be.roughlyNear(balPendingReward);
+      expect(afterSenderAuraBalance.sub(beforeTreasuryAuraBalance)).to.be.roughlyNear(auraPendingReward);
     });
 
     it("should be able to get position risk ratio", async () => {

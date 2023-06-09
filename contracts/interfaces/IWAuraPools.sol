@@ -9,9 +9,10 @@ import "./IERC20Wrapper.sol";
 import "./balancer/IBalancerPool.sol";
 import "./balancer/IBalancerVault.sol";
 import "./aura/IAuraPools.sol";
+import "./aura/IAura.sol";
 
 interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
-    function AURA() external view returns (IERC20Upgradeable);
+    function AURA() external view returns (IAura);
 
     function encodeId(uint, uint) external pure returns (uint);
 

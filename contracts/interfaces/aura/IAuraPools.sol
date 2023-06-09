@@ -48,4 +48,8 @@ interface IAuraPools {
     function shutdownSystem() external;
 
     function setUsedAddress(address[] memory) external;
+
+    function REWARD_MULTIPLIER_DENOMINATOR() external view returns (uint256);
+
+    function getRewardMultipliers(address) external view returns (uint256);
 }
