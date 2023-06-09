@@ -7,9 +7,10 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "./IERC20Wrapper.sol";
 import "./convex/ICvxPools.sol";
+import "./convex/IConvex.sol";
 
 interface IWConvexPools is IERC1155Upgradeable, IERC20Wrapper {
-    function CVX() external view returns (IERC20Upgradeable);
+    function CVX() external view returns (IConvex);
 
     /// @dev Mint ERC1155 token for the given ERC20 token.
     function mint(uint gid, uint amount) external returns (uint id);

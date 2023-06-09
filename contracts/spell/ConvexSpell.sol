@@ -132,9 +132,14 @@ contract ConvexSpell is BasicSpell {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             if (pos.collToken != address(wConvexPools))
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            (address[] memory rewardTokens, ) = IERC20Wrapper(pos.collToken)
+                .pendingRewards(pos.collId, pos.collateralSize);
             bank.takeCollateral(pos.collateralSize);
             wConvexPools.burn(pos.collId, pos.collateralSize);
-            _doRefundRewards(CVX);
+            // distribute multiple rewards to users
+            for (uint256 i; i < rewardTokens.length; i++) {
+                _doRefundRewards(rewardTokens[i]);
+            }
         }
 
         // 7. Deposit on Convex Pool, Put wrapped collateral tokens on Blueberry Bank
@@ -172,6 +177,7 @@ contract ConvexSpell is BasicSpell {
         // 2. Swap rewards tokens to debt token
         for (uint256 i = 0; i < rewardTokens.length; i++) {
             uint256 rewards = _doCutRewardsFee(rewardTokens[i]);
+
             _ensureApprove(rewardTokens[i], address(swapRouter), rewards);
             swapRouter.swapExactTokensForTokens(
                 rewards,
