@@ -25,6 +25,13 @@ if (!process.env.ALCHEMY_API_KEY) {
   alchemyapi = process.env.ALCHEMY_API_KEY;
 }
 
+let infuraApiKey: string;
+if (!process.env.INFURA_API_KEY) {
+  throw new Error("Please set your INFURA_API_KEY in a .env file");
+} else {
+  infuraApiKey = process.env.INFURA_API_KEY;
+}
+
 const config: HardhatUserConfig = {
   typechain: {
     target: "ethers-v5",
@@ -54,7 +61,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
+        url: `https://mainnet.infura.io/v3/${infuraApiKey}`,
         blockNumber: 17089048,
       },
     },

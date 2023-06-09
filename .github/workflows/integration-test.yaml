@@ -10,6 +10,7 @@ env:
   DEPLOY_ACCOUNT_KEY: ${{ secrets.DEPLOY_ACCOUNT_KEY }}
   ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
   ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+  INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
