@@ -22,10 +22,10 @@ import "../interfaces/curve/ICurveAddressProvider.sol";
 
 /**
  * @author BlueberryProtocol
- * @title Curve Oracle
- * @notice Oracle contract which privides price feeds of Curve Lp tokens
+ * @title Curve Stable Oracle
+ * @notice Oracle contract which privides price feeds of Curve stable Lp tokens
  */
-contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
+contract CurveStableOracle is UsingBaseOracle, ICurveOracle, Ownable {
     ICurveAddressProvider public immutable addressProvider;
 
     event CurveLpRegistered(
