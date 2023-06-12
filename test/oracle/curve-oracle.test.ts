@@ -124,6 +124,7 @@ describe('Curve LP Oracle', () => {
       console.log("cvxCRV/CRV Factory Pool", await stableOracle.getPoolInfo(ADDRESS.CRV_CVXCRV_CRV))
       console.log("ALCX/FRAXBP Crypto Factory Pool", await volatileOracle.getPoolInfo(ADDRESS.CRV_ALCX_FRAXBP))
     })
+
     it("Crv Lp Price", async () => {
       let price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_3Crv)
       console.log("3CrvPool Price:", utils.formatUnits(price, 18))
