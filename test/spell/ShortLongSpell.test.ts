@@ -175,36 +175,43 @@ describe("ShortLongSpell", () => {
   describe("#addStrategy", () => {
     it("should revert when msg.sender is not owner", async () => {
       await expect(
-        spell.connect(alice).addStrategy(weth.address, 10)
+        spell.connect(alice).addStrategy(weth.address, 1, 10)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("should revert when vault is address(0)", async () => {
       await expect(
-        spell.connect(owner).addStrategy(constants.AddressZero, 10)
+        spell.connect(owner).addStrategy(constants.AddressZero, 1, 10)
       ).to.be.revertedWith("ZERO_ADDRESS");
     });
 
     it("should revert when maxPosSize is 0", async () => {
       await expect(
-        spell.connect(owner).addStrategy(weth.address, 0)
+        spell.connect(owner).addStrategy(weth.address, 0, 0)
       ).to.be.revertedWith("ZERO_AMOUNT");
     });
 
+    it("should revert when minPosSize >= maxPosSize is 0", async () => {
+      await expect(
+        spell.connect(owner).addStrategy(weth.address, 10, 10)
+      ).to.be.revertedWith("INVALID_POS_SIZE");
+    });
+
     it("should add new strategy", async () => {
-      await spell.connect(owner).addStrategy(weth.address, 10);
+      await spell.connect(owner).addStrategy(weth.address, 1, 10);
 
       const strategy = await spell.strategies(0);
       expect(strategy.vault).to.eq(weth.address);
+      expect(strategy.minPositionSize).to.eq(1);
       expect(strategy.maxPositionSize).to.eq(10);
     });
 
     it("should emit StrategyAdded event", async () => {
-      const tx = await spell.connect(owner).addStrategy(weth.address, 10);
+      const tx = await spell.connect(owner).addStrategy(weth.address, 1, 10);
 
       await expect(tx)
         .to.emit(spell, "StrategyAdded")
-        .withArgs(0, weth.address, 10);
+        .withArgs(0, weth.address, 1, 10);
     });
   });
 });

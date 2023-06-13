@@ -21,6 +21,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "INVALID_POS_SIZE",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -132,6 +137,12 @@
       {
         "indexed": false,
         "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
         "name": "maxPosSize",
         "type": "uint256"
       }
@@ -151,11 +162,17 @@
       {
         "indexed": false,
         "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
         "name": "maxPosSize",
         "type": "uint256"
       }
     ],
-    "name": "StrategyMaxPosSizeUpdated",
+    "name": "StrategyPosSizeUpdated",
     "type": "event"
   },
   {
@@ -379,11 +396,16 @@
       },
       {
         "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "maxPosSize",
         "type": "uint256"
       }
     ],
-    "name": "setMaxPosSize",
+    "name": "setPosSize",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -402,6 +424,11 @@
         "internalType": "address",
         "name": "vault",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minPositionSize",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",

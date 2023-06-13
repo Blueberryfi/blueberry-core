@@ -269,9 +269,14 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
   await convexSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
-  await convexSpell.addStrategy(ADDRESS.CRV_3Crv, utils.parseUnits("2000", 18));
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_3Crv,
+    utils.parseUnits("100", 18),
+    utils.parseUnits("2000", 18)
+  );
   await convexSpell.addStrategy(
     ADDRESS.CRV_FRAX3Crv,
+    utils.parseUnits("100", 18),
     utils.parseUnits("2000", 18)
   );
   await convexSpell.setCollateralsMaxLTVs(

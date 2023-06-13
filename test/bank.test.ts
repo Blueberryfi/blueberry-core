@@ -128,8 +128,8 @@ describe('Bank', () => {
   })
 
   describe("Execution", () => {
-    const depositAmount = utils.parseUnits('1', 18); // worth of $400
-    const borrowAmount = utils.parseUnits('3', 6);
+    const depositAmount = utils.parseUnits('10', 18); // worth of $400
+    const borrowAmount = utils.parseUnits('30', 6);
     const iface = new ethers.utils.Interface(SpellABI);
     before(async () => {
       await usdc.approve(bank.address, ethers.constants.MaxUint256);

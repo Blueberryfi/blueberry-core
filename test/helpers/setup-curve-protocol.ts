@@ -243,8 +243,8 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   ])
   await curveSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
-  await curveSpell.addStrategy(ADDRESS.CRV_3Crv, utils.parseUnits("2000", 18));
-  await curveSpell.addStrategy(ADDRESS.CRV_CRVETH, utils.parseUnits("2000", 18));
+  await curveSpell.addStrategy(ADDRESS.CRV_3Crv, utils.parseUnits("100", 18), utils.parseUnits("2000", 18));
+  await curveSpell.addStrategy(ADDRESS.CRV_CRVETH, utils.parseUnits("100", 18), utils.parseUnits("2000", 18));
   await curveSpell.setCollateralsMaxLTVs(
     0,
     [USDC, CRV, DAI],

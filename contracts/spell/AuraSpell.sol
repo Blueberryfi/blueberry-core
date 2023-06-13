@@ -62,10 +62,11 @@ contract AuraSpell is BasicSpell {
     /**
      * @notice Add strategy to the spell
      * @param bpt Address of Balaner Pool Token
+     * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address bpt, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(bpt, maxPosSize);
+    function addStrategy(address bpt, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(bpt, minPosSize, maxPosSize);
     }
 
     /**
@@ -123,8 +124,8 @@ contract AuraSpell is BasicSpell {
         // 4. Validate MAX LTV
         _validateMaxLTV(param.strategyId);
 
-        // 5. Validate Max Pos Size
-        _validateMaxPosSize(param.strategyId);
+        // 5. Validate Pos Size
+        _validatePosSize(param.strategyId);
 
         // 6. Take out existing collateral and burn
         IBank.Position memory pos = bank.getCurrentPositionInfo();

@@ -261,9 +261,10 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   );
   await auraSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
-  await auraSpell.addStrategy(ADDRESS.BAL_UDU, utils.parseUnits("2000", 18));
+  await auraSpell.addStrategy(ADDRESS.BAL_UDU, utils.parseUnits("100", 18), utils.parseUnits("2000", 18));
   await auraSpell.addStrategy(
     ADDRESS.BAL_AURA_STABLE,
+    utils.parseUnits("100", 18),
     utils.parseUnits("2000", 18)
   );
   await auraSpell.setCollateralsMaxLTVs(

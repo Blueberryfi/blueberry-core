@@ -68,10 +68,11 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     /**
      * @notice Add strategy to the spell
      * @param vault Address of vault for given strategy
+     * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address vault, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(vault, maxPosSize);
+    function addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(vault, minPosSize, maxPosSize);
     }
 
     /**
@@ -112,7 +113,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         _validateMaxLTV(param.strategyId);
 
         // 5. Validate Max Pos Size
-        _validateMaxPosSize(param.strategyId);
+        _validatePosSize(param.strategyId);
     }
 
     /**

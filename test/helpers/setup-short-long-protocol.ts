@@ -304,6 +304,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   await shortLongSpell.addStrategy(
     daiSoftVault.address,
+    utils.parseUnits("10", 18),
     utils.parseUnits("2000", 18)
   );
   await shortLongSpell.setCollateralsMaxLTVs(

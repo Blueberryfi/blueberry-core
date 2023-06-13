@@ -54,10 +54,11 @@ contract CurveSpell is BasicSpell {
     /**
      * @notice Add strategy to the spell
      * @param crvLp Address of crv lp token for given strategy
+     * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address crvLp, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(crvLp, maxPosSize);
+    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
     /**
@@ -128,7 +129,7 @@ contract CurveSpell is BasicSpell {
         _validateMaxLTV(param.strategyId);
 
         // 5. Validate Max Pos Size
-        _validateMaxPosSize(param.strategyId);
+        _validatePosSize(param.strategyId);
 
         // 6. Take out collateral and burn
         IBank.Position memory pos = bank.getCurrentPositionInfo();

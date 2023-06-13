@@ -107,7 +107,7 @@ contract ShortLongSpell is BasicSpell {
         _validateMaxLTV(param.strategyId);
 
         // 6. Validate Max Pos Size
-        _validateMaxPosSize(param.strategyId);
+        _validatePosSize(param.strategyId);
     }
 
     /**
@@ -237,12 +237,14 @@ contract ShortLongSpell is BasicSpell {
     /**
      * @notice Add strategy to the spell
      * @param swapToken Address of token for given strategy
+     * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
     function addStrategy(
         address swapToken,
+        uint256 minPosSize,
         uint256 maxPosSize
     ) external onlyOwner {
-        _addStrategy(swapToken, maxPosSize);
+        _addStrategy(swapToken, minPosSize, maxPosSize);
     }
 }

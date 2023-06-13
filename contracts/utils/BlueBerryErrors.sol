@@ -53,8 +53,10 @@ error LP_NOT_WHITELISTED(address lp);
 error COLLATERAL_NOT_EXIST(uint256 strategyId, address colToken);
 error STRATEGY_NOT_EXIST(address spell, uint256 strategyId);
 error EXCEED_MAX_POS_SIZE(uint256 strategyId);
+error EXCEED_MIN_POS_SIZE(uint256 strategyId);
 error EXCEED_MAX_LTV();
 error INCORRECT_STRATEGY_ID(uint256 strategyId);
+error INVALID_POS_SIZE();
 
 // Ichi Spell
 error INCORRECT_LP(address lpToken);
