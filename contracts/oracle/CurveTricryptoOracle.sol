@@ -66,7 +66,7 @@ contract CurveTricryptoOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
-            _checkReentrant(pool, n);
+            _checkReentrant(pool);
             virtualPrice = ICurveRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -83,7 +83,7 @@ contract CurveTricryptoOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
-            _checkReentrant(pool, n);
+            _checkReentrant(pool);
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -100,7 +100,7 @@ contract CurveTricryptoOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
-            _checkReentrant(pool, n);
+            _checkReentrant(pool);
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -109,7 +109,7 @@ contract CurveTricryptoOracle is UsingBaseOracle, ICurveOracle, Ownable {
         revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
 
-    function _checkReentrant(address _pool, uint256 _numTokens) internal {
+    function _checkReentrant(address _pool) internal {
         ICurvePool pool = ICurvePool(_pool);
         pool.claim_admin_fees();
     }
@@ -166,6 +166,4 @@ contract CurveTricryptoOracle is UsingBaseOracle, ICurveOracle, Ownable {
         }
         revert("Did Not Converge");
     }
-
-    receive() external payable {}
 }
