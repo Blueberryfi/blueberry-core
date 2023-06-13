@@ -16,7 +16,9 @@ import {
   FeeManager,
   UniV3WrappedLib,
   WCurveGauge,
-  CurveOracle,
+  CurveStableOracle,
+  CurveVolatileOracle,
+  CurveTricryptoOracle,
   CurveSpell
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
@@ -35,7 +37,9 @@ export interface CrvProtocol {
   werc20: WERC20,
   wgauge: WCurveGauge,
   mockOracle: MockOracle,
-  curveOracle: CurveOracle,
+  stableOracle: CurveStableOracle,
+  volatileOracle: CurveVolatileOracle,
+  tricryptoOracle: CurveTricryptoOracle,
   oracle: CoreOracle,
   config: ProtocolConfig,
   bank: BlueBerryBank,
@@ -60,7 +64,9 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   let werc20: WERC20;
   let wgauge: WCurveGauge;
   let mockOracle: MockOracle;
-  let curveOracle: CurveOracle;
+  let stableOracle: CurveStableOracle;
+  let volatileOracle: CurveVolatileOracle;
+  let tricryptoOracle: CurveTricryptoOracle;
   let oracle: CoreOracle;
   let curveSpell: CurveSpell;
 
@@ -143,9 +149,38 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
     ],
   )
 
-  const CurveOracle = await ethers.getContractFactory("CurveOracle")
-  curveOracle = <CurveOracle>await CurveOracle.deploy(mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER);
-  await curveOracle.deployed();
+  const CurveStableOracleFactory = await ethers.getContractFactory(
+    CONTRACT_NAMES.CurveStableOracle
+  );
+  stableOracle = <CurveStableOracle>(
+    await CurveStableOracleFactory.deploy(
+      mockOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    )
+  );
+  await stableOracle.deployed();
+
+  const CurveVolatileOracleFactory = await ethers.getContractFactory(
+    CONTRACT_NAMES.CurveVolatileOracle
+  );
+  volatileOracle = <CurveVolatileOracle>(
+    await CurveVolatileOracleFactory.deploy(
+      mockOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    )
+  );
+  await volatileOracle.deployed();
+
+  const CurveTricryptoOracleFactory = await ethers.getContractFactory(
+    CONTRACT_NAMES.CurveTricryptoOracle
+  );
+  tricryptoOracle = <CurveTricryptoOracle>(
+    await CurveTricryptoOracleFactory.deploy(
+      mockOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    )
+  );
+  await tricryptoOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
@@ -166,7 +201,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
-      curveOracle.address
+      stableOracle.address
     ]
   )
 
@@ -204,7 +239,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
     werc20.address,
     WETH,
     wgauge.address,
-    curveOracle.address
+    stableOracle.address
   ])
   await curveSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
@@ -290,7 +325,9 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
     werc20,
     wgauge,
     mockOracle,
-    curveOracle,
+    stableOracle,
+    volatileOracle,
+    tricryptoOracle,
     oracle,
     config,
     feeManager,

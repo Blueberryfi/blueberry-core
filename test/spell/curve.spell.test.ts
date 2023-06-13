@@ -7,7 +7,9 @@ import {
   WCurveGauge,
   ERC20,
   CurveSpell,
-  CurveOracle
+  CurveStableOracle,
+  CurveVolatileOracle,
+  CurveTricryptoOracle,
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
@@ -45,7 +47,9 @@ describe("Curve Spell", () => {
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: CurveSpell;
-  let curveOracle: CurveOracle;
+  let stableOracle: CurveStableOracle;
+  let volatileOracle: CurveVolatileOracle;
+  let tricryptoOracle: CurveTricryptoOracle;
   let wgauge: WCurveGauge;
   let bank: BlueBerryBank;
   let protocol: CrvProtocol;
@@ -65,7 +69,9 @@ describe("Curve Spell", () => {
     wgauge = protocol.wgauge;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
-    curveOracle = protocol.curveOracle;
+    stableOracle = protocol.stableOracle;
+    volatileOracle = protocol.volatileOracle;
+    tricryptoOracle = protocol.tricryptoOracle;
   })
 
   describe("Constructor", () => {
@@ -77,7 +83,7 @@ describe("Curve Spell", () => {
           werc20.address,
           WETH,
           wgauge.address,
-          curveOracle.address
+          stableOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -86,7 +92,7 @@ describe("Curve Spell", () => {
           ethers.constants.AddressZero,
           WETH,
           wgauge.address,
-          curveOracle.address
+          stableOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -95,7 +101,7 @@ describe("Curve Spell", () => {
           werc20.address,
           ethers.constants.AddressZero,
           wgauge.address,
-          curveOracle.address
+          stableOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -104,7 +110,7 @@ describe("Curve Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          curveOracle.address
+          stableOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -124,7 +130,7 @@ describe("Curve Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          curveOracle.address
+          stableOracle.address
         )
       ).to.be.revertedWith("Initializable: contract is already initialized")
     })

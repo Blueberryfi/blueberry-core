@@ -15,7 +15,9 @@ import {
   HardVault,
   FeeManager,
   UniV3WrappedLib,
-  CurveOracle,
+  CurveStableOracle,
+  CurveVolatileOracle,
+  CurveTricryptoOracle,
   WAuraPools,
   AuraSpell,
 } from "../../typechain-types";
@@ -40,7 +42,9 @@ export interface AuraProtocol {
   werc20: WERC20;
   waura: WAuraPools;
   mockOracle: MockOracle;
-  curveOracle: CurveOracle;
+  stableOracle: CurveStableOracle;
+  volatileOracle: CurveVolatileOracle;
+  tricryptoOracle: CurveTricryptoOracle;
   oracle: CoreOracle;
   config: ProtocolConfig;
   bank: BlueBerryBank;
@@ -65,7 +69,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   let werc20: WERC20;
   let waura: WAuraPools;
   let mockOracle: MockOracle;
-  let curveOracle: CurveOracle;
+  let stableOracle: CurveStableOracle;
+  let volatileOracle: CurveVolatileOracle;
+  let tricryptoOracle: CurveTricryptoOracle;
   let oracle: CoreOracle;
   let auraSpell: AuraSpell;
 
@@ -156,11 +162,38 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     ]
   );
 
-  const CurveOracle = await ethers.getContractFactory("CurveOracle");
-  curveOracle = <CurveOracle>(
-    await CurveOracle.deploy(mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+  const CurveStableOracleFactory = await ethers.getContractFactory(
+    CONTRACT_NAMES.CurveStableOracle
   );
-  await curveOracle.deployed();
+  stableOracle = <CurveStableOracle>(
+    await CurveStableOracleFactory.deploy(
+      mockOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    )
+  );
+  await stableOracle.deployed();
+
+  const CurveVolatileOracleFactory = await ethers.getContractFactory(
+    CONTRACT_NAMES.CurveVolatileOracle
+  );
+  volatileOracle = <CurveVolatileOracle>(
+    await CurveVolatileOracleFactory.deploy(
+      mockOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    )
+  );
+  await volatileOracle.deployed();
+
+  const CurveTricryptoOracleFactory = await ethers.getContractFactory(
+    CONTRACT_NAMES.CurveTricryptoOracle
+  );
+  tricryptoOracle = <CurveTricryptoOracle>(
+    await CurveTricryptoOracleFactory.deploy(
+      mockOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    )
+  );
+  await tricryptoOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
@@ -337,7 +370,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     werc20,
     waura,
     mockOracle,
-    curveOracle,
+    stableOracle,
+    volatileOracle,
+    tricryptoOracle,
     oracle,
     config,
     feeManager,

@@ -7,7 +7,9 @@ import {
   WCurveGauge,
   ERC20,
   CurveSpell,
-  CurveOracle,
+  CurveStableOracle,
+  CurveVolatileOracle,
+  CurveTricryptoOracle,
   WAuraPools,
   ICvxPools,
   IRewarder,
@@ -57,7 +59,9 @@ describe("Aura Spell", () => {
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: AuraSpell;
-  let curveOracle: CurveOracle;
+  let stableOracle: CurveStableOracle;
+  let volatileOracle: CurveVolatileOracle;
+  let tricryptoOracle: CurveTricryptoOracle;
   let waura: WAuraPools;
   let bank: BlueBerryBank;
   let protocol: AuraProtocol;
@@ -88,7 +92,9 @@ describe("Aura Spell", () => {
     waura = protocol.waura;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
-    curveOracle = protocol.curveOracle;
+    stableOracle = protocol.stableOracle;
+    volatileOracle = protocol.volatileOracle;
+    tricryptoOracle = protocol.tricryptoOracle;
     config = protocol.config;
   });
 

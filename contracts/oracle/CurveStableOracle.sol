@@ -19,13 +19,14 @@ import "../interfaces/ICurveOracle.sol";
 import "../interfaces/curve/ICurveRegistry.sol";
 import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
 import "../interfaces/curve/ICurveAddressProvider.sol";
+import "../interfaces/curve/ICurvePool.sol";
 
 /**
  * @author BlueberryProtocol
- * @title Curve Oracle
- * @notice Oracle contract which privides price feeds of Curve Lp tokens
+ * @title Curve Stable Oracle
+ * @notice Oracle contract which privides price feeds of Curve stable Lp tokens
  */
-contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
+contract CurveStableOracle is UsingBaseOracle, ICurveOracle, Ownable {
     ICurveAddressProvider public immutable addressProvider;
 
     event CurveLpRegistered(
@@ -52,7 +53,6 @@ contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
         address crvLp
     )
         internal
-        view
         returns (address pool, address[] memory ulTokens, uint256 virtualPrice)
     {
         // 1. Try from main registry
@@ -65,6 +65,7 @@ contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
+            _checkReentrant(pool, n);
             virtualPrice = ICurveRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -81,6 +82,7 @@ contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
+            _checkReentrant(pool, n);
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -97,6 +99,7 @@ contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
+            _checkReentrant(pool, n);
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -105,11 +108,24 @@ contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
         revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
 
+    function _checkReentrant(address _pool, uint256 _numTokens) internal {
+        ICurvePool pool = ICurvePool(_pool);
+        if (_numTokens == 2) {
+            uint256[2] memory amounts;
+            pool.remove_liquidity(0, amounts);
+        } else if (_numTokens == 3) {
+            uint256[3] memory amounts;
+            pool.remove_liquidity(0, amounts);
+        } else if (_numTokens == 4) {
+            uint256[4] memory amounts;
+            pool.remove_liquidity(0, amounts);
+        }
+    }
+
     function getPoolInfo(
         address crvLp
     )
         external
-        view
         returns (address pool, address[] memory coins, uint256 virtualPrice)
     {
         return _getPoolInfo(crvLp);
@@ -132,4 +148,6 @@ contract CurveOracle is UsingBaseOracle, ICurveOracle, Ownable {
         // Use min underlying token prices
         return (minPrice * virtualPrice) / 1e18;
     }
+
+    receive() external payable {}
 }

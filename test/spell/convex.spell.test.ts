@@ -7,7 +7,9 @@ import {
   WCurveGauge,
   ERC20,
   CurveSpell,
-  CurveOracle,
+  CurveStableOracle,
+  CurveVolatileOracle,
+  CurveTricryptoOracle,
   ConvexSpell,
   WConvexPools,
   ICvxPools,
@@ -51,7 +53,9 @@ describe("Convex Spell", () => {
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: ConvexSpell;
-  let curveOracle: CurveOracle;
+  let stableOracle: CurveStableOracle;
+  let volatileOracle: CurveVolatileOracle;
+  let tricryptoOracle: CurveTricryptoOracle;
   let wconvex: WConvexPools;
   let bank: BlueBerryBank;
   let protocol: CvxProtocol;
@@ -76,7 +80,9 @@ describe("Convex Spell", () => {
     wconvex = protocol.wconvex;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
-    curveOracle = protocol.curveOracle;
+    stableOracle = protocol.stableOracle;
+    volatileOracle = protocol.volatileOracle;
+    tricryptoOracle = protocol.tricryptoOracle;
   })
 
   describe("Constructor", () => {
@@ -88,7 +94,7 @@ describe("Convex Spell", () => {
           werc20.address,
           WETH,
           wconvex.address,
-          curveOracle.address
+          stableOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -97,7 +103,7 @@ describe("Convex Spell", () => {
           ethers.constants.AddressZero,
           WETH,
           wconvex.address,
-          curveOracle.address
+          stableOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -106,7 +112,7 @@ describe("Convex Spell", () => {
           werc20.address,
           ethers.constants.AddressZero,
           wconvex.address,
-          curveOracle.address
+          stableOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -115,7 +121,7 @@ describe("Convex Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          curveOracle.address
+          stableOracle.address
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -135,7 +141,7 @@ describe("Convex Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          curveOracle.address
+          stableOracle.address
         )
       ).to.be.revertedWith("Initializable: contract is already initialized")
     })
