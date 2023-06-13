@@ -30,4 +30,8 @@ interface ICurvePool {
     function token() external view returns (address); // v2
 
     function balances(uint256 i) external view returns (uint256);
+
+    function withdraw_admin_fees() external;
+
+    function claim_admin_fees() external;
 }

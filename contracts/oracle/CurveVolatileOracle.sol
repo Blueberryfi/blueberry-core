@@ -54,7 +54,6 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
         address crvLp
     )
         internal
-        view
         returns (address pool, address[] memory ulTokens, uint256 virtualPrice)
     {
         // 1. Try from main registry
@@ -67,6 +66,7 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
+            _checkReentrant(pool);
             virtualPrice = ICurveRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -83,6 +83,7 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
+            _checkReentrant(pool);
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -99,6 +100,7 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
+            _checkReentrant(pool);
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -107,11 +109,15 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
         revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
 
+    function _checkReentrant(address _pool) internal {
+        ICurvePool pool = ICurvePool(_pool);
+        pool.claim_admin_fees();
+    }
+
     function getPoolInfo(
         address crvLp
     )
         external
-        view
         returns (address pool, address[] memory coins, uint256 virtualPrice)
     {
         return _getPoolInfo(crvLp);
@@ -122,24 +128,9 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
      * @param crvLp The ERC-20 Curve LP token to check the value.
      */
     function getPrice(address crvLp) external override returns (uint256) {
-        (
-            address _pool,
-            address[] memory tokens,
-            uint256 virtualPrice
-        ) = _getPoolInfo(crvLp);
+        (address _pool, address[] memory tokens, ) = _getPoolInfo(crvLp);
 
         if (tokens.length != 2) {
-            if (tokens.length == 3) {
-                // tokens[2] is WETH
-                uint256 ethPrice = base.getPrice(tokens[2]);
-                return
-                    (lpPrice(
-                        virtualPrice,
-                        base.getPrice(tokens[1]),
-                        ethPrice,
-                        base.getPrice(tokens[0])
-                    ) * 1e18) / ethPrice;
-            }
             revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
         }
 
@@ -183,4 +174,6 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
         }
         revert("Did Not Converge");
     }
+
+    receive() external payable {}
 }

@@ -74,6 +74,13 @@
   },
   {
     "inputs": [],
+    "name": "claim_admin_fees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "get_virtual_price",
     "outputs": [
       {
@@ -240,6 +247,13 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdraw_admin_fees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

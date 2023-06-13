@@ -7,6 +7,7 @@ import {
   CoreOracle,
   CurveStableOracle,
   CurveVolatileOracle,
+  CurveTricryptoOracle,
 } from '../../typechain-types';
 import { roughlyNear } from '../assertions/roughlyNear'
 import { solidity } from 'ethereum-waffle'
@@ -19,6 +20,7 @@ const OneDay = 86400;
 describe('Curve LP Oracle', () => {
   let stableOracle: CurveStableOracle;
   let volatileOracle: CurveVolatileOracle;
+  let tricryptoOracle: CurveTricryptoOracle;
   let coreOracle: CoreOracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
@@ -72,6 +74,13 @@ describe('Curve LP Oracle', () => {
     );
     await volatileOracle.deployed();
 
+    const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
+    tricryptoOracle = <CurveTricryptoOracle>await CurveTricryptoOracleFactory.deploy(
+      coreOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    );
+    await tricryptoOracle.deployed();
+
     await coreOracle.setRoutes(
       [
         ADDRESS.USDC,
@@ -111,25 +120,31 @@ describe('Curve LP Oracle', () => {
       ADDRESS.CRV_ADDRESS_PROVIDER
     );
     await volatileOracle.deployed();
+    const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
+    tricryptoOracle = <CurveTricryptoOracle>await CurveTricryptoOracleFactory.deploy(
+      chainlinkAdapterOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    );
+    await tricryptoOracle.deployed();
   })
 
   describe("Price Feed", () => {
     it("Getting PoolInfo", async () => {
-      console.log("3CrvPool", await stableOracle.getPoolInfo(ADDRESS.CRV_3Crv))
-      console.log("TriCrypto2 Pool", await volatileOracle.getPoolInfo(ADDRESS.CRV_TriCrypto))
-      console.log("FRAX/USDC USD Pool", await stableOracle.getPoolInfo(ADDRESS.CRV_FRAXUSDC))
-      console.log("frxETH/ETH ETH Pool", await stableOracle.getPoolInfo(ADDRESS.CRV_FRXETH))
-      console.log("CRV/ETH Crypto Pool", await volatileOracle.getPoolInfo(ADDRESS.CRV_CRVETH))
-      console.log("CVX/ETH Crypto Pool", await volatileOracle.getPoolInfo(ADDRESS.CRV_CVXETH))
-      console.log("cvxCRV/CRV Factory Pool", await stableOracle.getPoolInfo(ADDRESS.CRV_CVXCRV_CRV))
-      console.log("ALCX/FRAXBP Crypto Factory Pool", await volatileOracle.getPoolInfo(ADDRESS.CRV_ALCX_FRAXBP))
+      console.log("3CrvPool", await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_3Crv))
+      console.log("TriCrypto2 Pool", await tricryptoOracle.callStatic.getPoolInfo(ADDRESS.CRV_TriCrypto))
+      console.log("FRAX/USDC USD Pool", await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRAXUSDC))
+      console.log("frxETH/ETH ETH Pool", await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRXETH))
+      console.log("CRV/ETH Crypto Pool", await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CRVETH))
+      console.log("CVX/ETH Crypto Pool", await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXETH))
+      console.log("cvxCRV/CRV Factory Pool", await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXCRV_CRV))
+      console.log("ALCX/FRAXBP Crypto Factory Pool", await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_ALCX_FRAXBP))
     })
 
     it("Crv Lp Price", async () => {
       let price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_3Crv)
       console.log("3CrvPool Price:", utils.formatUnits(price, 18))
 
-      price = await volatileOracle.callStatic.getPrice(ADDRESS.CRV_TriCrypto)
+      price = await tricryptoOracle.callStatic.getPrice(ADDRESS.CRV_TriCrypto)
       console.log("TriCrypto Price:", utils.formatUnits(price, 18))
 
       price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_FRAXUSDC)

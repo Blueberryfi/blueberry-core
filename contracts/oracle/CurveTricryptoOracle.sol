@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "./UsingBaseOracle.sol";
+import "../libraries/BBMath.sol";
 import "../interfaces/ICurveOracle.sol";
 import "../interfaces/curve/ICurveRegistry.sol";
 import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
@@ -23,10 +24,10 @@ import "../interfaces/curve/ICurvePool.sol";
 
 /**
  * @author BlueberryProtocol
- * @title Curve Stable Oracle
- * @notice Oracle contract which privides price feeds of Curve stable Lp tokens
+ * @title Curve Volatile Oracle
+ * @notice Oracle contract which privides price feeds of Curve volatile pool LP tokens
  */
-contract CurveStableOracle is UsingBaseOracle, ICurveOracle, Ownable {
+contract CurveTricryptoOracle is UsingBaseOracle, ICurveOracle, Ownable {
     ICurveAddressProvider public immutable addressProvider;
 
     event CurveLpRegistered(
@@ -110,16 +111,7 @@ contract CurveStableOracle is UsingBaseOracle, ICurveOracle, Ownable {
 
     function _checkReentrant(address _pool, uint256 _numTokens) internal {
         ICurvePool pool = ICurvePool(_pool);
-        if (_numTokens == 2) {
-            uint256[2] memory amounts;
-            pool.remove_liquidity(0, amounts);
-        } else if (_numTokens == 3) {
-            uint256[3] memory amounts;
-            pool.remove_liquidity(0, amounts);
-        } else if (_numTokens == 4) {
-            uint256[4] memory amounts;
-            pool.remove_liquidity(0, amounts);
-        }
+        pool.claim_admin_fees();
     }
 
     function getPoolInfo(
@@ -138,15 +130,41 @@ contract CurveStableOracle is UsingBaseOracle, ICurveOracle, Ownable {
     function getPrice(address crvLp) external override returns (uint256) {
         (, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
 
-        uint256 minPrice = type(uint256).max;
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            uint256 tokenPrice = base.getPrice(tokens[idx]);
-            if (tokenPrice < minPrice) minPrice = tokenPrice;
+        if (tokens.length == 3) {
+            // tokens[2] is WETH
+            uint256 ethPrice = base.getPrice(tokens[2]);
+            return
+                (lpPrice(
+                    virtualPrice,
+                    base.getPrice(tokens[1]),
+                    ethPrice,
+                    base.getPrice(tokens[0])
+                ) * 1e18) / ethPrice;
         }
-        if (minPrice == type(uint256).max)
-            revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
-        // Use min underlying token prices
-        return (minPrice * virtualPrice) / 1e18;
+        revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
+    }
+
+    function lpPrice(
+        uint256 virtualPrice,
+        uint256 p1,
+        uint256 p2,
+        uint256 p3
+    ) internal pure returns (uint256) {
+        return (3 * virtualPrice * cubicRoot(((p1 * p2) / 1e18) * p3)) / 1e18;
+    }
+
+    function cubicRoot(uint256 x) internal pure returns (uint256) {
+        uint256 D = x / 1e18;
+        for (uint256 i; i < 255; ) {
+            uint256 D_prev = D;
+            D = (D * (2e18 + ((((x / D) * 1e18) / D) * 1e18) / D)) / (3e18);
+            uint256 diff = (D > D_prev) ? D - D_prev : D_prev - D;
+            if (diff < 2 || diff * 1e18 < D) return D;
+            unchecked {
+                ++i;
+            }
+        }
+        revert("Did Not Converge");
     }
 
     receive() external payable {}

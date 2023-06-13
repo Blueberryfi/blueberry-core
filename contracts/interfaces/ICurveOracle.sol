@@ -9,6 +9,5 @@ interface ICurveOracle is IBaseOracle {
         address crvLp
     )
         external
-        view
         returns (address pool, address[] memory coins, uint256 virtualPrice);
 }

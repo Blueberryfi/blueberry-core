@@ -33,6 +33,7 @@ export enum CONTRACT_NAMES {
   ERC20KP3ROracle = "ERC20KP3ROracle",
   CurveStableOracle = "CurveStableOracle",
   CurveVolatileOracle = "CurveVolatileOracle",
+  CurveTricryptoOracle = "CurveTricryptoOracle",
   UniswapV3AdapterOracle = "UniswapV3AdapterOracle",
   AggregatorOracle = "AggregatorOracle",
   IchiVaultOracle = "IchiVaultOracle",
