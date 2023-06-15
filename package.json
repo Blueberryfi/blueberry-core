@@ -15,7 +15,7 @@
     "prettier": "npx prettier --write contracts"
   },
   "dependencies": {
-    "@chainlink/contracts": "^0.4.1",
+    "@chainlink/contracts": "^0.6.1",
     "@openzeppelin/contracts": "^4.6.0",
     "@openzeppelin/contracts-upgradeable": "^4.7.3",
     "@openzeppelin/hardhat-upgrades": "^1.19.1",

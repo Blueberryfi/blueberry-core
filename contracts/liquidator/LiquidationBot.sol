@@ -3,6 +3,7 @@ pragma solidity 0.8.10;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
 
 import "@aave/core-v3/contracts/interfaces/IPool.sol";
 import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
@@ -16,7 +17,11 @@ import "../interfaces/ichi/IIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 import "../utils/ERC1155NaiveReceiver.sol";
 
-contract Liquidator is OwnableUpgradeable, ERC1155NaiveReceiver {
+contract Liquidator is
+    OwnableUpgradeable,
+    AutomationCompatibleInterface,
+    ERC1155NaiveReceiver
+{
     /// @dev temperory state used to store uni v3 pool when swapping on uni v3
     ISwapRouter private swapRouter;
 
@@ -61,11 +66,36 @@ contract Liquidator is OwnableUpgradeable, ERC1155NaiveReceiver {
         swapRouter = ISwapRouter(_swapRouter);
     }
 
+    function checkUpkeep(
+        bytes calldata checkData
+    )
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory performData)
+    {
+        (uint positionId, ) = abi.decode(checkData, (uint256, bytes));
+
+        upkeepNeeded = IBank(bankAddress).isLiquidatable(positionId);
+
+        performData = abi.encode(positionId);
+    }
+
+    function performUpkeep(bytes calldata performData) external override {
+        (uint positionId, ) = abi.decode(performData, (uint256, bytes));
+
+        if (IBank(bankAddress).isLiquidatable(positionId)) {
+            liquidate(positionId);
+        } else {
+            revert("Not liquidatable");
+        }
+    }
+
     /**
      * @notice Liquidate position using AAVE flashloan
      * @param _positionId position id to liquidate
      */
-    function liquidate(uint256 _positionId) external {
+    function liquidate(uint256 _positionId) public {
         IBank.Position memory posInfo = IBank(bankAddress).getPositionInfo(
             _positionId
         );

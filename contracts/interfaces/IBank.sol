@@ -105,38 +105,29 @@ interface IBank {
 
     function oracle() external view returns (ICoreOracle);
 
-    function getBankInfo(address token)
-        external
-        view
-        returns (
-            bool isListed,
-            address bToken,
-            uint256 totalShare
-        );
+    function getBankInfo(
+        address token
+    ) external view returns (bool isListed, address bToken, uint256 totalShare);
 
     function getBankInfoAll(address token) external view returns (Bank memory);
 
     function getDebtValue(uint256 positionId) external view returns (uint256);
 
-    function getPositionValue(uint256 positionId)
-        external
-        view
-        returns (uint256);
+    function getPositionValue(
+        uint256 positionId
+    ) external view returns (uint256);
 
-    function getPositionDebt(uint256 positionId)
-        external
-        view
-        returns (uint256 debt);
+    function getPositionDebt(
+        uint256 positionId
+    ) external view returns (uint256 debt);
 
-    function getIsolatedCollateralValue(uint256 positionId)
-        external
-        view
-        returns (uint256 icollValue);
+    function getIsolatedCollateralValue(
+        uint256 positionId
+    ) external view returns (uint256 icollValue);
 
-    function getPositionInfo(uint256 positionId)
-        external
-        view
-        returns (Position memory);
+    function getPositionInfo(
+        uint256 positionId
+    ) external view returns (Position memory);
 
     /// @dev Return current position information.
     function getCurrentPositionInfo() external view returns (Position memory);
@@ -184,4 +175,8 @@ interface IBank {
     ) external returns (uint256);
 
     function accrue(address token) external;
+
+    function isLiquidatable(
+        uint256 positionId
+    ) external view returns (bool liquidatable);
 }

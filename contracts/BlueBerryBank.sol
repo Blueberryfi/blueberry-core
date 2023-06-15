@@ -465,6 +465,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     function isLiquidatable(uint256 positionId)
         public
         view
+        override
         returns (bool liquidatable)
     {
         Position memory pos = positions[positionId];
