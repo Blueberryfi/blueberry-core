@@ -67,18 +67,22 @@ contract Liquidator is
     }
 
     function checkUpkeep(
-        bytes calldata checkData
+        bytes calldata /* checkData */
     )
         external
         view
         override
         returns (bool upkeepNeeded, bytes memory performData)
     {
-        (uint positionId, ) = abi.decode(checkData, (uint256, bytes));
+        uint nextPositionId = IBank(bankAddress).nextPositionId();
 
-        upkeepNeeded = IBank(bankAddress).isLiquidatable(positionId);
-
-        performData = abi.encode(positionId);
+        for (uint i = 1; i < nextPositionId; i += 1) {
+            if (IBank(bankAddress).isLiquidatable(i)) {
+                upkeepNeeded = true;
+                performData = abi.encode(i);
+                break;
+            }
+        }
     }
 
     function performUpkeep(bytes calldata performData) external override {
