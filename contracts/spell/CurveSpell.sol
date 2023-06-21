@@ -190,77 +190,93 @@ contract CurveSpell is BasicSpell {
         }
 
         {
-            (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
-                crvLp
-            );
-            // 3. Calculate actual amount to remove
-            uint256 amountPosRemove = param.amountPosRemove;
-            if (amountPosRemove == type(uint256).max) {
-                amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(
-                    address(this)
-                );
-            }
-
-            // 4. Remove liquidity
-            uint256 tokenIndex;
+            address[] memory tokens;
             {
-                uint256 len = tokens.length;
-                for (uint256 i; i != len; ++i) {
-                    if (tokens[i] == pos.debtToken) {
-                        tokenIndex = i;
-                        break;
+                address pool;
+                (pool, tokens, ) = crvOracle.getPoolInfo(crvLp);
+
+                // 3. Calculate actual amount to remove
+                uint256 amountPosRemove = param.amountPosRemove;
+                if (amountPosRemove == type(uint256).max) {
+                    amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(
+                        address(this)
+                    );
+                }
+
+                // 4. Remove liquidity
+                uint256 tokenIndex;
+                {
+                    uint256 len = tokens.length;
+                    for (uint256 i; i != len; ++i) {
+                        if (tokens[i] == pos.debtToken) {
+                            tokenIndex = i;
+                            break;
+                        }
                     }
                 }
-            }
 
-            uint256 minOut;
-            {
-                minOut =
-                    (amountPosRemove * param.sellSlippage) /
-                    Constants.DENOMINATOR;
+                uint256 minOut;
+                {
+                    minOut =
+                        (amountPosRemove * param.sellSlippage) /
+                        Constants.DENOMINATOR;
 
-                // We assume that there is no token with decimals above than 18
-                uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
-                    .decimals();
-                if (tokenDecimals < 18) {
-                    minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
+                    // We assume that there is no token with decimals above than 18
+                    uint8 tokenDecimals = IERC20MetadataUpgradeable(
+                        pos.debtToken
+                    ).decimals();
+                    if (tokenDecimals < 18) {
+                        minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
+                    }
+                }
+
+                if (isKilled) {
+                    uint256 len = tokens.length;
+                    if (len == 2) {
+                        uint256[2] memory minOuts;
+                        ICurvePool(pool).remove_liquidity(
+                            amountPosRemove,
+                            minOuts
+                        );
+                    } else if (len == 3) {
+                        uint256[3] memory minOuts;
+                        ICurvePool(pool).remove_liquidity(
+                            amountPosRemove,
+                            minOuts
+                        );
+                    } else if (len == 4) {
+                        uint256[4] memory minOuts;
+                        ICurvePool(pool).remove_liquidity(
+                            amountPosRemove,
+                            minOuts
+                        );
+                    } else {
+                        revert("Invalid pool length");
+                    }
+                } else {
+                    ICurvePool(pool).remove_liquidity_one_coin(
+                        amountPosRemove,
+                        int128(uint128(tokenIndex)),
+                        minOut
+                    );
                 }
             }
 
             if (isKilled) {
                 uint256 len = tokens.length;
-                if (len == 2) {
-                    uint256[2] memory minOuts;
-                    ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-                } else if (len == 3) {
-                    uint256[3] memory minOuts;
-                    ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-                } else if (len == 4) {
-                    uint256[4] memory minOuts;
-                    ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-                } else {
-                    revert("Invalid pool length");
-                }
                 for (uint256 i; i != len; ++i) {
-                    if (i != tokenIndex) {
-                        address token = tokens[i];
-                        uint256 tokenAmount = IERC20Upgradeable(token)
+                    if (tokens[i] != pos.debtToken) {
+                        uint256 tokenAmount = IERC20Upgradeable(tokens[i])
                             .balanceOf(address(this));
                         _swapOnUniV2(
                             swapRouter,
-                            token,
+                            tokens[i],
                             tokenAmount,
                             amountOutMin[i + 1],
                             swapPath[i + 1]
                         );
                     }
                 }
-            } else {
-                ICurvePool(pool).remove_liquidity_one_coin(
-                    amountPosRemove,
-                    int128(uint128(tokenIndex)),
-                    minOut
-                );
             }
         }
 
