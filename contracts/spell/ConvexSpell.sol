@@ -57,7 +57,11 @@ contract ConvexSpell is BasicSpell {
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address crvLp,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
@@ -153,6 +157,7 @@ contract ConvexSpell is BasicSpell {
     function closePositionFarm(
         ClosePosParam calldata param,
         IUniswapV2Router02 swapRouter,
+        uint256[] calldata amountOutMin,
         address[][] calldata swapPath
     )
         external
@@ -166,55 +171,65 @@ contract ConvexSpell is BasicSpell {
         if (wConvexPools.getUnderlyingToken(pos.collId) != crvLp)
             revert Errors.INCORRECT_UNDERLYING(crvLp);
 
-        uint256 amountPosRemove = param.amountPosRemove;
+        {
+            // 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
+            bank.takeCollateral(param.amountPosRemove);
 
-        // 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
-        bank.takeCollateral(amountPosRemove);
-        (address[] memory rewardTokens, ) = wConvexPools.burn(
-            pos.collId,
-            amountPosRemove
-        );
-
-        // 2. Swap rewards tokens to debt token
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
-            uint256 rewards = _doCutRewardsFee(rewardTokens[i]);
-
-            _ensureApprove(rewardTokens[i], address(swapRouter), rewards);
-            swapRouter.swapExactTokensForTokens(
-                rewards,
-                0,
-                swapPath[i],
-                address(this),
-                type(uint256).max
+            (address[] memory rewardTokens, ) = wConvexPools.burn(
+                pos.collId,
+                param.amountPosRemove
             );
+
+            // 2. Swap rewards tokens to debt token
+            uint256 rewardTokensLength = rewardTokens.length;
+            for (uint256 i; i != rewardTokensLength; ++i) {
+                uint256 rewards = _doCutRewardsFee(rewardTokens[i]);
+
+                _ensureApprove(rewardTokens[i], address(swapRouter), rewards);
+                swapRouter.swapExactTokensForTokens(
+                    rewards,
+                    amountOutMin[i],
+                    swapPath[i],
+                    address(this),
+                    block.timestamp
+                );
+            }
         }
 
+        uint256 amountPosRemove = param.amountPosRemove;
+
         {
-            (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
-                crvLp
-            );
             // 3. Calculate actual amount to remove
             if (amountPosRemove == type(uint256).max) {
                 amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(
                     address(this)
                 );
             }
+        }
 
-            // 4. Remove liquidity
+        {
+            address pool;
             int128 tokenIndex;
-            for (uint256 i = 0; i < tokens.length; i++) {
-                if (tokens[i] == pos.debtToken) {
-                    tokenIndex = int128(uint128(i));
-                    break;
+            {
+                address[] memory tokens;
+                (pool, tokens, ) = crvOracle.getPoolInfo(crvLp);
+
+                uint256 tokensLength = tokens.length;
+                for (uint256 i; i != tokensLength; ++i) {
+                    if (tokens[i] == pos.debtToken) {
+                        tokenIndex = int128(uint128(i));
+                        break;
+                    }
                 }
             }
 
+            // 4. Remove liquidity
+
+            uint256 minOut = (amountPosRemove * param.sellSlippage) /
+                Constants.DENOMINATOR;
+
             uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
                 .decimals();
-
-            uint256 sellSlippage = param.sellSlippage;
-            uint256 minOut = (amountPosRemove * sellSlippage) /
-                Constants.DENOMINATOR;
 
             // We assume that there is no token with decimals above than 18
             if (tokenDecimals < 18) {
