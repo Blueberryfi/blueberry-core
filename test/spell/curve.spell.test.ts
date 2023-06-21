@@ -13,7 +13,7 @@ import {
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { CrvProtocol, evm_mine_blocks, setupCrvProtocol } from "../helpers";
+import { CrvProtocol, evm_mine_blocks, currentTime, setupCrvProtocol } from "../helpers";
 import SpellABI from '../../abi/CurveSpell.json';
 import chai, { expect } from "chai";
 import { solidity } from 'ethereum-waffle'
@@ -339,6 +339,30 @@ describe("Curve Spell", () => {
     //     )
     //   ).to.be.revertedWith("INCORRECT_PID")
     // })
+    it("should revert if block timestamp is greater than deadline", async () => {
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits('10', 18));
+
+      const deadline = await currentTime()
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const iface = new ethers.utils.Interface(SpellABI);
+
+      await expect( bank.execute(
+        positionId,
+        spell.address,
+        iface.encodeFunctionData("closePositionFarm", [{
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          sellSlippage: 50,
+          sqrtRatioLimit: 0
+        }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, [], deadline])
+      )).to.be.revertedWith(`EXPIRED(${deadline})`);
+    })
+
     it("should revert if received amount is lower than slippage", async () => {
       evm_mine_blocks(1000);
 
@@ -360,7 +384,7 @@ describe("Curve Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             sellSlippage: 20000,
             sqrtRatioLimit: 0
-          }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, []])
+          }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, [], "7777777777"])
         )
       ).to.be.revertedWith("Not enough coins removed");
     })
@@ -386,7 +410,7 @@ describe("Curve Spell", () => {
           amountShareWithdraw: ethers.constants.MaxUint256,
           sellSlippage: 50,
           sqrtRatioLimit: 0
-        }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, []])
+        }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, [], "7777777777"])
       )
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);
