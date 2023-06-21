@@ -23,6 +23,8 @@ import {
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 
+const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
+const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
 const CCRV = ADDRESS.bCRV;
@@ -265,6 +267,8 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       WETH,
       wconvex.address,
       stableOracle.address,
+      AUGUSTUS_SWAPPER,
+      TOKEN_TRANSFER_PROXY,
     ])
   );
   await convexSpell.deployed();
