@@ -11,9 +11,9 @@
 pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 import "./UsingBaseOracle.sol";
-import "../utils/BNum.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/balancer/IBalancerVault.sol";
@@ -25,8 +25,28 @@ import "../interfaces/balancer/IBalancerVault.sol";
  * @dev Implented Fair Lp Pricing
  *      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
  */
-contract BalancerPairOracle is UsingBaseOracle, BNum, IBaseOracle {
+contract BalancerPairOracle is UsingBaseOracle, IBaseOracle {
+    uint256 private constant DECIMALS = 12;
+
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
+
+    /**
+     * @notice convert decimal parameter to 64x64 fixed point representation
+     * @param value parameter to convert
+     * @return 64x64 fixed point representation of parameter
+     */
+    function _toParameter64x64(uint256 value) private pure returns (int128) {
+        return ABDKMath64x64.divu(value, 10 ** DECIMALS);
+    }
+
+    /**
+     * @notice convert 64x64 fixed point representation to decimal parameter
+     * @param value parameter to convert
+     * @return
+     */
+    function _toUint256(int128 value) private pure returns (uint256) {
+        return ABDKMath64x64.mulu(value, 10 ** DECIMALS);
+    }
 
     /// @notice Return fair reserve amounts given spot reserves, weights, and fair prices.
     /// @param resA Reserve of the first asset
@@ -36,12 +56,12 @@ contract BalancerPairOracle is UsingBaseOracle, BNum, IBaseOracle {
     /// @param pxA Fair price of the first asset
     /// @param pxB Fair price of the second asset
     function computeFairReserves(
-        uint256 resA,
-        uint256 resB,
+        int128 resA,
+        int128 resB,
         uint256 wA,
         uint256 wB,
-        uint256 pxA,
-        uint256 pxB
+        int128 pxA,
+        int128 pxB
     ) internal view returns (uint256 fairResA, uint256 fairResB) {
         // NOTE: wA + wB = 1 (normalize weights)
         // constant product = resA^wA * resB^wB
@@ -53,19 +73,33 @@ contract BalancerPairOracle is UsingBaseOracle, BNum, IBaseOracle {
         // --> fairResA / r1^wB = constant product
         // --> fairResA = resA^wA * resB^wB * r1^wB
         // --> fairResA = resA * (resB/resA)^wB * r1^wB = resA * (r1/r0)^wB
-        uint256 r0 = bdiv(resA, resB);
-        uint256 r1 = bdiv(bmul(wA, pxB), bmul(wB, pxA));
+
+        int128 r0 = ABDKMath64x64.div(resA, resB);
+        int128 r1 = ABDKMath64x64.div(
+            ABDKMath64x64.mul(pxB, _toParameter64x64(wA)),
+            ABDKMath64x64.mul(pxA, _toParameter64x64(wB))
+        );
 
         // fairResA = resA * (r1 / r0) ^ wB
         // fairResB = resB * (r0 / r1) ^ wA
         if (r0 > r1) {
-            uint256 ratio = bdiv(r1, r0);
-            fairResA = bmul(resA, bpow(ratio, wB));
-            fairResB = bdiv(resB, bpow(ratio, wA));
+            int128 ratio = ABDKMath64x64.div(r1, r0);
+
+            fairResA = _toUint256(
+                ABDKMath64x64.mul(resA, ABDKMath64x64.pow(ratio, wB))
+            );
+            fairResB = _toUint256(
+                ABDKMath64x64.div(resB, ABDKMath64x64.pow(ratio, wA))
+            );
         } else {
-            uint256 ratio = bdiv(r0, r1);
-            fairResA = bdiv(resA, bpow(ratio, wB));
-            fairResB = bmul(resB, bpow(ratio, wA));
+            int128 ratio = ABDKMath64x64.div(r0, r1);
+
+            fairResA = _toUint256(
+                ABDKMath64x64.div(resA, ABDKMath64x64.pow(ratio, wB))
+            );
+            fairResB = _toUint256(
+                ABDKMath64x64.mul(resB, ABDKMath64x64.pow(ratio, wA))
+            );
         }
     }
 
@@ -91,12 +125,12 @@ contract BalancerPairOracle is UsingBaseOracle, BNum, IBaseOracle {
         uint256 price1 = base.getPrice(tokenB);
 
         (uint256 fairResA, uint256 fairResB) = computeFairReserves(
-            balances[0] * (10 ** (18 - uint256(decimalsA))),
-            balances[1] * (10 ** (18 - uint256(decimalsB))),
-            weights[0],
-            weights[1],
-            price0,
-            price1
+            _toParameter64x64(balances[0] * (10 ** (18 - uint256(decimalsA)))),
+            _toParameter64x64(balances[1] * (10 ** (18 - uint256(decimalsB)))),
+            weights[0] / (10 ** 16),
+            weights[1] / (10 ** 16),
+            _toParameter64x64(price0),
+            _toParameter64x64(price1)
         );
 
         // use fairReserveA and fairReserveB to compute LP token price
