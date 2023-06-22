@@ -236,7 +236,9 @@ contract WAuraPools is
         // Additional rewards
         for (uint i = 0; i < extraRewardsCount; i++) {
             address rewarder = extraRewards[i];
-            uint256 stRewardPerShare = accExtPerShare[tokenId][i];
+            uint256 stRewardPerShare = accExtPerShare[tokenId][
+                extraRewardsIdx[rewarder] - 1
+            ];
             tokens[i + 2] = IAuraRewarder(rewarder).rewardToken();
             rewards[i + 2] = _getPendingReward(
                 stRewardPerShare,
