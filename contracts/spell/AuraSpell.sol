@@ -103,7 +103,7 @@ contract AuraSpell is BasicSpell {
                 .getPoolTokens(lpToken);
             (
                 uint[] memory maxAmountsIn,
-                uint[] memory amountsIn,
+                ,
                 uint poolAmountOut
             ) = _getJoinPoolParams(tokens, balances, lpToken);
 
