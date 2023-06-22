@@ -369,8 +369,9 @@ describe("Convex Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               sellSlippage: 20000,
               sqrtRatioLimit: 0
-            }, 
-            ADDRESS.SUSHI_ROUTER, 
+            },
+            ADDRESS.SUSHI_ROUTER,
+            [0, 0, 0],
             [[CRV, WETH, USDC], [CVX, WETH, USDC], [ADDRESS.FRAX, ADDRESS.SUSHI, USDC]]
         ]))
       ).to.be.revertedWith("Not enough coins removed");
@@ -408,8 +409,9 @@ describe("Convex Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             sellSlippage: 50,
             sqrtRatioLimit: 0
-          }, 
-          ADDRESS.SUSHI_ROUTER, 
+          },
+          ADDRESS.SUSHI_ROUTER,
+          [0, 0, 0],
           [[CRV, WETH, USDC], [CVX, WETH, USDC], [ADDRESS.FRAX, ADDRESS.SUSHI, USDC]]
         ])
       );

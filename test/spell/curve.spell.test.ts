@@ -360,7 +360,7 @@ describe("Curve Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             sellSlippage: 20000,
             sqrtRatioLimit: 0
-          }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, []])
+          }, ADDRESS.SUSHI_ROUTER, [0], [[CRV, WETH, USDC]], false])
         )
       ).to.be.revertedWith("Not enough coins removed");
     })
@@ -386,7 +386,7 @@ describe("Curve Spell", () => {
           amountShareWithdraw: ethers.constants.MaxUint256,
           sellSlippage: 50,
           sqrtRatioLimit: 0
-        }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, []])
+        }, ADDRESS.SUSHI_ROUTER, [0], [[CRV, WETH, USDC]], false])
       )
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);
