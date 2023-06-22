@@ -429,13 +429,6 @@ describe("Aura Spell", () => {
           },
           expectedAmounts,
           swapDatas.map((item) => item.data),
-          // ADDRESS.SUSHI_ROUTER,
-          // [
-          //   [BAL, WETH, USDC],
-          //   [AURA, WETH, USDC],
-          //   [ADDRESS.FRAX, ADDRESS.SUSHI, USDC],
-          // ],
-          // 0,
         ])
       );
       const afterUSDCBalance = await usdc.balanceOf(admin.address);

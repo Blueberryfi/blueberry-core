@@ -13,7 +13,8 @@ import {
   ConvexSpell,
   WConvexPools,
   ICvxPools,
-  IRewarder
+  IRewarder,
+  ProtocolConfig
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
@@ -24,11 +25,14 @@ import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
 import { BigNumber, utils } from "ethers";
+import { getParaswaCalldata } from "../helpers/paraswap";
 
 chai.use(solidity)
 chai.use(near)
 chai.use(roughlyNear)
 
+const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
+const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
 const CCRV = ADDRESS.bCRV;
@@ -61,6 +65,7 @@ describe("Convex Spell", () => {
   let protocol: CvxProtocol;
   let cvxBooster: ICvxPools;
   let crvRewarder: IRewarder;
+  let config: ProtocolConfig;
 
   before(async () => {
     [admin, alice, treasury] = await ethers.getSigners();
@@ -83,6 +88,7 @@ describe("Convex Spell", () => {
     stableOracle = protocol.stableOracle;
     volatileOracle = protocol.volatileOracle;
     tricryptoOracle = protocol.tricryptoOracle;
+    config = protocol.config;
   })
 
   describe("Constructor", () => {
@@ -94,7 +100,9 @@ describe("Convex Spell", () => {
           werc20.address,
           WETH,
           wconvex.address,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -103,7 +111,9 @@ describe("Convex Spell", () => {
           ethers.constants.AddressZero,
           WETH,
           wconvex.address,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -112,7 +122,9 @@ describe("Convex Spell", () => {
           werc20.address,
           ethers.constants.AddressZero,
           wconvex.address,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -121,7 +133,9 @@ describe("Convex Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -130,7 +144,9 @@ describe("Convex Spell", () => {
           werc20.address,
           WETH,
           wconvex.address,
-          ethers.constants.AddressZero
+          ethers.constants.AddressZero,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
     })
@@ -141,7 +157,9 @@ describe("Convex Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         )
       ).to.be.revertedWith("Initializable: contract is already initialized")
     })
@@ -351,6 +369,29 @@ describe("Convex Spell", () => {
       const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
       console.log("Pending Rewards", pendingRewardsInfo)
 
+      const rewardFeeRatio = await config.rewardFee();
+
+      const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
+        reward.sub(reward.mul(rewardFeeRatio).div(10000))
+      );
+
+      const swapDatas = await Promise.all(
+        pendingRewardsInfo.tokens.map((token, idx) => {
+          if (expectedAmounts[idx].gt(0)) {
+            return getParaswaCalldata(
+              token,
+              USDC,
+              expectedAmounts[idx],
+              spell.address
+            );
+          } else {
+            return {
+              data: "0x00",
+            };
+          }
+        })
+      );
+
       // Manually transfer CRV rewards to spell
       await crv.transfer(spell.address, utils.parseUnits('10', 18));
 
@@ -369,9 +410,9 @@ describe("Convex Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               sellSlippage: 20000,
               sqrtRatioLimit: 0
-            }, 
-            ADDRESS.SUSHI_ROUTER, 
-            [[CRV, WETH, USDC], [CVX, WETH, USDC], [ADDRESS.FRAX, ADDRESS.SUSHI, USDC]]
+            },
+            expectedAmounts,
+            swapDatas.map((item) => item.data),
         ]))
       ).to.be.revertedWith("Not enough coins removed");
     })
@@ -386,6 +427,29 @@ describe("Convex Spell", () => {
 
       const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
       console.log("Pending Rewards", pendingRewardsInfo)
+
+      const rewardFeeRatio = await config.rewardFee();
+
+      const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
+        reward.sub(reward.mul(rewardFeeRatio).div(10000))
+      );
+
+      const swapDatas = await Promise.all(
+        pendingRewardsInfo.tokens.map((token, idx) => {
+          if (expectedAmounts[idx].gt(0)) {
+            return getParaswaCalldata(
+              token,
+              USDC,
+              expectedAmounts[idx],
+              spell.address
+            );
+          } else {
+            return {
+              data: "0x00",
+            };
+          }
+        })
+      );
 
       // Manually transfer USDC rewards to spell
       await usdc.transfer(spell.address, utils.parseUnits('10', 6));
@@ -408,9 +472,9 @@ describe("Convex Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             sellSlippage: 50,
             sqrtRatioLimit: 0
-          }, 
-          ADDRESS.SUSHI_ROUTER, 
-          [[CRV, WETH, USDC], [CVX, WETH, USDC], [ADDRESS.FRAX, ADDRESS.SUSHI, USDC]]
+          },
+          expectedAmounts,
+          swapDatas.map((item) => item.data),
         ])
       );
       const afterUSDCBalance = await usdc.balanceOf(admin.address);

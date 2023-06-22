@@ -17,6 +17,7 @@ import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWConvexPools.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../interfaces/uniswap/IUniswapV2Router02.sol";
+import "../libraries/Paraswap/PSwapLib.sol";
 
 /**
  * @title ConvexSpell
@@ -34,12 +35,19 @@ contract ConvexSpell is BasicSpell {
     /// @dev address of CVX token
     address public CVX;
 
+    /// @dev paraswap AugustusSwapper address
+    address public augustusSwapper;
+    /// @dev paraswap TokenTransferProxy address
+    address public tokenTransferProxy;
+
     function initialize(
         IBank bank_,
         address werc20_,
         address weth_,
         address wConvexPools_,
-        address crvOracle_
+        address crvOracle_,
+        address augustusSwapper_,
+        address tokenTransferProxy_
     ) external initializer {
         __BasicSpell_init(bank_, werc20_, weth_);
         if (wConvexPools_ == address(0) || crvOracle_ == address(0))
@@ -49,6 +57,9 @@ contract ConvexSpell is BasicSpell {
         CVX = address(wConvexPools.CVX());
         crvOracle = ICurveOracle(crvOracle_);
         IWConvexPools(wConvexPools_).setApprovalForAll(address(bank_), true);
+
+        augustusSwapper = augustusSwapper_;
+        tokenTransferProxy = tokenTransferProxy_;
     }
 
     /**
@@ -57,7 +68,11 @@ contract ConvexSpell is BasicSpell {
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address crvLp,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
@@ -152,8 +167,8 @@ contract ConvexSpell is BasicSpell {
 
     function closePositionFarm(
         ClosePosParam calldata param,
-        IUniswapV2Router02 swapRouter,
-        address[][] calldata swapPath
+        uint256[] calldata expectedRewards,
+        bytes[] calldata swapDatas
     )
         external
         existingStrategy(param.strategyId)
@@ -176,23 +191,15 @@ contract ConvexSpell is BasicSpell {
         );
 
         // 2. Swap rewards tokens to debt token
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
-            uint256 rewards = _doCutRewardsFee(rewardTokens[i]);
-
-            _ensureApprove(rewardTokens[i], address(swapRouter), rewards);
-            swapRouter.swapExactTokensForTokens(
-                rewards,
-                0,
-                swapPath[i],
-                address(this),
-                type(uint256).max
-            );
-        }
+        _sellRewards(rewardTokens, expectedRewards, swapDatas);
 
         {
+            uint256 sellSlippage = param.sellSlippage;
+
             (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
                 crvLp
             );
+
             // 3. Calculate actual amount to remove
             if (amountPosRemove == type(uint256).max) {
                 amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(
@@ -212,7 +219,6 @@ contract ConvexSpell is BasicSpell {
             uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
                 .decimals();
 
-            uint256 sellSlippage = param.sellSlippage;
             uint256 minOut = (amountPosRemove * sellSlippage) /
                 Constants.DENOMINATOR;
 
@@ -247,5 +253,31 @@ contract ConvexSpell is BasicSpell {
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
         _doRefund(CVX);
+    }
+
+    function _sellRewards(
+        address[] memory rewardTokens,
+        uint[] calldata expectedRewards,
+        bytes[] calldata swapDatas
+    ) internal {
+        for (uint256 i; i < rewardTokens.length; i++) {
+            address sellToken = rewardTokens[i];
+
+            _doCutRewardsFee(sellToken);
+
+            uint expectedReward = expectedRewards[i];
+            if (expectedReward == 0) continue;
+            if (
+                !PSwapLib.swap(
+                    augustusSwapper,
+                    tokenTransferProxy,
+                    sellToken,
+                    expectedReward,
+                    swapDatas[i]
+                )
+            ) revert Errors.SWAP_FAILED(sellToken);
+            // Refund rest amount to owner
+            _doRefund(sellToken);
+        }
     }
 }
