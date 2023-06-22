@@ -115,7 +115,7 @@ contract AuraSpell is BasicSpell {
                     IBalancerVault.JoinPoolRequest({
                         assets: tokens,
                         maxAmountsIn: maxAmountsIn,
-                        userData: abi.encode(1, amountsIn, 0),
+                        userData: abi.encode(1),
                         fromInternalBalance: false
                     })
                 );
