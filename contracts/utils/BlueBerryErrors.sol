@@ -122,3 +122,5 @@ error FEE_WINDOW_TOO_LONG(uint256 windowTime);
 
 // Utilities
 error CAST();
+
+error EXPIRED(uint256 deadline);

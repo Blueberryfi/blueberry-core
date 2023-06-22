@@ -57,7 +57,11 @@ contract CurveSpell is BasicSpell {
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address crvLp,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
@@ -156,12 +160,14 @@ contract CurveSpell is BasicSpell {
         IUniswapV2Router02 swapRouter,
         address[] calldata swapPath,
         bool isKilled,
-        address[][] calldata poolTokensSwapPath
+        address[][] calldata poolTokensSwapPath,
+        uint deadline
     )
         external
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
+        if (block.timestamp > deadline) revert Errors.EXPIRED(deadline);
         ClosePosParam memory _param = param;
         IUniswapV2Router02 _swapRouter = swapRouter;
         address[] memory _swapPath = swapPath;

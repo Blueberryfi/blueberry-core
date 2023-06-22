@@ -15,6 +15,12 @@ export const evm_mine_blocks = async (n: number) => {
   }
 };
 
+export const currentTime = async() => {
+  const blockNum = await latestBlockNumber();
+  const block = await ethers.provider.getBlock(blockNum);
+  return block.timestamp;
+}
+
 export * from "./setup-ichi-protocol";
 export * from "./setup-curve-protocol";
 export * from "./setup-convex-protocol";
