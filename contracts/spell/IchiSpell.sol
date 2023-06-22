@@ -71,7 +71,11 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address vault,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) external onlyOwner {
         _addStrategy(vault, minPosSize, maxPosSize);
     }
 
@@ -237,9 +241,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
                     deadline: block.timestamp + Constants.MAX_DELAY_ON_SWAP,
                     amountIn: amountIn,
                     amountOutMinimum: amountOutMin,
-                    sqrtPriceLimitX96: isTokenA
-                        ? param.sqrtRatioLimit + deltaSqrt
-                        : param.sqrtRatioLimit - deltaSqrt
+                    sqrtPriceLimitX96: 0
                 });
 
             _ensureApprove(params.tokenIn, address(uniV3Router), amountIn);
