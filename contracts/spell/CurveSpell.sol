@@ -275,9 +275,10 @@ contract CurveSpell is BasicSpell {
 
         uint256 minOut;
         {
+            uint256 virtualPrice = ICurvePool(pool).get_virtual_price();
             minOut =
-                (amountPosRemove * param.sellSlippage) /
-                Constants.DENOMINATOR;
+                (amountPosRemove * virtualPrice * param.sellSlippage) /
+                1e18 / Constants.DENOMINATOR;
 
             // We assume that there is no token with decimals above than 18
             uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)

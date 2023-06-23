@@ -219,8 +219,8 @@ contract ConvexSpell is BasicSpell {
             uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
                 .decimals();
 
-            uint256 minOut = (amountPosRemove * sellSlippage) /
-                Constants.DENOMINATOR;
+            uint256 minOut = (amountPosRemove * ICurvePool(pool).get_virtual_price() * param.sellSlippage) /
+                1e18 / Constants.DENOMINATOR;
 
             // We assume that there is no token with decimals above than 18
             if (tokenDecimals < 18) {
