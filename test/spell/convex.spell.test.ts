@@ -382,7 +382,8 @@ describe("Convex Spell", () => {
               token,
               USDC,
               expectedAmounts[idx],
-              spell.address
+              spell.address,
+              100
             );
           } else {
             return {
@@ -441,7 +442,8 @@ describe("Convex Spell", () => {
               token,
               USDC,
               expectedAmounts[idx],
-              spell.address
+              spell.address,
+              100,
             );
           } else {
             return {

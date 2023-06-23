@@ -11,13 +11,15 @@ export const getParaswaCalldata = async (
   fromToken: string,
   toToken: string,
   amount: BigNumberish,
-  userAddr: string
+  userAddr: string,
+  maxImpact?: number
 ) => {
   const priceRoute = await paraswapSdk.swap.getRate({
     srcToken: fromToken,
     destToken: toToken,
     amount: amount.toString(),
     options: {
+      maxImpact: maxImpact,
       otherExchangePrices: true,
     },
   });
@@ -27,11 +29,11 @@ export const getParaswaCalldata = async (
       srcToken: fromToken,
       destToken: toToken,
       srcAmount: amount.toString(),
-      slippage: 300,
-      priceRoute,
+      slippage: 3 * 0.01 * 10000, // 3% slippage
+      priceRoute: priceRoute,
       userAddress: userAddr,
     },
-    { ignoreChecks: true }
+    { ignoreChecks: true, ignoreGasEstimate: true }
   );
 
   return calldata;
