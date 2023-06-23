@@ -377,7 +377,7 @@ describe("Curve Spell", () => {
           amountShareWithdraw: ethers.constants.MaxUint256,
           sellSlippage: 50,
           sqrtRatioLimit: 0
-        }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, [], deadline])
+        }, [], [], false, deadline])
       )).to.be.revertedWith(`EXPIRED(${deadline})`);
     })
 
