@@ -12,6 +12,7 @@ import { ADDRESS } from "../../constant";
 import {
   ShortLongProtocol,
   evm_mine_blocks,
+  fork,
   setupShortLongProtocol,
 } from "../helpers";
 import SpellABI from "../../abi/ShortLongSpell.json";
@@ -46,6 +47,8 @@ describe("ShortLong Spell mainnet fork", () => {
   let daiSoftVault: SoftVault;
 
   before(async () => {
+    await fork();
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
