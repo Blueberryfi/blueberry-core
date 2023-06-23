@@ -193,51 +193,13 @@ contract ConvexSpell is BasicSpell {
         // 2. Swap rewards tokens to debt token
         _sellRewards(rewardTokens, expectedRewards, swapDatas);
 
-        {
-            uint256 sellSlippage = param.sellSlippage;
+        // 3. Remove liquidity
+        _removeLiquidity(param, pos, crvLp, amountPosRemove);
 
-            (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
-                crvLp
-            );
-
-            // 3. Calculate actual amount to remove
-            if (amountPosRemove == type(uint256).max) {
-                amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(
-                    address(this)
-                );
-            }
-
-            // 4. Remove liquidity
-            int128 tokenIndex;
-            for (uint256 i = 0; i < tokens.length; i++) {
-                if (tokens[i] == pos.debtToken) {
-                    tokenIndex = int128(uint128(i));
-                    break;
-                }
-            }
-
-            uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
-                .decimals();
-
-            uint256 minOut = (amountPosRemove * ICurvePool(pool).get_virtual_price() * param.sellSlippage) /
-                1e18 / Constants.DENOMINATOR;
-
-            // We assume that there is no token with decimals above than 18
-            if (tokenDecimals < 18) {
-                minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
-            }
-
-            ICurvePool(pool).remove_liquidity_one_coin(
-                amountPosRemove,
-                int128(tokenIndex),
-                minOut
-            );
-        }
-
-        // 5. Withdraw isolated collateral from Bank
+        // 4. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 
-        // 6. Repay
+        // 5. Repay
         {
             // Compute repay amount if MAX_INT is supplied (max debt)
             uint256 amountRepay = param.amountRepay;
@@ -249,10 +211,53 @@ contract ConvexSpell is BasicSpell {
 
         _validateMaxLTV(param.strategyId);
 
-        // 7. Refund
+        // 6. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
         _doRefund(CVX);
+    }
+
+    function _removeLiquidity(
+        ClosePosParam memory param,
+        IBank.Position memory pos,
+        address crvLp,
+        uint256 amountPosRemove
+    ) internal {
+        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
+            crvLp
+        );
+
+        if (amountPosRemove == type(uint256).max) {
+            amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(address(this));
+        }
+
+        uint256 minOut = (amountPosRemove *
+            ICurvePool(pool).get_virtual_price() *
+            param.sellSlippage) /
+            1e18 /
+            Constants.DENOMINATOR;
+
+        uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
+            .decimals();
+
+        // We assume that there is no token with decimals above than 18
+        if (tokenDecimals < 18) {
+            minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
+        }
+
+        int128 tokenIndex;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            if (tokens[i] == pos.debtToken) {
+                tokenIndex = int128(uint128(i));
+                break;
+            }
+        }
+
+        ICurvePool(pool).remove_liquidity_one_coin(
+            amountPosRemove,
+            int128(tokenIndex),
+            minOut
+        );
     }
 
     function _sellRewards(
