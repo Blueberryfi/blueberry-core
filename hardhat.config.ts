@@ -32,6 +32,13 @@ if (!process.env.INFURA_API_KEY) {
   infuraApiKey = process.env.INFURA_API_KEY;
 }
 
+let llamaApiKey: string;
+if (!process.env.LLAMA_API_KEY) {
+  throw new Error("Please set your LLAMA_API_KEY in a .env file");
+} else {
+  llamaApiKey = process.env.LLAMA_API_KEY;
+}
+
 const config: HardhatUserConfig = {
   typechain: {
     target: "ethers-v5",
@@ -61,7 +68,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://mainnet.infura.io/v3/${infuraApiKey}`,
+        url: `https://eth.llamarpc.com/rpc/${llamaApiKey}`,
         blockNumber: 17089048,
       },
     },
