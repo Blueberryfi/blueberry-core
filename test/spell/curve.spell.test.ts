@@ -10,6 +10,7 @@ import {
   CurveStableOracle,
   CurveVolatileOracle,
   CurveTricryptoOracle,
+  ProtocolConfig,
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
@@ -20,6 +21,7 @@ import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
 import { BigNumber, utils } from "ethers";
+import { getParaswaCalldata } from "../helpers/paraswap";
 
 chai.use(solidity)
 chai.use(near)
@@ -34,6 +36,8 @@ const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 const ETH_PRICE = 1600;
 const GAUGE_ID = ADDRESS.CRV_GAUGE_3CrvId;
+const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
+const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 
 describe("Curve Spell", () => {
   let admin: SignerWithAddress;
@@ -53,6 +57,7 @@ describe("Curve Spell", () => {
   let wgauge: WCurveGauge;
   let bank: BlueBerryBank;
   let protocol: CrvProtocol;
+  let config: ProtocolConfig;
 
 
   before(async () => {
@@ -72,6 +77,7 @@ describe("Curve Spell", () => {
     stableOracle = protocol.stableOracle;
     volatileOracle = protocol.volatileOracle;
     tricryptoOracle = protocol.tricryptoOracle;
+    config = protocol.config;
   })
 
   describe("Constructor", () => {
@@ -83,7 +89,9 @@ describe("Curve Spell", () => {
           werc20.address,
           WETH,
           wgauge.address,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -92,7 +100,9 @@ describe("Curve Spell", () => {
           ethers.constants.AddressZero,
           WETH,
           wgauge.address,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -101,7 +111,9 @@ describe("Curve Spell", () => {
           werc20.address,
           ethers.constants.AddressZero,
           wgauge.address,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -110,7 +122,9 @@ describe("Curve Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
       await expect(
@@ -119,7 +133,9 @@ describe("Curve Spell", () => {
           werc20.address,
           WETH,
           wgauge.address,
-          ethers.constants.AddressZero
+          ethers.constants.AddressZero,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         ])
       ).to.be.revertedWith("ZERO_ADDRESS");
     })
@@ -130,7 +146,9 @@ describe("Curve Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          stableOracle.address
+          stableOracle.address,
+          AUGUSTUS_SWAPPER,
+          TOKEN_TRANSFER_PROXY,
         )
       ).to.be.revertedWith("Initializable: contract is already initialized")
     })
@@ -367,10 +385,22 @@ describe("Curve Spell", () => {
       evm_mine_blocks(1000);
 
       // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits('10', 18));
+      const amount = utils.parseUnits('10', 18);
+      await crv.transfer(spell.address, amount);
 
       const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
+
+      const rewardFeeRatio = await config.rewardFee();
+
+      const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
+      const swapData = await getParaswaCalldata(
+        CRV,
+        USDC,
+        expectedAmount,
+        spell.address
+      );
+
       await expect(
         bank.execute(
           positionId,
@@ -384,13 +414,14 @@ describe("Curve Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             sellSlippage: 20000,
             sqrtRatioLimit: 0
-          }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, [], "7777777777"])
+          }, [expectedAmount], [swapData.data], false, 7777777777])
         )
       ).to.be.revertedWith("Not enough coins removed");
     })
     it("should be able to harvest on Curve Gauge", async () => {
       // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits('10', 18));
+      const amount = utils.parseUnits('10', 18);
+      await crv.transfer(spell.address, amount);
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -398,19 +429,36 @@ describe("Curve Spell", () => {
 
       const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
+
+      const rewardFeeRatio = await config.rewardFee();
+
+      const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
+      const swapData = await getParaswaCalldata(
+        CRV,
+        USDC,
+        expectedAmount,
+        spell.address
+      );
+
       await bank.execute(
         positionId,
         spell.address,
-        iface.encodeFunctionData("closePositionFarm", [{
-          strategyId: 0,
-          collToken: CRV,
-          borrowToken: USDC,
-          amountRepay: ethers.constants.MaxUint256,
-          amountPosRemove: ethers.constants.MaxUint256,
-          amountShareWithdraw: ethers.constants.MaxUint256,
-          sellSlippage: 50,
-          sqrtRatioLimit: 0
-        }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, [], "7777777777"])
+        iface.encodeFunctionData("closePositionFarm", [
+          {
+            strategyId: 0,
+            collToken: CRV,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            sellSlippage: 50,
+            sqrtRatioLimit: 0,
+          },
+          [expectedAmount],
+          [swapData.data],
+          false,
+          7777777777,
+        ])
       )
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);

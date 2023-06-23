@@ -27,8 +27,8 @@ export const getParaswaCalldata = async (
       srcToken: fromToken,
       destToken: toToken,
       srcAmount: amount.toString(),
-      destAmount: "1",
-      priceRoute: priceRoute,
+      slippage: 300,
+      priceRoute,
       userAddress: userAddr,
     },
     { ignoreChecks: true }

@@ -146,6 +146,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "swapToken",
+        "type": "address"
+      }
+    ],
+    "name": "SWAP_FAILED",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "ZERO_ADDRESS",
     "type": "error"
@@ -319,6 +330,19 @@
   },
   {
     "inputs": [],
+    "name": "augustusSwapper",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "bank",
     "outputs": [
       {
@@ -380,24 +404,19 @@
         "type": "tuple"
       },
       {
-        "internalType": "contract IUniswapV2Router02",
-        "name": "swapRouter",
-        "type": "address"
+        "internalType": "uint256[]",
+        "name": "amounts",
+        "type": "uint256[]"
       },
       {
-        "internalType": "address[]",
-        "name": "swapPath",
-        "type": "address[]"
+        "internalType": "bytes[]",
+        "name": "swapDatas",
+        "type": "bytes[]"
       },
       {
         "internalType": "bool",
         "name": "isKilled",
         "type": "bool"
-      },
-      {
-        "internalType": "address[][]",
-        "name": "poolTokensSwapPath",
-        "type": "address[][]"
       },
       {
         "internalType": "uint256",
@@ -466,6 +485,16 @@
       {
         "internalType": "address",
         "name": "crvOracle_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "augustusSwapper_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenTransferProxy_",
         "type": "address"
       }
     ],
@@ -758,6 +787,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenTransferProxy",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
