@@ -16,7 +16,6 @@ import "./BasicSpell.sol";
 import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWConvexPools.sol";
 import "../interfaces/curve/ICurvePool.sol";
-import "../interfaces/uniswap/IUniswapV2Router02.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
 
 /**

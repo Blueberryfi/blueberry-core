@@ -69,7 +69,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://eth.llamarpc.com/rpc/${llamaApiKey}`,
-        blockNumber: 17089048,
+        // blockNumber: 17089048,
       },
     },
     mainnet: {
