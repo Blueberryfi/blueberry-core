@@ -32,6 +32,8 @@ const USDT = ADDRESS.USDT;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 const ETH_PRICE = 1600;
+const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
+const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 
 export interface CrvProtocol {
   werc20: WERC20,
@@ -239,7 +241,9 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
     werc20.address,
     WETH,
     wgauge.address,
-    stableOracle.address
+    stableOracle.address,
+    AUGUSTUS_SWAPPER,
+    TOKEN_TRANSFER_PROXY,
   ])
   await curveSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);

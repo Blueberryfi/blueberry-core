@@ -16,7 +16,7 @@ import "./BasicSpell.sol";
 import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWCurveGauge.sol";
 import "../interfaces/curve/ICurvePool.sol";
-import "../interfaces/uniswap/IUniswapV2Router02.sol";
+import "../libraries/Paraswap/PSwapLib.sol";
 
 /**
  * @title CurveSpell
@@ -34,12 +34,19 @@ contract CurveSpell is BasicSpell {
     /// @dev address of CRV token
     address public CRV;
 
+    /// @dev paraswap AugustusSwapper address
+    address public augustusSwapper;
+    /// @dev paraswap TokenTransferProxy address
+    address public tokenTransferProxy;
+
     function initialize(
         IBank bank_,
         address werc20_,
         address weth_,
         address wCurveGauge_,
-        address crvOracle_
+        address crvOracle_,
+        address augustusSwapper_,
+        address tokenTransferProxy_
     ) external initializer {
         __BasicSpell_init(bank_, werc20_, weth_);
         if (wCurveGauge_ == address(0) || crvOracle_ == address(0))
@@ -49,6 +56,9 @@ contract CurveSpell is BasicSpell {
         CRV = address(wCurveGauge.CRV());
         crvOracle = ICurveOracle(crvOracle_);
         IWCurveGauge(wCurveGauge_).setApprovalForAll(address(bank_), true);
+
+        augustusSwapper = augustusSwapper_;
+        tokenTransferProxy = tokenTransferProxy_;
     }
 
     /**
@@ -157,9 +167,8 @@ contract CurveSpell is BasicSpell {
 
     function closePositionFarm(
         ClosePosParam memory param,
-        IUniswapV2Router02 swapRouter,
-        uint256[] memory amountOutMin,
-        address[][] memory swapPath,
+        uint256[] calldata amounts,
+        bytes[] calldata swapDatas,
         bool isKilled
     )
         external
@@ -179,14 +188,7 @@ contract CurveSpell is BasicSpell {
 
         {
             // 2. Swap rewards tokens to debt token
-            uint256 rewards = _doCutRewardsFee(CRV);
-            _swapOnUniV2(
-                swapRouter,
-                CRV,
-                rewards,
-                amountOutMin[0],
-                swapPath[0]
-            );
+            _swapOnParaswap(CRV, amounts[0], swapDatas[0]);
         }
 
         {
@@ -204,76 +206,24 @@ contract CurveSpell is BasicSpell {
                 }
 
                 // 4. Remove liquidity
-                uint256 tokenIndex;
-                {
-                    uint256 len = tokens.length;
-                    for (uint256 i; i != len; ++i) {
-                        if (tokens[i] == pos.debtToken) {
-                            tokenIndex = i;
-                            break;
-                        }
-                    }
-                }
-
-                uint256 minOut;
-                {
-                    minOut =
-                        (amountPosRemove * param.sellSlippage) /
-                        Constants.DENOMINATOR;
-
-                    // We assume that there is no token with decimals above than 18
-                    uint8 tokenDecimals = IERC20MetadataUpgradeable(
-                        pos.debtToken
-                    ).decimals();
-                    if (tokenDecimals < 18) {
-                        minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
-                    }
-                }
-
-                if (isKilled) {
-                    uint256 len = tokens.length;
-                    if (len == 2) {
-                        uint256[2] memory minOuts;
-                        ICurvePool(pool).remove_liquidity(
-                            amountPosRemove,
-                            minOuts
-                        );
-                    } else if (len == 3) {
-                        uint256[3] memory minOuts;
-                        ICurvePool(pool).remove_liquidity(
-                            amountPosRemove,
-                            minOuts
-                        );
-                    } else if (len == 4) {
-                        uint256[4] memory minOuts;
-                        ICurvePool(pool).remove_liquidity(
-                            amountPosRemove,
-                            minOuts
-                        );
-                    } else {
-                        revert("Invalid pool length");
-                    }
-                } else {
-                    ICurvePool(pool).remove_liquidity_one_coin(
-                        amountPosRemove,
-                        int128(uint128(tokenIndex)),
-                        minOut
-                    );
-                }
+                _removeLiquidity(
+                    param,
+                    isKilled,
+                    pool,
+                    tokens,
+                    pos,
+                    amountPosRemove
+                );
             }
 
             if (isKilled) {
                 uint256 len = tokens.length;
                 for (uint256 i; i != len; ++i) {
                     if (tokens[i] != pos.debtToken) {
-                        uint256 tokenAmount = IERC20Upgradeable(tokens[i])
-                            .balanceOf(address(this));
-                        _swapOnUniV2(
-                            swapRouter,
+                        _swapOnParaswap(
                             tokens[i],
-                            tokenAmount,
-                            amountOutMin[i + 1],
-                            swapPath[i + 1]
+                            amounts[i + 1],
+                            swapDatas[i + 1]
                         );
                     }
                 }
@@ -301,31 +251,79 @@ contract CurveSpell is BasicSpell {
         _doRefund(CRV);
     }
 
-    function _swapToDebt(
-        ClosePosParam memory _param,
-        IBank.Position memory pos,
-        address crvLp,
-        uint256 amountPosRemove,
+    function _removeLiquidity(
+        ClosePosParam memory param,
         bool isKilled,
-        IUniswapV2Router02 swapRouter,
-        uint256[] memory poolTokensAmountOutMin,
-        address[][] memory poolTokensSwapPath
-    ) internal {}
+        address pool,
+        address[] memory tokens,
+        IBank.Position memory pos,
+        uint256 amountPosRemove
+    ) internal {
+        uint256 tokenIndex;
+        {
+            uint256 len = tokens.length;
+            for (uint256 i; i != len; ++i) {
+                if (tokens[i] == pos.debtToken) {
+                    tokenIndex = i;
+                    break;
+                }
+            }
+        }
 
-    function _swapOnUniV2(
-        IUniswapV2Router02 swapRouter,
+        uint256 minOut;
+        {
+            minOut =
+                (amountPosRemove * param.sellSlippage) /
+                Constants.DENOMINATOR;
+
+            // We assume that there is no token with decimals above than 18
+            uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
+                .decimals();
+            if (tokenDecimals < 18) {
+                minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
+            }
+        }
+
+        if (isKilled) {
+            uint256 len = tokens.length;
+            if (len == 2) {
+                uint256[2] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else if (len == 3) {
+                uint256[3] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else if (len == 4) {
+                uint256[4] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else {
+                revert("Invalid pool length");
+            }
+        } else {
+            ICurvePool(pool).remove_liquidity_one_coin(
+                amountPosRemove,
+                int128(uint128(tokenIndex)),
+                minOut
+            );
+        }
+    }
+
+    function _swapOnParaswap(
         address token,
         uint256 amount,
-        uint256 amountOutMin,
-        address[] memory path
+        bytes calldata swapData
     ) internal {
-        _ensureApprove(token, address(swapRouter), amount);
-        swapRouter.swapExactTokensForTokens(
-            amount,
-            amountOutMin,
-            path,
-            address(this),
-            block.timestamp
-        );
+        if (amount == 0) return;
+        if (
+            !PSwapLib.swap(
+                augustusSwapper,
+                tokenTransferProxy,
+                token,
+                amount,
+                swapData
+            )
+        ) revert Errors.SWAP_FAILED(token);
+
+        // Refund rest amount to owner
+        _doRefund(token);
     }
 }
