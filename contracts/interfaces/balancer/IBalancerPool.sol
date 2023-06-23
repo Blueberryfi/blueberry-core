@@ -10,4 +10,6 @@ interface IBalancerPool {
     function totalSupply() external view returns (uint256);
 
     function getNormalizedWeights() external view returns (uint256[] memory);
+
+    function getInvariant() external view returns (uint256);
 }

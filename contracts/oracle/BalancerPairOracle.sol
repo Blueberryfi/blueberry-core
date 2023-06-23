@@ -26,82 +26,10 @@ import "../interfaces/balancer/IBalancerVault.sol";
  *      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
  */
 contract BalancerPairOracle is UsingBaseOracle, IBaseOracle {
+    using ABDKMath64x64 for int128;
     uint256 private constant DECIMALS = 12;
 
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
-
-    /**
-     * @notice convert decimal parameter to 64x64 fixed point representation
-     * @param value parameter to convert
-     * @return 64x64 fixed point representation of parameter
-     */
-    function _toParameter64x64(uint256 value) private pure returns (int128) {
-        return ABDKMath64x64.divu(value, 10 ** DECIMALS);
-    }
-
-    /**
-     * @notice convert 64x64 fixed point representation to decimal parameter
-     * @param value parameter to convert
-     * @return
-     */
-    function _toUint256(int128 value) private pure returns (uint256) {
-        return ABDKMath64x64.mulu(value, 10 ** DECIMALS);
-    }
-
-    /// @notice Return fair reserve amounts given spot reserves, weights, and fair prices.
-    /// @param resA Reserve of the first asset
-    /// @param resB Reserve of the second asset
-    /// @param wA Weight of the first asset
-    /// @param wB Weight of the second asset
-    /// @param pxA Fair price of the first asset
-    /// @param pxB Fair price of the second asset
-    function computeFairReserves(
-        int128 resA,
-        int128 resB,
-        uint256 wA,
-        uint256 wB,
-        int128 pxA,
-        int128 pxB
-    ) internal view returns (uint256 fairResA, uint256 fairResB) {
-        // NOTE: wA + wB = 1 (normalize weights)
-        // constant product = resA^wA * resB^wB
-        // constraints:
-        // - fairResA^wA * fairResB^wB = constant product
-        // - fairResA * pxA / wA = fairResB * pxB / wB
-        // Solving equations:
-        // --> fairResA^wA * (fairResA * (pxA * wB) / (wA * pxB))^wB = constant product
-        // --> fairResA / r1^wB = constant product
-        // --> fairResA = resA^wA * resB^wB * r1^wB
-        // --> fairResA = resA * (resB/resA)^wB * r1^wB = resA * (r1/r0)^wB
-
-        int128 r0 = ABDKMath64x64.div(resA, resB);
-        int128 r1 = ABDKMath64x64.div(
-            ABDKMath64x64.mul(pxB, _toParameter64x64(wA)),
-            ABDKMath64x64.mul(pxA, _toParameter64x64(wB))
-        );
-
-        // fairResA = resA * (r1 / r0) ^ wB
-        // fairResB = resB * (r0 / r1) ^ wA
-        if (r0 > r1) {
-            int128 ratio = ABDKMath64x64.div(r1, r0);
-
-            fairResA = _toUint256(
-                ABDKMath64x64.mul(resA, ABDKMath64x64.pow(ratio, wB))
-            );
-            fairResB = _toUint256(
-                ABDKMath64x64.div(resB, ABDKMath64x64.pow(ratio, wA))
-            );
-        } else {
-            int128 ratio = ABDKMath64x64.div(r0, r1);
-
-            fairResA = _toUint256(
-                ABDKMath64x64.div(resA, ABDKMath64x64.pow(ratio, wB))
-            );
-            fairResB = _toUint256(
-                ABDKMath64x64.mul(resB, ABDKMath64x64.pow(ratio, wA))
-            );
-        }
-    }
 
     /// @notice Return the USD value of given Curve Lp, with 18 decimals of precision.
     /// @param token The ERC-20 token to check the value.
@@ -112,30 +40,39 @@ contract BalancerPairOracle is UsingBaseOracle, IBaseOracle {
         // Reentrancy guard to prevent flashloan attack
         checkReentrancy(vault);
 
-        (address[] memory tokens, uint256[] memory balances, ) = vault
-            .getPoolTokens(pool.getPoolId());
+        (address[] memory tokens, , ) = vault.getPoolTokens(pool.getPoolId());
         uint256[] memory weights = pool.getNormalizedWeights();
+
         require(tokens.length == 2, "num tokens must be 2");
-        address tokenA = tokens[0];
-        address tokenB = tokens[1];
-        uint8 decimalsA = IERC20Metadata(tokenA).decimals();
-        uint8 decimalsB = IERC20Metadata(tokenB).decimals();
 
-        uint256 price0 = base.getPrice(tokenA);
-        uint256 price1 = base.getPrice(tokenB);
+        // This solution is from Balancer team
+        // Ref: https://twitter.com/0xa9a/status/1539554145048395777/photo/1
+        //
+        // BPT price of weighted pool = k/s * exp(w1 * log(p1/w1)) * exp(w2 * log(p2/w2))
+        //
+        // k: invariant of pool => pool.getInvariant()
+        // s: supply of pool => pool.totalSupply()
+        // w1: weight of token1
+        // w2: weight of token2
+        // p1: price of token1
+        // p2: price of token2
 
-        (uint256 fairResA, uint256 fairResB) = computeFairReserves(
-            _toParameter64x64(balances[0] * (10 ** (18 - uint256(decimalsA)))),
-            _toParameter64x64(balances[1] * (10 ** (18 - uint256(decimalsB)))),
-            weights[0] / (10 ** 16),
-            weights[1] / (10 ** 16),
-            _toParameter64x64(price0),
-            _toParameter64x64(price1)
-        );
+        uint256 k = pool.getInvariant();
+        uint256 s = pool.totalSupply();
+        int128 w1 = ABDKMath64x64.divu(weights[0], 1e18);
+        int128 w2 = ABDKMath64x64.divu(weights[1], 1e18);
+        int128 p1 = ABDKMath64x64.divu(base.getPrice(tokens[0]), 1e18);
+        int128 p2 = ABDKMath64x64.divu(base.getPrice(tokens[1]), 1e18);
 
-        // use fairReserveA and fairReserveB to compute LP token price
-        // LP price = (fairResA * pxA + fairResB * pxB) / totalLPSupply
-        return (fairResA * price0 + fairResB * price1) / pool.totalSupply();
+        return
+            (1e18 *
+                k *
+                (
+                    ABDKMath64x64.mul(
+                        ((w1.mul((p1.div(w1)).ln()))).exp(),
+                        ((w2.mul((p2.div(w2)).ln()))).exp()
+                    )
+                ).toUInt()) / s;
     }
 
     /// @dev makes a no-op call to the Balancer Vault using the manageUserBalance function.
