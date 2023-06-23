@@ -26,6 +26,7 @@ import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { BigNumber, utils } from "ethers";
 import { getParaswaCalldata } from "../helpers/paraswap";
+import { fork } from "../helpers";
 
 chai.use(solidity);
 chai.use(near);
@@ -70,6 +71,8 @@ describe("Aura Spell", () => {
   let config: ProtocolConfig;
 
   before(async () => {
+    await fork();
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);

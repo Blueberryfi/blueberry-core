@@ -20,7 +20,7 @@ import SpellABI from '../../abi/IchiSpell.json';
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
-import { evm_mine_blocks } from '../helpers';
+import { evm_mine_blocks, fork } from '../helpers';
 import { Protocol, setupIchiProtocol } from '../helpers/setup-ichi-protocol';
 import { TickMath } from '@uniswap/v3-sdk';
 
@@ -59,6 +59,8 @@ describe('ICHI Angel Vaults Spell', () => {
   let protocol: Protocol;
 
   before(async () => {
+    await fork(17089048);
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     ichi = <MockIchiV2>await ethers.getContractAt("MockIchiV2", ICHI);

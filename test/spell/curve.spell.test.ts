@@ -14,7 +14,7 @@ import {
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { CrvProtocol, evm_mine_blocks, currentTime, setupCrvProtocol } from "../helpers";
+import { CrvProtocol, evm_mine_blocks, currentTime, setupCrvProtocol, fork } from "../helpers";
 import SpellABI from '../../abi/CurveSpell.json';
 import chai, { expect } from "chai";
 import { solidity } from 'ethereum-waffle'
@@ -61,6 +61,8 @@ describe("Curve Spell", () => {
 
 
   before(async () => {
+    await fork(17089048);
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);

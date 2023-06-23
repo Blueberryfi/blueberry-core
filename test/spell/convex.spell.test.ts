@@ -18,7 +18,7 @@ import {
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { CvxProtocol, setupCvxProtocol, evm_mine_blocks } from "../helpers";
+import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork } from "../helpers";
 import SpellABI from '../../abi/ConvexSpell.json';
 import chai, { expect } from "chai";
 import { solidity } from 'ethereum-waffle'
@@ -68,6 +68,8 @@ describe("Convex Spell", () => {
   let config: ProtocolConfig;
 
   before(async () => {
+    await fork();
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
