@@ -21,7 +21,7 @@ import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
 import { BigNumber, utils } from "ethers";
-import { getParaswaCalldata } from "../helpers/paraswap";
+import { getParaswapCalldata } from "../helpers/paraswap";
 
 chai.use(solidity)
 chai.use(near)
@@ -396,11 +396,12 @@ describe("Curve Spell", () => {
       const rewardFeeRatio = await config.rewardFee();
 
       const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
-      const swapData = await getParaswaCalldata(
+      const swapData = await getParaswapCalldata(
         CRV,
         USDC,
         expectedAmount,
-        spell.address
+        spell.address,
+        100
       );
 
       await expect(
@@ -435,11 +436,12 @@ describe("Curve Spell", () => {
       const rewardFeeRatio = await config.rewardFee();
 
       const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
-      const swapData = await getParaswaCalldata(
+      const swapData = await getParaswapCalldata(
         CRV,
         USDC,
         expectedAmount,
-        spell.address
+        spell.address,
+        100
       );
 
       await bank.execute(

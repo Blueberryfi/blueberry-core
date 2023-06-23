@@ -7,7 +7,7 @@ const paraswapSdk = constructSimpleSDK({
   axios,
 });
 
-export const getParaswaCalldata = async (
+export const getParaswapCalldata = async (
   fromToken: string,
   toToken: string,
   amount: BigNumberish,

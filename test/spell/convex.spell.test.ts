@@ -25,7 +25,7 @@ import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
 import { BigNumber, utils } from "ethers";
-import { getParaswaCalldata } from "../helpers/paraswap";
+import { getParaswapCalldata } from "../helpers/paraswap";
 
 chai.use(solidity)
 chai.use(near)
@@ -380,7 +380,7 @@ describe("Convex Spell", () => {
       const swapDatas = await Promise.all(
         pendingRewardsInfo.tokens.map((token, idx) => {
           if (expectedAmounts[idx].gt(0)) {
-            return getParaswaCalldata(
+            return getParaswapCalldata(
               token,
               USDC,
               expectedAmounts[idx],
@@ -440,7 +440,7 @@ describe("Convex Spell", () => {
       const swapDatas = await Promise.all(
         pendingRewardsInfo.tokens.map((token, idx) => {
           if (expectedAmounts[idx].gt(0)) {
-            return getParaswaCalldata(
+            return getParaswapCalldata(
               token,
               USDC,
               expectedAmounts[idx],
