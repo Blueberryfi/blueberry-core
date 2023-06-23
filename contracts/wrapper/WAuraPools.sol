@@ -141,11 +141,11 @@ contract WAuraPools is
     /// @param amount lp amount
     /// @param lpDecimals lp decimals
     function _getPendingReward(
-        uint stRewardPerShare,
+        uint256 stRewardPerShare,
         address rewarder,
-        uint amount,
-        uint lpDecimals
-    ) internal view returns (uint rewards) {
+        uint256 amount,
+        uint256 lpDecimals
+    ) internal view returns (uint256 rewards) {
         uint256 enRewardPerShare = IAuraRewarder(rewarder).rewardPerToken();
         uint256 share = enRewardPerShare > stRewardPerShare
             ? enRewardPerShare - stRewardPerShare
@@ -208,6 +208,7 @@ contract WAuraPools is
         uint256 amount
     )
         public
+        view
         override
         returns (address[] memory tokens, uint256[] memory rewards)
     {
@@ -216,7 +217,7 @@ contract WAuraPools is
             pid
         );
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
-        uint extraRewardsCount = extraRewards.length;
+        uint256 extraRewardsCount = extraRewards.length;
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
 
@@ -234,7 +235,7 @@ contract WAuraPools is
         rewards[1] = _getAuraPendingReward(auraRewarder, rewards[0]);
 
         // Additional rewards
-        for (uint i = 0; i < extraRewardsCount; i++) {
+        for (uint256 i; i != extraRewardsCount; ) {
             address rewarder = extraRewards[i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][
                 extraRewardsIdx[rewarder] - 1
@@ -246,6 +247,10 @@ contract WAuraPools is
                 amount,
                 lpDecimals
             );
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -275,11 +280,11 @@ contract WAuraPools is
         _mint(msg.sender, id, amount, "");
 
         // Store extra rewards info
-        uint extraRewardsCount = IAuraRewarder(auraRewarder)
+        uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();
-        for (uint i; i < extraRewardsCount; ) {
+        for (uint256 i; i != extraRewardsCount; ) {
             address extraRewarder = IAuraRewarder(auraRewarder).extraRewards(i);
-            uint rewardPerToken = IAuraRewarder(extraRewarder).rewardPerToken();
+            uint256 rewardPerToken = IAuraRewarder(extraRewarder).rewardPerToken();
             accExtPerShare[id].push(rewardPerToken);
 
             _syncExtraReward(extraRewarder);
@@ -320,17 +325,17 @@ contract WAuraPools is
         // Transfer LP Tokens
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
 
-        uint extraRewardsCount = IAuraRewarder(auraRewarder)
+        uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();
 
-        for (uint i; i < extraRewardsCount; ) {
+        for (uint256 i; i != extraRewardsCount; ) {
             _syncExtraReward(IAuraRewarder(auraRewarder).extraRewards(i));
 
             unchecked {
                 ++i;
             }
         }
-        uint storedExtraRewardLength = extraRewards.length;
+        uint256 storedExtraRewardLength = extraRewards.length;
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
 
         // Transfer Reward Tokens
@@ -338,7 +343,7 @@ contract WAuraPools is
 
         // Withdraw manually
         if (hasDiffExtraRewards) {
-            for (uint i; i < storedExtraRewardLength; ) {
+            for (uint256 i; i != storedExtraRewardLength; ) {
                 IAuraExtraRewarder(extraRewards[i]).getReward();
 
                 unchecked {
@@ -347,7 +352,8 @@ contract WAuraPools is
             }
         }
 
-        for (uint i; i < rewardTokens.length; ) {
+        uint256 rewardTokensLength = rewardTokens.length;
+        for (uint256 i; i != rewardTokensLength; ) {
             IERC20Upgradeable(rewardTokens[i]).safeTransfer(
                 msg.sender,
                 rewards[i]
@@ -360,7 +366,7 @@ contract WAuraPools is
     }
 
     /// @notice Get length of extra rewards
-    function extraRewardsLength() external view returns (uint) {
+    function extraRewardsLength() external view returns (uint256) {
         return extraRewards.length;
     }
 
