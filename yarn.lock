@@ -1173,17 +1173,17 @@
     proper-lockfile "^4.1.1"
     solidity-ast "^0.4.15"
 
-"@paraswap/core@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.0.4.tgz#421f35893c9bdb934881b87436c20fff685fe25b"
-  integrity sha512-8/UkGJwftOFghSmeG1raSwEsXZTveVVo69duCNIWoeBbAj4vxy2KOJ5VugRkfvKbtNeDxR3MZ64QY5yqWYg82w==
+"@paraswap/core@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@paraswap/core/-/core-1.1.0.tgz#5ec7415be69dc657a9d82b0fde4e20f632cca1b6"
+  integrity sha512-ecnX8ezlhYWFwolZxYEz+K+RfLr8xaxQqiJKlxJ8Yf00tXTGxDGn6/Acy00t4+9Kv0apewd7++J33eJt9yNfwg==
 
-"@paraswap/sdk@^6.2.0":
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.2.0.tgz#3e393f0b9a550617148ddd617c7a1a57962204de"
-  integrity sha512-tHl8jWP4mC7nEVyPXshsGXwXLbxFR5sYGW/O6Vs1J+oa6kBVr32EO632Hgs1Dg5j8dMN9CooZi/KAxep++DZ/A==
+"@paraswap/sdk@6.2.1":
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/@paraswap/sdk/-/sdk-6.2.1.tgz#cbac091ae1a8f080edd64234465ef127fdbd21f6"
+  integrity sha512-PW0pw676Oyy6129gqLKU/o7JNFVurCnA6AJ3NAKmZ6zAbPrYLWJV+zl/pWqja5MZkst2QzbDhd40gGjIeEKaPg==
   dependencies:
-    "@paraswap/core" "^1.0.4"
+    "@paraswap/core" "1.1.0"
     bignumber.js "^9.0.2"
     ts-essentials "^9.1.2"
 
