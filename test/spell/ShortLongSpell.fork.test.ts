@@ -12,6 +12,7 @@ import { ADDRESS } from "../../constant";
 import {
   ShortLongProtocol,
   evm_mine_blocks,
+  fork,
   setupShortLongProtocol,
 } from "../helpers";
 import SpellABI from "../../abi/ShortLongSpell.json";
@@ -20,7 +21,7 @@ import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { BigNumber, utils } from "ethers";
-import { getParaswaCalldata } from "../helpers/paraswap";
+import { getParaswapCalldata } from "../helpers/paraswap";
 
 chai.use(solidity);
 chai.use(near);
@@ -46,6 +47,8 @@ describe("ShortLong Spell mainnet fork", () => {
   let daiSoftVault: SoftVault;
 
   before(async () => {
+    await fork();
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
@@ -70,7 +73,7 @@ describe("ShortLong Spell mainnet fork", () => {
     });
 
     it("should revert when opening position exceeds max LTV", async () => {
-      const swapData = await getParaswaCalldata(
+      const swapData = await getParaswapCalldata(
         CRV,
         DAI,
         borrowAmount.mul(4),
@@ -159,7 +162,7 @@ describe("ShortLong Spell mainnet fork", () => {
     it("should be able to farm DAI", async () => {
       const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
-      const swapData = await getParaswaCalldata(
+      const swapData = await getParaswapCalldata(
         CRV,
         DAI,
         borrowAmount,
@@ -250,7 +253,7 @@ describe("ShortLong Spell mainnet fork", () => {
         ]
       );
 
-      const swapData = await getParaswaCalldata(
+      const swapData = await getParaswapCalldata(
         DAI,
         CRV,
         swapAmount,

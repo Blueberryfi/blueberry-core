@@ -18,14 +18,14 @@ import {
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { CvxProtocol, setupCvxProtocol, evm_mine_blocks } from "../helpers";
+import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork } from "../helpers";
 import SpellABI from '../../abi/ConvexSpell.json';
 import chai, { expect } from "chai";
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
 import { BigNumber, utils } from "ethers";
-import { getParaswaCalldata } from "../helpers/paraswap";
+import { getParaswapCalldata } from "../helpers/paraswap";
 
 chai.use(solidity)
 chai.use(near)
@@ -68,6 +68,8 @@ describe("Convex Spell", () => {
   let config: ProtocolConfig;
 
   before(async () => {
+    await fork();
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
@@ -378,11 +380,12 @@ describe("Convex Spell", () => {
       const swapDatas = await Promise.all(
         pendingRewardsInfo.tokens.map((token, idx) => {
           if (expectedAmounts[idx].gt(0)) {
-            return getParaswaCalldata(
+            return getParaswapCalldata(
               token,
               USDC,
               expectedAmounts[idx],
-              spell.address
+              spell.address,
+              100
             );
           } else {
             return {
@@ -437,11 +440,12 @@ describe("Convex Spell", () => {
       const swapDatas = await Promise.all(
         pendingRewardsInfo.tokens.map((token, idx) => {
           if (expectedAmounts[idx].gt(0)) {
-            return getParaswaCalldata(
+            return getParaswapCalldata(
               token,
               USDC,
               expectedAmounts[idx],
-              spell.address
+              spell.address,
+              100,
             );
           } else {
             return {

@@ -1,4 +1,7 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const latestBlockNumber = async () => {
   return await ethers.provider.getBlockNumber();
@@ -20,6 +23,20 @@ export const currentTime = async() => {
   const block = await ethers.provider.getBlock(blockNum);
   return block.timestamp;
 }
+
+export const fork = async (blockNumber?: number) => {
+  await network.provider.request({
+    method: "hardhat_reset",
+    params: [
+      {
+        forking: {
+          jsonRpcUrl: `https://eth.llamarpc.com/rpc/${process.env.LLAMA_API_KEY}`,
+          blockNumber,
+        },
+      },
+    ],
+  });
+};
 
 export * from "./setup-ichi-protocol";
 export * from "./setup-curve-protocol";

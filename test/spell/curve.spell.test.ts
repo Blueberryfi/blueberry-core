@@ -14,14 +14,14 @@ import {
 } from '../../typechain-types';
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { CrvProtocol, evm_mine_blocks, currentTime, setupCrvProtocol } from "../helpers";
+import { CrvProtocol, evm_mine_blocks, currentTime, setupCrvProtocol, fork } from "../helpers";
 import SpellABI from '../../abi/CurveSpell.json';
 import chai, { expect } from "chai";
 import { solidity } from 'ethereum-waffle'
 import { near } from '../assertions/near'
 import { roughlyNear } from '../assertions/roughlyNear'
 import { BigNumber, utils } from "ethers";
-import { getParaswaCalldata } from "../helpers/paraswap";
+import { getParaswapCalldata } from "../helpers/paraswap";
 
 chai.use(solidity)
 chai.use(near)
@@ -61,6 +61,8 @@ describe("Curve Spell", () => {
 
 
   before(async () => {
+    await fork(17089048);
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
@@ -377,7 +379,7 @@ describe("Curve Spell", () => {
           amountShareWithdraw: ethers.constants.MaxUint256,
           sellSlippage: 50,
           sqrtRatioLimit: 0
-        }, ADDRESS.SUSHI_ROUTER, [CRV, WETH, USDC], false, [], deadline])
+        }, [], [], false, deadline])
       )).to.be.revertedWith(`EXPIRED(${deadline})`);
     })
 
@@ -394,11 +396,12 @@ describe("Curve Spell", () => {
       const rewardFeeRatio = await config.rewardFee();
 
       const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
-      const swapData = await getParaswaCalldata(
+      const swapData = await getParaswapCalldata(
         CRV,
         USDC,
         expectedAmount,
-        spell.address
+        spell.address,
+        100
       );
 
       await expect(
@@ -433,11 +436,12 @@ describe("Curve Spell", () => {
       const rewardFeeRatio = await config.rewardFee();
 
       const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
-      const swapData = await getParaswaCalldata(
+      const swapData = await getParaswapCalldata(
         CRV,
         USDC,
         expectedAmount,
-        spell.address
+        spell.address,
+        100
       );
 
       await bank.execute(

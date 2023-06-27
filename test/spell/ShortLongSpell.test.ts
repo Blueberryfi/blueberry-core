@@ -11,7 +11,7 @@ import {
 import { ethers, upgrades } from "hardhat";
 import { constants } from "ethers";
 import { CONTRACT_NAMES } from "../../constant";
-import { AuraProtocol } from "../helpers";
+import { fork } from "../helpers";
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
@@ -33,6 +33,8 @@ describe("ShortLongSpell", () => {
   let augustusSwapper: MockParaswap;
 
   beforeEach(async () => {
+    await fork(17089048);
+
     [owner, alice] = await ethers.getSigners();
 
     const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
