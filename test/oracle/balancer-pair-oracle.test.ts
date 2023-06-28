@@ -48,8 +48,13 @@ describe("Balancer Pair Oracle", () => {
     );
 
     await chainlinkAdapterOracle.setTokenRemappings(
-      [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.WBTC],
-      [ADDRESS.CHAINLINK_ETH, ADDRESS.CHAINLINK_ETH, ADDRESS.CHAINLINK_BTC]
+      [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.wstETH, ADDRESS.WBTC],
+      [
+        ADDRESS.CHAINLINK_ETH,
+        ADDRESS.CHAINLINK_ETH,
+        ADDRESS.CHAINLINK_ETH,
+        ADDRESS.CHAINLINK_BTC,
+      ]
     );
 
     const CoreOracle = await ethers.getContractFactory(
@@ -92,8 +97,10 @@ describe("Balancer Pair Oracle", () => {
         ADDRESS.WETH,
         ADDRESS.WBTC,
         ADDRESS.BAL,
+        ADDRESS.wstETH,
       ],
       [
+        chainlinkAdapterOracle.address,
         chainlinkAdapterOracle.address,
         chainlinkAdapterOracle.address,
         chainlinkAdapterOracle.address,
@@ -112,6 +119,16 @@ describe("Balancer Pair Oracle", () => {
       let price = await compStableOracle.callStatic.getPrice(ADDRESS.BAL_UDU);
       console.log(
         "Balancer USDC-DAI-USDT LP Price:",
+        utils.formatUnits(price, 18)
+      );
+    });
+
+    it("Balancer AURA Stable Lp Price", async () => {
+      let price = await stableOracle.callStatic.getPrice(
+        ADDRESS.BAL_WSTETH_STABLE
+      );
+      console.log(
+        "Balancer wstETH-WETH LP Price:",
         utils.formatUnits(price, 18)
       );
     });
