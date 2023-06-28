@@ -13,9 +13,9 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueBerryErrors.sol" as BlueBerryErrors;
 import "./UsingBaseOracle.sol";
-import "../libraries/BBMath.sol";
+import "../libraries/balancer/FixedPoint.sol";
 import "../interfaces/ICurveOracle.sol";
 import "../interfaces/curve/ICurveRegistry.sol";
 import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
@@ -28,6 +28,11 @@ import "../interfaces/curve/ICurvePool.sol";
  * @notice Oracle contract which privides price feeds of Curve volatile pool LP tokens
  */
 contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
+    using FixedPoint for uint256;
+
+    uint256 constant DECIMALS = 10 ** 18;
+    uint256 constant USD_FEED_DECIMALS = 10 ** 8;
+
     ICurveAddressProvider public immutable addressProvider;
 
     event CurveLpRegistered(
@@ -106,7 +111,7 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
             return (pool, ulTokens, virtualPrice);
         }
 
-        revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
+        revert BlueBerryErrors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
 
     function _checkReentrant(address _pool) internal {
@@ -128,27 +133,20 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
      * @param crvLp The ERC-20 Curve LP token to check the value.
      */
     function getPrice(address crvLp) external override returns (uint256) {
-        (address _pool, address[] memory tokens, ) = _getPoolInfo(crvLp);
+        (, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
 
         if (tokens.length != 2) {
-            revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
+            revert BlueBerryErrors.ORACLE_NOT_SUPPORT_LP(crvLp);
         }
 
-        ICurvePool pool = ICurvePool(_pool);
-
-        IERC20Metadata token = IERC20Metadata(crvLp);
-        uint256 totalSupply = token.totalSupply();
-
-        uint256 r0 = pool.balances(0);
-        uint256 r1 = pool.balances(1);
         uint256 px0 = base.getPrice(tokens[0]);
         uint256 px1 = base.getPrice(tokens[1]);
-        uint256 t0Decimal = IERC20Metadata(tokens[0]).decimals();
-        uint256 t1Decimal = IERC20Metadata(tokens[1]).decimals();
-        uint256 sqrtK = BBMath.sqrt(
-            r0 * r1 * 10 ** (36 - t0Decimal - t1Decimal)
-        );
 
-        return (2 * sqrtK * BBMath.sqrt(px0 * px1)) / totalSupply;
+        uint256 product = px0 * DECIMALS / USD_FEED_DECIMALS;
+        product = product.mulDown(px1 * DECIMALS / USD_FEED_DECIMALS);
+
+        uint256 answer = product.powDown(DECIMALS / 2).mulDown(2 * virtualPrice);
+
+        return answer * USD_FEED_DECIMALS / DECIMALS;
     }
 }
