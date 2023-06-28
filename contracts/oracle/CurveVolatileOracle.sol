@@ -33,10 +33,6 @@ contract CurveVolatileOracle is CurveBaseOracle {
 
     event NewLimiterParams(uint256 lowerBound, uint256 upperBound);
 
-    error ValueOutOfRangeException();
-
-    error IncorrectLimitsException();
-
     constructor(
         IBaseOracle base_,
         ICurveAddressProvider addressProvider_
@@ -62,7 +58,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
                 _lowerBound,
                 _upperBound(_lowerBound)
             )
-        ) revert IncorrectLimitsException();
+        ) revert BlueBerryErrors.INCORRECT_LIMITS();
 
         lowerBound[_crvLp] = _lowerBound;
         emit NewLimiterParams(_lowerBound, _upperBound(_lowerBound));
@@ -125,7 +121,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
         uint256 value
     ) internal view returns (uint256) {
         uint256 lb = lowerBound[crvLp];
-        if (value < lb) revert ValueOutOfRangeException();
+        if (value < lb) revert BlueBerryErrors.VALUE_OUT_OF_RANGE();
 
         uint256 uBound = _upperBound(lb);
 

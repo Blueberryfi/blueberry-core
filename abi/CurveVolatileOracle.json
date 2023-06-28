@@ -17,7 +17,7 @@
   },
   {
     "inputs": [],
-    "name": "IncorrectLimitsException",
+    "name": "INCORRECT_LIMITS",
     "type": "error"
   },
   {
@@ -33,7 +33,7 @@
   },
   {
     "inputs": [],
-    "name": "ValueOutOfRangeException",
+    "name": "VALUE_OUT_OF_RANGE",
     "type": "error"
   },
   {

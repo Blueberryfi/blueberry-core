@@ -43,6 +43,9 @@ error ORACLE_NOT_SUPPORT_LP(address lp);
 error ORACLE_NOT_SUPPORT_WTOKEN(address wToken);
 error NO_ORACLE_ROUTE(address token);
 
+error VALUE_OUT_OF_RANGE();
+error INCORRECT_LIMITS();
+
 error CRV_LP_ALREADY_REGISTERED(address lp);
 
 // Spell
