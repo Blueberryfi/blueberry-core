@@ -35,9 +35,6 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     uint256 public withdrawVaultFeeWindow;
     uint256 public withdrawVaultFeeWindowStartTime;
 
-    /// @dev Slippage of converting withdrawn reserves to debt tokens when closing position
-    uint256 public maxSlippageOfClose;
-
     uint256 public treasuryFeeRate;
     uint256 public blbStablePoolFeeRate;
     uint256 public blbIchiVaultFeeRate;
@@ -67,8 +64,6 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
 
         withdrawVaultFee = 100; // 1% as default, base 10000
         withdrawVaultFeeWindow = 60 days; // Liquidity boot strapping event per vault
-
-        maxSlippageOfClose = 300; // 3% of Max Slippage as default, base 10000
     }
 
     function startVaultWithdrawFee() external onlyOwner {
@@ -86,8 +81,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
             revert Errors.RATIO_TOO_HIGH(depositFee_);
         depositFee = depositFee_;
     }
+
     /**
-     *  @dev Owner priviledged function to set withdraw fee 
+     *  @dev Owner priviledged function to set withdraw fee
      */
     function setWithdrawFee(uint256 withdrawFee_) external onlyOwner {
         // Cap to 20%
@@ -97,9 +93,11 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     }
 
     /**
-     * @dev Owner priviledged function to set withdraw vault fee window 
+     * @dev Owner priviledged function to set withdraw vault fee window
      */
-    function setWithdrawVaultFeeWindow(uint256 withdrawVaultFeeWindow_) external onlyOwner {
+    function setWithdrawVaultFeeWindow(
+        uint256 withdrawVaultFeeWindow_
+    ) external onlyOwner {
         // Cap to 60 days
         if (withdrawVaultFeeWindow_ > Constants.MAX_WITHDRAW_VAULT_FEE_WINDOW)
             revert Errors.FEE_WINDOW_TOO_LONG(withdrawVaultFeeWindow_);
@@ -107,17 +105,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     }
 
     /**
-     * @dev Owner priviledged function to set maximum slippage to close a position 
-     */
-    function setMaxSlippageOfClose(uint256 slippage_) external onlyOwner {
-        // Cap to 20%
-        if (maxSlippageOfClose > Constants.MAX_FEE_RATE)
-            revert Errors.RATIO_TOO_HIGH(slippage_);
-        maxSlippageOfClose = slippage_;
-    }
-
-    /**
-     * @dev Owner priviledged function to set reward fee 
+     * @dev Owner priviledged function to set reward fee
      */
     function setRewardFee(uint256 rewardFee_) external onlyOwner {
         // Cap to 20%
@@ -127,7 +115,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     }
 
     /**
-     * @dev Owner priviledged function to set fee distribution  
+     * @dev Owner priviledged function to set fee distribution
      */
     function setFeeDistribution(
         uint256 treasuryFeeRate_,

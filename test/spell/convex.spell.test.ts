@@ -411,8 +411,7 @@ describe("Convex Spell", () => {
               amountRepay: ethers.constants.MaxUint256,
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
-              sellSlippage: 20000,
-              sqrtRatioLimit: 0
+              amountOutMin: utils.parseUnits('1000', 18),
             },
             expectedAmounts,
             swapDatas.map((item) => item.data),
@@ -474,8 +473,7 @@ describe("Convex Spell", () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: 0
+            amountOutMin: 1,
           },
           expectedAmounts,
           swapDatas.map((item) => item.data),

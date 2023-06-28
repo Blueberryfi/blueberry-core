@@ -62,6 +62,7 @@ abstract contract BasicSpell is
      * @param amountPosRemove Amount of position to withdraw
      * @param amountRepay Amount of debt to repay
      * @param amountShareWithdraw Amount of isolated collaterals to withdraw
+     * @param amountOutMin Minimum amount out used for slippage
      */
     struct ClosePosParam {
         uint256 strategyId;
@@ -70,8 +71,7 @@ abstract contract BasicSpell is
         uint256 amountRepay;
         uint256 amountPosRemove;
         uint256 amountShareWithdraw;
-        uint256 sellSlippage;
-        uint160 sqrtRatioLimit;
+        uint256 amountOutMin;
     }
 
     IBank public bank;
@@ -83,8 +83,17 @@ abstract contract BasicSpell is
     /// @dev strategyId => collateral token => maxLTV
     mapping(uint256 => mapping(address => uint256)) public maxLTV; // base 1e4
 
-    event StrategyAdded(uint256 strategyId, address vault, uint256 minPosSize, uint256 maxPosSize);
-    event StrategyPosSizeUpdated(uint256 strategyId, uint256 minPosSize, uint256 maxPosSize);
+    event StrategyAdded(
+        uint256 strategyId,
+        address vault,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    );
+    event StrategyPosSizeUpdated(
+        uint256 strategyId,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    );
     event CollateralsMaxLTVSet(
         uint256 strategyId,
         address[] collaterals,
@@ -134,12 +143,27 @@ abstract contract BasicSpell is
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function _addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) internal {
+    function _addStrategy(
+        address vault,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) internal {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
-        strategies.push(Strategy({vault: vault, minPositionSize: minPosSize, maxPositionSize: maxPosSize}));
-        emit StrategyAdded(strategies.length - 1, vault, minPosSize, maxPosSize);
+        strategies.push(
+            Strategy({
+                vault: vault,
+                minPositionSize: minPosSize,
+                maxPositionSize: maxPosSize
+            })
+        );
+        emit StrategyAdded(
+            strategies.length - 1,
+            vault,
+            minPosSize,
+            maxPosSize
+        );
     }
 
     /**

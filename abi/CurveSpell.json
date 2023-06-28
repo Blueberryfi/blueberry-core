@@ -390,13 +390,8 @@
           },
           {
             "internalType": "uint256",
-            "name": "sellSlippage",
+            "name": "amountOutMin",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint160",
-            "name": "sqrtRatioLimit",
-            "type": "uint160"
           }
         ],
         "internalType": "struct BasicSpell.ClosePosParam",

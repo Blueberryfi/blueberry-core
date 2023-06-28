@@ -403,8 +403,7 @@ describe('Bank', () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: 1,
           }])
         )
       ).to.be.revertedWith("INVALID_UTOKEN")
@@ -445,8 +444,7 @@ describe('Bank', () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: 1,
           }])
         )
       ).to.be.revertedWith("INCORRECT_DEBT")
@@ -487,8 +485,7 @@ describe('Bank', () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: 1,
           }])
         )
       ).to.be.revertedWith("TOKEN_NOT_WHITELISTED")
@@ -939,8 +936,7 @@ describe('Bank', () => {
               amountRepay: ethers.constants.MaxUint256,
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
-              sellSlippage: 50,
-              sqrtRatioLimit: BigNumber.from(sqrt.toString())
+              amountOutMin: 1,
             }])
           )
         ).to.be.revertedWith("WITHDRAW_LEND_NOT_ALLOWED")
@@ -957,8 +953,7 @@ describe('Bank', () => {
               amountRepay: ethers.constants.MaxUint256,
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
-              sellSlippage: 50,
-              sqrtRatioLimit: BigNumber.from(sqrt.toString())
+              amountOutMin: 1,
             }])
           )
         ).to.be.revertedWith("REPAY_NOT_ALLOWED")
