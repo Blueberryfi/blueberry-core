@@ -50,7 +50,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
         address _crvLp,
         uint256 _lowerBound
     ) external onlyOwner {
-        _setLimiter(_crvLp, _lowerBound); // F:[LPF-4,5]
+        _setLimiter(_crvLp, _lowerBound);
     }
 
     /// @dev IMPLEMENTATION: setLimiter
@@ -62,10 +62,10 @@ contract CurveVolatileOracle is CurveBaseOracle {
                 _lowerBound,
                 _upperBound(_lowerBound)
             )
-        ) revert IncorrectLimitsException(); // F:[LPF-4]
+        ) revert IncorrectLimitsException();
 
-        lowerBound[_crvLp] = _lowerBound; // F:[LPF-5]
-        emit NewLimiterParams(_lowerBound, _upperBound(_lowerBound)); // F:[LPF-5]
+        lowerBound[_crvLp] = _lowerBound;
+        emit NewLimiterParams(_lowerBound, _upperBound(_lowerBound));
     }
 
     function _checkCurrentValueInBounds(
@@ -125,7 +125,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
         uint256 value
     ) internal view returns (uint256) {
         uint256 lb = lowerBound[crvLp];
-        if (value < lb) revert ValueOutOfRangeException(); // F:[LPF-3]
+        if (value < lb) revert ValueOutOfRangeException();
 
         uint256 uBound = _upperBound(lb);
 
@@ -133,6 +133,6 @@ contract CurveVolatileOracle is CurveBaseOracle {
     }
 
     function _upperBound(uint256 lb) internal pure returns (uint256) {
-        return (lb * (PERCENTAGE_FACTOR + RANGE_WIDTH)) / PERCENTAGE_FACTOR; // F:[LPF-5]
+        return (lb * (PERCENTAGE_FACTOR + RANGE_WIDTH)) / PERCENTAGE_FACTOR;
     }
 }
