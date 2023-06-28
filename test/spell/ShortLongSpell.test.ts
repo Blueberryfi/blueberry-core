@@ -193,7 +193,7 @@ describe("ShortLongSpell", () => {
       ).to.be.revertedWith("ZERO_AMOUNT");
     });
 
-    it("should revert when minPosSize >= maxPosSize is 0", async () => {
+    it("should revert when minPosSize >= maxPosSize", async () => {
       await expect(
         spell.connect(owner).addStrategy(weth.address, 10, 10)
       ).to.be.revertedWith("INVALID_POS_SIZE");

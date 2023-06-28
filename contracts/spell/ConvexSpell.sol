@@ -230,20 +230,6 @@ contract ConvexSpell is BasicSpell {
             amountPosRemove = IERC20Upgradeable(crvLp).balanceOf(address(this));
         }
 
-        uint256 minOut = (amountPosRemove *
-            ICurvePool(pool).get_virtual_price() *
-            param.sellSlippage) /
-            1e18 /
-            Constants.DENOMINATOR;
-
-        uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
-            .decimals();
-
-        // We assume that there is no token with decimals above than 18
-        if (tokenDecimals < 18) {
-            minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
-        }
-
         int128 tokenIndex;
         for (uint256 i = 0; i < tokens.length; i++) {
             if (tokens[i] == pos.debtToken) {
@@ -255,7 +241,7 @@ contract ConvexSpell is BasicSpell {
         ICurvePool(pool).remove_liquidity_one_coin(
             amountPosRemove,
             int128(tokenIndex),
-            minOut
+            param.amountOutMin
         );
     }
 

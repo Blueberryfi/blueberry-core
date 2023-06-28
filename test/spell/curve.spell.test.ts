@@ -377,8 +377,7 @@ describe("Curve Spell", () => {
           amountRepay: ethers.constants.MaxUint256,
           amountPosRemove: ethers.constants.MaxUint256,
           amountShareWithdraw: ethers.constants.MaxUint256,
-          sellSlippage: 50,
-          sqrtRatioLimit: 0
+          amountOutMin: 1,
         }, [], [], false, deadline])
       )).to.be.revertedWith(`EXPIRED(${deadline})`);
     })
@@ -415,8 +414,7 @@ describe("Curve Spell", () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 20000,
-            sqrtRatioLimit: 0
+            amountOutMin: utils.parseUnits('1000', 18),
           }, [expectedAmount], [swapData.data], false, 7777777777])
         )
       ).to.be.revertedWith("Not enough coins removed");
@@ -455,8 +453,7 @@ describe("Curve Spell", () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: 0,
+            amountOutMin: 1,
           },
           [expectedAmount],
           [swapData.data],

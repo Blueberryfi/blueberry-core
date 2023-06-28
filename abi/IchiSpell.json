@@ -148,17 +148,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "ratio",
-        "type": "uint256"
-      }
-    ],
-    "name": "RATIO_TOO_HIGH",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "spell",
         "type": "address"
@@ -393,13 +382,8 @@
           },
           {
             "internalType": "uint256",
-            "name": "sellSlippage",
+            "name": "amountOutMin",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint160",
-            "name": "sqrtRatioLimit",
-            "type": "uint160"
           }
         ],
         "internalType": "struct BasicSpell.ClosePosParam",
@@ -448,13 +432,8 @@
           },
           {
             "internalType": "uint256",
-            "name": "sellSlippage",
+            "name": "amountOutMin",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint160",
-            "name": "sqrtRatioLimit",
-            "type": "uint160"
           }
         ],
         "internalType": "struct BasicSpell.ClosePosParam",

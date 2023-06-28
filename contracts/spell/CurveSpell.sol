@@ -273,21 +273,6 @@ contract CurveSpell is BasicSpell {
             }
         }
 
-        uint256 minOut;
-        {
-            uint256 virtualPrice = ICurvePool(pool).get_virtual_price();
-            minOut =
-                (amountPosRemove * virtualPrice * param.sellSlippage) /
-                1e18 / Constants.DENOMINATOR;
-
-            // We assume that there is no token with decimals above than 18
-            uint8 tokenDecimals = IERC20MetadataUpgradeable(pos.debtToken)
-                .decimals();
-            if (tokenDecimals < 18) {
-                minOut = minOut / (uint256(10) ** (18 - tokenDecimals));
-            }
-        }
-
         if (isKilled) {
             uint256 len = tokens.length;
             if (len == 2) {
@@ -306,7 +291,7 @@ contract CurveSpell is BasicSpell {
             ICurvePool(pool).remove_liquidity_one_coin(
                 amountPosRemove,
                 int128(uint128(tokenIndex)),
-                minOut
+                param.amountOutMin
             );
         }
     }

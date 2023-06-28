@@ -364,8 +364,7 @@ describe('ICHI Angel Vaults Spell', () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: 1,
           }])
         )
       ).to.be.revertedWith("STRATEGY_NOT_EXIST")
@@ -386,8 +385,7 @@ describe('ICHI Angel Vaults Spell', () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: 1,
           }])
         )
       ).to.be.revertedWith("COLLATERAL_NOT_EXIST")
@@ -408,34 +406,12 @@ describe('ICHI Angel Vaults Spell', () => {
             amountRepay: 0,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: 1,
           }])
         )
       ).to.be.revertedWith("STRATEGY_NOT_EXIST")
     })
-    it("should revert closing a position with too high slippage", async () => {
-      const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
 
-      await ichi.approve(bank.address, ethers.constants.MaxUint256);
-      await expect(
-        bank.execute(
-          1,
-          spell.address,
-          iface.encodeFunctionData("closePosition", [{
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            amountRepay: ethers.constants.MaxUint256,
-            amountPosRemove: ethers.constants.MaxUint256,
-            amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 350,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
-          }])
-        )
-      ).to.be.revertedWith("RATIO_TOO_HIGH")
-    })
     it("should revert when token price is changed and outToken amount is out of slippage range", async () => {
       const positionId = (await bank.nextPositionId()).sub(1);
       const positionInfo = await bank.getPositionInfo(positionId);
@@ -455,8 +431,7 @@ describe('ICHI Angel Vaults Spell', () => {
             amountRepay: 0,
             amountPosRemove: positionInfo.collateralSize.div(3),
             amountShareWithdraw: 0,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: utils.parseEther('10000'),
           }])
         )
       ).to.be.revertedWith("Too little received");
@@ -486,8 +461,7 @@ describe('ICHI Angel Vaults Spell', () => {
           amountRepay: 0,
           amountPosRemove: positionInfo.collateralSize.div(3),
           amountShareWithdraw: 0,
-          sellSlippage: 50,
-          sqrtRatioLimit: BigNumber.from(sqrt.toString())
+          amountOutMin: 1,
         }])
       )
       const afterPositionInfo = await bank.getPositionInfo(positionId);
@@ -517,8 +491,7 @@ describe('ICHI Angel Vaults Spell', () => {
           amountRepay: positionInfo.debtShare.div(3),
           amountPosRemove: positionInfo.collateralSize.div(3),
           amountShareWithdraw: positionInfo.underlyingVaultShare.div(3),
-          sellSlippage: 50,
-          sqrtRatioLimit: BigNumber.from(sqrt.toString())
+          amountOutMin: 1,
         }])
       )
 
@@ -557,8 +530,7 @@ describe('ICHI Angel Vaults Spell', () => {
           amountRepay: ethers.constants.MaxUint256,
           amountPosRemove: ethers.constants.MaxUint256,
           amountShareWithdraw: ethers.constants.MaxUint256,
-          sellSlippage: 50,
-          sqrtRatioLimit: BigNumber.from(sqrt.toString())
+          amountOutMin: 1,
         }])
       )
 
@@ -666,8 +638,7 @@ describe('ICHI Angel Vaults Spell', () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: 1,
           }])
         )
       ).to.be.revertedWith("STRATEGY_NOT_EXIST")
@@ -688,8 +659,7 @@ describe('ICHI Angel Vaults Spell', () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: BigNumber.from(sqrt.toString())
+            amountOutMin: 1,
           }])
         )
       ).to.be.revertedWith("COLLATERAL_NOT_EXIST")
@@ -793,8 +763,7 @@ describe('ICHI Angel Vaults Spell', () => {
           amountRepay: ethers.constants.MaxUint256,
           amountPosRemove: ethers.constants.MaxUint256,
           amountShareWithdraw: ethers.constants.MaxUint256,
-          sellSlippage: 50,
-          sqrtRatioLimit: BigNumber.from(sqrt.toString())
+          amountOutMin: 1,
         }])
       )
       const afterUSDCBalance = await usdc.balanceOf(admin.address);

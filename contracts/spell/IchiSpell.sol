@@ -191,9 +191,6 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
      *      Repay Debt and refund rest to user
      */
     function _withdraw(ClosePosParam calldata param) internal {
-        if (param.sellSlippage > bank.config().maxSlippageOfClose())
-            revert Errors.RATIO_TOO_HIGH(param.sellSlippage);
-
         Strategy memory strategy = strategies[param.strategyId];
         IICHIVault vault = IICHIVault(strategy.vault);
 
@@ -219,18 +216,9 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
         ).balanceOf(address(this));
 
         if (amountIn > 0) {
-            uint160 deltaSqrt = (param.sqrtRatioLimit *
-                uint160(param.sellSlippage)) / uint160(Constants.DENOMINATOR);
             address[] memory swapPath = new address[](2);
             swapPath[0] = isTokenA ? vault.token1() : vault.token0();
             swapPath[1] = isTokenA ? vault.token0() : vault.token1();
-
-            uint256 amountOutMin = _getMinOutAmount(
-                swapPath[0],
-                swapPath[1],
-                amountIn,
-                param.sellSlippage
-            );
 
             IUniswapV3Router.ExactInputSingleParams
                 memory params = IUniswapV3Router.ExactInputSingleParams({
@@ -240,7 +228,7 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
                     recipient: address(this),
                     deadline: block.timestamp + Constants.MAX_DELAY_ON_SWAP,
                     amountIn: amountIn,
-                    amountOutMinimum: amountOutMin,
+                    amountOutMinimum: param.amountOutMin,
                     sqrtPriceLimitX96: 0
                 });
 

@@ -272,8 +272,7 @@ describe("ShortLong Spell mainnet fork", () => {
             amountRepay: ethers.constants.MaxUint256,
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
-            sellSlippage: 50,
-            sqrtRatioLimit: 0,
+            amountOutMin: 1,
           },
           swapData.data,
         ])

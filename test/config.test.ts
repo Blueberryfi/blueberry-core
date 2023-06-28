@@ -118,18 +118,6 @@ describe("Protocol Config", () => {
     expect(await config.rewardFee()).to.be.equal(100);
   })
 
-  it("owner should be able to set max slippage of close", async () => {
-    await expect(
-      config.connect(alice).setMaxSlippageOfClose(100)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-    // await expect(
-    //   config.setMaxSlippageOfClose(2500)
-    // ).to.be.revertedWith("RATIO_TOO_HIGH");
-
-    await config.setMaxSlippageOfClose(100);
-    expect(await config.maxSlippageOfClose()).to.be.equal(100);
-  })
-
   it("owner should be able to set fee distribution rates", async () => {
     await expect(
       config.connect(alice).setFeeDistribution(0, 0, 0)
