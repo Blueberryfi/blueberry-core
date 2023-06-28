@@ -2,38 +2,12 @@
   {
     "inputs": [
       {
-        "internalType": "contract IBaseOracle",
-        "name": "base_",
-        "type": "address"
-      },
-      {
-        "internalType": "contract ICurveAddressProvider",
-        "name": "addressProvider_",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [],
-    "name": "IncorrectLimitsException",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "lp",
         "type": "address"
       }
     ],
     "name": "ORACLE_NOT_SUPPORT_LP",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ValueOutOfRangeException",
     "type": "error"
   },
   {
@@ -59,25 +33,6 @@
       }
     ],
     "name": "CurveLpRegistered",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "lowerBound",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "upperBound",
-        "type": "uint256"
-      }
-    ],
-    "name": "NewLimiterParams",
     "type": "event"
   },
   {
@@ -174,25 +129,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "lowerBound",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -208,24 +144,6 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_crvLp",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_lowerBound",
-        "type": "uint256"
-      }
-    ],
-    "name": "setLimiter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
