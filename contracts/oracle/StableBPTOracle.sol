@@ -18,10 +18,10 @@ import "../libraries/FixedPointMathLib.sol";
 
 /**
  * @author BlueberryProtocol
- * @title Composable Stable Balancer LP Oracle
- * @notice Oracle contract which privides price feeds of Composable Stable Balancer LP tokens
+ * @title Stable Balancer LP Oracle
+ * @notice Oracle contract which privides price feeds of Stable Balancer LP tokens
  */
-contract CompStableBalancerLPOracle is UsingBaseOracle, IBaseOracle {
+contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
     using FixedPointMathLib for uint256;
 
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
@@ -39,9 +39,8 @@ contract CompStableBalancerLPOracle is UsingBaseOracle, IBaseOracle {
             .getPoolTokens(pool.getPoolId());
 
         uint256 length = tokens.length;
-        uint256 minPrice = type(uint256).max;
-        for(uint256 i; i != length; ++i) {
-            if (tokens[i] == token) continue;
+        uint256 minPrice = base.getPrice(tokens[0]);
+        for(uint256 i = 1; i != length; ++i) {
             uint256 price = base.getPrice(tokens[i]);
             minPrice = (price < minPrice) ? price : minPrice;
         }

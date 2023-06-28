@@ -5,9 +5,9 @@ import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import {
   ChainlinkAdapterOracle,
   CoreOracle,
-  WeightedBalancerLPOracle,
-  StableBalancerLPOracle,
-  CompStableBalancerLPOracle,
+  WeightedBPTOracle,
+  StableBPTOracle,
+  CompStableBPTOracle,
 } from "../../typechain-types";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { solidity } from "ethereum-waffle";
@@ -18,9 +18,9 @@ chai.use(roughlyNear);
 const OneDay = 86400;
 
 describe("Balancer Pair Oracle", () => {
-  let weightedOracle: WeightedBalancerLPOracle;
-  let stableOracle: StableBalancerLPOracle;
-  let compStableOracle: CompStableBalancerLPOracle;
+  let weightedOracle: WeightedBPTOracle;
+  let stableOracle: StableBPTOracle;
+  let compStableOracle: CompStableBPTOracle;
   let coreOracle: CoreOracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
@@ -57,27 +57,27 @@ describe("Balancer Pair Oracle", () => {
     );
     coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
 
-    const WeightedBalancerLPOracleFactory = await ethers.getContractFactory(
-      CONTRACT_NAMES.WeightedBalancerLPOracle
+    const WeightedBPTOracleFactory = await ethers.getContractFactory(
+      CONTRACT_NAMES.WeightedBPTOracle
     );
-    weightedOracle = <WeightedBalancerLPOracle>(
-      await WeightedBalancerLPOracleFactory.deploy(coreOracle.address)
+    weightedOracle = <WeightedBPTOracle>(
+      await WeightedBPTOracleFactory.deploy(coreOracle.address)
     );
     await weightedOracle.deployed();
 
-    const StableBalancerLPOracleFactory = await ethers.getContractFactory(
-      CONTRACT_NAMES.StableBalancerLPOracle
+    const StableBPTOracleFactory = await ethers.getContractFactory(
+      CONTRACT_NAMES.StableBPTOracle
     );
-    stableOracle = <StableBalancerLPOracle>(
-      await StableBalancerLPOracleFactory.deploy(coreOracle.address)
+    stableOracle = <StableBPTOracle>(
+      await StableBPTOracleFactory.deploy(coreOracle.address)
     );
     await stableOracle.deployed();
 
-    const CompStableBalancerLPOracleFactory = await ethers.getContractFactory(
-      CONTRACT_NAMES.CompStableBalancerLPOracle
+    const CompStableBPTOracleFactory = await ethers.getContractFactory(
+      CONTRACT_NAMES.CompStableBPTOracle
     );
-    compStableOracle = <CompStableBalancerLPOracle>(
-      await CompStableBalancerLPOracleFactory.deploy(coreOracle.address)
+    compStableOracle = <CompStableBPTOracle>(
+      await CompStableBPTOracleFactory.deploy(coreOracle.address)
     );
     await compStableOracle.deployed();
 

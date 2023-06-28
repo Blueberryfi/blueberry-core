@@ -10,19 +10,21 @@
 
 pragma solidity 0.8.16;
 
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
 import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/balancer/IBalancerVault.sol";
-import "../libraries/FixedPointMathLib.sol";
+import "../libraries/balancer/FixedPoint.sol";
 
 /**
  * @author BlueberryProtocol
- * @title Stable Balancer LP Oracle
- * @notice Oracle contract which privides price feeds of Stable Balancer LP tokens
+ * @title Weighted Balancer LP Oracle
+ * @notice Oracle contract which privides price feeds of Weighted Balancer LP tokens
  */
-contract StableBalancerLPOracle is UsingBaseOracle, IBaseOracle {
-    using FixedPointMathLib for uint256;
+contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
+    using FixedPoint for uint256;
 
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
@@ -35,16 +37,27 @@ contract StableBalancerLPOracle is UsingBaseOracle, IBaseOracle {
         // Reentrancy guard to prevent flashloan attack
         checkReentrancy(vault);
 
-        (address[] memory tokens, , ) = vault
+        (address[] memory tokens, uint256[] memory balances, ) = vault
             .getPoolTokens(pool.getPoolId());
 
-        uint256 length = tokens.length;
-        uint256 minPrice = base.getPrice(tokens[0]);
-        for(uint256 i = 1; i != length; ++i) {
-            uint256 price = base.getPrice(tokens[i]);
-            minPrice = (price < minPrice) ? price : minPrice;
+        uint256[] memory weights = pool.getNormalizedWeights();
+
+        uint256 length = weights.length;
+        uint256 temp = 1e18;
+        uint256 invariant = 1e18;
+        for(uint256 i; i < length; i++) {
+            temp = temp.mulDown(
+                (base.getPrice(tokens[i]).divDown(weights[i]))
+                .powDown(weights[i])
+            );
+            invariant = invariant.mulDown(
+                (balances[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals()))
+                .powDown(weights[i])
+            );
         }
-        return minPrice.mulWadDown(pool.getRate());
+        return invariant
+            .mulDown(temp)
+            .divDown(IBalancerPool(token).totalSupply());
     }
 
     function checkReentrancy(IBalancerVault vault) internal {
