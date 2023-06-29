@@ -10,117 +10,73 @@
 
 pragma solidity 0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-import "../utils/BlueBerryErrors.sol" as Errors;
-import "./UsingBaseOracle.sol";
-import "../libraries/BBMath.sol";
-import "../interfaces/ICurveOracle.sol";
-import "../interfaces/curve/ICurveRegistry.sol";
-import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
-import "../interfaces/curve/ICurveAddressProvider.sol";
-import "../interfaces/curve/ICurvePool.sol";
+import "./CurveBaseOracle.sol";
+import "../libraries/balancer/FixedPoint.sol";
+import "../utils/BlueBerryConst.sol" as Constants;
 
 /**
  * @author BlueberryProtocol
  * @title Curve Volatile Oracle
  * @notice Oracle contract which privides price feeds of Curve volatile pool LP tokens
  */
-contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
-    ICurveAddressProvider public immutable addressProvider;
+contract CurveVolatileOracle is CurveBaseOracle {
+    using FixedPoint for uint256;
 
-    event CurveLpRegistered(
-        address crvLp,
-        address pool,
-        address[] underlyingTokens
-    );
+    uint16 constant PERCENTAGE_FACTOR = 1e4;
+    uint256 constant RANGE_WIDTH = 200; // 2%
+
+    /// @dev The lower bound for the contract's token-to-underlying exchange rate.
+    /// @notice Used to protect against LP token / share price manipulation.
+    mapping(address => uint256) public lowerBound;
+
+    event NewLimiterParams(uint256 lowerBound, uint256 upperBound);
 
     constructor(
         IBaseOracle base_,
         ICurveAddressProvider addressProvider_
-    ) UsingBaseOracle(base_) {
-        addressProvider = addressProvider_;
+    ) CurveBaseOracle(base_, addressProvider_) {}
+
+    /// @dev Updates the bounds for the exchange rate value
+    /// @param _crvLp The curve lp token
+    /// @param _lowerBound The new lower bound (the upper bound is computed dynamically)
+    ///                    from the lower bound
+    function setLimiter(
+        address _crvLp,
+        uint256 _lowerBound
+    ) external onlyOwner {
+        _setLimiter(_crvLp, _lowerBound);
     }
 
-    /**
-     * @dev Get Curve pool info of given curve lp
-     * @param crvLp Curve LP token address to get the pool info of
-     * @return pool The address of curve pool
-     * @return ulTokens Underlying tokens of curve pool
-     * @return virtualPrice Virtual price of curve pool
-     */
-    function _getPoolInfo(
-        address crvLp
-    )
-        internal
-        returns (address pool, address[] memory ulTokens, uint256 virtualPrice)
-    {
-        // 1. Try from main registry
-        address registry = addressProvider.get_registry();
-        pool = ICurveRegistry(registry).get_pool_from_lp_token(crvLp);
-        if (pool != address(0)) {
-            (uint256 n, ) = ICurveRegistry(registry).get_n_coins(pool);
-            address[8] memory coins = ICurveRegistry(registry).get_coins(pool);
-            ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; i++) {
-                ulTokens[i] = coins[i];
-            }
-            _checkReentrant(pool);
-            virtualPrice = ICurveRegistry(registry)
-                .get_virtual_price_from_lp_token(crvLp);
-            return (pool, ulTokens, virtualPrice);
-        }
+    /// @dev IMPLEMENTATION: setLimiter
+    function _setLimiter(address _crvLp, uint256 _lowerBound) internal {
+        if (
+            _lowerBound == 0 ||
+            !_checkCurrentValueInBounds(
+                _crvLp,
+                _lowerBound,
+                _upperBound(_lowerBound)
+            )
+        ) revert BlueBerryErrors.INCORRECT_LIMITS();
 
-        // 2. Try from CryptoSwap Registry
-        registry = addressProvider.get_address(5);
-        pool = ICurveCryptoSwapRegistry(registry).get_pool_from_lp_token(crvLp);
-        if (pool != address(0)) {
-            uint256 n = ICurveCryptoSwapRegistry(registry).get_n_coins(pool);
-            address[8] memory coins = ICurveCryptoSwapRegistry(registry)
-                .get_coins(pool);
-            ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; i++) {
-                ulTokens[i] = coins[i];
-            }
-            _checkReentrant(pool);
-            virtualPrice = ICurveCryptoSwapRegistry(registry)
-                .get_virtual_price_from_lp_token(crvLp);
-            return (pool, ulTokens, virtualPrice);
-        }
-
-        // 3. Try from Metaregistry
-        registry = addressProvider.get_address(7);
-        pool = ICurveCryptoSwapRegistry(registry).get_pool_from_lp_token(crvLp);
-        if (pool != address(0)) {
-            uint256 n = ICurveCryptoSwapRegistry(registry).get_n_coins(pool);
-            address[8] memory coins = ICurveCryptoSwapRegistry(registry)
-                .get_coins(pool);
-            ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; i++) {
-                ulTokens[i] = coins[i];
-            }
-            _checkReentrant(pool);
-            virtualPrice = ICurveCryptoSwapRegistry(registry)
-                .get_virtual_price_from_lp_token(crvLp);
-            return (pool, ulTokens, virtualPrice);
-        }
-
-        revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
+        lowerBound[_crvLp] = _lowerBound;
+        emit NewLimiterParams(_lowerBound, _upperBound(_lowerBound));
     }
 
-    function _checkReentrant(address _pool) internal {
+    function _checkCurrentValueInBounds(
+        address _crvLp,
+        uint256 _lowerBound,
+        uint256 __upperBound
+    ) internal returns (bool) {
+        (, , uint256 virtualPrice) = _getPoolInfo(_crvLp);
+        if (virtualPrice < _lowerBound || virtualPrice > __upperBound) {
+            return false;
+        }
+        return true;
+    }
+
+    function _checkReentrant(address _pool, uint256) internal override {
         ICurvePool pool = ICurvePool(_pool);
         pool.claim_admin_fees();
-    }
-
-    function getPoolInfo(
-        address crvLp
-    )
-        external
-        returns (address pool, address[] memory coins, uint256 virtualPrice)
-    {
-        return _getPoolInfo(crvLp);
     }
 
     /**
@@ -128,27 +84,49 @@ contract CurveVolatileOracle is UsingBaseOracle, ICurveOracle, Ownable {
      * @param crvLp The ERC-20 Curve LP token to check the value.
      */
     function getPrice(address crvLp) external override returns (uint256) {
-        (address _pool, address[] memory tokens, ) = _getPoolInfo(crvLp);
+        (, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
 
-        if (tokens.length != 2) {
-            revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
-        }
+        uint256 nTokens = tokens.length;
 
-        ICurvePool pool = ICurvePool(_pool);
-
-        IERC20Metadata token = IERC20Metadata(crvLp);
-        uint256 totalSupply = token.totalSupply();
-
-        uint256 r0 = pool.balances(0);
-        uint256 r1 = pool.balances(1);
         uint256 px0 = base.getPrice(tokens[0]);
         uint256 px1 = base.getPrice(tokens[1]);
-        uint256 t0Decimal = IERC20Metadata(tokens[0]).decimals();
-        uint256 t1Decimal = IERC20Metadata(tokens[1]).decimals();
-        uint256 sqrtK = BBMath.sqrt(
-            r0 * r1 * 10 ** (36 - t0Decimal - t1Decimal)
+
+        uint256 product = (px0 * Constants.PRICE_PRECISION) / Constants.CHAINLINK_PRICE_FEED_PRECISION;
+        product = product.mulDown((px1 * Constants.PRICE_PRECISION) / Constants.CHAINLINK_PRICE_FEED_PRECISION);
+
+        if (nTokens == 3) {
+            uint256 px2 = base.getPrice(tokens[2]);
+            product = product.mulDown(
+                (uint256(px2) * Constants.PRICE_PRECISION) / Constants.CHAINLINK_PRICE_FEED_PRECISION
+            );
+        }
+
+        // Checks that virtual_price is within bounds
+        virtualPrice = _checkAndUpperBoundValue(crvLp, virtualPrice);
+
+        uint256 answer = product.powDown(Constants.PRICE_PRECISION / nTokens).mulDown(
+            nTokens * virtualPrice
         );
 
-        return (2 * sqrtK * BBMath.sqrt(px0 * px1)) / totalSupply;
+        return (answer * Constants.CHAINLINK_PRICE_FEED_PRECISION) / Constants.PRICE_PRECISION;
+    }
+
+    /// @dev Checks that value is in range [lowerBound; upperBound],
+    /// Reverts if below lowerBound and returns min(value, upperBound)
+    /// @param value Value to be checked and bounded
+    function _checkAndUpperBoundValue(
+        address crvLp,
+        uint256 value
+    ) internal view returns (uint256) {
+        uint256 lb = lowerBound[crvLp];
+        if (value < lb) revert BlueBerryErrors.VALUE_OUT_OF_RANGE();
+
+        uint256 uBound = _upperBound(lb);
+
+        return (value > uBound) ? uBound : value;
+    }
+
+    function _upperBound(uint256 lb) internal pure returns (uint256) {
+        return (lb * (PERCENTAGE_FACTOR + RANGE_WIDTH)) / PERCENTAGE_FACTOR;
     }
 }
