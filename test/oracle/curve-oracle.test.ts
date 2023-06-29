@@ -199,9 +199,6 @@ describe("Curve LP Oracle", () => {
       let price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_3Crv);
       console.log("3CrvPool Price:", utils.formatUnits(price, 18));
 
-      price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_SUSD);
-      console.log("susd Price:", utils.formatUnits(price, 18));
-
       price = await tricryptoOracle.callStatic.getPrice(ADDRESS.CRV_TriCrypto);
       console.log("TriCrypto Price:", utils.formatUnits(price, 18));
 

@@ -12,6 +12,7 @@ pragma solidity 0.8.16;
 
 import "./CurveBaseOracle.sol";
 import "../libraries/balancer/FixedPoint.sol";
+import "../utils/BlueBerryConst.sol" as Constants;
 
 /**
  * @author BlueberryProtocol
@@ -20,9 +21,6 @@ import "../libraries/balancer/FixedPoint.sol";
  */
 contract CurveVolatileOracle is CurveBaseOracle {
     using FixedPoint for uint256;
-
-    uint256 constant DECIMALS = 10 ** 18;
-    uint256 constant USD_FEED_DECIMALS = 10 ** 8;
 
     uint16 constant PERCENTAGE_FACTOR = 1e4;
     uint256 constant RANGE_WIDTH = 200; // 2%
@@ -88,29 +86,29 @@ contract CurveVolatileOracle is CurveBaseOracle {
     function getPrice(address crvLp) external override returns (uint256) {
         (, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
 
-        uint256 nCoins = tokens.length;
+        uint256 nTokens = tokens.length;
 
         uint256 px0 = base.getPrice(tokens[0]);
         uint256 px1 = base.getPrice(tokens[1]);
 
-        uint256 product = (px0 * DECIMALS) / USD_FEED_DECIMALS;
-        product = product.mulDown((px1 * DECIMALS) / USD_FEED_DECIMALS);
+        uint256 product = (px0 * Constants.PRICE_PRECISION) / Constants.CHAINLINK_PRICE_FEED_PRECISION;
+        product = product.mulDown((px1 * Constants.PRICE_PRECISION) / Constants.CHAINLINK_PRICE_FEED_PRECISION);
 
-        if (nCoins == 3) {
+        if (nTokens == 3) {
             uint256 px2 = base.getPrice(tokens[2]);
             product = product.mulDown(
-                (uint256(px2) * DECIMALS) / USD_FEED_DECIMALS
+                (uint256(px2) * Constants.PRICE_PRECISION) / Constants.CHAINLINK_PRICE_FEED_PRECISION
             );
         }
 
         // Checks that virtual_price is within bounds
         virtualPrice = _checkAndUpperBoundValue(crvLp, virtualPrice);
 
-        uint256 answer = product.powDown(DECIMALS / nCoins).mulDown(
-            nCoins * virtualPrice
+        uint256 answer = product.powDown(Constants.PRICE_PRECISION / nTokens).mulDown(
+            nTokens * virtualPrice
         );
 
-        return (answer * USD_FEED_DECIMALS) / DECIMALS;
+        return (answer * Constants.CHAINLINK_PRICE_FEED_PRECISION) / Constants.PRICE_PRECISION;
     }
 
     /// @dev Checks that value is in range [lowerBound; upperBound],
