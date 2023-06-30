@@ -16,7 +16,6 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./BaseAdapter.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/chainlink/ISequencerUptimeFeed.sol";
-import "hardhat/console.sol";
 
 /**
  * @author BlueberryProtocol
