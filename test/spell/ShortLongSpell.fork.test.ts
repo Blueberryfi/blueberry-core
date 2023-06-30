@@ -77,7 +77,8 @@ describe("ShortLong Spell mainnet fork", () => {
         CRV,
         DAI,
         borrowAmount.mul(4),
-        spell.address
+        spell.address,
+        100
       );
 
       await expect(
@@ -166,7 +167,8 @@ describe("ShortLong Spell mainnet fork", () => {
         CRV,
         DAI,
         borrowAmount,
-        spell.address
+        spell.address,
+        100
       );
 
       await bank.execute(
@@ -257,7 +259,8 @@ describe("ShortLong Spell mainnet fork", () => {
         DAI,
         CRV,
         swapAmount,
-        spell.address
+        spell.address,
+        100
       );
 
       const iface = new ethers.utils.Interface(SpellABI);

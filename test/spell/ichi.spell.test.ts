@@ -188,7 +188,7 @@ describe('ICHI Angel Vaults Spell', () => {
           collToken: ICHI,
           borrowToken: USDC,
           collAmount: depositAmount.mul(40),
-          borrowAmount: borrowAmount.mul(50), // 30 * 50 = 1,500 USDC
+          borrowAmount: borrowAmount.mul(20), // 30 * 20 = 600 USDC
           farmingPoolId: 0
         }])
       )
