@@ -112,6 +112,7 @@ contract WIchiFarm is
         uint amount
     )
         public
+        view
         override
         returns (address[] memory tokens, uint256[] memory rewards)
     {
