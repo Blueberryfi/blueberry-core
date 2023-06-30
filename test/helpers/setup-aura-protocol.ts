@@ -25,6 +25,7 @@ import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
+const STASH_AURA = ADDRESS.STASH_AURA;
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
 const CCRV = ADDRESS.bCRV;
@@ -243,7 +244,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
 
   const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
   waura = <WAuraPools>(
-    await upgrades.deployProxy(WAuraPools, [AURA, ADDRESS.AURA_BOOSTER])
+    await upgrades.deployProxy(WAuraPools, [AURA, ADDRESS.AURA_BOOSTER, STASH_AURA])
   );
   await waura.deployed();
 

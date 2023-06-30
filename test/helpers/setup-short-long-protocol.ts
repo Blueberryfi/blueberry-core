@@ -18,7 +18,6 @@ import {
   CurveStableOracle,
   CurveVolatileOracle,
   CurveTricryptoOracle,
-  WAuraPools,
   ShortLongSpell,
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
@@ -40,7 +39,6 @@ const ETH_PRICE = 1600;
 
 export interface ShortLongProtocol {
   werc20: WERC20;
-  waura: WAuraPools;
   mockOracle: MockOracle;
   stableOracle: CurveStableOracle;
   volatileOracle: CurveVolatileOracle;
@@ -67,7 +65,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   let crv: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
-  let waura: WAuraPools;
   let mockOracle: MockOracle;
   let stableOracle: CurveStableOracle;
   let volatileOracle: CurveVolatileOracle;
@@ -241,12 +238,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   werc20 = <WERC20>await upgrades.deployProxy(WERC20);
   await werc20.deployed();
 
-  const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
-  waura = <WAuraPools>(
-    await upgrades.deployProxy(WAuraPools, [AURA, ADDRESS.AURA_BOOSTER])
-  );
-  await waura.deployed();
-
   // Deploy CRV spell
   const ShortLongSpell = await ethers.getContractFactory(
     CONTRACT_NAMES.ShortLongSpell
@@ -319,7 +310,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     [USDC, USDT, DAI, CRV, WETH],
     [true, true, true, true, true]
   );
-  await bank.whitelistERC1155([werc20.address, waura.address], true);
+  await bank.whitelistERC1155([werc20.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
   hardVault = <HardVault>(
@@ -377,7 +368,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   return {
     werc20,
-    waura,
     mockOracle,
     stableOracle,
     volatileOracle,

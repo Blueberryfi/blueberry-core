@@ -33,6 +33,8 @@ contract AuraSpell is BasicSpell {
     ICurveOracle public crvOracle;
     /// @dev address of AURA token
     address public AURA;
+    /// @dev address of Stash AURA token
+    address public STASH_AURA;
 
     /// @dev paraswap AugustusSwapper address
     address public augustusSwapper;
@@ -52,6 +54,7 @@ contract AuraSpell is BasicSpell {
 
         wAuraPools = IWAuraPools(wAuraPools_);
         AURA = address(wAuraPools.AURA());
+        STASH_AURA = wAuraPools.STASH_AURA();
         IWAuraPools(wAuraPools_).setApprovalForAll(address(bank_), true);
 
         augustusSwapper = augustusSwapper_;
@@ -64,7 +67,11 @@ contract AuraSpell is BasicSpell {
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address bpt, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address bpt,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) external onlyOwner {
         _addStrategy(bpt, minPosSize, maxPosSize);
     }
 
@@ -101,9 +108,9 @@ contract AuraSpell is BasicSpell {
             (address[] memory tokens, uint256[] memory balances, ) = wAuraPools
                 .getPoolTokens(lpToken);
             (
-                uint[] memory maxAmountsIn,
-                uint[] memory amountsIn,
-                uint poolAmountOut
+                uint256[] memory maxAmountsIn,
+                uint256[] memory amountsIn,
+                uint256 poolAmountOut
             ) = _getJoinPoolParams(tokens, balances, lpToken);
 
             if (poolAmountOut != 0) {
@@ -139,8 +146,14 @@ contract AuraSpell is BasicSpell {
             bank.takeCollateral(pos.collateralSize);
             wAuraPools.burn(pos.collId, pos.collateralSize);
             // distribute multiple rewards to users
-            for (uint256 i; i < rewardTokens.length; i++) {
-                _doRefundRewards(rewardTokens[i]);
+            uint256 rewardTokensLength = rewardTokens.length;
+            for (uint256 i; i != rewardTokensLength; ) {
+                _doRefundRewards(
+                    rewardTokens[i] == STASH_AURA ? AURA : rewardTokens[i]
+                );
+                unchecked {
+                    ++i;
+                }
             }
         }
 
@@ -160,56 +173,61 @@ contract AuraSpell is BasicSpell {
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
-        address lpToken = strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
-        if (pos.collToken != address(wAuraPools))
-            revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-        if (wAuraPools.getUnderlyingToken(pos.collId) != lpToken)
-            revert Errors.INCORRECT_UNDERLYING(lpToken);
-
-        // 1. Take out collateral - Burn wrapped tokens, receive BPT tokens and harvest AURA
-        bank.takeCollateral(param.amountPosRemove);
-        (address[] memory rewardTokens, ) = wAuraPools.burn(
-            pos.collId,
-            param.amountPosRemove
-        );
-
+        address[] memory rewardTokens;
         {
-            // 2. Calculate actual amount to remove
-            uint256 amountPosRemove = param.amountPosRemove;
-            if (amountPosRemove == type(uint256).max) {
-                amountPosRemove = IERC20Upgradeable(lpToken).balanceOf(
-                    address(this)
+            address lpToken = strategies[param.strategyId].vault;
+            if (pos.collToken != address(wAuraPools))
+                revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            if (wAuraPools.getUnderlyingToken(pos.collId) != lpToken)
+                revert Errors.INCORRECT_UNDERLYING(lpToken);
+
+            // 1. Take out collateral - Burn wrapped tokens, receive BPT tokens and harvest AURA
+            bank.takeCollateral(param.amountPosRemove);
+            (rewardTokens, ) = wAuraPools.burn(
+                pos.collId,
+                param.amountPosRemove
+            );
+
+            {
+                // 2. Calculate actual amount to remove
+                uint256 amountPosRemove = param.amountPosRemove;
+                if (amountPosRemove == type(uint256).max) {
+                    amountPosRemove = IERC20Upgradeable(lpToken).balanceOf(
+                        address(this)
+                    );
+                }
+
+                // 3. Remove liquidity
+                (
+                    uint256[] memory minAmountsOut,
+                    address[] memory tokens,
+                    uint256 borrowTokenIndex
+                ) = _getExitPoolParams(param.borrowToken, lpToken);
+
+                wAuraPools.getVault(lpToken).exitPool(
+                    IBalancerPool(lpToken).getPoolId(),
+                    address(this),
+                    address(this),
+                    IBalancerVault.ExitPoolRequest(
+                        tokens,
+                        minAmountsOut,
+                        abi.encode(0, amountPosRemove, borrowTokenIndex),
+                        false
+                    )
                 );
             }
-
-            // 3. Remove liquidity
-            (
-                uint[] memory minAmountsOut,
-                address[] memory tokens,
-                uint borrowTokenIndex
-            ) = _getExitPoolParams(param.borrowToken, lpToken);
-
-            wAuraPools.getVault(lpToken).exitPool(
-                IBalancerPool(lpToken).getPoolId(),
-                address(this),
-                address(this),
-                IBalancerVault.ExitPoolRequest(
-                    tokens,
-                    minAmountsOut,
-                    abi.encode(0, amountPosRemove, borrowTokenIndex),
-                    false
-                )
-            );
         }
 
         // 4. Swap rewards tokens to debt token
-        for (uint256 i; i < rewardTokens.length; i++) {
+        uint256 rewardTokensLength = rewardTokens.length;
+        for (uint256 i; i != rewardTokensLength; ) {
             address sellToken = rewardTokens[i];
+            if (sellToken == STASH_AURA) sellToken = AURA;
 
             _doCutRewardsFee(sellToken);
-            if (expectedRewards[i] == 0) continue;
             if (
+                expectedRewards[i] != 0 &&
                 !PSwapLib.swap(
                     augustusSwapper,
                     tokenTransferProxy,
@@ -221,6 +239,10 @@ contract AuraSpell is BasicSpell {
 
             // Refund rest amount to owner
             _doRefund(sellToken);
+
+            unchecked {
+                ++i;
+            }
         }
 
         // 5. Withdraw isolated collateral from Bank
@@ -241,21 +263,21 @@ contract AuraSpell is BasicSpell {
         // 7. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
-        _doRefund(AURA);
     }
 
     function _getJoinPoolParams(
         address[] memory tokens,
         uint256[] memory balances,
         address lpToken
-    ) internal returns (uint[] memory, uint[] memory, uint) {
-        uint i;
-        uint j;
-        uint[] memory maxAmountsIn = new uint[](tokens.length);
-        uint[] memory amountsIn = new uint[](tokens.length);
+    ) internal view returns (uint256[] memory, uint256[] memory, uint256) {
+        uint256 i;
+        uint256 j;
+        uint256 length = tokens.length;
+        uint256[] memory maxAmountsIn = new uint256[](length);
+        uint256[] memory amountsIn = new uint256[](length);
         bool isLPIncluded;
 
-        for (i; i < tokens.length; ) {
+        for (i; i != length; ) {
             if (tokens[i] != lpToken) {
                 amountsIn[j++] = IERC20(tokens[i]).balanceOf(address(this));
             } else isLPIncluded = true;
@@ -273,12 +295,12 @@ contract AuraSpell is BasicSpell {
             }
         }
 
-        uint totalLPSupply = IBalancerPool(lpToken).totalSupply();
+        uint256 totalLPSupply = IBalancerPool(lpToken).totalSupply();
         // compute in reverse order of how Balancer's `joinPool` computes tokenAmountIn
-        uint poolAmountOut;
-        for (i = 0; i < tokens.length; ) {
+        uint256 poolAmountOut;
+        for (i = 0; i != length; ) {
             if ((maxAmountsIn[i] * totalLPSupply) / balances[i] != 0) {
-                poolAmountOut = type(uint).max;
+                poolAmountOut = type(uint256).max;
                 break;
             }
 
@@ -293,13 +315,14 @@ contract AuraSpell is BasicSpell {
     function _getExitPoolParams(
         address borrowToken,
         address lpToken
-    ) internal returns (uint[] memory, address[] memory, uint) {
+    ) internal view returns (uint256[] memory, address[] memory, uint256) {
         (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
 
-        uint[] memory minAmountsOut = new uint[](tokens.length);
-        uint exitTokenIndex;
+        uint256 length = tokens.length;
+        uint256[] memory minAmountsOut = new uint256[](length);
+        uint256 exitTokenIndex;
 
-        for (uint i; i < tokens.length; ) {
+        for (uint256 i; i != length; ) {
             if (tokens[i] == borrowToken) break;
 
             if (tokens[i] != lpToken) ++exitTokenIndex;
