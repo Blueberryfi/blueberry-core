@@ -33,6 +33,8 @@ contract AuraSpell is BasicSpell {
     ICurveOracle public crvOracle;
     /// @dev address of AURA token
     address public AURA;
+    /// @dev address of Stash AURA token
+    address public STASH_AURA;
 
     /// @dev paraswap AugustusSwapper address
     address public augustusSwapper;
@@ -52,6 +54,7 @@ contract AuraSpell is BasicSpell {
 
         wAuraPools = IWAuraPools(wAuraPools_);
         AURA = address(wAuraPools.AURA());
+        STASH_AURA = wAuraPools.STASH_AURA();
         IWAuraPools(wAuraPools_).setApprovalForAll(address(bank_), true);
 
         augustusSwapper = augustusSwapper_;
@@ -64,7 +67,11 @@ contract AuraSpell is BasicSpell {
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address bpt, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address bpt,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) external onlyOwner {
         _addStrategy(bpt, minPosSize, maxPosSize);
     }
 
@@ -140,7 +147,9 @@ contract AuraSpell is BasicSpell {
             wAuraPools.burn(pos.collId, pos.collateralSize);
             // distribute multiple rewards to users
             for (uint256 i; i < rewardTokens.length; i++) {
-                _doRefundRewards(rewardTokens[i]);
+                _doRefundRewards(
+                    rewardTokens[i] == STASH_AURA ? AURA : rewardTokens[i]
+                );
             }
         }
 
@@ -206,10 +215,11 @@ contract AuraSpell is BasicSpell {
         // 4. Swap rewards tokens to debt token
         for (uint256 i; i < rewardTokens.length; i++) {
             address sellToken = rewardTokens[i];
+            if (sellToken == STASH_AURA) sellToken = AURA;
 
             _doCutRewardsFee(sellToken);
-            if (expectedRewards[i] == 0) continue;
             if (
+                expectedRewards[i] != 0 &&
                 !PSwapLib.swap(
                     augustusSwapper,
                     tokenTransferProxy,
@@ -241,7 +251,6 @@ contract AuraSpell is BasicSpell {
         // 7. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
-        _doRefund(AURA);
     }
 
     function _getJoinPoolParams(

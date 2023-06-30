@@ -14,6 +14,8 @@ import "./aura/IAura.sol";
 interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     function AURA() external view returns (IAura);
 
+    function STASH_AURA() external view returns (address);
+
     function encodeId(uint, uint) external pure returns (uint);
 
     function decodeId(uint id) external pure returns (uint, uint);

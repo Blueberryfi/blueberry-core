@@ -185,6 +185,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "STASH_AURA",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -537,6 +550,11 @@
       {
         "internalType": "address",
         "name": "auraPools_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "stash_aura_",
         "type": "address"
       }
     ],

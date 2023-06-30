@@ -46,6 +46,8 @@ contract WAuraPools is
     IAuraPools public auraPools;
     /// @dev Address to AURA token
     IAura public AURA;
+    /// @dev Address to STASH_AURA token
+    address public STASH_AURA;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => uint256[]) public accExtPerShare;
     /// @dev Aura extra rewards addresses
@@ -55,11 +57,13 @@ contract WAuraPools is
 
     function initialize(
         address aura_,
-        address auraPools_
+        address auraPools_,
+        address stash_aura_
     ) external initializer {
         __ReentrancyGuard_init();
         __ERC1155_init("WAuraPools");
         AURA = IAura(aura_);
+        STASH_AURA = stash_aura_;
         auraPools = IAuraPools(auraPools_);
     }
 
