@@ -24,18 +24,32 @@ export const currentTime = async() => {
   return block.timestamp;
 }
 
-export const fork = async (blockNumber?: number) => {
-  await network.provider.request({
-    method: "hardhat_reset",
-    params: [
-      {
-        forking: {
-          jsonRpcUrl: `https://eth.llamarpc.com/rpc/${process.env.LLAMA_API_KEY}`,
-          blockNumber,
+export const fork = async (chainId: number = 1, blockNumber?: number) => {
+  if (chainId === 1) {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: `https://eth.llamarpc.com/rpc/${process.env.LLAMA_API_KEY}`,
+            blockNumber,
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
+  } else if (chainId === 42161) {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: `https://arb1.arbitrum.io/rpc`,
+            blockNumber,
+          },
+        },
+      ],
+    });
+  }
 };
 
 export * from "./setup-ichi-protocol";

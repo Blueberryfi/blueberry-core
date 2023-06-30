@@ -16,6 +16,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./BaseAdapter.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/chainlink/ISequencerUptimeFeed.sol";
+import "hardhat/console.sol";
 
 /**
  * @author BlueberryProtocol
@@ -80,7 +81,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
      * @param token_ Token address to get price of
      * @return price USD price of token in 18 decimal
      */
-    function getPrice(address token_) external override returns (uint256) {
+    function getPrice(address token_) external view override returns (uint256) {
         // 1. Check max delay time
         uint256 maxDelayTime = timeGaps[token_];
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token_);
@@ -92,13 +93,13 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
         // Answer == 0: Sequencer is up, Answer == 1: Sequencer is down
         bool isSequencerUp = answer == 0;
         if (!isSequencerUp) {
-            revert Errors.SEQURENCE_DOWN(address(sequencerUptimeFeed));
+            revert Errors.SEQUENCE_DOWN(address(sequencerUptimeFeed));
         }
 
         // Make sure the grace period has passed after the sequencer is back up.
         uint256 timeSinceUp = block.timestamp - startedAt;
         if (timeSinceUp <= Constants.SEQUENCE_GRACE_PERIOD_TIME) {
-            revert Errors.SEQURENCE_GRACE_PERIOD_NOT_OVER(
+            revert Errors.SEQUENCE_GRACE_PERIOD_NOT_OVER(
                 address(sequencerUptimeFeed)
             );
         }
