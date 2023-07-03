@@ -1,5 +1,6 @@
 import { ethers, network } from "hardhat";
 import dotenv from "dotenv";
+import { Wallet } from "ethers";
 
 dotenv.config();
 
@@ -50,6 +51,10 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
       ],
     });
   }
+};
+
+export const generateRandomAddress = () => {
+  return Wallet.createRandom().address
 };
 
 export * from "./setup-ichi-protocol";

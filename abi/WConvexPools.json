@@ -310,7 +310,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "gid",
+        "name": "pid",
         "type": "uint256"
       },
       {

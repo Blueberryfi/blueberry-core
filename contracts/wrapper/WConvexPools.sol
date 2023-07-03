@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-
+import "hardhat/console.sol";
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "../utils/EnsureApprove.sol";
 import "../interfaces/IWConvexPools.sol";
@@ -77,8 +77,8 @@ contract WConvexPools is
     /// @param id Token id
     function decodeId(
         uint256 id
-    ) public pure returns (uint256 gid, uint256 cvxPerShare) {
-        gid = id >> 240; // First 16 bits
+    ) public pure returns (uint256 pid, uint256 cvxPerShare) {
+        pid = id >> 240; // First 16 bits
         cvxPerShare = id & ((1 << 240) - 1); // Last 240 bits
     }
 
@@ -129,11 +129,9 @@ contract WConvexPools is
     }
 
     /// @notice Get CVX pending reward
-    /// @param cvxRewarder Address of CVX rewarder contract
     /// @param crvAmount Amount of CRV reward
     /// @dev CVX token is minted in booster contract following the mint logic in the below
     function _getCvxPendingReward(
-        address cvxRewarder,
         uint256 crvAmount
     ) internal view returns (uint256 mintAmount) {
         // CVX token mint logic
@@ -191,7 +189,7 @@ contract WConvexPools is
 
         // CVX reward
         tokens[1] = address(CVX);
-        rewards[1] = _getCvxPendingReward(cvxRewarder, rewards[0]);
+        rewards[1] = _getCvxPendingReward(rewards[0]);
 
         for (uint i = 0; i < extraRewardsCount; i++) {
             address rewarder = extraRewards[i];
