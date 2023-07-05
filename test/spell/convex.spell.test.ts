@@ -377,15 +377,10 @@ describe("Convex Spell", () => {
 
     it("should be able to get position risk ratio", async () => {
       const positionId = (await bank.nextPositionId()).sub(1);
-      console.log("===> 1");
       let pv = await bank.callStatic.getPositionValue(positionId);
-      console.log("===> 2", pv);
       let ov = await bank.callStatic.getDebtValue(positionId);
-      console.log("===> 3", ov);
       let cv = await bank.callStatic.getIsolatedCollateralValue(positionId);
-      console.log("===> 4", cv);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log("===> 5", risk);
       console.log("PV:", utils.formatUnits(pv));
       console.log("OV:", utils.formatUnits(ov));
       console.log("CV:", utils.formatUnits(cv));
@@ -427,7 +422,7 @@ describe("Convex Spell", () => {
     // })
 
     it("should revert if received amount is lower than slippage", async () => {
-      evm_mine_blocks(1000);
+      await evm_mine_blocks(1000);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
@@ -539,8 +534,79 @@ describe("Convex Spell", () => {
       ).to.be.revertedWith("COLLATERAL_NOT_EXIST");
     });
 
-    it("should be able to harvest on Convex", async () => {
-      evm_mine_blocks(1000);
+    it("should be able to harvest on Convex 1", async () => {
+      await evm_mine_blocks(1000);
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const position = await bank.positions(positionId);
+
+      const totalEarned = await crvRewarder1.earned(wconvex.address);
+      console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
+
+      const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(
+        position.collId,
+        position.collateralSize
+      );
+      console.log("Pending Rewards", pendingRewardsInfo);
+
+      const rewardFeeRatio = await config.rewardFee();
+
+      // Manually transfer CRV rewards to spell
+      const rewardAmount = utils.parseUnits("10", 18);
+      await crv.transfer(spell.address, rewardAmount);
+
+      const expectedAmounts = pendingRewardsInfo.rewards.map((reward, idx) => {
+        if (pendingRewardsInfo.tokens[idx] == ADDRESS.CRV) {
+          reward = rewardAmount;
+        }
+        return reward.sub(reward.mul(rewardFeeRatio).div(10000));
+      });
+
+      const swapDatas = await Promise.all(
+        pendingRewardsInfo.tokens.map((token, idx) => {
+          if (expectedAmounts[idx].gt(0)) {
+            return getParaswapCalldata(
+              token,
+              USDC,
+              expectedAmounts[idx],
+              spell.address,
+              100
+            );
+          } else {
+            return {
+              data: "0x00",
+            };
+          }
+        })
+      );
+
+      // Manually transfer USDC rewards to spell
+      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [
+            {
+              strategyId: 0,
+              collToken: CRV,
+              borrowToken: USDC,
+              amountRepay: utils.parseUnits("20", 6),
+              amountPosRemove: utils.parseUnits("10", 18),
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+            },
+            expectedAmounts,
+            swapDatas.map((item) => item.data),
+          ])
+        )
+      ).to.be.revertedWith("EXCEED_MAX_LTV");
+    });
+
+    it("should be able to harvest on Convex 2", async () => {
+      await evm_mine_blocks(1000);
+
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
