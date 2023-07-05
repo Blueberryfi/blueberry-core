@@ -188,7 +188,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
   await volatileOracle.setLimiter(
     ADDRESS.CRV_CRVETH,
-    poolInfo.virtualPrice
+    poolInfo.virtualPrice.mul(99).div(100)
   );
 
   const CurveTricryptoOracleFactory = await ethers.getContractFactory(
