@@ -48,6 +48,7 @@ export interface CvxProtocol {
   config: ProtocolConfig;
   bank: BlueBerryBank;
   convexSpell: ConvexSpell;
+  convexSpellWithVolatileOracle: ConvexSpell;
   usdcSoftVault: SoftVault;
   crvSoftVault: SoftVault;
   daiSoftVault: SoftVault;
@@ -73,6 +74,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   let tricryptoOracle: CurveTricryptoOracle;
   let oracle: CoreOracle;
   let convexSpell: ConvexSpell;
+  let convexSpellWithVolatileOracle: ConvexSpell;
 
   let config: ProtocolConfig;
   let feeManager: FeeManager;
@@ -181,6 +183,14 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
   await volatileOracle.deployed();
 
+  let poolInfo = await volatileOracle.callStatic.getPoolInfo(
+    ADDRESS.CRV_CRVETH
+  );
+  await volatileOracle.setLimiter(
+    ADDRESS.CRV_CRVETH,
+    poolInfo.virtualPrice
+  );
+
   const CurveTricryptoOracleFactory = await ethers.getContractFactory(
     CONTRACT_NAMES.CurveTricryptoOracle
   );
@@ -207,6 +217,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       CVX,
       ADDRESS.CRV_3Crv,
       ADDRESS.CRV_FRAX3Crv,
+      ADDRESS.CRV_CRVETH,
     ],
     [
       mockOracle.address,
@@ -218,6 +229,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       mockOracle.address,
       stableOracle.address,
       stableOracle.address,
+      volatileOracle.address,
     ]
   );
 
@@ -293,9 +305,31 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
   );
+  convexSpellWithVolatileOracle = <ConvexSpell>(
+    await upgrades.deployProxy(ConvexSpell, [
+      bank.address,
+      werc20.address,
+      WETH,
+      wconvex.address,
+      volatileOracle.address,
+      AUGUSTUS_SWAPPER,
+      TOKEN_TRANSFER_PROXY,
+    ])
+  );
+  await convexSpellWithVolatileOracle.deployed();
+  await convexSpellWithVolatileOracle.addStrategy(
+    ADDRESS.CRV_CRVETH,
+    utils.parseUnits("0.5", 18),
+    utils.parseUnits("2000", 18)
+  );
+  await convexSpellWithVolatileOracle.setCollateralsMaxLTVs(
+    0,
+    [USDC, CRV, DAI],
+    [30000, 30000, 30000]
+  );
 
   // Setup Bank
-  await bank.whitelistSpells([convexSpell.address], [true]);
+  await bank.whitelistSpells([convexSpell.address, convexSpellWithVolatileOracle.address], [true, true]);
   await bank.whitelistTokens([USDC, CRV, DAI], [true, true, true]);
   await bank.whitelistERC1155([werc20.address, wconvex.address], true);
 
@@ -395,6 +429,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     feeManager,
     bank,
     convexSpell,
+    convexSpellWithVolatileOracle,
     usdcSoftVault,
     crvSoftVault,
     daiSoftVault,

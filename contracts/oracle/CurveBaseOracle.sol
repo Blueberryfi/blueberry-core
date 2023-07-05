@@ -64,7 +64,6 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
-            _checkReentrant(pool, n);
             virtualPrice = ICurveRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -81,7 +80,6 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
-            _checkReentrant(pool, n);
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
@@ -98,7 +96,6 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             for (uint256 i = 0; i < n; i++) {
                 ulTokens[i] = coins[i];
             }
-            _checkReentrant(pool, n);
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);

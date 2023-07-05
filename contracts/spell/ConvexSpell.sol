@@ -138,7 +138,6 @@ contract ConvexSpell is BasicSpell {
 
         // 5. Validate Max Pos Size
         _validatePosSize(param.strategyId);
-
         // 6. Take out existing collateral and burn
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
