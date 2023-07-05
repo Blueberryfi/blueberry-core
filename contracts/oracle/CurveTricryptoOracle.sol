@@ -33,7 +33,8 @@ contract CurveTricryptoOracle is CurveBaseOracle {
      * @param crvLp The ERC-20 Curve LP token to check the value.
      */
     function getPrice(address crvLp) external override returns (uint256) {
-        (, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
+        (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
+        _checkReentrant(pool, tokens.length);
 
         if (tokens.length == 3) {
             // tokens[2] is WETH

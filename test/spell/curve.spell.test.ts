@@ -61,7 +61,7 @@ describe("Curve Spell", () => {
 
 
   before(async () => {
-    await fork(17089048);
+    await fork();
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
