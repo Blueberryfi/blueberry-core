@@ -439,7 +439,7 @@ describe("Convex Spell", () => {
       const rewardFeeRatio = await config.rewardFee();
 
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
-        reward.sub(reward.mul(rewardFeeRatio).div(10000))
+        reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)
       );
 
       const swapDatas = await Promise.all(
@@ -540,6 +540,8 @@ describe("Convex Spell", () => {
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
+      const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
+
       const totalEarned = await crvRewarder1.earned(wconvex.address);
       console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
 
@@ -556,10 +558,10 @@ describe("Convex Spell", () => {
       await crv.transfer(spell.address, rewardAmount);
 
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward, idx) => {
-        if (pendingRewardsInfo.tokens[idx] == ADDRESS.CRV) {
+        if (pendingRewardsInfo.tokens[idx] == ADDRESS.CRV && reward.isZero()) {
           reward = rewardAmount;
         }
-        return reward.sub(reward.mul(rewardFeeRatio).div(10000));
+        return reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000).div(2);
       });
 
       const swapDatas = await Promise.all(
@@ -593,9 +595,9 @@ describe("Convex Spell", () => {
               strategyId: 0,
               collToken: CRV,
               borrowToken: USDC,
-              amountRepay: utils.parseUnits("20", 6),
-              amountPosRemove: utils.parseUnits("10", 18),
-              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountRepay: debtAmount.div(2),
+              amountPosRemove: position.collateralSize.div(2),
+              amountShareWithdraw: position.underlyingVaultShare.div(2),
               amountOutMin: 1,
             },
             expectedAmounts,
@@ -623,7 +625,7 @@ describe("Convex Spell", () => {
       const rewardFeeRatio = await config.rewardFee();
 
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
-        reward.sub(reward.mul(rewardFeeRatio).div(10000))
+        reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)
       );
 
       const swapDatas = await Promise.all(
@@ -732,21 +734,23 @@ describe("Convex Spell", () => {
     });
 
     it("should be fail to farm DAI on Convex", async () => {
-      await expect(bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData("openPositionFarm", [
-          {
-            strategyId: 2,
-            collToken: CRV,
-            borrowToken: DAI,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID_3,
-          },
+      await expect(
+        bank.execute(
           0,
-        ])
-      )).to.be.revertedWithCustomError(spell, "EXCEED_MIN_POS_SIZE");
+          spell.address,
+          iface.encodeFunctionData("openPositionFarm", [
+            {
+              strategyId: 2,
+              collToken: CRV,
+              borrowToken: DAI,
+              collAmount: depositAmount,
+              borrowAmount: borrowAmount,
+              farmingPoolId: POOL_ID_3,
+            },
+            0,
+          ])
+        )
+      ).to.be.revertedWithCustomError(spell, "EXCEED_MIN_POS_SIZE");
     });
   });
 });
