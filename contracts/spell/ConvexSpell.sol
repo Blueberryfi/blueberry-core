@@ -123,7 +123,7 @@ contract ConvexSpell is BasicSpell {
                 );
             }
             ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
-        } else if (tokens.length == 4) {
+        } else {
             uint256[4] memory suppliedAmts;
             for (uint256 i; i != 4; ++i) {
                 suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(

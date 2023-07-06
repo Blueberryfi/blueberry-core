@@ -48,6 +48,7 @@ const CRV = ADDRESS.CRV;
 const CVX = ADDRESS.CVX;
 const POOL_ID_1 = ADDRESS.CVX_3Crv_Id;
 const POOL_ID_2 = ADDRESS.CVX_CrvEth_Id;
+const POOL_ID_3 = ADDRESS.CVX_Susd_Id;
 
 describe("Convex Spell", () => {
   let admin: SignerWithAddress;
@@ -728,6 +729,24 @@ describe("Convex Spell", () => {
 
       const rewarderBalance = await crvRewarder2.balanceOf(wconvex.address);
       expect(rewarderBalance).to.be.equal(pos.collateralSize);
+    });
+
+    it("should be fail to farm DAI on Convex", async () => {
+      await expect(bank.execute(
+        0,
+        spell.address,
+        iface.encodeFunctionData("openPositionFarm", [
+          {
+            strategyId: 2,
+            collToken: CRV,
+            borrowToken: DAI,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: POOL_ID_3,
+          },
+          0,
+        ])
+      )).to.be.revertedWithCustomError(spell, "EXCEED_MAX_POS_SIZE");
     });
   });
 });
