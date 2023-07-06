@@ -746,7 +746,7 @@ describe("Convex Spell", () => {
           },
           0,
         ])
-      )).to.be.revertedWithCustomError(spell, "EXCEED_MAX_POS_SIZE");
+      )).to.be.revertedWithCustomError(spell, "EXCEED_MIN_POS_SIZE");
     });
   });
 });
