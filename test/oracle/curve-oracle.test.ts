@@ -1,6 +1,7 @@
 import chai, { expect } from "chai";
 import { BigNumber, utils } from "ethers";
 import { ethers, upgrades } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import {
   ChainlinkAdapterOracle,
@@ -18,6 +19,9 @@ chai.use(roughlyNear);
 const OneDay = 86400;
 
 describe("Curve LP Oracle", () => {
+  let admin: SignerWithAddress;
+  let alice: SignerWithAddress;
+
   let stableOracle: CurveStableOracle;
   let volatileOracle: CurveVolatileOracle;
   let tricryptoOracle: CurveTricryptoOracle;
@@ -25,6 +29,8 @@ describe("Curve LP Oracle", () => {
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
   before(async () => {
+    [admin, alice] = await ethers.getSigners();
+
     const ChainlinkAdapterOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.ChainlinkAdapterOracle
     );
@@ -98,6 +104,38 @@ describe("Curve LP Oracle", () => {
       )
     );
     await tricryptoOracle.deployed();
+  });
+
+  describe("Owner", () => {
+    it("should be able to set limiter", async () => {
+      let poolInfo = await volatileOracle.callStatic.getPoolInfo(
+        ADDRESS.CRV_CVXETH
+      );
+
+      await expect(
+        volatileOracle
+          .connect(alice)
+          .setLimiter(ADDRESS.CRV_CVXETH, poolInfo.virtualPrice)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+
+      await expect(
+        volatileOracle.setLimiter(ADDRESS.CRV_CVXETH, 0)
+      ).to.be.revertedWith("INCORRECT_LIMITS");
+
+      await expect(
+        volatileOracle.setLimiter(
+          ADDRESS.CRV_CVXETH,
+          poolInfo.virtualPrice.add(1)
+        )
+      ).to.be.revertedWith("INCORRECT_LIMITS");
+
+      await expect(
+        volatileOracle.setLimiter(
+          ADDRESS.CRV_CVXETH,
+          poolInfo.virtualPrice.mul(9).div(10)
+        )
+      ).to.be.revertedWith("INCORRECT_LIMITS");
+    });
   });
 
   describe("Price Feed", () => {
@@ -201,6 +239,9 @@ describe("Curve LP Oracle", () => {
 
       price = await tricryptoOracle.callStatic.getPrice(ADDRESS.CRV_TriCrypto);
       console.log("TriCrypto Price:", utils.formatUnits(price, 18));
+
+      price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_SUSD);
+      console.log("DAI/USDC/USDT/sUSD Price:", utils.formatUnits(price, 18));
 
       price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_FRAXUSDC);
       console.log("FRAX/USDC Price:", utils.formatUnits(price, 18));

@@ -109,7 +109,7 @@ contract ConvexSpell is BasicSpell {
         _ensureApprove(param.borrowToken, pool, borrowBalance);
         if (tokens.length == 2) {
             uint256[2] memory suppliedAmts;
-            for (uint256 i = 0; i < 2; i++) {
+            for (uint256 i; i != 2; ++i) {
                 suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
                     address(this)
                 );
@@ -117,7 +117,7 @@ contract ConvexSpell is BasicSpell {
             ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
         } else if (tokens.length == 3) {
             uint256[3] memory suppliedAmts;
-            for (uint256 i = 0; i < 3; i++) {
+            for (uint256 i; i != 3; ++i) {
                 suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
                     address(this)
                 );
@@ -125,7 +125,7 @@ contract ConvexSpell is BasicSpell {
             ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
         } else if (tokens.length == 4) {
             uint256[4] memory suppliedAmts;
-            for (uint256 i = 0; i < 4; i++) {
+            for (uint256 i; i != 4; ++i) {
                 suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
                     address(this)
                 );
@@ -138,7 +138,6 @@ contract ConvexSpell is BasicSpell {
 
         // 5. Validate Max Pos Size
         _validatePosSize(param.strategyId);
-
         // 6. Take out existing collateral and burn
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
@@ -152,7 +151,8 @@ contract ConvexSpell is BasicSpell {
             bank.takeCollateral(pos.collateralSize);
             wConvexPools.burn(pos.collId, pos.collateralSize);
             // distribute multiple rewards to users
-            for (uint256 i; i < rewardTokens.length; i++) {
+            uint256 tokensLength = rewardTokens.length;
+            for (uint256 i; i != tokensLength; ++i) {
                 _doRefundRewards(rewardTokens[i]);
             }
         }
@@ -231,7 +231,8 @@ contract ConvexSpell is BasicSpell {
         }
 
         int128 tokenIndex;
-        for (uint256 i = 0; i < tokens.length; i++) {
+        uint256 tokensLength = tokens.length;
+        for (uint256 i; i != tokensLength; ++i) {
             if (tokens[i] == pos.debtToken) {
                 tokenIndex = int128(uint128(i));
                 break;
@@ -250,7 +251,8 @@ contract ConvexSpell is BasicSpell {
         uint[] calldata expectedRewards,
         bytes[] calldata swapDatas
     ) internal {
-        for (uint256 i; i < rewardTokens.length; i++) {
+        uint256 tokensLength = rewardTokens.length;
+        for (uint256 i; i != tokensLength; ++i) {
             address sellToken = rewardTokens[i];
 
             _doCutRewardsFee(sellToken);
