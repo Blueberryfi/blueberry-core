@@ -231,6 +231,168 @@ describe("ShortLong Spell mainnet fork", () => {
       console.log("Position Risk", utils.formatUnits(risk, 2), "%");
     });
 
+    it("should revert when opening a position for non-existing strategy", async () => {
+      await expect(
+        bank.execute(
+          0,
+          spell.address,
+          iface.encodeFunctionData("closePosition", [
+            {
+              strategyId: 5,
+              collToken: USDC,
+              borrowToken: CRV,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+            },
+            "0x00",
+          ])
+        )
+      ).to.be.revertedWith("STRATEGY_NOT_EXIST");
+    });
+
+    it("should revert when opening a position for non-existing collateral", async () => {
+      await expect(
+        bank.execute(
+          0,
+          spell.address,
+          iface.encodeFunctionData("closePosition", [
+            {
+              strategyId: 0,
+              collToken: WETH,
+              borrowToken: CRV,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+            },
+            "0x00",
+          ])
+        )
+      ).to.be.revertedWith("COLLATERAL_NOT_EXIST");
+    });
+
+    it("should be able to close position partially", async () => {
+      await evm_mine_blocks(10000);
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const position = await bank.positions(positionId);
+
+      const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
+
+      const swapAmount = (
+        await daiSoftVault.callStatic.withdraw(position.collateralSize)
+      ).div(2);
+
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits("3", 18));
+
+      const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
+      const beforeUSDCBalance = await usdc.balanceOf(admin.address);
+      const beforeCrvBalance = await crv.balanceOf(admin.address);
+
+      await mockOracle.setPrice(
+        [daiSoftVault.address, USDC],
+        [
+          BigNumber.from(10).pow(18), // $1
+          BigNumber.from(10).pow(18), // $1
+        ]
+      );
+
+      const swapData = await getParaswapCalldata(
+        DAI,
+        CRV,
+        swapAmount,
+        spell.address,
+        100
+      );
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await bank.execute(
+        positionId,
+        spell.address,
+        iface.encodeFunctionData("closePosition", [
+          {
+            strategyId: 0,
+            collToken: USDC,
+            borrowToken: CRV,
+            amountRepay: debtAmount.div(2),
+            amountPosRemove: position.collateralSize.div(2),
+            amountShareWithdraw: position.underlyingVaultShare.div(2),
+            amountOutMin: 1,
+          },
+          swapData.data,
+        ])
+      );
+      const afterUSDCBalance = await usdc.balanceOf(admin.address);
+      const afterCrvBalance = await crv.balanceOf(admin.address);
+      console.log(
+        "USDC Balance Change:",
+        afterUSDCBalance.sub(beforeUSDCBalance)
+      );
+      console.log("CRV Balance Change:", afterCrvBalance.sub(beforeCrvBalance));
+      const depositFee = depositAmount.mul(50).div(10000);
+      const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
+      expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
+        depositAmount.sub(depositFee).sub(withdrawFee)
+      );
+
+      const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
+      // Plus rewards fee
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
+        withdrawFee.div(2)
+      );
+    });
+
+    it("should fail to close position", async () => {
+      await evm_mine_blocks(10000);
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const position = await bank.positions(positionId);
+
+      const swapAmount = (
+        await daiSoftVault.callStatic.withdraw(position.collateralSize)
+      ).div(2);
+
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits("3", 18));
+
+      await mockOracle.setPrice(
+        [daiSoftVault.address, USDC],
+        [
+          BigNumber.from(10).pow(18), // $1
+          BigNumber.from(10).pow(18), // $1
+        ]
+      );
+
+      const swapData = await getParaswapCalldata(
+        DAI,
+        CRV,
+        swapAmount,
+        spell.address,
+        100
+      );
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePosition", [
+            {
+              strategyId: 0,
+              collToken: USDC,
+              borrowToken: CRV,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+            },
+            swapData.data,
+          ])
+        )
+      ).to.be.revertedWith(`INCORRECT_LP("${DAI}")`);
+    });
+
     it("should be able to close position", async () => {
       await evm_mine_blocks(10000);
       const positionId = (await bank.nextPositionId()).sub(1);
@@ -296,7 +458,7 @@ describe("ShortLong Spell mainnet fork", () => {
       const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
       // Plus rewards fee
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
-        withdrawFee
+        withdrawFee.div(2)
       );
     });
   });
