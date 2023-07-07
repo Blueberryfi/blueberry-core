@@ -14,7 +14,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
 
 import "./BasicSpell.sol";
 import "../interfaces/IWIchiFarm.sol";
@@ -27,7 +26,7 @@ import "../interfaces/uniswap/IUniswapV3Router.sol";
  * @notice IchiSpell is the factory contract that
  * defines how Blueberry Protocol interacts with Ichi Vaults
  */
-contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
+contract IchiSpell is BasicSpell {
     using SafeCast for uint256;
     using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -250,35 +249,6 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
     }
 
     /**
-     * @notice Internal function to get outToken amount based on inToken amount
-     * @param inToken Address of inToken
-     * @param outToken Address of outToken
-     * @param amountIn Amount of inToken
-     * @param slippage Swap slippage
-     */
-    function _getMinOutAmount(
-        address inToken,
-        address outToken,
-        uint256 amountIn,
-        uint256 slippage
-    ) internal returns (uint256) {
-        uint256 inTokenPrice = bank.oracle().getPrice(inToken);
-        uint256 outTokenPrice = bank.oracle().getPrice(outToken);
-        uint256 inTokenDecimal = IERC20MetadataUpgradeable(inToken).decimals();
-        uint256 outTokenDecimal = IERC20MetadataUpgradeable(outToken)
-            .decimals();
-
-        // calculate amountOut based on this formular. token0 blance * token0 price = token1 balance * token1 price
-        // decimal should be considered
-        uint256 amountOut = ((amountIn * inTokenPrice) *
-            (10 ** outTokenDecimal)) / (outTokenPrice * (10 ** inTokenDecimal));
-
-        return
-            (amountOut * (Constants.DENOMINATOR - slippage)) /
-            Constants.DENOMINATOR;
-    }
-
-    /**
      * @notice External function to withdraw assets from ICHI Vault
      */
     function closePosition(
@@ -324,43 +294,5 @@ contract IchiSpell is BasicSpell, IUniswapV3SwapCallback {
 
         // 9. Refund ichi token
         _doRefund(ICHI);
-    }
-
-    function uniswapV3SwapCallback(
-        int256 amount0Delta,
-        int256 amount1Delta,
-        bytes calldata data
-    ) external override {
-        if (msg.sender != address(SWAP_POOL))
-            revert Errors.NOT_FROM_UNIV3(msg.sender);
-        address payer = abi.decode(data, (address));
-
-        if (amount0Delta > 0) {
-            if (payer == address(this)) {
-                IERC20Upgradeable(SWAP_POOL.token0()).safeTransfer(
-                    msg.sender,
-                    amount0Delta.toUint256()
-                );
-            } else {
-                IERC20Upgradeable(SWAP_POOL.token0()).safeTransferFrom(
-                    payer,
-                    msg.sender,
-                    amount0Delta.toUint256()
-                );
-            }
-        } else if (amount1Delta > 0) {
-            if (payer == address(this)) {
-                IERC20Upgradeable(SWAP_POOL.token1()).safeTransfer(
-                    msg.sender,
-                    amount1Delta.toUint256()
-                );
-            } else {
-                IERC20Upgradeable(SWAP_POOL.token1()).safeTransferFrom(
-                    payer,
-                    msg.sender,
-                    amount1Delta.toUint256()
-                );
-            }
-        }
     }
 }
