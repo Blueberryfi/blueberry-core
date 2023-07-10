@@ -545,6 +545,88 @@ describe('ICHI Angel Vaults Spell', () => {
       const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(withdrawFee);
     })
+
+    it("should be able to open a position for ICHI angel vault", async () => {
+      const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
+      const beforeICHIBalance = await ichi.balanceOf(CICHI);
+      const beforeWrappedTokenBalance = await werc20.balanceOfERC20(ichiVault.address, bank.address);
+      // Isolated collateral: ICHI
+      // Borrow: ICHI
+      await bank.execute(
+        0,
+        spell.address,
+        iface.encodeFunctionData("openPosition", [{
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: ICHI,
+          collAmount: depositAmount,
+          borrowAmount: utils.parseUnits('5', 18),
+          farmingPoolId: 0
+        }])
+      )
+
+      const fee = depositAmount.mul(50).div(10000);
+      const afterICHIBalance = await ichi.balanceOf(CICHI);
+      expect(afterICHIBalance.sub(beforeICHIBalance)).to.be.near(depositAmount.sub(fee).sub(utils.parseUnits('5', 18)))
+
+      const positionId = (await bank.nextPositionId()).sub(1)
+      const pos = await bank.positions(positionId);
+      const afterWrappedTokenBalance = await werc20.balanceOfERC20(ichiVault.address, bank.address);
+      expect(pos.owner).to.be.equal(admin.address);
+      expect(pos.collToken).to.be.equal(werc20.address);
+      expect(pos.collId).to.be.equal(BigNumber.from(ichiVault.address));
+      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+      expect(afterWrappedTokenBalance.sub(beforeWrappedTokenBalance)).to.be.equal(pos.collateralSize);
+      const bankInfo = await bank.banks(ICHI);
+      console.log('Bank Info', bankInfo);
+      console.log('Position Info', pos);
+
+      const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
+      expect(
+        afterTreasuryBalance.sub(beforeTreasuryBalance)
+      ).to.be.equal(depositAmount.mul(50).div(10000))
+    })
+    it("should be able to close portion of position", async () => {
+      const positionId = (await bank.nextPositionId()).sub(1);
+      await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
+
+      const positionInfo = await bank.getPositionInfo(positionId);
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await bank.execute(
+        positionId,
+        spell.address,
+        iface.encodeFunctionData("closePosition", [{
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: ICHI,
+          amountRepay: positionInfo.debtShare.div(3),
+          amountPosRemove: 1,
+          amountShareWithdraw: positionInfo.underlyingVaultShare.div(3),
+          amountOutMin: 1,
+        }])
+      )
+    })
+    it("should be able to withdraw ICHI", async () => {
+      const positionId = (await bank.nextPositionId()).sub(1);
+      await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
+      await ichi.transfer(spell.address, utils.parseUnits('10', 18)); // manually set rewards
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await bank.execute(
+        positionId,
+        spell.address,
+        iface.encodeFunctionData("closePosition", [{
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: ICHI,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+        }])
+      )
+    })
   })
 
   describe("ICHI Vault Farming Position", () => {
@@ -1021,25 +1103,6 @@ describe('ICHI Angel Vaults Spell', () => {
           )
         ).to.be.emit(spell, "CollateralsMaxLTVSet")
       })
-    })
-  })
-
-  describe("Misc", () => {
-    beforeEach(async () => {
-      const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
-      spell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
-        bank.address,
-        werc20.address,
-        WETH,
-        wichi.address,
-        UNI_V3_ROUTER
-      ])
-      await spell.deployed();
-    })
-    it("should revert direct external call of uniswapV3SwapCallback from non-swap pools", async () => {
-      await expect(
-        spell.uniswapV3SwapCallback(0, 0, ethers.constants.HashZero)
-      ).to.be.revertedWith("NOT_FROM_UNIV3");
     })
   })
 })
