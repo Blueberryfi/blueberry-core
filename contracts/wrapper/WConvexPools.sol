@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "hardhat/console.sol";
+
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "../utils/EnsureApprove.sol";
 import "../interfaces/IWConvexPools.sol";
@@ -47,7 +47,7 @@ contract WConvexPools is
     /// @dev Address to CVX token
     IConvex public CVX;
     /// @dev Mapping from token id to accExtPerShare
-    mapping(uint256 => uint256[]) public accExtPerShare;
+    mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
     /// @dev Extra rewards addresses
     address[] public extraRewards;
     /// @dev The index of extra rewards
@@ -191,11 +191,9 @@ contract WConvexPools is
         tokens[1] = address(CVX);
         rewards[1] = _getCvxPendingReward(rewards[0]);
 
-        for (uint i = 0; i < extraRewardsCount; i++) {
+        for (uint i = 0; i < extraRewardsCount; ) {
             address rewarder = extraRewards[i];
-            uint256 stRewardPerShare = accExtPerShare[tokenId][
-                extraRewardsIdx[rewarder] - 1
-            ];
+            uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IRewarder(rewarder).rewardToken();
             rewards[i + 2] = _getPendingReward(
                 stRewardPerShare,
@@ -203,6 +201,10 @@ contract WConvexPools is
                 amount,
                 lpDecimals
             );
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -233,7 +235,7 @@ contract WConvexPools is
         for (uint i; i < extraRewardsCount; ) {
             address extraRewarder = IRewarder(cvxRewarder).extraRewards(i);
             uint rewardPerToken = IRewarder(extraRewarder).rewardPerToken();
-            accExtPerShare[id].push(rewardPerToken);
+            accExtPerShare[id][extraRewarder] = rewardPerToken;
 
             _syncExtraReward(extraRewarder);
 
@@ -298,7 +300,8 @@ contract WConvexPools is
             }
         }
 
-        for (uint i; i < rewardTokens.length; ) {
+        uint rewardLen = rewardTokens.length;
+        for (uint i; i < rewardLen; ) {
             IERC20Upgradeable(rewardTokens[i]).safeTransfer(
                 msg.sender,
                 rewards[i]

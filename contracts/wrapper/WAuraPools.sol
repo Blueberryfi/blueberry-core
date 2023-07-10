@@ -49,11 +49,13 @@ contract WAuraPools is
     /// @dev Address to STASH_AURA token
     address public STASH_AURA;
     /// @dev Mapping from token id to accExtPerShare
-    mapping(uint256 => uint256[]) public accExtPerShare;
+    mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
     /// @dev Aura extra rewards addresses
     address[] public extraRewards;
     /// @dev The index of extra rewards
     mapping(address => uint256) public extraRewardsIdx;
+
+    uint public REWARD_MULTIPLIER_DENOMINATOR;
 
     function initialize(
         address aura_,
@@ -65,6 +67,8 @@ contract WAuraPools is
         AURA = IAura(aura_);
         STASH_AURA = stash_aura_;
         auraPools = IAuraPools(auraPools_);
+        REWARD_MULTIPLIER_DENOMINATOR = auraPools
+            .REWARD_MULTIPLIER_DENOMINATOR();
     }
 
     /// @notice Encode pid, auraPerShare to ERC1155 token id
@@ -168,7 +172,7 @@ contract WAuraPools is
         // AURA mint request amount = amount * reward_multiplier / reward_multiplier_denominator
         uint256 mintRequestAmount = (balAmount *
             auraPools.getRewardMultipliers(auraRewarder)) /
-            auraPools.REWARD_MULTIPLIER_DENOMINATOR();
+            REWARD_MULTIPLIER_DENOMINATOR;
 
         // AURA token mint logic
         // e.g. emissionsMinted = 6e25 - 5e25 - 0 = 1e25;
@@ -241,9 +245,7 @@ contract WAuraPools is
         // Additional rewards
         for (uint256 i; i != extraRewardsCount; ) {
             address rewarder = extraRewards[i];
-            uint256 stRewardPerShare = accExtPerShare[tokenId][
-                extraRewardsIdx[rewarder] - 1
-            ];
+            uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IAuraRewarder(rewarder).rewardToken();
             rewards[i + 2] = _getPendingReward(
                 stRewardPerShare,
@@ -288,8 +290,9 @@ contract WAuraPools is
             .extraRewardsLength();
         for (uint256 i; i != extraRewardsCount; ) {
             address extraRewarder = IAuraRewarder(auraRewarder).extraRewards(i);
-            uint256 rewardPerToken = IAuraRewarder(extraRewarder).rewardPerToken();
-            accExtPerShare[id].push(rewardPerToken);
+            uint256 rewardPerToken = IAuraRewarder(extraRewarder)
+                .rewardPerToken();
+            accExtPerShare[id][extraRewarder] = rewardPerToken;
 
             _syncExtraReward(extraRewarder);
 

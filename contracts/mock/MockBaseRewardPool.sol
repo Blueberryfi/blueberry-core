@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/convex/IRewarder.sol";
+import "./MockVirtualBalanceRewardPool.sol";
 
 contract MockBaseRewardPool {
     using SafeERC20 for IERC20;
@@ -42,6 +43,10 @@ contract MockBaseRewardPool {
         pid = pid_;
         stakingToken = IERC20(stakingToken_);
         rewardToken = IERC20(rewardToken_);
+    }
+
+    function setReward(address user, uint amount) external {
+        rewards[user] = amount;
     }
 
     function totalSupply() public view returns (uint256) {
@@ -80,11 +85,7 @@ contract MockBaseRewardPool {
     }
 
     function earned(address account) public view returns (uint256) {
-        return
-            balanceOf(account)
-                .mul(rewardPerToken.sub(userRewardPerTokenPaid[account]))
-                .div(1e18)
-                .add(rewards[account]);
+        return rewards[account];
     }
 
     function stake(
@@ -101,6 +102,28 @@ contract MockBaseRewardPool {
         return true;
     }
 
+    function stakeFor(
+        address _for,
+        uint256 _amount
+    ) public updateReward(_for) returns (bool) {
+        require(_amount > 0, "RewardPool : Cannot stake 0");
+
+        //also stake to linked rewards
+        for (uint i = 0; i < extraRewards.length; i++) {
+            MockVirtualBalanceRewardPool(extraRewards[i]).stake(_for, _amount);
+        }
+
+        //give to _for
+        _totalSupply = _totalSupply.add(_amount);
+        _balances[_for] = _balances[_for].add(_amount);
+
+        //take away from sender
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        emit Staked(_for, _amount);
+
+        return true;
+    }
+
     function stakeAll() external returns (bool) {
         uint256 balance = stakingToken.balanceOf(msg.sender);
         stake(balance);
@@ -112,6 +135,14 @@ contract MockBaseRewardPool {
         bool claim
     ) public updateReward(msg.sender) returns (bool) {
         require(amount > 0, "RewardPool : Cannot withdraw 0");
+
+        //also withdraw from linked rewards
+        for (uint i = 0; i < extraRewards.length; i++) {
+            MockVirtualBalanceRewardPool(extraRewards[i]).withdraw(
+                msg.sender,
+                amount
+            );
+        }
 
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
@@ -158,6 +189,15 @@ contract MockBaseRewardPool {
             rewards[_account] = 0;
             rewardToken.safeTransfer(_account, reward);
             emit RewardPaid(_account, reward);
+        }
+
+        //also get rewards from linked rewards
+        if (_claimExtras) {
+            for (uint i = 0; i < extraRewards.length; i++) {
+                MockVirtualBalanceRewardPool(extraRewards[i]).getReward(
+                    _account
+                );
+            }
         }
 
         return true;
