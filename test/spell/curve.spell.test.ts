@@ -11,21 +11,25 @@ import {
   CurveVolatileOracle,
   CurveTricryptoOracle,
   ProtocolConfig,
-} from '../../typechain-types';
+} from "../../typechain-types";
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { CrvProtocol, evm_mine_blocks, currentTime, setupCrvProtocol, fork } from "../helpers";
-import SpellABI from '../../abi/CurveSpell.json';
+import {
+  CrvProtocol,
+  evm_mine_blocks,
+  currentTime,
+  setupCrvProtocol,
+  fork,
+} from "../helpers";
+import SpellABI from "../../abi/CurveSpell.json";
 import chai, { expect } from "chai";
-import { solidity } from 'ethereum-waffle'
-import { near } from '../assertions/near'
-import { roughlyNear } from '../assertions/roughlyNear'
+import { near } from "../assertions/near";
+import { roughlyNear } from "../assertions/roughlyNear";
 import { BigNumber, utils } from "ethers";
 import { getParaswapCalldata } from "../helpers/paraswap";
 
-chai.use(solidity)
-chai.use(near)
-chai.use(roughlyNear)
+chai.use(near);
+chai.use(roughlyNear);
 
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
@@ -59,7 +63,6 @@ describe("Curve Spell", () => {
   let protocol: CrvProtocol;
   let config: ProtocolConfig;
 
-
   before(async () => {
     await fork();
 
@@ -80,11 +83,13 @@ describe("Curve Spell", () => {
     volatileOracle = protocol.volatileOracle;
     tricryptoOracle = protocol.tricryptoOracle;
     config = protocol.config;
-  })
+  });
 
   describe("Constructor", () => {
     it("should revert when zero address is provided in param", async () => {
-      const CurveSpell = await ethers.getContractFactory(CONTRACT_NAMES.CurveSpell);
+      const CurveSpell = await ethers.getContractFactory(
+        CONTRACT_NAMES.CurveSpell
+      );
       await expect(
         upgrades.deployProxy(CurveSpell, [
           ethers.constants.AddressZero,
@@ -95,7 +100,7 @@ describe("Curve Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(CurveSpell, [
           bank.address,
@@ -106,7 +111,7 @@ describe("Curve Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(CurveSpell, [
           bank.address,
@@ -117,7 +122,7 @@ describe("Curve Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(CurveSpell, [
           bank.address,
@@ -128,7 +133,7 @@ describe("Curve Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(CurveSpell, [
           bank.address,
@@ -139,8 +144,8 @@ describe("Curve Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
-    })
+      ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
+    });
     it("should revert initializing twice", async () => {
       await expect(
         spell.initialize(
@@ -150,105 +155,126 @@ describe("Curve Spell", () => {
           ethers.constants.AddressZero,
           stableOracle.address,
           AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
+          TOKEN_TRANSFER_PROXY
         )
-      ).to.be.revertedWith("Initializable: contract is already initialized")
-    })
-  })
+      ).to.be.revertedWith("Initializable: contract is already initialized");
+    });
+  });
 
   describe("Curve Gauge Farming Position", () => {
-    const depositAmount = utils.parseUnits('100', 18); // CRV => $100
-    const borrowAmount = utils.parseUnits('250', 6);	 // USDC
+    const depositAmount = utils.parseUnits("100", 18); // CRV => $100
+    const borrowAmount = utils.parseUnits("250", 6); // USDC
     const iface = new ethers.utils.Interface(SpellABI);
 
     before(async () => {
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
       await crv.approve(bank.address, ethers.constants.MaxUint256);
-    })
+    });
 
     it("should revert when opening position exceeds max LTV", async () => {
-      await expect(bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData("openPositionFarm", [{
-          strategyId: 0,
-          collToken: CRV,
-          borrowToken: USDC,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount.mul(4),
-          farmingPoolId: GAUGE_ID
-        }, 0])
-      )).to.be.revertedWith("EXCEED_MAX_LTV");
-    })
+      await expect(
+        bank.execute(
+          0,
+          spell.address,
+          iface.encodeFunctionData("openPositionFarm", [
+            {
+              strategyId: 0,
+              collToken: CRV,
+              borrowToken: USDC,
+              collAmount: depositAmount,
+              borrowAmount: borrowAmount.mul(4),
+              farmingPoolId: GAUGE_ID,
+            },
+            0,
+          ])
+        )
+      ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
+    });
     it("should revert when opening a position for non-existing strategy", async () => {
       await expect(
         bank.execute(
           0,
           spell.address,
-          iface.encodeFunctionData("openPositionFarm", [{
-            strategyId: 5,
-            collToken: CRV,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: GAUGE_ID
-          }, 0])
+          iface.encodeFunctionData("openPositionFarm", [
+            {
+              strategyId: 5,
+              collToken: CRV,
+              borrowToken: USDC,
+              collAmount: depositAmount,
+              borrowAmount: borrowAmount,
+              farmingPoolId: GAUGE_ID,
+            },
+            0,
+          ])
         )
-      ).to.be.revertedWith("STRATEGY_NOT_EXIST")
-    })
+      )
+        .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
+        .withArgs(spell.address, 5);
+    });
     it("should revert when opening a position for non-existing collateral", async () => {
       await expect(
         bank.execute(
           0,
           spell.address,
-          iface.encodeFunctionData("openPositionFarm", [{
-            strategyId: 0,
-            collToken: WETH,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: GAUGE_ID
-          }, 0])
+          iface.encodeFunctionData("openPositionFarm", [
+            {
+              strategyId: 0,
+              collToken: WETH,
+              borrowToken: USDC,
+              collAmount: depositAmount,
+              borrowAmount: borrowAmount,
+              farmingPoolId: GAUGE_ID,
+            },
+            0,
+          ])
         )
-      ).to.be.revertedWith("COLLATERAL_NOT_EXIST")
-    })
+      )
+        .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
+        .withArgs(0, WETH);
+    });
     it("should revert when opening a position for incorrect farming pool id", async () => {
       await expect(
         bank.execute(
           0,
           spell.address,
-          iface.encodeFunctionData("openPositionFarm", [{
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: GAUGE_ID + 1
-          }, 0])
+          iface.encodeFunctionData("openPositionFarm", [
+            {
+              strategyId: 0,
+              collToken: CRV,
+              borrowToken: USDC,
+              collAmount: depositAmount,
+              borrowAmount: borrowAmount,
+              farmingPoolId: GAUGE_ID + 1,
+            },
+            0,
+          ])
         )
-      ).to.be.revertedWith("INCORRECT_LP")
-    })
+      ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
+    });
     it("should be able to farm USDC on Curve pool", async () => {
       const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       await bank.execute(
         0,
         spell.address,
-        iface.encodeFunctionData("openPositionFarm", [{
-          strategyId: 0,
-          collToken: CRV,
-          borrowToken: USDC,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId: GAUGE_ID
-        }, 0])
-      )
+        iface.encodeFunctionData("openPositionFarm", [
+          {
+            strategyId: 0,
+            collToken: CRV,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: GAUGE_ID,
+          },
+          0,
+        ])
+      );
 
       const bankInfo = await bank.getBankInfo(USDC);
       console.log("USDC Bank Info:", bankInfo);
 
       const pos = await bank.positions(positionId);
-      console.log("Position Info:", pos)
+      console.log("Position Info:", pos);
       console.log("Position Value:", await bank.callStatic.getPositionValue(1));
       expect(pos.owner).to.be.equal(admin.address);
       expect(pos.collToken).to.be.equal(wgauge.address);
@@ -259,34 +285,37 @@ describe("Curve Spell", () => {
       // ).to.be.equal(pos.collateralSize);
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);
-      expect(
-        afterTreasuryBalance.sub(beforeTreasuryBalance)
-      ).to.be.equal(depositAmount.mul(50).div(10000))
-    })
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
+        depositAmount.mul(50).div(10000)
+      );
+    });
     it("should not revert when another token exists with balance", async () => {
       // transfer 1 wei DAI to check tx success.
-      await dai.connect(admin).transfer(spell.address, 1)
+      await dai.connect(admin).transfer(spell.address, 1);
 
       const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       await bank.execute(
         0,
         spell.address,
-        iface.encodeFunctionData("openPositionFarm", [{
-          strategyId: 0,
-          collToken: CRV,
-          borrowToken: USDC,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId: GAUGE_ID
-        }, 0])
-      )
+        iface.encodeFunctionData("openPositionFarm", [
+          {
+            strategyId: 0,
+            collToken: CRV,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: GAUGE_ID,
+          },
+          0,
+        ])
+      );
 
       const bankInfo = await bank.getBankInfo(USDC);
       console.log("USDC Bank Info:", bankInfo);
 
       const pos = await bank.positions(positionId);
-      console.log("Position Info:", pos)
+      console.log("Position Info:", pos);
       console.log("Position Value:", await bank.callStatic.getPositionValue(1));
       expect(pos.owner).to.be.equal(admin.address);
       expect(pos.collToken).to.be.equal(wgauge.address);
@@ -294,10 +323,10 @@ describe("Curve Spell", () => {
       expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);
-      expect(
-        afterTreasuryBalance.sub(beforeTreasuryBalance)
-      ).to.be.equal(depositAmount.mul(50).div(10000))
-    })
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
+        depositAmount.mul(50).div(10000)
+      );
+    });
 
     it("should be able to get pendingReward info", async () => {
       evm_mine_blocks(1000);
@@ -310,9 +339,9 @@ describe("Curve Spell", () => {
         position.collateralSize
       );
 
-      expect((pendingRewardsInfo[0][0])).to.be.equal(CRV);
+      expect(pendingRewardsInfo[0][0]).to.be.equal(CRV);
       expect(pendingRewardsInfo[1][0]).to.be.gte(0);
-    })
+    });
 
     it("should be able to get position risk ratio", async () => {
       let risk = await bank.callStatic.getPositionRisk(1);
@@ -322,7 +351,7 @@ describe("Curve Spell", () => {
       console.log("PV:", utils.formatUnits(pv));
       console.log("OV:", utils.formatUnits(ov));
       console.log("CV:", utils.formatUnits(cv));
-      console.log('Prev Position Risk', utils.formatUnits(risk, 2), '%');
+      console.log("Prev Position Risk", utils.formatUnits(risk, 2), "%");
       await mockOracle.setPrice(
         [USDC, CRV],
         [
@@ -334,13 +363,12 @@ describe("Curve Spell", () => {
       pv = await bank.callStatic.getPositionValue(1);
       ov = await bank.callStatic.getDebtValue(1);
       cv = await bank.callStatic.getIsolatedCollateralValue(1);
-      console.log("=======")
+      console.log("=======");
       console.log("PV:", utils.formatUnits(pv));
       console.log("OV:", utils.formatUnits(ov));
       console.log("CV:", utils.formatUnits(cv));
-      console.log('Position Risk', utils.formatUnits(risk, 2), '%');
-
-    })
+      console.log("Position Risk", utils.formatUnits(risk, 2), "%");
+    });
     // TODO: Find another USDC curve pool
     // it("should revert increasing existing position when diff pos param given", async () => {
     //   const positionId = (await bank.nextPositionId()).sub(1);
@@ -357,36 +385,46 @@ describe("Curve Spell", () => {
     //         farmingPoolId: 0
     //       }, 0])
     //     )
-    //   ).to.be.revertedWith("INCORRECT_PID")
+    //   ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
     // })
     it("should revert if block timestamp is greater than deadline", async () => {
       // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits('10', 18));
+      await crv.transfer(spell.address, utils.parseUnits("10", 18));
 
-      const deadline = await currentTime()
+      const deadline = await currentTime();
       const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
 
-      await expect( bank.execute(
-        positionId,
-        spell.address,
-        iface.encodeFunctionData("closePositionFarm", [{
-          strategyId: 0,
-          collToken: CRV,
-          borrowToken: USDC,
-          amountRepay: ethers.constants.MaxUint256,
-          amountPosRemove: ethers.constants.MaxUint256,
-          amountShareWithdraw: ethers.constants.MaxUint256,
-          amountOutMin: 1,
-        }, [], [], false, deadline])
-      )).to.be.revertedWith(`EXPIRED(${deadline})`);
-    })
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [
+            {
+              strategyId: 0,
+              collToken: CRV,
+              borrowToken: USDC,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+            },
+            [],
+            [],
+            false,
+            deadline,
+          ])
+        )
+      )
+        .to.be.revertedWithCustomError(spell, "EXPIRED")
+        .withArgs(deadline);
+    });
 
     it("should revert if received amount is lower than slippage", async () => {
       evm_mine_blocks(1000);
 
       // Manually transfer CRV rewards to spell
-      const amount = utils.parseUnits('10', 18);
+      const amount = utils.parseUnits("10", 18);
       await crv.transfer(spell.address, amount);
 
       const positionId = (await bank.nextPositionId()).sub(1);
@@ -407,21 +445,27 @@ describe("Curve Spell", () => {
         bank.execute(
           positionId,
           spell.address,
-          iface.encodeFunctionData("closePositionFarm", [{
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: USDC,
-            amountRepay: ethers.constants.MaxUint256,
-            amountPosRemove: ethers.constants.MaxUint256,
-            amountShareWithdraw: ethers.constants.MaxUint256,
-            amountOutMin: utils.parseUnits('1000', 18),
-          }, [expectedAmount], [swapData.data], false, 7777777777])
+          iface.encodeFunctionData("closePositionFarm", [
+            {
+              strategyId: 0,
+              collToken: CRV,
+              borrowToken: USDC,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: utils.parseUnits("1000", 18),
+            },
+            [expectedAmount],
+            [swapData.data],
+            false,
+            7777777777,
+          ])
         )
       ).to.be.revertedWith("Not enough coins removed");
-    })
+    });
     it("should be able to harvest on Curve Gauge", async () => {
       // Manually transfer CRV rewards to spell
-      const amount = utils.parseUnits('10', 18);
+      const amount = utils.parseUnits("10", 18);
       await crv.transfer(spell.address, amount);
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
@@ -460,19 +504,25 @@ describe("Curve Spell", () => {
           false,
           7777777777,
         ])
-      )
+      );
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);
-      console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
-      console.log('CRV Balance Change:', afterCrvBalance.sub(beforeCrvBalance));
+      console.log(
+        "USDC Balance Change:",
+        afterUSDCBalance.sub(beforeUSDCBalance)
+      );
+      console.log("CRV Balance Change:", afterCrvBalance.sub(beforeCrvBalance));
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
-      expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(depositAmount.sub(depositFee).sub(withdrawFee));
+      expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
+        depositAmount.sub(depositFee).sub(withdrawFee)
+      );
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);
       // Plus rewards fee
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(withdrawFee);
-    })
-  })
-
-})
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
+        withdrawFee
+      );
+    });
+  });
+});
