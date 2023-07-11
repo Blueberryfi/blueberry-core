@@ -95,15 +95,11 @@ contract AuraSpell is BasicSpell {
         _doLend(param.collToken, param.collAmount);
 
         // 2. Borrow specific amounts
-        uint256 borrowBalance = _doBorrow(
-            param.borrowToken,
-            param.borrowAmount
-        );
+        _doBorrow(param.borrowToken, param.borrowAmount);
 
         // 3. Add liquidity on Balancer, get BPT
         {
             IBalancerVault vault = wAuraPools.getVault(lpToken);
-            _ensureApprove(param.borrowToken, address(vault), borrowBalance);
 
             (address[] memory tokens, uint256[] memory balances, ) = wAuraPools
                 .getPoolTokens(lpToken);
@@ -111,7 +107,7 @@ contract AuraSpell is BasicSpell {
                 uint256[] memory maxAmountsIn,
                 uint256[] memory amountsIn,
                 uint256 poolAmountOut
-            ) = _getJoinPoolParams(tokens, balances, lpToken);
+            ) = _getJoinPoolParamsAndApprove(address(vault), tokens, balances, lpToken);
 
             if (poolAmountOut != 0) {
                 vault.joinPool(
@@ -265,11 +261,12 @@ contract AuraSpell is BasicSpell {
         _doRefund(param.collToken);
     }
 
-    function _getJoinPoolParams(
+    function _getJoinPoolParamsAndApprove(
+        address vault,
         address[] memory tokens,
         uint256[] memory balances,
         address lpToken
-    ) internal view returns (uint256[] memory, uint256[] memory, uint256) {
+    ) internal returns (uint256[] memory, uint256[] memory, uint256) {
         uint256 i;
         uint256 j;
         uint256 length = tokens.length;
@@ -279,7 +276,11 @@ contract AuraSpell is BasicSpell {
 
         for (i; i != length; ) {
             if (tokens[i] != lpToken) {
-                amountsIn[j++] = IERC20(tokens[i]).balanceOf(address(this));
+                amountsIn[j] = IERC20(tokens[i]).balanceOf(address(this));
+                if (amountsIn[j] > 0) {
+                    _ensureApprove(tokens[i], vault, amountsIn[j]);
+                }
+                ++j;
             } else isLPIncluded = true;
 
             maxAmountsIn[i] = IERC20(tokens[i]).balanceOf(address(this));
