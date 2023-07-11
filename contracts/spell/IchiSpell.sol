@@ -225,7 +225,7 @@ contract IchiSpell is BasicSpell {
                     tokenOut: swapPath[1],
                     fee: IUniswapV3Pool(vault.pool()).fee(),
                     recipient: address(this),
-                    deadline: block.timestamp + Constants.MAX_DELAY_ON_SWAP,
+                    deadline: block.timestamp,
                     amountIn: amountIn,
                     amountOutMinimum: param.amountOutMin,
                     sqrtPriceLimitX96: 0

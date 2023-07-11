@@ -11,9 +11,7 @@ import {
   CurveTricryptoOracle,
 } from "../../typechain-types";
 import { roughlyNear } from "../assertions/roughlyNear";
-import { solidity } from "ethereum-waffle";
 
-chai.use(solidity);
 chai.use(roughlyNear);
 
 const OneDay = 86400;
@@ -120,21 +118,21 @@ describe("Curve LP Oracle", () => {
 
       await expect(
         volatileOracle.setLimiter(ADDRESS.CRV_CVXETH, 0)
-      ).to.be.revertedWith("INCORRECT_LIMITS");
+      ).to.be.revertedWithCustomError(volatileOracle, "INCORRECT_LIMITS");
 
       await expect(
         volatileOracle.setLimiter(
           ADDRESS.CRV_CVXETH,
           poolInfo.virtualPrice.add(1)
         )
-      ).to.be.revertedWith("INCORRECT_LIMITS");
+      ).to.be.revertedWithCustomError(volatileOracle, "INCORRECT_LIMITS");
 
       await expect(
         volatileOracle.setLimiter(
           ADDRESS.CRV_CVXETH,
           poolInfo.virtualPrice.mul(9).div(10)
         )
-      ).to.be.revertedWith("INCORRECT_LIMITS");
+      ).to.be.revertedWithCustomError(volatileOracle, "INCORRECT_LIMITS");
     });
   });
 
@@ -178,9 +176,9 @@ describe("Curve LP Oracle", () => {
       await expect(stableOracle.callStatic.getPrice(ADDRESS.CRV_3Crv)).to.be
         .reverted;
 
-      await expect(
-        tricryptoOracle.callStatic.getPrice(ADDRESS.CRV_CVXETH)
-      ).to.be.revertedWith("ORACLE_NOT_SUPPORT_LP");
+      await expect(tricryptoOracle.callStatic.getPrice(ADDRESS.CRV_CVXETH))
+        .to.be.revertedWithCustomError(tricryptoOracle, "ORACLE_NOT_SUPPORT_LP")
+        .withArgs(ADDRESS.CRV_CVXETH);
     });
 
     it("Crv Lp Price", async () => {

@@ -2,18 +2,11 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers, upgrades } from "hardhat";
 import chai, { expect } from "chai";
 import { ProtocolConfig } from "../typechain-types";
-import { ADDRESS } from "../constant";
-import { solidity } from 'ethereum-waffle'
-import { BigNumber, utils } from "ethers";
 import { roughlyNear } from "./assertions/roughlyNear";
 import { near } from "./assertions/near";
 
-chai.use(solidity);
 chai.use(roughlyNear);
 chai.use(near);
-
-const USDC = ADDRESS.USDC;
-const WETH = ADDRESS.WETH;
 
 describe("Protocol Config", () => {
   let admin: SignerWithAddress;
@@ -25,27 +18,29 @@ describe("Protocol Config", () => {
 
   before(async () => {
     [admin, alice, bank, treasury] = await ethers.getSigners();
-  })
+  });
 
   beforeEach(async () => {
     const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
-    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address]);
-  })
+    config = <ProtocolConfig>(
+      await upgrades.deployProxy(ProtocolConfig, [treasury.address])
+    );
+  });
 
   describe("Constructor", () => {
     it("should revert initializing twice", async () => {
-      await expect(
-        config.initialize(config.address)
-      ).to.be.revertedWith("Initializable: contract is already initialized")
-    })
+      await expect(config.initialize(config.address)).to.be.revertedWith(
+        "Initializable: contract is already initialized"
+      );
+    });
     it("should revert when treasury address is invalid", async () => {
       const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
       await expect(
         upgrades.deployProxy(ProtocolConfig, [ethers.constants.AddressZero])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(ProtocolConfig, "ZERO_ADDRESS");
 
-      expect(await config.treasury()).to.be.equal(treasury.address)
-    })
+      expect(await config.treasury()).to.be.equal(treasury.address);
+    });
     it("should set initial states on constructor", async () => {
       expect(await config.depositFee()).to.be.equal(50);
       expect(await config.withdrawFee()).to.be.equal(50);
@@ -53,10 +48,12 @@ describe("Protocol Config", () => {
       expect(await config.blbStablePoolFeeRate()).to.be.equal(3500);
       expect(await config.blbIchiVaultFeeRate()).to.be.equal(3500);
       expect(await config.withdrawVaultFee()).to.be.equal(100);
-      expect(await config.withdrawVaultFeeWindow()).to.be.equal(60 * 60 * 24 * 60);
+      expect(await config.withdrawVaultFeeWindow()).to.be.equal(
+        60 * 60 * 24 * 60
+      );
       expect(await config.withdrawVaultFeeWindowStartTime()).to.be.equal(0);
-    })
-  })
+    });
+  });
 
   it("owner should be able to start vault withdraw fee", async () => {
     await expect(
@@ -65,72 +62,73 @@ describe("Protocol Config", () => {
 
     await config.startVaultWithdrawFee();
 
-    await expect(
-      config.startVaultWithdrawFee()
-    ).to.be.revertedWith("FEE_WINDOW_ALREADY_STARTED");
-  })
+    await expect(config.startVaultWithdrawFee()).to.be.revertedWithCustomError(
+      config,
+      "FEE_WINDOW_ALREADY_STARTED"
+    );
+  });
 
   it("owner should be able to set vault withdraw fee window", async () => {
     await expect(
       config.connect(alice).setWithdrawVaultFeeWindow(60)
     ).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(
-      config.setWithdrawVaultFeeWindow(60 * 60 * 24 * 90)
-    ).to.be.revertedWith("FEE_WINDOW_TOO_LONG");
+    await expect(config.setWithdrawVaultFeeWindow(60 * 60 * 24 * 90))
+      .to.be.revertedWithCustomError(config, "FEE_WINDOW_TOO_LONG")
+      .withArgs(60 * 60 * 24 * 90);
 
     await config.setWithdrawVaultFeeWindow(60);
     expect(await config.withdrawVaultFeeWindow()).to.be.equal(60);
-  })
+  });
 
   it("owner should be able to set deposit fee", async () => {
-    await expect(
-      config.connect(alice).setDepositFee(100)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(
-      config.setDepositFee(2500)
-    ).to.be.revertedWith("RATIO_TOO_HIGH");
+    await expect(config.connect(alice).setDepositFee(100)).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(config.setDepositFee(2500)).to.be.revertedWithCustomError(config, 
+      "RATIO_TOO_HIGH"
+    ).withArgs(2500);
 
     await config.setDepositFee(100);
     expect(await config.depositFee()).to.be.equal(100);
-  })
+  });
 
   it("owner should be able to set withdraw fee", async () => {
-    await expect(
-      config.connect(alice).setWithdrawFee(100)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(
-      config.setWithdrawFee(2500)
-    ).to.be.revertedWith("RATIO_TOO_HIGH");
+    await expect(config.connect(alice).setWithdrawFee(100)).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(config.setWithdrawFee(2500)).to.be.revertedWithCustomError(config, 
+      "RATIO_TOO_HIGH"
+    ).withArgs(2500);
 
     await config.setWithdrawFee(100);
     expect(await config.withdrawFee()).to.be.equal(100);
-  })
+  });
 
   it("owner should be able to set rewards fee", async () => {
-    await expect(
-      config.connect(alice).setRewardFee(100)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(
-      config.setRewardFee(2500)
-    ).to.be.revertedWith("RATIO_TOO_HIGH");
+    await expect(config.connect(alice).setRewardFee(100)).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(config.setRewardFee(2500)).to.be.revertedWithCustomError(config, 
+      "RATIO_TOO_HIGH"
+    ).withArgs(2500);
 
     await config.setRewardFee(100);
     expect(await config.rewardFee()).to.be.equal(100);
-  })
+  });
 
   it("owner should be able to set fee distribution rates", async () => {
     await expect(
       config.connect(alice).setFeeDistribution(0, 0, 0)
     ).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(
-      config.setFeeDistribution(0, 4000, 3000)
-    ).to.be.revertedWith("INVALID_FEE_DISTRIBUTION");
+    await expect(config.setFeeDistribution(0, 4000, 3000)).to.be.revertedWithCustomError(config, 
+      "INVALID_FEE_DISTRIBUTION"
+    );
 
-    await config.setFeeDistribution(3000, 4000, 3000)
+    await config.setFeeDistribution(3000, 4000, 3000);
     expect(await config.treasuryFeeRate()).to.be.equal(3000);
     expect(await config.blbStablePoolFeeRate()).to.be.equal(4000);
     expect(await config.blbIchiVaultFeeRate()).to.be.equal(3000);
-  })
+  });
 
   it("owner should be able to set treasury wallet", async () => {
     await expect(
@@ -138,11 +136,11 @@ describe("Protocol Config", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(
       config.setTreasuryWallet(ethers.constants.AddressZero)
-    ).to.be.revertedWith("ZERO_ADDRESS");
+    ).to.be.revertedWithCustomError(config, "ZERO_ADDRESS");
 
     await config.setTreasuryWallet(treasury.address);
     expect(await config.treasury()).to.be.equal(treasury.address);
-  })
+  });
 
   it("owner should be able to set fee manager", async () => {
     await expect(
@@ -150,11 +148,11 @@ describe("Protocol Config", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(
       config.setFeeManager(ethers.constants.AddressZero)
-    ).to.be.revertedWith("ZERO_ADDRESS");
+    ).to.be.revertedWithCustomError(config, "ZERO_ADDRESS");
 
     await config.setFeeManager(treasury.address);
     expect(await config.feeManager()).to.be.equal(treasury.address);
-  })
+  });
 
   it("owner should be able to set BLB/USDC ichi vault", async () => {
     await expect(
@@ -162,11 +160,11 @@ describe("Protocol Config", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(
       config.setBlbUsdcIchiVault(ethers.constants.AddressZero)
-    ).to.be.revertedWith("ZERO_ADDRESS");
+    ).to.be.revertedWithCustomError(config, "ZERO_ADDRESS");
 
     await config.setBlbUsdcIchiVault(treasury.address);
     expect(await config.blbUsdcIchiVault()).to.be.equal(treasury.address);
-  })
+  });
 
   it("owner should be able to set BLB stable pool", async () => {
     await expect(
@@ -174,9 +172,9 @@ describe("Protocol Config", () => {
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(
       config.setBlbStabilityPool(ethers.constants.AddressZero)
-    ).to.be.revertedWith("ZERO_ADDRESS");
+    ).to.be.revertedWithCustomError(config, "ZERO_ADDRESS");
 
     await config.setBlbStabilityPool(treasury.address);
     expect(await config.blbStabilityPool()).to.be.equal(treasury.address);
-  })
-})
+  });
+});

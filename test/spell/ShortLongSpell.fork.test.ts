@@ -17,13 +17,11 @@ import {
 } from "../helpers";
 import SpellABI from "../../abi/ShortLongSpell.json";
 import chai, { expect } from "chai";
-import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { BigNumber, utils } from "ethers";
 import { getParaswapCalldata } from "../helpers/paraswap";
 
-chai.use(solidity);
 chai.use(near);
 chai.use(roughlyNear);
 
@@ -97,7 +95,7 @@ describe("ShortLong Spell mainnet fork", () => {
             swapData.data,
           ])
         )
-      ).to.be.revertedWith("EXCEED_MAX_LTV");
+      ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
     });
 
     it("should revert when opening a position for non-existing strategy", async () => {
@@ -117,7 +115,9 @@ describe("ShortLong Spell mainnet fork", () => {
             "0x00",
           ])
         )
-      ).to.be.revertedWith("STRATEGY_NOT_EXIST");
+      )
+        .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
+        .withArgs(spell.address, 5);
     });
 
     it("should revert when opening a position for non-existing collateral", async () => {
@@ -137,7 +137,9 @@ describe("ShortLong Spell mainnet fork", () => {
             "0x00",
           ])
         )
-      ).to.be.revertedWith("COLLATERAL_NOT_EXIST");
+      )
+        .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
+        .withArgs(0, WETH);
     });
 
     it("should revert when opening a position for incorrect farming pool id", async () => {
@@ -157,7 +159,7 @@ describe("ShortLong Spell mainnet fork", () => {
             "0x00",
           ])
         )
-      ).to.be.revertedWith("INCORRECT_LP");
+      ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
     });
 
     it("should be able to farm DAI", async () => {
@@ -249,7 +251,9 @@ describe("ShortLong Spell mainnet fork", () => {
             "0x00",
           ])
         )
-      ).to.be.revertedWith("STRATEGY_NOT_EXIST");
+      )
+        .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
+        .withArgs(spell.address, 5);
     });
 
     it("should revert when opening a position for non-existing collateral", async () => {
@@ -270,7 +274,9 @@ describe("ShortLong Spell mainnet fork", () => {
             "0x00",
           ])
         )
-      ).to.be.revertedWith("COLLATERAL_NOT_EXIST");
+      )
+        .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
+        .withArgs(0, WETH);
     });
 
     it("should be able to close position partially", async () => {
@@ -390,7 +396,9 @@ describe("ShortLong Spell mainnet fork", () => {
             swapData.data,
           ])
         )
-      ).to.be.revertedWith(`INCORRECT_LP("${DAI}")`);
+      )
+        .to.be.revertedWithCustomError(spell, "INCORRECT_LP")
+        .withArgs(DAI);
     });
 
     it("should be able to close position", async () => {
