@@ -32,6 +32,7 @@ const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const USDT = ADDRESS.USDT;
 const DAI = ADDRESS.DAI;
+const SUSD = ADDRESS.SUSD;
 const FRAX = ADDRESS.FRAX;
 const CRV = ADDRESS.CRV;
 const CVX = ADDRESS.CVX;
@@ -149,9 +150,10 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
   await mockOracle.setPrice(
-    [WETH, USDC, CRV, DAI, USDT, FRAX, CVX],
+    [WETH, USDC, CRV, DAI, USDT, FRAX, CVX, SUSD],
     [
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
+      BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
@@ -215,8 +217,10 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       USDT,
       FRAX,
       CVX,
+      SUSD,
       ADDRESS.CRV_3Crv,
       ADDRESS.CRV_FRAX3Crv,
+      ADDRESS.CRV_SUSD,
       ADDRESS.CRV_CRVETH,
     ],
     [
@@ -227,6 +231,8 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
+      mockOracle.address,
+      stableOracle.address,
       stableOracle.address,
       stableOracle.address,
       volatileOracle.address,
@@ -295,6 +301,11 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     utils.parseUnits("100", 18),
     utils.parseUnits("2000", 18)
   );
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_SUSD,
+    utils.parseUnits("100", 18),
+    utils.parseUnits("2000", 18)
+  );
   await convexSpell.setCollateralsMaxLTVs(
     0,
     [USDC, CRV, DAI],
@@ -304,6 +315,11 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     1,
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    2,
+    [USDC, CRV, DAI],
+    [300, 300, 300]
   );
   convexSpellWithVolatileOracle = <ConvexSpell>(
     await upgrades.deployProxy(ConvexSpell, [
