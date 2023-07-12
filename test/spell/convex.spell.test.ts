@@ -26,13 +26,11 @@ import {
 } from "../helpers";
 import SpellABI from "../../abi/ConvexSpell.json";
 import chai, { expect } from "chai";
-import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { BigNumber, utils } from "ethers";
 import { getParaswapCalldata } from "../helpers/paraswap";
 
-chai.use(solidity);
 chai.use(near);
 chai.use(roughlyNear);
 
@@ -125,7 +123,7 @@ describe("Convex Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(ConvexSpell, [
           bank.address,
@@ -136,7 +134,7 @@ describe("Convex Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(ConvexSpell, [
           bank.address,
@@ -147,7 +145,7 @@ describe("Convex Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(ConvexSpell, [
           bank.address,
@@ -158,7 +156,7 @@ describe("Convex Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(ConvexSpell, [
           bank.address,
@@ -169,7 +167,7 @@ describe("Convex Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
     });
     it("should revert initializing twice", async () => {
       await expect(
@@ -227,7 +225,7 @@ describe("Convex Spell", () => {
             0,
           ])
         )
-      ).to.be.revertedWith("EXCEED_MAX_LTV");
+      ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
     });
     it("should revert when opening a position for non-existing strategy", async () => {
       await expect(
@@ -246,7 +244,9 @@ describe("Convex Spell", () => {
             0,
           ])
         )
-      ).to.be.revertedWith("STRATEGY_NOT_EXIST");
+      )
+        .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
+        .withArgs(spell.address, 5);
     });
     it("should revert when opening a position for non-existing collateral", async () => {
       await expect(
@@ -265,7 +265,9 @@ describe("Convex Spell", () => {
             0,
           ])
         )
-      ).to.be.revertedWith("COLLATERAL_NOT_EXIST");
+      )
+        .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
+        .withArgs(0, WETH);
     });
     it("should revert when opening a position for incorrect farming pool id", async () => {
       await expect(
@@ -284,7 +286,7 @@ describe("Convex Spell", () => {
             0,
           ])
         )
-      ).to.be.revertedWith("INCORRECT_LP");
+      ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
     });
 
     it("should be able to farm USDC on Convex", async () => {
@@ -419,7 +421,7 @@ describe("Convex Spell", () => {
     //         farmingPoolId: 0
     //       }, 0])
     //     )
-    //   ).to.be.revertedWith("INCORRECT_PID")
+    //   ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
     // })
 
     it("should revert if received amount is lower than slippage", async () => {
@@ -507,7 +509,9 @@ describe("Convex Spell", () => {
             [],
           ])
         )
-      ).to.be.revertedWith("STRATEGY_NOT_EXIST");
+      )
+        .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
+        .withArgs(spell.address, 5);
     });
 
     it("should fail to close position for non-existing collateral", async () => {
@@ -532,7 +536,9 @@ describe("Convex Spell", () => {
             [],
           ])
         )
-      ).to.be.revertedWith("COLLATERAL_NOT_EXIST");
+      )
+        .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
+        .withArgs(0, WETH);
     });
 
     it("should be able to harvest on Convex 1", async () => {
@@ -561,7 +567,10 @@ describe("Convex Spell", () => {
         if (pendingRewardsInfo.tokens[idx] == ADDRESS.CRV && reward.isZero()) {
           reward = rewardAmount;
         }
-        return reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000).div(2);
+        return reward
+          .mul(BigNumber.from(10000).sub(rewardFeeRatio))
+          .div(10000)
+          .div(2);
       });
 
       const swapDatas = await Promise.all(
@@ -604,7 +613,7 @@ describe("Convex Spell", () => {
             swapDatas.map((item) => item.data),
           ])
         )
-      ).to.be.revertedWith("EXCEED_MAX_LTV");
+      ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
     });
 
     it("should be able to harvest on Convex 2", async () => {

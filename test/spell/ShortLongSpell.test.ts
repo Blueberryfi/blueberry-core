@@ -13,11 +13,9 @@ import { constants } from "ethers";
 import { CONTRACT_NAMES } from "../../constant";
 import { fork } from "../helpers";
 import chai, { expect } from "chai";
-import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 
-chai.use(solidity);
 chai.use(near);
 chai.use(roughlyNear);
 
@@ -97,7 +95,7 @@ describe("ShortLongSpell", () => {
           augustusSwapper.address,
           tokenTransferProxy.address,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when werc20 is address(0)", async () => {
@@ -109,7 +107,7 @@ describe("ShortLongSpell", () => {
           augustusSwapper.address,
           tokenTransferProxy.address,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when weth is address(0)", async () => {
@@ -121,7 +119,7 @@ describe("ShortLongSpell", () => {
           augustusSwapper.address,
           tokenTransferProxy.address,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when augustus swapper is address(0)", async () => {
@@ -133,7 +131,7 @@ describe("ShortLongSpell", () => {
           constants.AddressZero,
           tokenTransferProxy.address,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when token transfer proxy is address(0)", async () => {
@@ -145,7 +143,7 @@ describe("ShortLongSpell", () => {
           augustusSwapper.address,
           constants.AddressZero,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("Check initial values", async () => {
@@ -184,19 +182,19 @@ describe("ShortLongSpell", () => {
     it("should revert when vault is address(0)", async () => {
       await expect(
         spell.connect(owner).addStrategy(constants.AddressZero, 1, 10)
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when maxPosSize is 0", async () => {
       await expect(
         spell.connect(owner).addStrategy(weth.address, 0, 0)
-      ).to.be.revertedWith("ZERO_AMOUNT");
+      ).to.be.revertedWithCustomError(spell, "ZERO_AMOUNT");
     });
 
     it("should revert when minPosSize >= maxPosSize", async () => {
       await expect(
         spell.connect(owner).addStrategy(weth.address, 10, 10)
-      ).to.be.revertedWith("INVALID_POS_SIZE");
+      ).to.be.revertedWithCustomError(spell, "INVALID_POS_SIZE");
     });
 
     it("should add new strategy", async () => {

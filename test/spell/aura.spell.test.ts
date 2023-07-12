@@ -21,14 +21,12 @@ import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { AuraProtocol, evm_mine_blocks, setupAuraProtocol } from "../helpers";
 import SpellABI from "../../abi/AuraSpell.json";
 import chai, { expect } from "chai";
-import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { BigNumber, utils } from "ethers";
 import { getParaswapCalldata } from "../helpers/paraswap";
 import { fork } from "../helpers";
 
-chai.use(solidity);
 chai.use(near);
 chai.use(roughlyNear);
 
@@ -115,7 +113,7 @@ describe("Aura Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(AuraSpell, [
           bank.address,
@@ -125,7 +123,7 @@ describe("Aura Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(AuraSpell, [
           bank.address,
@@ -135,7 +133,7 @@ describe("Aura Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
       await expect(
         upgrades.deployProxy(AuraSpell, [
           bank.address,
@@ -145,7 +143,7 @@ describe("Aura Spell", () => {
           AUGUSTUS_SWAPPER,
           TOKEN_TRANSFER_PROXY,
         ])
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
     it("should revert initializing twice", async () => {
       await expect(
@@ -158,6 +156,20 @@ describe("Aura Spell", () => {
           TOKEN_TRANSFER_PROXY
         )
       ).to.be.revertedWith("Initializable: contract is already initialized");
+    });
+  });
+
+  describe("Owner", () => {
+    it("should fail to add strategy as non-owner", async () => {
+      await expect(
+        spell
+          .connect(alice)
+          .addStrategy(
+            ADDRESS.CRV_3Crv,
+            utils.parseUnits("100", 18),
+            utils.parseUnits("2000", 18)
+          )
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -188,7 +200,7 @@ describe("Aura Spell", () => {
             },
           ])
         )
-      ).to.be.revertedWith("EXCEED_MAX_LTV");
+      ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
     });
 
     it("should revert when opening a position for non-existing strategy", async () => {
@@ -207,7 +219,7 @@ describe("Aura Spell", () => {
             },
           ])
         )
-      ).to.be.revertedWith("STRATEGY_NOT_EXIST");
+      ).to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST");
     });
 
     it("should revert when opening a position for non-existing collateral", async () => {
@@ -226,7 +238,7 @@ describe("Aura Spell", () => {
             },
           ])
         )
-      ).to.be.revertedWith("COLLATERAL_NOT_EXIST");
+      ).to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST");
     });
 
     it("should revert when opening a position for incorrect farming pool id", async () => {
@@ -245,7 +257,7 @@ describe("Aura Spell", () => {
             },
           ])
         )
-      ).to.be.revertedWith("INCORRECT_LP");
+      ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
     });
 
     it("should be able to farm USDC on Aura", async () => {
@@ -299,7 +311,10 @@ describe("Aura Spell", () => {
 
       await evm_mine_blocks(10);
 
-      const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
+      const pendingRewardsInfo = await waura.callStatic.pendingRewards(
+        position.collId,
+        position.collateralSize
+      );
       const balPendingReward = pendingRewardsInfo.rewards[0];
       const auraPendingReward = pendingRewardsInfo.rewards[1];
 
@@ -321,8 +336,12 @@ describe("Aura Spell", () => {
       const afterSenderBalBalance = await bal.balanceOf(admin.address);
       const afterSenderAuraBalance = await aura.balanceOf(admin.address);
 
-      expect(afterSenderBalBalance.sub(beforeSenderBalBalance)).to.be.roughlyNear(balPendingReward);
-      expect(afterSenderAuraBalance.sub(beforeTreasuryAuraBalance)).to.be.roughlyNear(auraPendingReward);
+      expect(
+        afterSenderBalBalance.sub(beforeSenderBalBalance)
+      ).to.be.roughlyNear(balPendingReward);
+      expect(
+        afterSenderAuraBalance.sub(beforeTreasuryAuraBalance)
+      ).to.be.roughlyNear(auraPendingReward);
     });
 
     it("should be able to get position risk ratio", async () => {
@@ -367,8 +386,128 @@ describe("Aura Spell", () => {
     //         farmingPoolId: 0
     //       }, 0])
     //     )
-    //   ).to.be.revertedWith("INCORRECT_PID")
+    //   ).to.be.revertedWithCustomError(spell, "INCORRECT_PID")
     // })
+
+    it("should fail to close position for non-existing strategy", async () => {
+      const positionId = (await bank.nextPositionId()).sub(1);
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [
+            {
+              strategyId: 5,
+              collToken: CRV,
+              borrowToken: USDC,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+            },
+            [],
+            [],
+          ])
+        )
+      )
+        .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
+        .withArgs(spell.address, 5);
+    });
+
+    it("should fail to close position for non-existing collateral", async () => {
+      const positionId = (await bank.nextPositionId()).sub(1);
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [
+            {
+              strategyId: 0,
+              collToken: WETH,
+              borrowToken: USDC,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+            },
+            [],
+            [],
+          ])
+        )
+      )
+        .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
+        .withArgs(0, WETH);
+    });
+
+    it("should be able to close portion of position without withdrawing isolated collaterals", async () => {
+      await evm_mine_blocks(1000);
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const position = await bank.positions(positionId);
+
+      const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
+
+      const totalEarned = await auraRewarder.earned(waura.address);
+      console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
+
+      const pendingRewardsInfo = await waura.callStatic.pendingRewards(
+        position.collId,
+        position.collateralSize
+      );
+
+      const rewardFeeRatio = await config.rewardFee();
+
+      const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
+        reward.sub(reward.mul(rewardFeeRatio).div(10000))
+      );
+
+      const swapDatas = await Promise.all(
+        pendingRewardsInfo.tokens.map((token, idx) => {
+          if (expectedAmounts[idx].gt(0)) {
+            return getParaswapCalldata(
+              token,
+              USDC,
+              expectedAmounts[idx],
+              spell.address,
+              100
+            );
+          } else {
+            return {
+              data: "0x00",
+            };
+          }
+        })
+      );
+
+      console.log("Pending Rewards", pendingRewardsInfo);
+
+      // Manually transfer CRV rewards to spell
+      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+
+      const iface = new ethers.utils.Interface(SpellABI);
+      await expect(
+        bank.execute(
+          positionId,
+          spell.address,
+          iface.encodeFunctionData("closePositionFarm", [
+            {
+              strategyId: 0,
+              collToken: CRV,
+              borrowToken: USDC,
+              amountRepay: debtAmount.div(2),
+              amountPosRemove: position.collateralSize.div(2),
+              amountShareWithdraw: position.underlyingVaultShare.div(2),
+              amountOutMin: 1,
+            },
+            expectedAmounts,
+            swapDatas.map((item) => item.data),
+          ])
+        )
+      ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
+    });
 
     it("should be able to harvest on Aura", async () => {
       await evm_mine_blocks(1000);

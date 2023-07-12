@@ -5,12 +5,10 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { ChainlinkAdapterOracleL2 } from "../../typechain-types";
 
-import { solidity } from "ethereum-waffle";
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { fork, evm_increaseTime } from "../helpers";
 
-chai.use(solidity);
 chai.use(near);
 chai.use(roughlyNear);
 
@@ -57,7 +55,7 @@ describe("Aggregator Oracle", () => {
       );
       await expect(
         ChainlinkAdapterOracleL2.deploy(ethers.constants.AddressZero)
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(ChainlinkAdapterOracleL2, "ZERO_ADDRESS");
     });
     it("should set sequencer", async () => {
       expect(await chainlinkAdapterOracle.sequencerUptimeFeed()).to.be.equal(
@@ -78,7 +76,7 @@ describe("Aggregator Oracle", () => {
         chainlinkAdapterOracle.setSequencerUptimeFeed(
           ethers.constants.AddressZero
         )
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(chainlinkAdapterOracle, "ZERO_ADDRESS");
 
       await expect(
         chainlinkAdapterOracle.setSequencerUptimeFeed(
@@ -105,21 +103,24 @@ describe("Aggregator Oracle", () => {
           [ADDRESS.USDC_ARB],
           [ADDRESS.CHAINLINK_USDC_FEED, ADDRESS.CHAINLINK_UNI_FEED]
         )
-      ).to.be.revertedWith("INPUT_ARRAY_MISMATCH");
+      ).to.be.revertedWithCustomError(
+        chainlinkAdapterOracle,
+        "INPUT_ARRAY_MISMATCH"
+      );
 
       await expect(
         chainlinkAdapterOracle.setPriceFeeds(
           [ADDRESS.USDC_ARB, ethers.constants.AddressZero],
           [ADDRESS.CHAINLINK_USDC_FEED, ADDRESS.CHAINLINK_UNI_FEED]
         )
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(chainlinkAdapterOracle, "ZERO_ADDRESS");
 
       await expect(
         chainlinkAdapterOracle.setPriceFeeds(
           [ADDRESS.USDC_ARB, ADDRESS.UNI_ARB],
           [ADDRESS.CHAINLINK_USDC_FEED, ethers.constants.AddressZero]
         )
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(chainlinkAdapterOracle, "ZERO_ADDRESS");
 
       await expect(
         chainlinkAdapterOracle.setPriceFeeds(
@@ -143,9 +144,9 @@ describe("Aggregator Oracle", () => {
     });
 
     it("should revert when max delay time is not set", async () => {
-      await expect(
-        chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.CRV_ARB)
-      ).to.be.revertedWith("NO_MAX_DELAY");
+      await expect(chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.CRV_ARB))
+        .to.be.revertedWithCustomError(chainlinkAdapterOracle, "NO_MAX_DELAY")
+        .withArgs(ADDRESS.CRV_ARB);
     });
 
     it("USDC price feeds / based 10^18", async () => {
@@ -161,16 +162,16 @@ describe("Aggregator Oracle", () => {
     it("should revert for too old prices", async () => {
       await chainlinkAdapterOracle.setTimeGap([ADDRESS.UNI_ARB], [3600]);
       await evm_increaseTime(3600);
-      await expect(
-        chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.UNI_ARB)
-      ).to.be.revertedWith("PRICE_OUTDATED");
+      await expect(chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.UNI_ARB))
+        .to.be.revertedWithCustomError(chainlinkAdapterOracle, "PRICE_OUTDATED")
+        .withArgs(ADDRESS.UNI_ARB);
     });
 
     it("should revert for invalid feeds", async () => {
       await chainlinkAdapterOracle.setTimeGap([ADDRESS.ICHI], [OneDay]);
       await expect(
         chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.ICHI)
-      ).to.be.revertedWith("ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(chainlinkAdapterOracle, "ZERO_ADDRESS");
     });
   });
 });

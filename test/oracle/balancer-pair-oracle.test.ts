@@ -10,9 +10,7 @@ import {
   CompStableBPTOracle,
 } from "../../typechain-types";
 import { roughlyNear } from "../assertions/roughlyNear";
-import { solidity } from "ethereum-waffle";
 
-chai.use(solidity);
 chai.use(roughlyNear);
 
 const OneDay = 86400;
