@@ -107,7 +107,12 @@ contract AuraSpell is BasicSpell {
                 uint256[] memory maxAmountsIn,
                 uint256[] memory amountsIn,
                 uint256 poolAmountOut
-            ) = _getJoinPoolParamsAndApprove(address(vault), tokens, balances, lpToken);
+            ) = _getJoinPoolParamsAndApprove(
+                    address(vault),
+                    tokens,
+                    balances,
+                    lpToken
+                );
 
             if (poolAmountOut != 0) {
                 vault.joinPool(
@@ -137,10 +142,11 @@ contract AuraSpell is BasicSpell {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             if (pos.collToken != address(wAuraPools))
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-            (address[] memory rewardTokens, ) = IERC20Wrapper(pos.collToken)
-                .pendingRewards(pos.collId, pos.collateralSize);
             bank.takeCollateral(pos.collateralSize);
-            wAuraPools.burn(pos.collId, pos.collateralSize);
+            (address[] memory rewardTokens, ) = wAuraPools.burn(
+                pos.collId,
+                pos.collateralSize
+            );
             // distribute multiple rewards to users
             uint256 rewardTokensLength = rewardTokens.length;
             for (uint256 i; i != rewardTokensLength; ) {
