@@ -1,7 +1,6 @@
 import chai, { expect } from "chai";
 import { BigNumber, utils } from "ethers";
 import { ethers, upgrades } from "hardhat";
-import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import { CONTRACT_NAMES } from "../../constant";
@@ -14,8 +13,6 @@ import {
   MockVirtualBalanceRewardPool,
 } from "../../typechain-types";
 import { generateRandomAddress } from "../helpers";
-
-chai.use(solidity);
 
 describe("WConvexPools", () => {
   let alice: SignerWithAddress;
@@ -113,18 +110,18 @@ describe("WConvexPools", () => {
       const pid = BigNumber.from(2).pow(16);
       const cvxPerShare = BigNumber.from(100);
 
-      await expect(wConvexPools.encodeId(pid, cvxPerShare)).to.be.revertedWith(
-        "BAD_PID"
-      );
+      await expect(
+        wConvexPools.encodeId(pid, cvxPerShare)
+      ).to.be.revertedWithCustomError(wConvexPools, "BAD_PID");
     });
 
     it("reverts if cvxPerShare is equal or greater than 2 ^ 240", async () => {
       const pid = BigNumber.from(2).pow(2);
       const cvxPerShare = BigNumber.from(2).pow(240);
 
-      await expect(wConvexPools.encodeId(pid, cvxPerShare)).to.be.revertedWith(
-        "BAD_REWARD_PER_SHARE"
-      );
+      await expect(
+        wConvexPools.encodeId(pid, cvxPerShare)
+      ).to.be.revertedWithCustomError(wConvexPools, "BAD_REWARD_PER_SHARE");
     });
   });
 

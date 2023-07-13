@@ -1,7 +1,6 @@
 import chai, { expect } from "chai";
 import { BigNumber, utils } from "ethers";
 import { ethers, upgrades } from "hardhat";
-import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import { CONTRACT_NAMES } from "../../constant";
@@ -15,8 +14,6 @@ import {
   MockStashToken,
 } from "../../typechain-types";
 import { generateRandomAddress } from "../helpers";
-
-chai.use(solidity);
 
 describe("wAuraPools", () => {
   let alice: SignerWithAddress;
@@ -127,18 +124,18 @@ describe("wAuraPools", () => {
       const pid = BigNumber.from(2).pow(16);
       const auraPerShare = BigNumber.from(100);
 
-      await expect(wAuraPools.encodeId(pid, auraPerShare)).to.be.revertedWith(
-        "BAD_PID"
-      );
+      await expect(
+        wAuraPools.encodeId(pid, auraPerShare)
+      ).to.be.revertedWithCustomError(wAuraPools, "BAD_PID");
     });
 
     it("reverts if auraPerShare is equal or greater than 2 ^ 240", async () => {
       const pid = BigNumber.from(2).pow(2);
       const auraPerShare = BigNumber.from(2).pow(240);
 
-      await expect(wAuraPools.encodeId(pid, auraPerShare)).to.be.revertedWith(
-        "BAD_REWARD_PER_SHARE"
-      );
+      await expect(
+        wAuraPools.encodeId(pid, auraPerShare)
+      ).to.be.revertedWithCustomError(wAuraPools, "BAD_REWARD_PER_SHARE");
     });
   });
 
