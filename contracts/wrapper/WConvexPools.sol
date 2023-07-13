@@ -47,7 +47,7 @@ contract WConvexPools is
     /// @dev Address to CVX token
     IConvex public CVX;
     /// @dev Mapping from token id to accExtPerShare
-    mapping(uint256 => uint256[]) public accExtPerShare;
+    mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
     /// @dev Extra rewards addresses
     address[] public extraRewards;
     /// @dev The index of extra rewards
@@ -77,8 +77,8 @@ contract WConvexPools is
     /// @param id Token id
     function decodeId(
         uint256 id
-    ) public pure returns (uint256 gid, uint256 cvxPerShare) {
-        gid = id >> 240; // First 16 bits
+    ) public pure returns (uint256 pid, uint256 cvxPerShare) {
+        pid = id >> 240; // First 16 bits
         cvxPerShare = id & ((1 << 240) - 1); // Last 240 bits
     }
 
@@ -129,11 +129,9 @@ contract WConvexPools is
     }
 
     /// @notice Get CVX pending reward
-    /// @param cvxRewarder Address of CVX rewarder contract
     /// @param crvAmount Amount of CRV reward
     /// @dev CVX token is minted in booster contract following the mint logic in the below
     function _getCvxPendingReward(
-        address cvxRewarder,
         uint256 crvAmount
     ) internal view returns (uint256 mintAmount) {
         // CVX token mint logic
@@ -191,13 +189,11 @@ contract WConvexPools is
 
         // CVX reward
         tokens[1] = address(CVX);
-        rewards[1] = _getCvxPendingReward(cvxRewarder, rewards[0]);
+        rewards[1] = _getCvxPendingReward(rewards[0]);
 
-        for (uint i = 0; i < extraRewardsCount; i++) {
+        for (uint i = 0; i < extraRewardsCount; ) {
             address rewarder = extraRewards[i];
-            uint256 stRewardPerShare = accExtPerShare[tokenId][
-                extraRewardsIdx[rewarder] - 1
-            ];
+            uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IRewarder(rewarder).rewardToken();
             rewards[i + 2] = _getPendingReward(
                 stRewardPerShare,
@@ -205,6 +201,10 @@ contract WConvexPools is
                 amount,
                 lpDecimals
             );
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -235,7 +235,7 @@ contract WConvexPools is
         for (uint i; i < extraRewardsCount; ) {
             address extraRewarder = IRewarder(cvxRewarder).extraRewards(i);
             uint rewardPerToken = IRewarder(extraRewarder).rewardPerToken();
-            accExtPerShare[id].push(rewardPerToken);
+            accExtPerShare[id][extraRewarder] = rewardPerToken;
 
             _syncExtraReward(extraRewarder);
 
@@ -300,7 +300,8 @@ contract WConvexPools is
             }
         }
 
-        for (uint i; i < rewardTokens.length; ) {
+        uint rewardLen = rewardTokens.length;
+        for (uint i; i < rewardLen; ) {
             IERC20Upgradeable(rewardTokens[i]).safeTransfer(
                 msg.sender,
                 rewards[i]

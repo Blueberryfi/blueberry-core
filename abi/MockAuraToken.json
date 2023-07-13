@@ -1,22 +1,6 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "symbol",
-        "type": "string"
-      },
-      {
-        "internalType": "uint8",
-        "name": "decimal",
-        "type": "uint8"
-      }
-    ],
+    "inputs": [],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
@@ -69,6 +53,32 @@
     ],
     "name": "Transfer",
     "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "EMISSIONS_MAX_SUPPLY",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "INIT_MINT_AMOUNT",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [
@@ -138,24 +148,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "burn",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "decimals",
     "outputs": [
@@ -217,7 +209,18 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      }
+    ],
     "name": "mint",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -236,7 +239,7 @@
         "type": "uint256"
       }
     ],
-    "name": "mintTo",
+    "name": "mintTestTokens",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -244,12 +247,17 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
       }
     ],
-    "name": "mintWithAmount",
+    "name": "mintTestTokensManually",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -268,16 +276,29 @@
     "type": "function"
   },
   {
-    "inputs": [
+    "inputs": [],
+    "name": "operator",
+    "outputs": [
       {
-        "internalType": "uint8",
-        "name": "decimal",
-        "type": "uint8"
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
-    "name": "setDecimals",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reductionPerCliff",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -288,6 +309,19 @@
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalCliffs",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -357,6 +391,19 @@
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "vecrvProxy",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ]

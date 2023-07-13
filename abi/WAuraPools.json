@@ -186,6 +186,19 @@
   },
   {
     "inputs": [],
+    "name": "REWARD_MULTIPLIER_DENOMINATOR",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "STASH_AURA",
     "outputs": [
       {
@@ -205,9 +218,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
+        "internalType": "address",
         "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "name": "accExtPerShare",

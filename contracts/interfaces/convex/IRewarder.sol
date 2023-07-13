@@ -18,4 +18,6 @@ interface IRewarder {
     function earned(address account) external view returns (uint256);
 
     function rewardPerToken() external view returns (uint256);
+
+    function stakeFor(address _for, uint256 _amount) external returns (bool);
 }
