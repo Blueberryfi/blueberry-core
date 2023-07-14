@@ -146,10 +146,8 @@ contract ConvexSpell is BasicSpell {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             if (pos.collToken != address(wConvexPools))
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-            (address[] memory rewardTokens, ) = IERC20Wrapper(pos.collToken)
-                .pendingRewards(pos.collId, pos.collateralSize);
             bank.takeCollateral(pos.collateralSize);
-            wConvexPools.burn(pos.collId, pos.collateralSize);
+            (address[] memory rewardTokens, ) = wConvexPools.burn(pos.collId, pos.collateralSize);
             // distribute multiple rewards to users
             uint256 tokensLength = rewardTokens.length;
             for (uint256 i; i != tokensLength; ++i) {
