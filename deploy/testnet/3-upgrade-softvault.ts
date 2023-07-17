@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { ethers, network, upgrades } from "hardhat";
-import { SafeBox } from "../../typechain-types";
+import { CONTRACT_NAMES } from '../../constant';
+import { SoftVault } from "../../typechain-types";
 
 const deploymentPath = "./deployments";
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
@@ -13,12 +14,12 @@ async function main(): Promise<void> {
 	const [deployer] = await ethers.getSigners();
 	console.log("Deployer:", deployer.address);
 
-	// SafeBox
-	const SafeBox = await ethers.getContractFactory("SafeBox");
-	let safeBox = <SafeBox>await upgrades.upgradeProxy(deployment.USDC_SafeBox, SafeBox);
+	// SoftVault
+	const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
+	let safeBox = <SoftVault>await upgrades.upgradeProxy(deployment.USDC_SafeBox, SoftVault);
 	await safeBox.deployed();
 
-	safeBox = <SafeBox>await upgrades.upgradeProxy(deployment.ICHI_SafeBox, SafeBox);
+	safeBox = <SoftVault>await upgrades.upgradeProxy(deployment.ICHI_SafeBox, SoftVault);
 	await safeBox.deployed();
 }
 

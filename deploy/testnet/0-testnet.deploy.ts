@@ -2,8 +2,7 @@ import fs from 'fs';
 import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades, network } from 'hardhat';
 import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../constant';
-import SpellABI from '../../abi/IchiSpell.json';
-import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiVaultOracle, IchiSpell, IICHIVault, MockFeedRegistry, MockIchiFarm, MockIchiVault, ProtocolConfig, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
+import { AggregatorOracle, BlueBerryBank, ChainlinkAdapterOracle, CoreOracle, IchiVaultOracle, IchiSpell, SoftVault, HardVault, MockFeedRegistry, MockIchiFarm, MockIchiVault, ProtocolConfig, UniswapV3AdapterOracle, WERC20, WIchiFarm } from '../../typechain-types';
 
 const deploymentPath = "./deployments";
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
@@ -67,7 +66,7 @@ async function main(): Promise<void> {
 	writeDeployments(deployment);
 
 	console.log('Setting up USDC config on Chainlink Oracle\nMax Delay Times: 129900s');
-	await chainlinkOracle.setMaxDelayTimes([deployment.MockUSDC], [129900]);
+	await chainlinkOracle.setTimeGap([deployment.MockUSDC], [129900]);
 
 	// Aggregator Oracle
 	const AggregatorOracle = await ethers.getContractFactory(CONTRACT_NAMES.AggregatorOracle);
@@ -92,7 +91,7 @@ async function main(): Promise<void> {
 	writeDeployments(deployment);
 
 	await uniV3Oracle.setStablePools([deployment.MockIchiV2], [ADDRESS_GOERLI.UNI_V3_ICHI_USDC]);
-	await uniV3Oracle.setMaxDelayTimes([deployment.MockIchiV2], [10]); // 10s ago
+	await uniV3Oracle.setTimeGap([deployment.MockIchiV2], [10]); // 10s ago
 
 	// Core Oracle
 	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -171,22 +170,17 @@ async function main(): Promise<void> {
 	deployment.MockIchiVault = ichiVaultUSDC.address;
 	writeDeployments(deployment);
 
-	await coreOracle.setWhitelistERC1155(
+	await bank.whitelistERC1155(
 		[deployment.WERC20, deployment.MockIchiVault],
 		true
 	);
-	await coreOracle.setTokenSettings(
+	await coreOracle.setRoutes(
 		[deployment.MockIchiV2, ADDRESS_GOERLI.MockUSDC, deployment.MockIchiVault],
-		[{
-			liqThreshold: 8000,
-			route: deployment.UniswapV3AdapterOracle,
-		}, {
-			liqThreshold: 9000,
-			route: deployment.AggregatorOracle,
-		}, {
-			liqThreshold: 10000,
-			route: deployment.IchiVaultOracle,
-		}]
+		[
+			deployment.UniswapV3AdapterOracle,
+			deployment.AggregatorOracle,
+			deployment.IchiVaultOracle,
+		]
 	)
 
 	// Ichi Vault Spell
@@ -199,30 +193,40 @@ async function main(): Promise<void> {
 	])
 	await ichiSpell.deployed();
 	console.log('Ichi Spell:', ichiSpell.address);
-	await ichiSpell.addVault(deployment.MockUSDC, deployment.MockIchiVault);
+	await ichiSpell.addStrategy(deployment.MockIchiVault, utils.parseUnits("10", 18), utils.parseUnits("2000", 18));
 	deployment.IchiSpell = ichiSpell.address;
 	writeDeployments(deployment);
 
 	await bank.whitelistSpells([deployment.IchiSpell], [true]);
 
-	// SafeBox
-	const SafeBox = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
-	const safeBox = <SafeBox>await upgrades.deployProxy(SafeBox, [
+	// SoftVault
+	const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
+	const safeBox = <SoftVault>await upgrades.deployProxy(SoftVault, [
 		ADDRESS_GOERLI.bUSDC,
 		"Interest Bearing USDC",
 		"ibUSDC"
 	]);
 	await safeBox.deployed();
-	console.log('SafeBox:', safeBox.address);
-	deployment.USDC_SafeBox = safeBox.address;
+	console.log('SoftVault:', safeBox.address);
+	deployment.USDC_SoftVault = safeBox.address;
 	writeDeployments(deployment);
+
+	// HardVault
+	const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
+	const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [
+		config.address,
+	]);
+	await hardVault.deployed();
+	console.log('HardVault:', hardVault.address);
+	deployment.USDC_HardVault = hardVault.address;
 
 	// Add Bank
 	await bank.whitelistTokens([deployment.MockUSDC], [true])
 	await bank.addBank(
 		deployment.MockUSDC,
-		ADDRESS_GOERLI.bUSDC,
-		deployment.USDC_SafeBox
+		deployment.USDC_SoftVault,
+		deployment.USDC_HardVault,
+		9000,
 	)
 }
 

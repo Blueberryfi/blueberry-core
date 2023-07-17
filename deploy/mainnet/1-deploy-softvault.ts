@@ -1,8 +1,7 @@
-import { BigNumber } from 'ethers';
 import fs from 'fs';
 import { ethers, network, upgrades } from "hardhat";
-import { ADDRESS } from '../../constant';
-import { AggregatorOracle, BandAdapterOracle, ChainlinkAdapterOracle, CoreOracle, UniswapV3AdapterOracle } from '../../typechain-types';
+import { ADDRESS, CONTRACT_NAMES } from '../../constant';
+import { SoftVault } from '../../typechain-types';
 
 const deploymentPath = "./deployments";
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
@@ -30,18 +29,18 @@ async function main(): Promise<void> {
 	// deployment.ProtocolConfig = config.address;
 	// writeDeployments(deployment);
 
-	const SafeBox = await ethers.getContractFactory("SafeBox");
+	const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
 
-	// Deploy USDC Safebox
-	const safeBox = await upgrades.deployProxy(SafeBox, [
+	// Deploy USDC SoftVault
+	const softVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
 		deployment.ProtocolConfig,
 		ADDRESS.bWETH,
 		"Interest Bearing WETH",
 		"ibWETH",
 	])
-	await safeBox.deployed();
-	console.log(safeBox.address);
-	deployment.SafeBox_WETH = safeBox.address;
+	await softVault.deployed();
+	console.log(softVault.address);
+	deployment.SoftVault_WETH = softVault.address;
 	writeDeployments(deployment);
 }
 

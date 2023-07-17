@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   writeDeployments(deployment);
 
   console.log('Setting up Token configs on Band Oracle\nMax Delay Times: 1 day 12 hours');
-  await bandOracle.setMaxDelayTimes([
+  await bandOracle.setTimeGap([
     ADDRESS.USDC,
     ADDRESS.DAI,
     ADDRESS.CRV,
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
   writeDeployments(deployment);
 
   console.log('Setting up USDC config on Chainlink Oracle\nMax Delay Times: 129900s');
-  await chainlinkOracle.setMaxDelayTimes([
+  await chainlinkOracle.setTimeGap([
     ADDRESS.USDC,
     ADDRESS.DAI,
     ADDRESS.CRV,
@@ -126,7 +126,7 @@ async function main(): Promise<void> {
   writeDeployments(deployment);
 
   await uniV3Oracle.setStablePools([ADDRESS.ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
-  await uniV3Oracle.setTimeAgos([ADDRESS.ICHI], [10]); // 10s ago
+  await uniV3Oracle.setTimeGap([ADDRESS.ICHI], [10]); // 10s ago
 
   // Core Oracle
   const CoreOracle = await ethers.getContractFactory("CoreOracle");
@@ -136,7 +136,7 @@ async function main(): Promise<void> {
   deployment.CoreOracle = coreOracle.address;
   writeDeployments(deployment);
 
-  await coreOracle.setRoute([
+  await coreOracle.setRoutes([
     ADDRESS.USDC,
     ADDRESS.DAI,
     ADDRESS.CRV,

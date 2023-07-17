@@ -13,7 +13,7 @@ async function main(): Promise<void> {
 	console.log("Band Oracle Address:", bandOracle.address);
 
 	console.log('Setting up USDC config on Band Oracle\nMax Delay Times: 11100s, Symbol: USDC');
-	await bandOracle.setMaxDelayTimes([ADDRESS.USDC], [11100]);
+	await bandOracle.setTimeGap([ADDRESS.USDC], [11100]);
 	await bandOracle.setSymbols([ADDRESS.USDC], ['USDC']);
 
 	// Chainlink Adapter Oracle
@@ -23,7 +23,7 @@ async function main(): Promise<void> {
 	console.log('Chainlink Oracle Address:', chainlinkOracle.address);
 
 	console.log('Setting up USDC config on Chainlink Oracle\nMax Delay Times: 129900s');
-	await chainlinkOracle.setMaxDelayTimes([ADDRESS.USDC], [129900]);
+	await chainlinkOracle.setTimeGap([ADDRESS.USDC], [129900]);
 
 	// Aggregator Oracle
 	const AggregatorOracle = await ethers.getContractFactory(CONTRACT_NAMES.AggregatorOracle);
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
 	console.log('Uni V3 Oracle Address:', uniV3Oracle.address);
 
 	await uniV3Oracle.setStablePools([ADDRESS.ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
-	await uniV3Oracle.setMaxDelayTimes([ADDRESS.ICHI], [10]); // 10s ago
+	await uniV3Oracle.setTimeGap([ADDRESS.ICHI], [10]); // 10s ago
 
 	// Core Oracle
 	const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
 	await coreOracle.deployed();
 	console.log('Core Oracle Address:', coreOracle.address);
 
-	await coreOracle.setRoute(
+	await coreOracle.setRoutes(
 		[ADDRESS.USDC, ADDRESS.ICHI],
 		[aggregatorOracle.address, uniV3Oracle.address]
 	);
@@ -63,7 +63,7 @@ async function main(): Promise<void> {
 	await ichiVaultOracle.deployed();
 	console.log('Ichi Lp Oracle Address:', ichiVaultOracle.address);
 
-	await coreOracle.setRoute(
+	await coreOracle.setRoutes(
 		[ADDRESS.ICHI_VAULT_USDC],
 		[ichiVaultOracle.address]
 	);
@@ -89,12 +89,13 @@ async function main(): Promise<void> {
 
 	// Ichi Vault Spell
 	const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
-	const ichiSpell = <IchiSpell>await IchiSpell.deploy(
+	const ichiSpell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
 		bank.address,
 		werc20.address,
 		ADDRESS.WETH,
-		wichiFarm.address
-	)
+		wichiFarm.address,
+		ADDRESS.UNI_V3_ROUTER
+	]);
 	await ichiSpell.deployed();
 }
 
