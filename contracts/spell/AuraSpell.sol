@@ -79,7 +79,8 @@ contract AuraSpell is BasicSpell {
      * @notice Add liquidity to Balancer pool, with staking to Aura
      */
     function openPositionFarm(
-        OpenPosParam calldata param
+        OpenPosParam calldata param,
+        uint256 minimumBPT
     )
         external
         existingStrategy(param.strategyId)
@@ -102,6 +103,7 @@ contract AuraSpell is BasicSpell {
 
         // 3. Add liquidity on Balancer, get BPT
         {
+            uint256 _minimumBPT = minimumBPT;
             IBalancerVault vault = wAuraPools.getVault(lpToken);
             _ensureApprove(param.borrowToken, address(vault), borrowBalance);
 
@@ -121,7 +123,7 @@ contract AuraSpell is BasicSpell {
                     IBalancerVault.JoinPoolRequest({
                         assets: tokens,
                         maxAmountsIn: maxAmountsIn,
-                        userData: abi.encode(1, amountsIn, 0),
+                        userData: abi.encode(1, amountsIn, _minimumBPT),
                         fromInternalBalance: false
                     })
                 );

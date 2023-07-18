@@ -625,6 +625,11 @@
         "internalType": "struct BasicSpell.OpenPosParam",
         "name": "param",
         "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minimumBPT",
+        "type": "uint256"
       }
     ],
     "name": "openPositionFarm",
