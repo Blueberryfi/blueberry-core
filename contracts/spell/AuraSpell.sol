@@ -298,7 +298,7 @@ contract AuraSpell is BasicSpell {
             }
         }
 
-        uint256 totalLPSupply = IBalancerPool(lpToken).totalSupply();
+        uint256 totalLPSupply = IBalancerPool(lpToken).getActualSupply();
         // compute in reverse order of how Balancer's `joinPool` computes tokenAmountIn
         uint256 poolAmountOut;
         for (i = 0; i != length; ) {
