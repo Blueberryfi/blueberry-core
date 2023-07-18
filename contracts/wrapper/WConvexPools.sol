@@ -195,12 +195,16 @@ contract WConvexPools is
             address rewarder = extraRewards[i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IRewarder(rewarder).rewardToken();
-            rewards[i + 2] = _getPendingReward(
-                stRewardPerShare,
-                rewarder,
-                amount,
-                lpDecimals
-            );
+            if (stRewardPerShare == 0) {
+                rewards[i + 2] = 0;
+            } else {
+                rewards[i + 2] = _getPendingReward(
+                    stRewardPerShare == type(uint).max ? 0 : stRewardPerShare,
+                    rewarder,
+                    amount,
+                    lpDecimals
+                );
+            }
 
             unchecked {
                 ++i;
@@ -235,7 +239,9 @@ contract WConvexPools is
         for (uint i; i < extraRewardsCount; ) {
             address extraRewarder = IRewarder(cvxRewarder).extraRewards(i);
             uint rewardPerToken = IRewarder(extraRewarder).rewardPerToken();
-            accExtPerShare[id][extraRewarder] = rewardPerToken;
+            accExtPerShare[id][extraRewarder] = rewardPerToken == 0
+                ? type(uint).max
+                : rewardPerToken;
 
             _syncExtraReward(extraRewarder);
 
