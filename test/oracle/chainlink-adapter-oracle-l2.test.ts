@@ -83,7 +83,7 @@ describe("Aggregator Oracle", () => {
           ADDRESS.ChainlinkSequencerArb
         )
       )
-        .to.be.emit(chainlinkAdapterOracle, "SetRequencerUptimeFeed")
+        .to.be.emit(chainlinkAdapterOracle, "SetSequencerUptimeFeed")
         .withArgs(ADDRESS.ChainlinkSequencerArb);
 
       expect(await chainlinkAdapterOracle.sequencerUptimeFeed()).to.be.equal(

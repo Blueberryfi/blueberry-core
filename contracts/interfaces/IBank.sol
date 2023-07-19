@@ -10,8 +10,8 @@ interface IBank {
     struct Bank {
         bool isListed; // Whether this market exists.
         uint8 index; // Reverse look up index for this bank.
-        address hardVault;
-        address softVault;
+        address hardVault; // The hard vault address.
+        address softVault; // The soft vault address.
         address bToken; // The bToken to draw liquidity from.
         uint256 totalShare; // The total debt share count across all open positions.
         uint256 liqThreshold; // 85% for volatile tokens, 90% for stablecoins, base 1e4

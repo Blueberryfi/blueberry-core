@@ -30,8 +30,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /// @dev Mapping from token to price feed (e.g. ETH -> ETH/USD price feed)
     mapping(address => address) public priceFeeds;
 
-    event SetRegistry(address registry);
-    event SetRequencerUptimeFeed(address registry);
+    event SetSequencerUptimeFeed(address registry);
     event SetTokenPriceFeed(address indexed token, address indexed priceFeed);
 
     constructor(ISequencerUptimeFeed sequencerUptimeFeed_) {
@@ -52,7 +51,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
             revert Errors.ZERO_ADDRESS();
 
         sequencerUptimeFeed = sequencerUptimeFeed_;
-        emit SetRequencerUptimeFeed(address(sequencerUptimeFeed_));
+        emit SetSequencerUptimeFeed(address(sequencerUptimeFeed_));
     }
 
     /**

@@ -50,7 +50,7 @@ contract BlueBerryBank is
     uint256 public POSITION_ID; // TEMPORARY: position ID currently under execution.
     address public SPELL; // TEMPORARY: spell currently under execution.
 
-    IProtocolConfig public config;
+    IProtocolConfig public config; // The protocol config address.
     ICoreOracle public oracle; // The oracle address for determining prices.
 
     uint256 public nextPositionId; // Next available position ID, starting from 1 (see initialize).
@@ -328,6 +328,8 @@ contract BlueBerryBank is
         }
     }
 
+    /// @notice Get the stored borrowed balance of the contract.
+    /// @param token The address of the underlying token.
     function _borrowBalanceStored(
         address token
     ) internal view returns (uint256) {

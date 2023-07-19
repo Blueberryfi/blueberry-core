@@ -27,7 +27,6 @@ import "../interfaces/IHardVault.sol";
  * @dev HardVault is just holding LP tokens deposited by users.
  *      LP tokens should be listed by Blueberry team.
  *      HardVault is ERC1155 and Underlying LP tokens are identified by casted tokenId from token address
- * @dev HardVault is not on the road yet, need more research.
  */
 contract HardVault is
     OwnableUpgradeable,

@@ -66,6 +66,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         withdrawVaultFeeWindow = 60 days; // Liquidity boot strapping event per vault
     }
 
+    /**
+     * @dev Owner priviledged function to start withdraw vault fee window
+     */
     function startVaultWithdrawFee() external onlyOwner {
         if (withdrawVaultFeeWindowStartTime > 0)
             revert Errors.FEE_WINDOW_ALREADY_STARTED();
@@ -147,6 +150,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         feeManager = IFeeManager(feeManager_);
     }
 
+    /**
+     * @dev Owner priviledged function to set blb usdc ichi vault address
+     */
     function setBlbUsdcIchiVault(address vault_) external onlyOwner {
         if (vault_ == address(0)) revert Errors.ZERO_ADDRESS();
         blbUsdcIchiVault = vault_;

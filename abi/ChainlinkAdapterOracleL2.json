@@ -139,7 +139,7 @@
         "type": "address"
       }
     ],
-    "name": "SetRequencerUptimeFeed",
+    "name": "SetSequencerUptimeFeed",
     "type": "event"
   },
   {
