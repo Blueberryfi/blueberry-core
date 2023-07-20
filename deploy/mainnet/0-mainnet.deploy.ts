@@ -499,6 +499,129 @@ async function main(): Promise<void> {
   deployment.ConvexSpell = convexSpell.address;
   writeDeployments(deployment);
 
+  console.log("Adding Strategies to ConvexSpell");
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_FRXETH,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    0,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.LINK,
+      ADDRESS.CRV_FRXETH,
+    ],
+    [200000, 200000, 200000, 200000, 200000, 200000]
+  );
+
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_STETH,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    1,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.LINK,
+      ADDRESS.CRV_STETH,
+    ],
+    [200000, 200000, 200000, 200000, 200000, 200000]
+  );
+
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_MIM3CRV,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    2,
+    [ADDRESS.MIM, ADDRESS.CRV_MIM3CRV],
+    [50000, 50000]
+  );
+
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_CVXCRV_CRV,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    3,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.LINK,
+      ADDRESS.CRV_CVXCRV_CRV,
+    ],
+    [70000, 70000, 70000, 70000, 70000]
+  );
+
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_ALCX_FRAXBP,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    4,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.LINK,
+      ADDRESS.CRV_ALCX_FRAXBP,
+    ],
+    [30000, 30000, 30000, 30000, 30000, 30000]
+  );
+
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_OHM_FRAXBP,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    5,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.LINK,
+      ADDRESS.CRV_OHM_FRAXBP,
+    ],
+    [50000, 50000, 50000, 50000, 50000, 50000]
+  );
+
+  await convexSpell.addStrategy(
+    ADDRESS.CRV,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    6,
+    [ADDRESS.WBTC, ADDRESS.wstETH, ADDRESS.ETH, ADDRESS.DAI, ADDRESS.CRV],
+    [30000, 30000, 30000, 30000, 30000]
+  );
+
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_TriCrypto,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await convexSpell.setCollateralsMaxLTVs(
+    7,
+    [ADDRESS.WBTC, ADDRESS.wstETH, ADDRESS.ETH, ADDRESS.DAI],
+    [30000, 30000, 30000, 30000]
+  );
+
   console.log("Deploying WCurveGauge...");
   const WCurveGauge = await ethers.getContractFactory(
     CONTRACT_NAMES.WCurveGauge
