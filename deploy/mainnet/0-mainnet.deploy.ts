@@ -41,10 +41,23 @@ async function main(): Promise<void> {
     await ethers.getContractAt(CONTRACT_NAMES.CoreOracle, deployment.CoreOracle)
   );
 
+  console.log("Deploying UniV3WrappedLib...");
+  const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+  const LibInstance = await LinkedLibFactory.deploy();
+  await LibInstance.deployed();
+  console.log("UniV3WrappedLib Address:", LibInstance.address);
+  deployment.UniV3WrappedLib = LibInstance.address;
+  writeDeployments(deployment);
+
   // Ichi Lp Oracle
   console.log("Deploying IchiVaultOracle...");
   const IchiVaultOracle = await ethers.getContractFactory(
-    CONTRACT_NAMES.IchiVaultOracle
+    CONTRACT_NAMES.IchiVaultOracle,
+    {
+      libraries: {
+        Univ3WrappedLibContainer: LibInstance.address,
+      },
+    }
   );
   const ichiVaultOracle = <IchiVaultOracle>(
     await IchiVaultOracle.deploy(coreOracle.address)
@@ -54,9 +67,42 @@ async function main(): Promise<void> {
   deployment.IchiVaultOracle = ichiVaultOracle.address;
   writeDeployments(deployment);
 
+  await ichiVaultOracle.setPriceDeviation(ADDRESS.USDC, 500);
+  await ichiVaultOracle.setPriceDeviation(ADDRESS.ALCX, 500);
+  await ichiVaultOracle.setPriceDeviation(ADDRESS.ETH, 500);
+  await ichiVaultOracle.setPriceDeviation(ADDRESS.WBTC, 500);
+  await ichiVaultOracle.setPriceDeviation(ADDRESS.OHM, 500);
+  await ichiVaultOracle.setPriceDeviation(ADDRESS.LINK, 500);
+
   await coreOracle.setRoutes(
-    [ADDRESS.ICHI_VAULT_USDC],
-    [ichiVaultOracle.address]
+    [
+      ADDRESS.ICHI_VAULT_USDC,
+      ADDRESS.ICHI_VAULT_USDC_ALCX,
+      ADDRESS.ICHI_VAULT_ALCX_USDC,
+      ADDRESS.ICHI_VAULT_ALCX_ETH,
+      ADDRESS.ICHI_VAULT_ETH_USDC,
+      ADDRESS.ICHI_VAULT_USDC_ETH,
+      ADDRESS.ICHI_VAULT_WBTC_USDC,
+      ADDRESS.ICHI_VAULT_USDC_WBTC,
+      ADDRESS.ICHI_VAULT_OHM_ETH,
+      ADDRESS.ICHI_VAULT_LINK_ETH,
+      ADDRESS.ICHI_VAULT_WBTC_ETH,
+      ADDRESS.ICHI_VAULT_ETH_WBTC,
+    ],
+    [
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+      ichiVaultOracle.address,
+    ]
   );
 
   // Bank
