@@ -66,7 +66,7 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 import "../interfaces/ichi/IICHIVaultFactory.sol";
 
-import "../libraries/UniV3/UniV3WrappedLibMockup.sol";
+import "../libraries/UniV3/Univ3WrappedLibContainer.sol";
 
 /**
  @notice A Uniswap V2-like interface with fungible liquidity to Uniswap V3 
@@ -426,8 +426,8 @@ contract MockIchiVault is
                 swapQuantity > 0,
                 swapQuantity > 0 ? swapQuantity : -swapQuantity,
                 swapQuantity > 0
-                    ? UniV3WrappedLibMockup.MIN_SQRT_RATIO + 1
-                    : UniV3WrappedLibMockup.MAX_SQRT_RATIO - 1,
+                    ? Univ3WrappedLibContainer.MIN_SQRT_RATIO + 1
+                    : Univ3WrappedLibContainer.MAX_SQRT_RATIO - 1,
                 abi.encode(address(this))
             );
         }
@@ -698,10 +698,10 @@ contract MockIchiVault is
     ) internal view returns (uint256, uint256) {
         (uint160 sqrtRatioX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
         return
-            UniV3WrappedLibMockup.getAmountsForLiquidity(
+            Univ3WrappedLibContainer.getAmountsForLiquidity(
                 sqrtRatioX96,
-                UniV3WrappedLibMockup.getSqrtRatioAtTick(tickLower),
-                UniV3WrappedLibMockup.getSqrtRatioAtTick(tickUpper),
+                Univ3WrappedLibContainer.getSqrtRatioAtTick(tickLower),
+                Univ3WrappedLibContainer.getSqrtRatioAtTick(tickUpper),
                 liquidity
             );
     }
@@ -721,10 +721,10 @@ contract MockIchiVault is
     ) internal view returns (uint128) {
         (uint160 sqrtRatioX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
         return
-            UniV3WrappedLibMockup.getLiquidityForAmounts(
+            Univ3WrappedLibContainer.getLiquidityForAmounts(
                 sqrtRatioX96,
-                UniV3WrappedLibMockup.getSqrtRatioAtTick(tickLower),
-                UniV3WrappedLibMockup.getSqrtRatioAtTick(tickUpper),
+                Univ3WrappedLibContainer.getSqrtRatioAtTick(tickLower),
+                Univ3WrappedLibContainer.getSqrtRatioAtTick(tickUpper),
                 amount0,
                 amount1
             );
@@ -833,7 +833,7 @@ contract MockIchiVault is
         uint256 _amountIn
     ) internal pure returns (uint256 amountOut) {
         return
-            UniV3WrappedLibMockup.getQuoteAtTick(
+            Univ3WrappedLibContainer.getQuoteAtTick(
                 _tick,
                 uint128(_amountIn),
                 _tokenIn,
@@ -858,9 +858,9 @@ contract MockIchiVault is
         uint256 _amountIn
     ) internal view returns (uint256 amountOut) {
         // Leave twapTick as a int256 to avoid solidity casting
-        (int256 twapTick, ) = UniV3WrappedLibMockup.consult(_pool, _twapPeriod);
+        (int256 twapTick, ) = Univ3WrappedLibContainer.consult(_pool, _twapPeriod);
         return
-            UniV3WrappedLibMockup.getQuoteAtTick(
+            Univ3WrappedLibContainer.getQuoteAtTick(
                 int24(twapTick), // can assume safe being result from consult()
                 uint128(_amountIn),
                 _tokenIn,

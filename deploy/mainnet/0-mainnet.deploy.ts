@@ -1,5 +1,6 @@
 import fs from "fs";
 import { ethers, upgrades, network } from "hardhat";
+import { utils } from "ethers";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import {
   BlueBerryBank,
@@ -17,10 +18,18 @@ import {
   ProtocolConfig,
   WERC20,
   WIchiFarm,
+  SoftVault,
 } from "../../typechain-types";
 
 const deploymentPath = "./deployments";
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
+
+function writeDeployments(deployment: any) {
+  if (!fs.existsSync(deploymentPath)) {
+    fs.mkdirSync(deploymentPath);
+  }
+  fs.writeFileSync(deploymentFilePath, JSON.stringify(deployment, null, 2));
+}
 
 async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
@@ -33,6 +42,7 @@ async function main(): Promise<void> {
   );
 
   // Ichi Lp Oracle
+  console.log("Deploying IchiVaultOracle...");
   const IchiVaultOracle = await ethers.getContractFactory(
     CONTRACT_NAMES.IchiVaultOracle
   );
@@ -41,6 +51,8 @@ async function main(): Promise<void> {
   );
   await ichiVaultOracle.deployed();
   console.log("Ichi Lp Oracle Address:", ichiVaultOracle.address);
+  deployment.IchiVaultOracle = ichiVaultOracle.address;
+  writeDeployments(deployment);
 
   await coreOracle.setRoutes(
     [ADDRESS.ICHI_VAULT_USDC],
@@ -48,10 +60,15 @@ async function main(): Promise<void> {
   );
 
   // Bank
+  console.log("Deploying ProtocolConfig...");
   const Config = await ethers.getContractFactory("ProtocolConfig");
   const config = <ProtocolConfig>await upgrades.deployProxy(Config, [deployer]);
   await config.deployed();
+  console.log("Protocol Config Address:", config.address);
+  deployment.ProtocolConfig = config.address;
+  writeDeployments(deployment);
 
+  console.log("Deploying Bank...");
   const BlueBerryBank = await ethers.getContractFactory(
     CONTRACT_NAMES.BlueBerryBank
   );
@@ -63,20 +80,32 @@ async function main(): Promise<void> {
     ])
   );
   await bank.deployed();
+  console.log("Bank Address:", bank.address);
+  deployment.Bank = bank.address;
+  writeDeployments(deployment);
 
   // WERC20 of Ichi Vault Lp
+  console.log("Deploying WERC20...");
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
   const werc20 = <WERC20>await WERC20.deploy();
   await werc20.deployed();
+  console.log("WERC20 Address:", werc20.address);
+  deployment.WERC20 = werc20.address;
+  writeDeployments(deployment);
 
   // WIchiFarm
+  console.log("Deploying WIchiFarm...");
   const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
   const wichiFarm = <WIchiFarm>(
     await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARMING])
   );
   await wichiFarm.deployed();
+  console.log("WIchiFarm Address:", wichiFarm.address);
+  deployment.WIchiFarm = wichiFarm.address;
+  writeDeployments(deployment);
 
   // Ichi Vault Spell
+  console.log("Deploying IchiSpell...");
   const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
   const ichiSpell = <IchiSpell>(
     await upgrades.deployProxy(IchiSpell, [
@@ -88,7 +117,200 @@ async function main(): Promise<void> {
     ])
   );
   await ichiSpell.deployed();
+  console.log("IchiSpell Address:", ichiSpell.address);
+  deployment.IchiSpell = ichiSpell.address;
+  writeDeployments(deployment);
 
+  console.log("Adding Strategies to IchiSpell");
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_ALCX_USDC,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("250000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    0,
+    [
+      ADDRESS.wstETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.ETH,
+      ADDRESS.ICHI_VAULT_ALCX_USDC,
+    ],
+    [30000, 30000, 30000, 30000, 30000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_USDC_ALCX,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("100000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    1,
+    [
+      ADDRESS.wstETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.ETH,
+      ADDRESS.ICHI_VAULT_USDC_ALCX,
+    ],
+    [20000, 20000, 20000, 20000, 20000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_ALCX_ETH,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("250000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    2,
+    [
+      ADDRESS.wstETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.ETH,
+      ADDRESS.ICHI_VAULT_ALCX_ETH,
+    ],
+    [30000, 30000, 30000, 30000, 30000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_ETH_USDC,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    3,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.ETH,
+      ADDRESS.ICHI_VAULT_ETH_USDC,
+    ],
+    [30000, 30000, 30000, 30000, 30000, 30000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_USDC_ETH,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    4,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.ETH,
+      ADDRESS.ICHI_VAULT_USDC_ETH,
+    ],
+    [30000, 30000, 30000, 30000, 30000, 30000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_WBTC_USDC,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("2500000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    5,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.ETH,
+      ADDRESS.ICHI_VAULT_WBTC_USDC,
+    ],
+    [30000, 30000, 30000, 30000, 30000, 30000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_USDC_WBTC,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("2500000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    6,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.ETH,
+      ADDRESS.ICHI_VAULT_USDC_WBTC,
+    ],
+    [30000, 30000, 30000, 30000, 30000, 30000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_OHM_ETH,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("2500000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    7,
+    [
+      ADDRESS.ETH,
+      ADDRESS.OHM,
+      ADDRESS.wstETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.ICHI_VAULT_OHM_ETH,
+    ],
+    [50000, 50000, 50000, 50000, 50000, 50000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_LINK_ETH,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("1000000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    8,
+    [ADDRESS.LINK, ADDRESS.wstETH, ADDRESS.USDC, ADDRESS.ICHI_VAULT_LINK_ETH],
+    [30000, 30000, 30000, 30000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_WBTC_ETH,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("2500000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    9,
+    [
+      ADDRESS.ETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.ICHI_VAULT_WBTC_ETH,
+    ],
+    [30000, 30000, 30000, 30000, 30000, 30000]
+  );
+
+  await ichiSpell.addStrategy(
+    ADDRESS.ICHI_VAULT_ETH_WBTC,
+    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("2500000", 18)
+  );
+  await ichiSpell.setCollateralsMaxLTVs(
+    10,
+    [
+      ADDRESS.ETH,
+      ADDRESS.USDC,
+      ADDRESS.DAI,
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.ICHI_VAULT_ETH_WBTC,
+    ],
+    [30000, 30000, 30000, 30000, 30000, 30000]
+  );
+
+  console.log("Deploying WAuraPools...");
   const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
   const waura = <WAuraPools>(
     await upgrades.deployProxy(WAuraPools, [
@@ -98,7 +320,11 @@ async function main(): Promise<void> {
     ])
   );
   await waura.deployed();
+  console.log("WAuraPools Address:", waura.address);
+  deployment.WAuraPools = waura.address;
+  writeDeployments(deployment);
 
+  console.log("Deploying AuraSpell...");
   const AuraSpell = await ethers.getContractFactory(CONTRACT_NAMES.AuraSpell);
   const auraSpell = <AuraSpell>(
     await upgrades.deployProxy(AuraSpell, [
@@ -111,7 +337,11 @@ async function main(): Promise<void> {
     ])
   );
   await auraSpell.deployed();
+  console.log("AuraSpell Address:", auraSpell.address);
+  deployment.AuraSpell = auraSpell.address;
+  writeDeployments(deployment);
 
+  console.log("Deploying CurveStableOracle...");
   const CurveStableOracle = await ethers.getContractFactory(
     CONTRACT_NAMES.CurveStableOracle
   );
@@ -122,7 +352,11 @@ async function main(): Promise<void> {
     )
   );
   await stableOracle.deployed();
+  console.log("CurveStableOracle Address:", stableOracle.address);
+  deployment.CurveStableOracle = stableOracle.address;
+  writeDeployments(deployment);
 
+  console.log("Deploying WConvexPools...");
   const WConvexPools = await ethers.getContractFactory(
     CONTRACT_NAMES.WConvexPools
   );
@@ -130,7 +364,11 @@ async function main(): Promise<void> {
     await upgrades.deployProxy(WConvexPools, [ADDRESS.CVX, ADDRESS.CVX_BOOSTER])
   );
   await wconvex.deployed();
+  console.log("WConvexPools Address:", wconvex.address);
+  deployment.WConvexPools = wconvex.address;
+  writeDeployments(deployment);
 
+  console.log("Deploying ConvexSpell...");
   const ConvexSpell = await ethers.getContractFactory(
     CONTRACT_NAMES.ConvexSpell
   );
@@ -146,7 +384,11 @@ async function main(): Promise<void> {
     ])
   );
   await convexSpell.deployed();
+  console.log("ConvexSpell Address:", convexSpell.address);
+  deployment.ConvexSpell = convexSpell.address;
+  writeDeployments(deployment);
 
+  console.log("Deploying WCurveGauge...");
   const WCurveGauge = await ethers.getContractFactory(
     CONTRACT_NAMES.WCurveGauge
   );
@@ -158,8 +400,12 @@ async function main(): Promise<void> {
     ])
   );
   await wgauge.deployed();
+  console.log("WCurveGauge Address:", wgauge.address);
+  deployment.WCurveGauge = wgauge.address;
+  writeDeployments(deployment);
 
   // Deploy CRV spell
+  console.log("Deploying CurveSpell...");
   const CurveSpell = await ethers.getContractFactory(CONTRACT_NAMES.CurveSpell);
   const curveSpell = <CurveSpell>(
     await upgrades.deployProxy(CurveSpell, [
@@ -173,7 +419,11 @@ async function main(): Promise<void> {
     ])
   );
   await curveSpell.deployed();
+  console.log("CurveSpell Address:", curveSpell.address);
+  deployment.CurveSpell = curveSpell.address;
+  writeDeployments(deployment);
 
+  console.log("Deploying ShortLongSpell...");
   const ShortLongSpell = await ethers.getContractFactory(
     CONTRACT_NAMES.ShortLongSpell
   );
@@ -187,6 +437,9 @@ async function main(): Promise<void> {
     ])
   );
   await shortLongSpell.deployed();
+  console.log("ShortLongSpell Address:", shortLongSpell.address);
+  deployment.ShortLongSpell = shortLongSpell.address;
+  writeDeployments(deployment);
 }
 
 main()
