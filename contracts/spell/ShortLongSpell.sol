@@ -213,9 +213,6 @@ contract ShortLongSpell is BasicSpell {
     {
         Strategy memory strategy = strategies[param.strategyId];
 
-        // if (address(ISoftVault(strategy.vault).uToken()) != swapData.fromToken)
-        //     revert Errors.INCORRECT_LP(swapData.fromToken);
-
         address vault = strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
