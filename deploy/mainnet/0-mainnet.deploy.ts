@@ -170,7 +170,7 @@ async function main(): Promise<void> {
   console.log("Adding Strategies to IchiSpell");
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_ALCX_USDC,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("250000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -187,7 +187,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_USDC_ALCX,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("100000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -204,7 +204,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_ALCX_ETH,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("250000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -221,7 +221,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_ETH_USDC,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("5000000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -239,7 +239,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_USDC_ETH,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("5000000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -257,7 +257,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_WBTC_USDC,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("2500000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -275,7 +275,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_USDC_WBTC,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("2500000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -293,7 +293,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_OHM_ETH,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("2500000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -311,7 +311,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_LINK_ETH,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("1000000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -322,7 +322,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_WBTC_ETH,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("2500000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -340,7 +340,7 @@ async function main(): Promise<void> {
 
   await ichiSpell.addStrategy(
     ADDRESS.ICHI_VAULT_ETH_WBTC,
-    utils.parseUnits("100", 18), // TODO: update this minPosSize
+    utils.parseUnits("5000", 18),
     utils.parseUnits("2500000", 18)
   );
   await ichiSpell.setCollateralsMaxLTVs(
@@ -486,6 +486,141 @@ async function main(): Promise<void> {
   console.log("ShortLongSpell Address:", shortLongSpell.address);
   deployment.ShortLongSpell = shortLongSpell.address;
   writeDeployments(deployment);
+
+  console.log("Adding Long + earn ETH (wstETH) strategy to ShortLongSpell");
+  console.log("Deploying DAI SoftVault...");
+  const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
+  const daiSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS.bDAI,
+      "Interest Bearing DAI",
+      "ibDAI",
+    ])
+  );
+  await daiSoftVault.deployed();
+  console.log("DAI SoftVault Address:", daiSoftVault.address);
+  deployment.DAISoftVault = daiSoftVault.address;
+  writeDeployments(deployment);
+
+  await shortLongSpell.addStrategy(
+    daiSoftVault.address,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("25000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    0,
+    [ADDRESS.WBTC, ADDRESS.wstETH, ADDRESS.ETH, ADDRESS.DAI],
+    [50000, 50000, 50000, 50000]
+  );
+
+  console.log("Deploying ETH SoftVault...");
+  const ethSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS.bWETH,
+      "Interest Bearing ETH",
+      "ibETH",
+    ])
+  );
+  await ethSoftVault.deployed();
+  console.log("ETH SoftVault Address:", ethSoftVault.address);
+  deployment.ETHSoftVault = ethSoftVault.address;
+  writeDeployments(deployment);
+
+  await shortLongSpell.addStrategy(
+    ethSoftVault.address,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("25000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    1,
+    [ADDRESS.WBTC, ADDRESS.wstETH, ADDRESS.ETH, ADDRESS.DAI],
+    [10000, 10000, 10000, 10000]
+  );
+
+  await shortLongSpell.addStrategy(
+    ethSoftVault.address,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("25000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    2,
+    [ADDRESS.WBTC, ADDRESS.wstETH, ADDRESS.DAI],
+    [50000, 50000, 50000]
+  );
+
+  console.log("Deploying wBTC SoftVault...");
+  const wbtcSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS.bWBTC,
+      "Interest Bearing wBTC",
+      "ibwBTC",
+    ])
+  );
+  await wbtcSoftVault.deployed();
+  console.log("wBTC SoftVault Address:", wbtcSoftVault.address);
+  deployment.WBTCSoftVault = wbtcSoftVault.address;
+  writeDeployments(deployment);
+
+  await shortLongSpell.addStrategy(
+    wbtcSoftVault.address,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("25000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    3,
+    [ADDRESS.wstETH, ADDRESS.ETH, ADDRESS.DAI],
+    [50000, 50000, 50000]
+  );
+
+  await shortLongSpell.addStrategy(
+    daiSoftVault.address,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("25000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    4,
+    [ADDRESS.WBTC, ADDRESS.DAI, ADDRESS.ETH],
+    [50000, 50000, 50000]
+  );
+
+  console.log("Deploying LINK SoftVault...");
+  const linkSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS.bLINK,
+      "Interest Bearing LINK",
+      "ibLINK",
+    ])
+  );
+  await linkSoftVault.deployed();
+  console.log("wBTC SoftVault Address:", linkSoftVault.address);
+  deployment.WBTCSoftVault = linkSoftVault.address;
+  writeDeployments(deployment);
+
+  await shortLongSpell.addStrategy(
+    linkSoftVault.address,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("25000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    5,
+    [ADDRESS.wstETH, ADDRESS.ETH, ADDRESS.DAI, ADDRESS.WBTC],
+    [50000, 50000, 50000, 50000]
+  );
+
+  await shortLongSpell.addStrategy(
+    daiSoftVault.address,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("25000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    6,
+    [ADDRESS.WBTC, ADDRESS.DAI, ADDRESS.ETH],
+    [50000, 50000, 50000]
+  );
 }
 
 main()
