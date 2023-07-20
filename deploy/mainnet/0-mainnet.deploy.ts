@@ -387,6 +387,71 @@ async function main(): Promise<void> {
   deployment.AuraSpell = auraSpell.address;
   writeDeployments(deployment);
 
+  console.log("Adding Strategies to AuraSpell");
+  await auraSpell.addStrategy(
+    ADDRESS.BAL_AURA_STABLE,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await auraSpell.setCollateralsMaxLTVs(
+    0,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.LINK,
+      ADDRESS.BAL,
+      ADDRESS.BAL_AURA_STABLE,
+    ],
+    [70000, 70000, 70000, 70000, 70000, 70000]
+  );
+
+  await auraSpell.addStrategy(
+    ADDRESS.BAL_ETH_BASKET,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await auraSpell.setCollateralsMaxLTVs(
+    1,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.LINK,
+      ADDRESS.BAL_ETH_BASKET,
+    ],
+    [70000, 70000, 70000, 70000, 70000]
+  );
+
+  await auraSpell.addStrategy(
+    ADDRESS.BAL_OHM_ETH,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await auraSpell.setCollateralsMaxLTVs(
+    2,
+    [ADDRESS.OHM, ADDRESS.ETH, ADDRESS.BAL_OHM_ETH],
+    [70000, 70000, 70000]
+  );
+
+  await auraSpell.addStrategy(
+    ADDRESS.BAL_AURA_STABLE,
+    utils.parseUnits("5000", 18),
+    utils.parseUnits("2500000", 18)
+  );
+  await auraSpell.setCollateralsMaxLTVs(
+    3,
+    [
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.LINK,
+      ADDRESS.BAL_AURA_STABLE,
+    ],
+    [70000, 70000, 70000, 70000, 70000, 70000]
+  );
+
   console.log("Deploying CurveStableOracle...");
   const CurveStableOracle = await ethers.getContractFactory(
     CONTRACT_NAMES.CurveStableOracle
@@ -487,7 +552,7 @@ async function main(): Promise<void> {
   deployment.ShortLongSpell = shortLongSpell.address;
   writeDeployments(deployment);
 
-  console.log("Adding Long + earn ETH (wstETH) strategy to ShortLongSpell");
+  console.log("Adding Strategies to ShortLongSpell");
   console.log("Deploying DAI SoftVault...");
   const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
   const daiSoftVault = <SoftVault>(
