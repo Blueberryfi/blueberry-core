@@ -13,7 +13,6 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "./BasicSpell.sol";
-import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWAuraPools.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
@@ -29,8 +28,6 @@ contract AuraSpell is BasicSpell {
 
     /// @dev Address to Wrapped Aura Pools
     IWAuraPools public wAuraPools;
-    /// @dev address of CurveOracle
-    ICurveOracle public crvOracle;
     /// @dev address of AURA token
     address public AURA;
     /// @dev address of Stash AURA token

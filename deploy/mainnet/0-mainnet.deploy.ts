@@ -1,7 +1,7 @@
 import fs from "fs";
 import { ethers, upgrades, network } from "hardhat";
 import { utils } from "ethers";
-import { ADDRESS, CONTRACT_NAMES } from "../../constant";
+import { ADDRESS, ADDRESS_DEV, CONTRACT_NAMES } from "../../constant";
 import {
   BlueBerryBank,
   CoreOracle,
@@ -19,6 +19,7 @@ import {
   WERC20,
   WIchiFarm,
   SoftVault,
+  HardVault,
 } from "../../typechain-types";
 
 const deploymentPath = "./deployments";
@@ -681,7 +682,7 @@ async function main(): Promise<void> {
   const daiSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bDAI,
+      ADDRESS_DEV.bDAI,
       "Interest Bearing DAI",
       "ibDAI",
     ])
@@ -706,7 +707,7 @@ async function main(): Promise<void> {
   const ethSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bWETH,
+      ADDRESS_DEV.bWETH,
       "Interest Bearing ETH",
       "ibETH",
     ])
@@ -742,7 +743,7 @@ async function main(): Promise<void> {
   const wbtcSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bWBTC,
+      ADDRESS_DEV.bWBTC,
       "Interest Bearing wBTC",
       "ibwBTC",
     ])
@@ -778,14 +779,14 @@ async function main(): Promise<void> {
   const linkSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bLINK,
+      ADDRESS_DEV.bLINK,
       "Interest Bearing LINK",
       "ibLINK",
     ])
   );
   await linkSoftVault.deployed();
-  console.log("wBTC SoftVault Address:", linkSoftVault.address);
-  deployment.WBTCSoftVault = linkSoftVault.address;
+  console.log("LINK SoftVault Address:", linkSoftVault.address);
+  deployment.LINKSoftVault = linkSoftVault.address;
   writeDeployments(deployment);
 
   await shortLongSpell.addStrategy(
@@ -808,6 +809,196 @@ async function main(): Promise<void> {
     6,
     [ADDRESS.WBTC, ADDRESS.DAI, ADDRESS.ETH],
     [50000, 50000, 50000]
+  );
+
+  await bank.whitelistSpells(
+    [
+      auraSpell.address,
+      convexSpell.address,
+      ichiSpell.address,
+      curveSpell.address,
+      shortLongSpell.address,
+    ],
+    [true, true, true, true, true]
+  );
+  await bank.whitelistTokens(
+    [
+      ADDRESS.ALCX,
+      ADDRESS.DAI,
+      ADDRESS.USDC,
+      ADDRESS.ETH,
+      ADDRESS.WBTC,
+      ADDRESS.OHM,
+      ADDRESS.LINK,
+      ADDRESS.CRV,
+      ADDRESS.MIM,
+      ADDRESS.BAL,
+    ],
+    [true, true, true, true, true, true, true, true, true, true]
+  );
+  await bank.whitelistERC1155(
+    [
+      werc20.address,
+      wichiFarm.address,
+      waura.address,
+      wconvex.address,
+      wgauge.address,
+    ],
+    true
+  );
+
+  console.log("Deploying HardVault...");
+  const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
+  const hardVault = <HardVault>(
+    await upgrades.deployProxy(HardVault, [config.address])
+  );
+  console.log("HardVault Address:", hardVault.address);
+  deployment.HardVault = hardVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying USDC SoftVault...");
+  const usdcSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bUSDC,
+      "Interest Bearing USDC",
+      "ibUSDC",
+    ])
+  );
+  await usdcSoftVault.deployed();
+  console.log("USDC SoftVault Address:", usdcSoftVault.address);
+  deployment.USDCSoftVault = usdcSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying ALCX SoftVault...");
+  const alcxSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bALCX,
+      "Interest Bearing ALCX",
+      "ibALCX",
+    ])
+  );
+  await alcxSoftVault.deployed();
+  console.log("ALCX SoftVault Address:", alcxSoftVault.address);
+  deployment.ALCXSoftVault = alcxSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying OHM SoftVault...");
+  const ohmSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bOHM,
+      "Interest Bearing OHM",
+      "ibOHM",
+    ])
+  );
+  await ohmSoftVault.deployed();
+  console.log("OHM SoftVault Address:", ohmSoftVault.address);
+  deployment.OHMSoftVault = ohmSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying CRV SoftVault...");
+  const crvSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bCRV,
+      "Interest Bearing CRV",
+      "ibCRV",
+    ])
+  );
+  await crvSoftVault.deployed();
+  console.log("CRV SoftVault Address:", crvSoftVault.address);
+  deployment.CRVSoftVault = crvSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying MIM SoftVault...");
+  const mimSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bMIM,
+      "Interest Bearing MIM",
+      "ibMIM",
+    ])
+  );
+  await mimSoftVault.deployed();
+  console.log("MIM SoftVault Address:", mimSoftVault.address);
+  deployment.MIMSoftVault = mimSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying BAL SoftVault...");
+  const balSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bBAL,
+      "Interest Bearing BAL",
+      "ibBAL",
+    ])
+  );
+  await balSoftVault.deployed();
+  console.log("BAL SoftVault Address:", balSoftVault.address);
+  deployment.BALSoftVault = balSoftVault.address;
+  writeDeployments(deployment);
+
+  await bank.addBank(
+    ADDRESS.ALCX,
+    alcxSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.DAI,
+    daiSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.USDC,
+    usdcSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.ETH,
+    ethSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.WBTC,
+    wbtcSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.OHM,
+    ohmSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.LINK,
+    linkSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.CRV,
+    crvSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.MIM,
+    mimSoftVault.address,
+    hardVault.address,
+    8500
+  );
+  await bank.addBank(
+    ADDRESS.BAL,
+    balSoftVault.address,
+    hardVault.address,
+    8500
   );
 }
 
