@@ -42,6 +42,14 @@ async function main(): Promise<void> {
     await ethers.getContractAt(CONTRACT_NAMES.CoreOracle, deployment.CoreOracle)
   );
 
+  console.log("Deploying ProtocolConfig...");
+  const Config = await ethers.getContractFactory("ProtocolConfig");
+  const config = <ProtocolConfig>await upgrades.deployProxy(Config, [deployer]);
+  await config.deployed();
+  console.log("Protocol Config Address:", config.address);
+  deployment.ProtocolConfig = config.address;
+  writeDeployments(deployment);
+
   console.log("Deploying UniV3WrappedLib...");
   const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
   const LibInstance = await LinkedLibFactory.deploy();
@@ -106,15 +114,22 @@ async function main(): Promise<void> {
     ]
   );
 
-  // Bank
-  console.log("Deploying ProtocolConfig...");
-  const Config = await ethers.getContractFactory("ProtocolConfig");
-  const config = <ProtocolConfig>await upgrades.deployProxy(Config, [deployer]);
-  await config.deployed();
-  console.log("Protocol Config Address:", config.address);
-  deployment.ProtocolConfig = config.address;
+  console.log("Deploying CurveStableOracle...");
+  const CurveStableOracle = await ethers.getContractFactory(
+    CONTRACT_NAMES.CurveStableOracle
+  );
+  const stableOracle = <CurveStableOracle>(
+    await CurveStableOracle.deploy(
+      coreOracle.address,
+      ADDRESS.CRV_ADDRESS_PROVIDER
+    )
+  );
+  await stableOracle.deployed();
+  console.log("CurveStableOracle Address:", stableOracle.address);
+  deployment.CurveStableOracle = stableOracle.address;
   writeDeployments(deployment);
 
+  // Bank
   console.log("Deploying Bank...");
   const BlueBerryBank = await ethers.getContractFactory(
     CONTRACT_NAMES.BlueBerryBank
@@ -129,6 +144,157 @@ async function main(): Promise<void> {
   await bank.deployed();
   console.log("Bank Address:", bank.address);
   deployment.Bank = bank.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying HardVault...");
+  const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
+  const hardVault = <HardVault>(
+    await upgrades.deployProxy(HardVault, [config.address])
+  );
+  console.log("HardVault Address:", hardVault.address);
+  deployment.HardVault = hardVault.address;
+  writeDeployments(deployment);
+
+  const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
+
+  console.log("Deploying USDC SoftVault...");
+  const usdcSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bUSDC,
+      "Interest Bearing USDC",
+      "ibUSDC",
+    ])
+  );
+  await usdcSoftVault.deployed();
+  console.log("USDC SoftVault Address:", usdcSoftVault.address);
+  deployment.USDCSoftVault = usdcSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying ALCX SoftVault...");
+  const alcxSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bALCX,
+      "Interest Bearing ALCX",
+      "ibALCX",
+    ])
+  );
+  await alcxSoftVault.deployed();
+  console.log("ALCX SoftVault Address:", alcxSoftVault.address);
+  deployment.ALCXSoftVault = alcxSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying OHM SoftVault...");
+  const ohmSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bOHM,
+      "Interest Bearing OHM",
+      "ibOHM",
+    ])
+  );
+  await ohmSoftVault.deployed();
+  console.log("OHM SoftVault Address:", ohmSoftVault.address);
+  deployment.OHMSoftVault = ohmSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying CRV SoftVault...");
+  const crvSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bCRV,
+      "Interest Bearing CRV",
+      "ibCRV",
+    ])
+  );
+  await crvSoftVault.deployed();
+  console.log("CRV SoftVault Address:", crvSoftVault.address);
+  deployment.CRVSoftVault = crvSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying MIM SoftVault...");
+  const mimSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bMIM,
+      "Interest Bearing MIM",
+      "ibMIM",
+    ])
+  );
+  await mimSoftVault.deployed();
+  console.log("MIM SoftVault Address:", mimSoftVault.address);
+  deployment.MIMSoftVault = mimSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying BAL SoftVault...");
+  const balSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bBAL,
+      "Interest Bearing BAL",
+      "ibBAL",
+    ])
+  );
+  await balSoftVault.deployed();
+  console.log("BAL SoftVault Address:", balSoftVault.address);
+  deployment.BALSoftVault = balSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying LINK SoftVault...");
+  const linkSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bLINK,
+      "Interest Bearing LINK",
+      "ibLINK",
+    ])
+  );
+  await linkSoftVault.deployed();
+  console.log("LINK SoftVault Address:", linkSoftVault.address);
+  deployment.LINKSoftVault = linkSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying DAI SoftVault...");
+  const daiSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bDAI,
+      "Interest Bearing DAI",
+      "ibDAI",
+    ])
+  );
+  await daiSoftVault.deployed();
+  console.log("DAI SoftVault Address:", daiSoftVault.address);
+  deployment.DAISoftVault = daiSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying ETH SoftVault...");
+  const ethSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bWETH,
+      "Interest Bearing ETH",
+      "ibETH",
+    ])
+  );
+  await ethSoftVault.deployed();
+  console.log("ETH SoftVault Address:", ethSoftVault.address);
+  deployment.ETHSoftVault = ethSoftVault.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying wBTC SoftVault...");
+  const wbtcSoftVault = <SoftVault>(
+    await upgrades.deployProxy(SoftVault, [
+      config.address,
+      ADDRESS_DEV.bWBTC,
+      "Interest Bearing wBTC",
+      "ibwBTC",
+    ])
+  );
+  await wbtcSoftVault.deployed();
+  console.log("wBTC SoftVault Address:", wbtcSoftVault.address);
+  deployment.WBTCSoftVault = wbtcSoftVault.address;
   writeDeployments(deployment);
 
   // WERC20 of Ichi Vault Lp
@@ -149,6 +315,48 @@ async function main(): Promise<void> {
   await wichiFarm.deployed();
   console.log("WIchiFarm Address:", wichiFarm.address);
   deployment.WIchiFarm = wichiFarm.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying WAuraPools...");
+  const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
+  const waura = <WAuraPools>(
+    await upgrades.deployProxy(WAuraPools, [
+      ADDRESS.AURA,
+      ADDRESS.AURA_BOOSTER,
+      ADDRESS.STASH_AURA,
+    ])
+  );
+  await waura.deployed();
+  console.log("WAuraPools Address:", waura.address);
+  deployment.WAuraPools = waura.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying WConvexPools...");
+  const WConvexPools = await ethers.getContractFactory(
+    CONTRACT_NAMES.WConvexPools
+  );
+  const wconvex = <WConvexPools>(
+    await upgrades.deployProxy(WConvexPools, [ADDRESS.CVX, ADDRESS.CVX_BOOSTER])
+  );
+  await wconvex.deployed();
+  console.log("WConvexPools Address:", wconvex.address);
+  deployment.WConvexPools = wconvex.address;
+  writeDeployments(deployment);
+
+  console.log("Deploying WCurveGauge...");
+  const WCurveGauge = await ethers.getContractFactory(
+    CONTRACT_NAMES.WCurveGauge
+  );
+  const wgauge = <WCurveGauge>(
+    await upgrades.deployProxy(WCurveGauge, [
+      ADDRESS.CRV,
+      ADDRESS.CRV_REGISTRY,
+      ADDRESS.CRV_GAUGE_CONTROLLER,
+    ])
+  );
+  await wgauge.deployed();
+  console.log("WCurveGauge Address:", wgauge.address);
+  deployment.WCurveGauge = wgauge.address;
   writeDeployments(deployment);
 
   // Ichi Vault Spell
@@ -357,20 +565,6 @@ async function main(): Promise<void> {
     [30000, 30000, 30000, 30000, 30000, 30000]
   );
 
-  console.log("Deploying WAuraPools...");
-  const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
-  const waura = <WAuraPools>(
-    await upgrades.deployProxy(WAuraPools, [
-      ADDRESS.AURA,
-      ADDRESS.AURA_BOOSTER,
-      ADDRESS.STASH_AURA,
-    ])
-  );
-  await waura.deployed();
-  console.log("WAuraPools Address:", waura.address);
-  deployment.WAuraPools = waura.address;
-  writeDeployments(deployment);
-
   console.log("Deploying AuraSpell...");
   const AuraSpell = await ethers.getContractFactory(CONTRACT_NAMES.AuraSpell);
   const auraSpell = <AuraSpell>(
@@ -452,33 +646,6 @@ async function main(): Promise<void> {
     ],
     [70000, 70000, 70000, 70000, 70000, 70000]
   );
-
-  console.log("Deploying CurveStableOracle...");
-  const CurveStableOracle = await ethers.getContractFactory(
-    CONTRACT_NAMES.CurveStableOracle
-  );
-  const stableOracle = <CurveStableOracle>(
-    await CurveStableOracle.deploy(
-      coreOracle.address,
-      ADDRESS.CRV_ADDRESS_PROVIDER
-    )
-  );
-  await stableOracle.deployed();
-  console.log("CurveStableOracle Address:", stableOracle.address);
-  deployment.CurveStableOracle = stableOracle.address;
-  writeDeployments(deployment);
-
-  console.log("Deploying WConvexPools...");
-  const WConvexPools = await ethers.getContractFactory(
-    CONTRACT_NAMES.WConvexPools
-  );
-  const wconvex = <WConvexPools>(
-    await upgrades.deployProxy(WConvexPools, [ADDRESS.CVX, ADDRESS.CVX_BOOSTER])
-  );
-  await wconvex.deployed();
-  console.log("WConvexPools Address:", wconvex.address);
-  deployment.WConvexPools = wconvex.address;
-  writeDeployments(deployment);
 
   console.log("Deploying ConvexSpell...");
   const ConvexSpell = await ethers.getContractFactory(
@@ -623,22 +790,6 @@ async function main(): Promise<void> {
     [30000, 30000, 30000, 30000]
   );
 
-  console.log("Deploying WCurveGauge...");
-  const WCurveGauge = await ethers.getContractFactory(
-    CONTRACT_NAMES.WCurveGauge
-  );
-  const wgauge = <WCurveGauge>(
-    await upgrades.deployProxy(WCurveGauge, [
-      ADDRESS.CRV,
-      ADDRESS.CRV_REGISTRY,
-      ADDRESS.CRV_GAUGE_CONTROLLER,
-    ])
-  );
-  await wgauge.deployed();
-  console.log("WCurveGauge Address:", wgauge.address);
-  deployment.WCurveGauge = wgauge.address;
-  writeDeployments(deployment);
-
   // Deploy CRV spell
   console.log("Deploying CurveSpell...");
   const CurveSpell = await ethers.getContractFactory(CONTRACT_NAMES.CurveSpell);
@@ -677,20 +828,6 @@ async function main(): Promise<void> {
   writeDeployments(deployment);
 
   console.log("Adding Strategies to ShortLongSpell");
-  console.log("Deploying DAI SoftVault...");
-  const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
-  const daiSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bDAI,
-      "Interest Bearing DAI",
-      "ibDAI",
-    ])
-  );
-  await daiSoftVault.deployed();
-  console.log("DAI SoftVault Address:", daiSoftVault.address);
-  deployment.DAISoftVault = daiSoftVault.address;
-  writeDeployments(deployment);
 
   await shortLongSpell.addStrategy(
     daiSoftVault.address,
@@ -702,20 +839,6 @@ async function main(): Promise<void> {
     [ADDRESS.WBTC, ADDRESS.wstETH, ADDRESS.ETH, ADDRESS.DAI],
     [50000, 50000, 50000, 50000]
   );
-
-  console.log("Deploying ETH SoftVault...");
-  const ethSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bWETH,
-      "Interest Bearing ETH",
-      "ibETH",
-    ])
-  );
-  await ethSoftVault.deployed();
-  console.log("ETH SoftVault Address:", ethSoftVault.address);
-  deployment.ETHSoftVault = ethSoftVault.address;
-  writeDeployments(deployment);
 
   await shortLongSpell.addStrategy(
     ethSoftVault.address,
@@ -739,20 +862,6 @@ async function main(): Promise<void> {
     [50000, 50000, 50000]
   );
 
-  console.log("Deploying wBTC SoftVault...");
-  const wbtcSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bWBTC,
-      "Interest Bearing wBTC",
-      "ibwBTC",
-    ])
-  );
-  await wbtcSoftVault.deployed();
-  console.log("wBTC SoftVault Address:", wbtcSoftVault.address);
-  deployment.WBTCSoftVault = wbtcSoftVault.address;
-  writeDeployments(deployment);
-
   await shortLongSpell.addStrategy(
     wbtcSoftVault.address,
     utils.parseUnits("5000", 18),
@@ -774,20 +883,6 @@ async function main(): Promise<void> {
     [ADDRESS.WBTC, ADDRESS.DAI, ADDRESS.ETH],
     [50000, 50000, 50000]
   );
-
-  console.log("Deploying LINK SoftVault...");
-  const linkSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bLINK,
-      "Interest Bearing LINK",
-      "ibLINK",
-    ])
-  );
-  await linkSoftVault.deployed();
-  console.log("LINK SoftVault Address:", linkSoftVault.address);
-  deployment.LINKSoftVault = linkSoftVault.address;
-  writeDeployments(deployment);
 
   await shortLongSpell.addStrategy(
     linkSoftVault.address,
@@ -846,99 +941,6 @@ async function main(): Promise<void> {
     ],
     true
   );
-
-  console.log("Deploying HardVault...");
-  const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  const hardVault = <HardVault>(
-    await upgrades.deployProxy(HardVault, [config.address])
-  );
-  console.log("HardVault Address:", hardVault.address);
-  deployment.HardVault = hardVault.address;
-  writeDeployments(deployment);
-
-  console.log("Deploying USDC SoftVault...");
-  const usdcSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bUSDC,
-      "Interest Bearing USDC",
-      "ibUSDC",
-    ])
-  );
-  await usdcSoftVault.deployed();
-  console.log("USDC SoftVault Address:", usdcSoftVault.address);
-  deployment.USDCSoftVault = usdcSoftVault.address;
-  writeDeployments(deployment);
-
-  console.log("Deploying ALCX SoftVault...");
-  const alcxSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bALCX,
-      "Interest Bearing ALCX",
-      "ibALCX",
-    ])
-  );
-  await alcxSoftVault.deployed();
-  console.log("ALCX SoftVault Address:", alcxSoftVault.address);
-  deployment.ALCXSoftVault = alcxSoftVault.address;
-  writeDeployments(deployment);
-
-  console.log("Deploying OHM SoftVault...");
-  const ohmSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bOHM,
-      "Interest Bearing OHM",
-      "ibOHM",
-    ])
-  );
-  await ohmSoftVault.deployed();
-  console.log("OHM SoftVault Address:", ohmSoftVault.address);
-  deployment.OHMSoftVault = ohmSoftVault.address;
-  writeDeployments(deployment);
-
-  console.log("Deploying CRV SoftVault...");
-  const crvSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bCRV,
-      "Interest Bearing CRV",
-      "ibCRV",
-    ])
-  );
-  await crvSoftVault.deployed();
-  console.log("CRV SoftVault Address:", crvSoftVault.address);
-  deployment.CRVSoftVault = crvSoftVault.address;
-  writeDeployments(deployment);
-
-  console.log("Deploying MIM SoftVault...");
-  const mimSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bMIM,
-      "Interest Bearing MIM",
-      "ibMIM",
-    ])
-  );
-  await mimSoftVault.deployed();
-  console.log("MIM SoftVault Address:", mimSoftVault.address);
-  deployment.MIMSoftVault = mimSoftVault.address;
-  writeDeployments(deployment);
-
-  console.log("Deploying BAL SoftVault...");
-  const balSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      ADDRESS_DEV.bBAL,
-      "Interest Bearing BAL",
-      "ibBAL",
-    ])
-  );
-  await balSoftVault.deployed();
-  console.log("BAL SoftVault Address:", balSoftVault.address);
-  deployment.BALSoftVault = balSoftVault.address;
-  writeDeployments(deployment);
 
   await bank.addBank(
     ADDRESS.ALCX,
