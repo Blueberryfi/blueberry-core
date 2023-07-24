@@ -40,6 +40,13 @@ if (!process.env.LLAMA_API_KEY) {
   llamaApiKey = process.env.LLAMA_API_KEY;
 }
 
+let devnetUrl: string;
+if (!process.env.DEVNET_URL) {
+  throw new Error("Please set your DEVNET_URL in a .env file");
+} else {
+  devnetUrl = process.env.DEVNET_URL;
+}
+
 const config: HardhatUserConfig = {
   typechain: {
     target: "ethers-v5",
@@ -81,6 +88,10 @@ const config: HardhatUserConfig = {
     goerli: {
       accounts: [deployAccountKey],
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
+    },
+    devnet: {
+      accounts: [deployAccountKey],
+      url: devnetUrl,
     },
   },
   abiExporter: {

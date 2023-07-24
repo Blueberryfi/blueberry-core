@@ -138,6 +138,7 @@ async function main(): Promise<void> {
   deployment.AggregatorOracle = aggregatorOracle.address;
   writeDeployments(deployment);
 
+  console.log("Setting up Primary Sources\nMax Price Deviation: 5%");
   await aggregatorOracle.setMultiPrimarySources(
     [
       ADDRESS.USDC,
@@ -152,19 +153,7 @@ async function main(): Promise<void> {
       ADDRESS.wstETH,
       ADDRESS.BAL,
     ],
-    [
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-      ethers.utils.parseEther("1.05"),
-    ],
+    [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
     [
       [bandOracle.address, chainlinkOracle.address],
       [bandOracle.address, chainlinkOracle.address],
