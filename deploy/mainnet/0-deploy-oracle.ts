@@ -1,6 +1,5 @@
-import { BigNumber } from "ethers";
 import fs from "fs";
-import { ethers, network } from "hardhat";
+import { ethers, network, upgrades } from "hardhat";
 import { ADDRESS } from "../../constant";
 import {
   AggregatorOracle,
@@ -169,9 +168,22 @@ async function main(): Promise<void> {
     ]
   );
 
+  console.log("Deploying UniV3WrappedLib...");
+  const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+  const LibInstance = await LinkedLibFactory.deploy();
+  await LibInstance.deployed();
+  console.log("UniV3WrappedLib Address:", LibInstance.address);
+  deployment.UniV3WrappedLib = LibInstance.address;
+  writeDeployments(deployment);
+
   // Uni V3 Adapter Oracle
   const UniswapV3AdapterOracle = await ethers.getContractFactory(
-    "UniswapV3AdapterOracle"
+    "UniswapV3AdapterOracle",
+    {
+      libraries: {
+        Univ3WrappedLibContainer: LibInstance.address,
+      },
+    }
   );
   const uniV3Oracle = <UniswapV3AdapterOracle>(
     await UniswapV3AdapterOracle.deploy(aggregatorOracle.address)
@@ -182,11 +194,11 @@ async function main(): Promise<void> {
   writeDeployments(deployment);
 
   await uniV3Oracle.setStablePools([ADDRESS.ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
-  await uniV3Oracle.setTimeGap([ADDRESS.ICHI], [10]); // 10s ago
+  await uniV3Oracle.setTimeGap([ADDRESS.ICHI], [3600]); // 1 hours ago
 
   // Core Oracle
   const CoreOracle = await ethers.getContractFactory("CoreOracle");
-  const coreOracle = <CoreOracle>await CoreOracle.deploy();
+  const coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, []);
   await coreOracle.deployed();
   console.log("Core Oracle Address:", coreOracle.address);
   deployment.CoreOracle = coreOracle.address;

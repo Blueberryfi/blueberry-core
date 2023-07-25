@@ -44,18 +44,12 @@ async function main(): Promise<void> {
 
   console.log("Deploying ProtocolConfig...");
   const Config = await ethers.getContractFactory("ProtocolConfig");
-  const config = <ProtocolConfig>await upgrades.deployProxy(Config, [deployer]);
+  const config = <ProtocolConfig>(
+    await upgrades.deployProxy(Config, [deployer.address])
+  );
   await config.deployed();
   console.log("Protocol Config Address:", config.address);
   deployment.ProtocolConfig = config.address;
-  writeDeployments(deployment);
-
-  console.log("Deploying UniV3WrappedLib...");
-  const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
-  const LibInstance = await LinkedLibFactory.deploy();
-  await LibInstance.deployed();
-  console.log("UniV3WrappedLib Address:", LibInstance.address);
-  deployment.UniV3WrappedLib = LibInstance.address;
   writeDeployments(deployment);
 
   // Ichi Lp Oracle
@@ -64,7 +58,7 @@ async function main(): Promise<void> {
     CONTRACT_NAMES.IchiVaultOracle,
     {
       libraries: {
-        Univ3WrappedLibContainer: LibInstance.address,
+        Univ3WrappedLibContainer: deployment.UniV3WrappedLib,
       },
     }
   );
@@ -138,7 +132,6 @@ async function main(): Promise<void> {
     await upgrades.deployProxy(BlueBerryBank, [
       coreOracle.address,
       config.address,
-      2000,
     ])
   );
   await bank.deployed();
@@ -310,7 +303,7 @@ async function main(): Promise<void> {
   console.log("Deploying WIchiFarm...");
   const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
   const wichiFarm = <WIchiFarm>(
-    await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARMING])
+    await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ADDRESS.ICHI_FARMING])
   );
   await wichiFarm.deployed();
   console.log("WIchiFarm Address:", wichiFarm.address);
