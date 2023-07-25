@@ -914,6 +914,7 @@ async function main(): Promise<void> {
       ADDRESS.ALCX,
       ADDRESS.DAI,
       ADDRESS.USDC,
+      ADDRESS.WETH,
       ADDRESS.ETH,
       ADDRESS.WBTC,
       ADDRESS.OHM,
@@ -922,7 +923,7 @@ async function main(): Promise<void> {
       ADDRESS.MIM,
       ADDRESS.BAL,
     ],
-    [true, true, true, true, true, true, true, true, true, true]
+    [true, true, true, true, true, true, true, true, true, true, true]
   );
   await bank.whitelistERC1155(
     [
