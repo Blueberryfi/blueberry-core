@@ -28,22 +28,18 @@ async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
   console.log("Deployer:", deployer.address);
 
-  // Band Adapter Oracle
-  const BandAdapterOracle = await ethers.getContractFactory(
-    "BandAdapterOracle"
+  // Mock Oracle
+  const MockOracle = await ethers.getContractFactory(
+    CONTRACT_NAMES.MockOracle
   );
-  const bandOracle = <BandAdapterOracle>(
-    await BandAdapterOracle.deploy(ADDRESS.BandStdRef)
-  );
-  await bandOracle.deployed();
-  console.log("Band Oracle Address:", bandOracle.address);
-  deployment.BandAdapterOracle = bandOracle.address;
+  const mockOracle = <MockOracle>await MockOracle.deploy();
+  await mockOracle.deployed();
+  console.log("Mock Oracle Address:", mockOracle.address);
+  deployment.MockOracle = mockOracle.address;
   writeDeployments(deployment);
 
-  console.log(
-    "Setting up Token configs on Band Oracle\nMax Delay Times: 1 day 12 hours"
-  );
-  await bandOracle.setTimeGap(
+  console.log("Setting up mock prices");
+  await mockOracle.setPrice(
     [
       ADDRESS.USDC,
       ADDRESS.DAI,
@@ -52,82 +48,26 @@ async function main(): Promise<void> {
       ADDRESS.LINK,
       ADDRESS.WBTC,
       ADDRESS.WETH,
+      ADDRESS.ETH,
       ADDRESS.OHM,
       ADDRESS.ALCX,
       ADDRESS.wstETH,
       ADDRESS.BAL,
     ],
     [
-      129600, 129600, 129600, 129600, 129600, 129600, 129600, 129600, 129600,
-      129600, 129600,
+      100000000,
+      100000000,
+      70000000,
+      98000000,
+      700000000,
+      2900000000000,
+      190000000000,
+      190000000000,
+      1000000000,
+      1400000000,
+      210000000000,
+      450000000,
     ]
-  );
-  await bandOracle.setSymbols(
-    [
-      ADDRESS.USDC,
-      ADDRESS.DAI,
-      ADDRESS.CRV,
-      ADDRESS.MIM,
-      ADDRESS.LINK,
-      ADDRESS.WBTC,
-      ADDRESS.WETH,
-      ADDRESS.OHM,
-      ADDRESS.ALCX,
-      ADDRESS.wstETH,
-      ADDRESS.BAL,
-    ],
-    [
-      "USDC",
-      "DAI",
-      "CRV",
-      "MIM",
-      "LINK",
-      "WBTC",
-      "ETH",
-      "OHM",
-      "ALCX",
-      "wstETH",
-      "BAL",
-    ]
-  );
-
-  // Chainlink Adapter Oracle
-  const ChainlinkAdapterOracle = await ethers.getContractFactory(
-    "ChainlinkAdapterOracle"
-  );
-  const chainlinkOracle = <ChainlinkAdapterOracle>(
-    await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry)
-  );
-  await chainlinkOracle.deployed();
-  console.log("Chainlink Oracle Address:", chainlinkOracle.address);
-  deployment.ChainlinkAdapterOracle = chainlinkOracle.address;
-  writeDeployments(deployment);
-
-  console.log(
-    "Setting up USDC config on Chainlink Oracle\nMax Delay Times: 129900s"
-  );
-  await chainlinkOracle.setTimeGap(
-    [
-      ADDRESS.USDC,
-      ADDRESS.DAI,
-      ADDRESS.CRV,
-      ADDRESS.MIM,
-      ADDRESS.LINK,
-      ADDRESS.WBTC,
-      ADDRESS.WETH,
-      ADDRESS.OHM,
-      ADDRESS.ALCX,
-      ADDRESS.wstETH,
-      ADDRESS.BAL,
-    ],
-    [
-      129600, 129600, 129600, 129600, 129600, 129600, 129600, 129600, 129600,
-      129600, 129600,
-    ]
-  );
-  await chainlinkOracle.setTokenRemappings(
-    [ADDRESS.WBTC, ADDRESS.WETH],
-    [ADDRESS.CHAINLINK_BTC, ADDRESS.CHAINLINK_ETH]
   );
 
   // Aggregator Oracle
@@ -148,24 +88,26 @@ async function main(): Promise<void> {
       ADDRESS.LINK,
       ADDRESS.WBTC,
       ADDRESS.WETH,
+      ADDRESS.ETH,
       ADDRESS.OHM,
       ADDRESS.ALCX,
       ADDRESS.wstETH,
       ADDRESS.BAL,
     ],
-    [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
+    [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
     [
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
-      [bandOracle.address, chainlinkOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
+      [mockOracle.address],
     ]
   );
 

@@ -1,7 +1,7 @@
 import fs from "fs";
 import { ethers, upgrades, network } from "hardhat";
 import { utils } from "ethers";
-import { ADDRESS, CONTRACT_NAMES } from "../../constant";
+import { ADDRESS, ADDRESS_DEV, CONTRACT_NAMES } from "../../constant";
 import {
   BlueBerryBank,
   CoreOracle,
@@ -154,7 +154,7 @@ async function main(): Promise<void> {
   const usdcSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bUSDC,
+      ADDRESS_DEV.bUSDC,
       "Interest Bearing USDC",
       "ibUSDC",
     ])
@@ -168,7 +168,7 @@ async function main(): Promise<void> {
   const alcxSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bALCX,
+      ADDRESS_DEV.bALCX,
       "Interest Bearing ALCX",
       "ibALCX",
     ])
@@ -182,7 +182,7 @@ async function main(): Promise<void> {
   const ohmSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bOHM,
+      ADDRESS_DEV.bOHM,
       "Interest Bearing OHM",
       "ibOHM",
     ])
@@ -196,7 +196,7 @@ async function main(): Promise<void> {
   const crvSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bCRV,
+      ADDRESS_DEV.bCRV,
       "Interest Bearing CRV",
       "ibCRV",
     ])
@@ -210,7 +210,7 @@ async function main(): Promise<void> {
   const mimSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bMIM,
+      ADDRESS_DEV.bMIM,
       "Interest Bearing MIM",
       "ibMIM",
     ])
@@ -224,7 +224,7 @@ async function main(): Promise<void> {
   const balSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bBAL,
+      ADDRESS_DEV.bBAL,
       "Interest Bearing BAL",
       "ibBAL",
     ])
@@ -238,7 +238,7 @@ async function main(): Promise<void> {
   const linkSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bLINK,
+      ADDRESS_DEV.bLINK,
       "Interest Bearing LINK",
       "ibLINK",
     ])
@@ -252,7 +252,7 @@ async function main(): Promise<void> {
   const daiSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bDAI,
+      ADDRESS_DEV.bDAI,
       "Interest Bearing DAI",
       "ibDAI",
     ])
@@ -266,7 +266,7 @@ async function main(): Promise<void> {
   const ethSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bWETH,
+      ADDRESS_DEV.bWETH,
       "Interest Bearing ETH",
       "ibETH",
     ])
@@ -280,7 +280,7 @@ async function main(): Promise<void> {
   const wbtcSoftVault = <SoftVault>(
     await upgrades.deployProxy(SoftVault, [
       config.address,
-      ADDRESS.bWBTC,
+      ADDRESS_DEV.bWBTC,
       "Interest Bearing wBTC",
       "ibwBTC",
     ])
