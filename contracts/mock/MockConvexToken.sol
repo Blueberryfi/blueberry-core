@@ -16,6 +16,10 @@ contract MockConvexToken is ERC20 {
     uint256 public totalCliffs = 1000;
     uint256 public reductionPerCliff;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     constructor() ERC20("Convex Token", "CVX") {
         operator = msg.sender;
         reductionPerCliff = maxSupply / totalCliffs;

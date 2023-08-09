@@ -81,6 +81,10 @@ contract MockIchiFarm is Ownable {
     );
     event SetIchiPerBlock(uint256 ichiPerBlock, bool withUpdate);
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     /// @param _ichi The ICHI token contract address.
     /// @param _ichiPerBlock ICHI tokens created per block.
     constructor(IERC20 _ichi, uint256 _ichiPerBlock) {

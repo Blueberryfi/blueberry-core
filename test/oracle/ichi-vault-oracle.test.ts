@@ -80,7 +80,7 @@ describe("Ichi Vault Oracle", () => {
       CONTRACT_NAMES.UniswapV3AdapterOracle,
       {
         libraries: {
-          UniV3WrappedLibMockup: LibInstance.address,
+          UniV3WrappedLibContainer: LibInstance.address,
         },
       }
     );
@@ -103,7 +103,7 @@ describe("Ichi Vault Oracle", () => {
       CONTRACT_NAMES.IchiVaultOracle,
       {
         libraries: {
-          UniV3WrappedLibMockup: LibInstance.address,
+          UniV3WrappedLibContainer: LibInstance.address,
         },
       }
     );
@@ -143,7 +143,7 @@ describe("Ichi Vault Oracle", () => {
 
     const IchiVault = await ethers.getContractFactory("MockIchiVault", {
       libraries: {
-        UniV3WrappedLibMockup: LibInstance.address,
+        UniV3WrappedLibContainer: LibInstance.address,
       },
     });
     const newVault = await IchiVault.deploy(
@@ -165,7 +165,7 @@ describe("Ichi Vault Oracle", () => {
 
     const IchiVault = await ethers.getContractFactory("MockIchiVault", {
       libraries: {
-        UniV3WrappedLibMockup: LibInstance.address,
+        UniV3WrappedLibContainer: LibInstance.address,
       },
     });
     const newVault = await IchiVault.deploy(
@@ -190,7 +190,7 @@ describe("Ichi Vault Oracle", () => {
 
     const IchiVault = await ethers.getContractFactory("MockIchiVault", {
       libraries: {
-        UniV3WrappedLibMockup: LibInstance.address,
+        UniV3WrappedLibContainer: LibInstance.address,
       },
     });
     const newVault = await IchiVault.deploy(

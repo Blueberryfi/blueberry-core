@@ -52,22 +52,22 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "sequence",
+        "name": "sequencer",
         "type": "address"
       }
     ],
-    "name": "SEQUENCE_DOWN",
+    "name": "SEQUENCER_DOWN",
     "type": "error"
   },
   {
     "inputs": [
       {
         "internalType": "address",
-        "name": "sequence",
+        "name": "sequencer",
         "type": "address"
       }
     ],
-    "name": "SEQUENCE_GRACE_PERIOD_NOT_OVER",
+    "name": "SEQUENCER_GRACE_PERIOD_NOT_OVER",
     "type": "error"
   },
   {

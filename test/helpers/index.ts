@@ -32,7 +32,7 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
       params: [
         {
           forking: {
-            jsonRpcUrl: `https://eth.llamarpc.com/rpc/${process.env.LLAMA_API_KEY}`,
+            jsonRpcUrl: `https://rpc.ankr.com/eth`,
             blockNumber,
           },
         },

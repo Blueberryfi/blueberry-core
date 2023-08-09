@@ -64,6 +64,10 @@ contract MockVirtualBalanceRewardPool {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     /**
      * @param deposit_  Parent deposit pool e.g cvxCRV staking in BaseRewardPool
      * @param reward_   The rewards token e.g 3Crv

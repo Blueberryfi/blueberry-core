@@ -6,7 +6,7 @@ Blueberry Core v1 a leveraged yield-farming product.
 Additional documentation can be found [here](https://docs.blueberry.garden/).
 Here are some key features:
 
-The protocol is integrated with existing lending protocol (Blueberry Money Market). Whenever a user wants to borrow funds (on leverage) to yield farm additionally, Blueberry Bank will borrow from the lending protocol (Blueberry Money Market).
+The protocol is integrated with an existing lending protocol (Blueberry Money Market). Whenever a user wants to borrow funds (on leverage) to yield farm additionally, Blueberry Bank will borrow from the lending protocol (Blueberry Money Market).
 
 - A wide varitey of assets are borrow-able, including stables like USDC, USDT, DAI.
 - Each "spell" defines how the protocol interacts with the end deployment. Such as concentrated liquidity vaults, e.g. Ichi vault.
@@ -63,14 +63,15 @@ Prices are determined in USD.
 ## Getting Started
 
 Steps to run the tests:
-Hardhat version 2.12.4 Block height 16283930 Eth mainnet fork
+Hardhat version 2.12.4 Block height 17089048 Eth mainnet fork
 
 Copies all the files
 > Clone the repo
 ### Installs all of the files
 > yarn install
 ### Required for tests and all other actions to work  
-> Create .env file with env var DEPLOY_ACCOUNT_KEY= , ALCHEMY_API_KEY= , ETHERSCAN_API_KEY= (use http://alchemy.com)
+> Create .env file with env var DEPLOY_ACCOUNT_KEY= , 
+ETHERSCAN_API_KEY=
 
 ### Compiles all of the contracts
 > yarn hardhat compile

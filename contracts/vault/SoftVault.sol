@@ -21,13 +21,11 @@ import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/ISoftVault.sol";
 import "../interfaces/compound/ICErc20.sol";
 
-/**
- * @author BlueberryProtocol
- * @title Soft Vault
- * @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
- * @dev SoftVault is communicating with bTokens to lend and borrow underlying tokens from/to Blueberry Money Market.
- *      Underlying tokens can be ERC20 tokens listed by Blueberry team, such as USDC, USDT, DAI, WETH, ...
- */
+/// @author BlueberryProtocol
+/// @title Soft Vault
+/// @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
+/// @dev SoftVault is communicating with bTokens to lend and borrow underlying tokens from/to Blueberry Money Market.
+///      Underlying tokens can be ERC20 tokens listed by Blueberry team, such as USDC, USDT, DAI, WETH, ...
 contract SoftVault is
     OwnableUpgradeable,
     ERC20Upgradeable,
@@ -37,6 +35,10 @@ contract SoftVault is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                   PUBLIC STORAGE
+    //////////////////////////////////////////////////////////////////////////*/
+
     /// @dev address of bToken for underlying token
     ICErc20 public bToken;
     /// @dev address of underlying token
@@ -44,11 +46,24 @@ contract SoftVault is
     /// @dev address of protocol config
     IProtocolConfig public config;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Initializes the contract
+    /// @param _config Address of protocol configuration
+    /// @param _bToken Address of bToken
+    /// @param _name ERC20 name for the SoftVault token
+    /// @param _symbol ERC20 symbol for the SoftVault token
     function initialize(
         IProtocolConfig _config,
         ICErc20 _bToken,
@@ -73,11 +88,10 @@ contract SoftVault is
         return bToken.decimals();
     }
 
-    /**
-     * @notice Deposit underlying assets on Blueberry Money Market and issue share token
-     * @param amount Underlying token amount to deposit
-     * @return shareAmount same as bToken amount received
-     */
+    /// @notice Deposit underlying assets on Blueberry Money Market and issue share token
+    /// @dev Emits a {Deposited} event.
+    /// @param amount Underlying token amount to deposit
+    /// @return shareAmount same as bToken amount received
     function deposit(
         uint256 amount
     ) external override nonReentrant returns (uint256 shareAmount) {
@@ -98,12 +112,11 @@ contract SoftVault is
         emit Deposited(msg.sender, amount, shareAmount);
     }
 
-    /**
-     * @notice Withdraw underlying assets from Blueberry Money Market
-     * @dev It cuts vault withdraw fee when you withdraw within the vault withdraw window
-     * @param shareAmount Amount of bTokens to redeem
-     * @return withdrawAmount Amount of underlying assets withdrawn
-     */
+    /// @notice Withdraw underlying assets from Blueberry Money Market
+    /// @dev Emits a {Withdrawn} event.
+    /// @dev It cuts vault withdraw fee when you withdraw within the vault withdraw window
+    /// @param shareAmount Amount of bTokens to redeem
+    /// @return withdrawAmount Amount of underlying assets withdrawn
     function withdraw(
         uint256 shareAmount
     ) external override nonReentrant returns (uint256 withdrawAmount) {

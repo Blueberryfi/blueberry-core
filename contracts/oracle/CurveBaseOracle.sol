@@ -21,19 +21,36 @@ import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
 import "../interfaces/curve/ICurveAddressProvider.sol";
 import "../interfaces/curve/ICurvePool.sol";
 
-/**
- * @author BlueberryProtocol
- * @title Curve Base Oracle
- */
+/// @title Curve Base Oracle
+/// @author BlueberryProtocol
+/// @notice Abstract base oracle for Curve LP token price feeds.
 abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      PUBLIC STORAGE 
+    //////////////////////////////////////////////////////////////////////////*/
+    
+    /// Address provider for Curve-related contracts.
     ICurveAddressProvider public immutable addressProvider;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                       EVENTS 
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// Emitted when a Curve LP token is registered with its associated pool and underlying tokens.
     event CurveLpRegistered(
         address crvLp,
         address pool,
         address[] underlyingTokens
     );
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
+    /// @notice Constructor initializes the CurveBaseOracle with the provided parameters.
+    /// @param base_ The address of the base oracle.
+    /// @param addressProvider_ The address of the curve address provider.
     constructor(
         IBaseOracle base_,
         ICurveAddressProvider addressProvider_
@@ -41,20 +58,22 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         addressProvider = addressProvider_;
     }
 
-    /**
-     * @dev Get Curve pool info of given curve lp
-     * @param crvLp Curve LP token address to get the pool info of
-     * @return pool The address of curve pool
-     * @return ulTokens Underlying tokens of curve pool
-     * @return virtualPrice Virtual price of curve pool
-     */
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Fetches Curve pool information for a given Curve LP token address.
+    /// @param crvLp Curve LP token address.
+    /// @return pool The address of the associated Curve pool.
+    /// @return ulTokens Underlying tokens of the Curve pool.
+    /// @return virtualPrice Virtual price of the Curve pool.
     function _getPoolInfo(
         address crvLp
     )
         internal
         returns (address pool, address[] memory ulTokens, uint256 virtualPrice)
     {
-        // 1. Try from main registry
+        /// 1. Attempt retrieval from main Curve registry.
         address registry = addressProvider.get_registry();
         pool = ICurveRegistry(registry).get_pool_from_lp_token(crvLp);
         if (pool != address(0)) {
@@ -69,7 +88,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             return (pool, ulTokens, virtualPrice);
         }
 
-        // 2. Try from CryptoSwap Registry
+        /// 2. Attempt retrieval from CryptoSwap Curve registry.
         registry = addressProvider.get_address(5);
         pool = ICurveCryptoSwapRegistry(registry).get_pool_from_lp_token(crvLp);
         if (pool != address(0)) {
@@ -85,7 +104,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             return (pool, ulTokens, virtualPrice);
         }
 
-        // 3. Try from Metaregistry
+        /// 3. Attempt retrieval from Meta Curve registry.
         registry = addressProvider.get_address(7);
         pool = ICurveCryptoSwapRegistry(registry).get_pool_from_lp_token(crvLp);
         if (pool != address(0)) {
@@ -104,8 +123,16 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         revert BlueBerryErrors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
 
+    /// @dev Internal function to check for reentrancy issues with Curve pools.
+    /// @param _pool The address of the Curve pool to check.
+    /// @param _numTokens The number of tokens in the pool.
     function _checkReentrant(address _pool, uint256 _numTokens) internal virtual;
 
+    /// @notice Fetches Curve pool details for the provided Curve LP token.
+    /// @param crvLp The Curve LP token address.
+    /// @return pool The Curve pool address.
+    /// @return coins The list of underlying tokens in the pool.
+    /// @return virtualPrice The virtual price of the Curve pool.
     function getPoolInfo(
         address crvLp
     )
@@ -115,9 +142,9 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         return _getPoolInfo(crvLp);
     }
 
-    /**
-     * @notice Return the USD value of given Curve Lp, with 18 decimals of precision.
-     * @param crvLp The ERC-20 Curve LP token to check the value.
-     */
+    /// @notice Fetches the USD value of a given Curve LP token.
+    /// @dev To be implemented in inheriting contracts.
+    /// @param crvLp The Curve LP token address.
+    /// @return The USD value of the Curve LP token.
     function getPrice(address crvLp) external virtual returns (uint256);
 }

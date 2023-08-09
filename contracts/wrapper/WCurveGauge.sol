@@ -21,18 +21,18 @@ import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/IWCurveGauge.sol";
 import "../interfaces/curve/ILiquidityGauge.sol";
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     INTERFACE
+    //////////////////////////////////////////////////////////////////////////*/
 interface ILiquidityGaugeMinter {
     function mint(address gauge) external;
 }
 
-/**
- * @title WCurveGauge
- * @author BlueberryProtocol
- * @notice Wrapped Curve Gauge is the wrapper of Gauge positions
- * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank
- *      and do not generate yields. LP Tokens are identified by tokenIds
- *      encoded from lp token address.
- */
+/// @title WCurveGauge - Wrapper for Curve Gauge Positions.
+/// @author BlueberryProtocol
+/// @notice This contract allows for wrapping of Gauge positions into a custom ERC1155 token.
+/// @dev LP Tokens are identified by tokenIds, which are encoded from the LP token address.
+///      This contract assumes leveraged LP Tokens are held in the BlueberryBank and do not generate yields.
 contract WCurveGauge is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
@@ -43,15 +43,27 @@ contract WCurveGauge is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                   PUBLIC STORAGE
+    //////////////////////////////////////////////////////////////////////////*/
+    
     /// @dev Address of Curve Registry
     ICurveRegistry public registry;
     /// @dev Address of Curve Gauge Controller
     ICurveGaugeController public gaugeController;
     /// @dev Address of CRV token
     IERC20Upgradeable public CRV;
-    /// @dev Mapping from gauge id to accCrvPerShare
+    /// Mapping to keep track of accumulated CRV per share for each gauge.
     mapping(uint256 => uint256) public accCrvPerShares;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Initializes the contract with provided addresses.
+    /// @param crv_ Address of the CRV token.
+    /// @param crvRegistry_ Address of the Curve Registry.
+    /// @param gaugeController_ Address of the Gauge Controller.
     function initialize(
         address crv_,
         address crvRegistry_,
@@ -64,9 +76,10 @@ contract WCurveGauge is
         gaugeController = ICurveGaugeController(gaugeController_);
     }
 
-    /// @notice Encode pid, crvPerShare to ERC1155 token id
-    /// @param pid Pool id (16-bit)
-    /// @param crvPerShare CRV amount per share, multiplied by 1e18 (240-bit)
+    /// @notice Encode pool id and CRV amount per share into a unique ERC1155 token id.
+    /// @param pid Pool id (the first 16-bit).
+    /// @param crvPerShare CRV amount per share (multiplied by 1e18 - for the last 240 bits).
+    /// @return id The unique token id.
     function encodeId(
         uint256 pid,
         uint256 crvPerShare
@@ -77,17 +90,20 @@ contract WCurveGauge is
         return (pid << 240) | crvPerShare;
     }
 
-    /// @notice Decode ERC1155 token id to pid, crvPerShare
-    /// @param id Token id
+    /// @notice Decode an ERC1155 token id into its components: pool id and CRV per share.
+    /// @param id Unique token id.
+    /// @return gid The pool id.
+    /// @return crvPerShare The CRV amount per share.
     function decodeId(
         uint256 id
     ) public pure returns (uint256 gid, uint256 crvPerShare) {
-        gid = id >> 240; // First 16 bits
-        crvPerShare = id & ((1 << 240) - 1); // Last 240 bits
+        gid = id >> 240; // Extracting the first 16 bits
+        crvPerShare = id & ((1 << 240) - 1); // Extracting the last 240 bits
     }
 
-    /// @notice Get underlying ERC20 token of ERC1155 given token id
-    /// @param id Token id
+    /// @notice Get the underlying ERC20 token for a given ERC1155 token id.
+    /// @param id The ERC1155 token id.
+    /// @return Address of the underlying ERC20 token.
     function getUnderlyingToken(
         uint256 id
     ) external view override returns (address) {
@@ -95,14 +111,18 @@ contract WCurveGauge is
         return getLpFromGaugeId(gid);
     }
 
+    /// @notice Given a gauge id, fetch the associated LP token.
+    /// @param gid The gauge id.
+    /// @return Address of the LP token.
     function getLpFromGaugeId(uint256 gid) public view returns (address) {
         return ILiquidityGauge(gaugeController.gauges(gid)).lp_token();
     }
 
-    /// @notice Return pending rewards from the farming pool
-    /// @dev Reward tokens can be multiple tokens
-    /// @param tokenId Token Id
-    /// @param amount amount of share
+    /// @notice Calculate pending rewards for a given ERC1155 token amount.
+    /// @param tokenId Token id.
+    /// @param amount Amount of tokens.
+    /// @return tokens Addresses of reward tokens.
+    /// @return rewards Amounts of rewards corresponding to each token.
     function pendingRewards(
         uint256 tokenId,
         uint256 amount
@@ -129,9 +149,10 @@ contract WCurveGauge is
         rewards[0] = crvRewards;
     }
 
-    /// @notice Mint ERC1155 token for the given LP token
-    /// @param gid Gauge id
-    /// @param amount Token amount to wrap
+    /// @notice Wrap an LP token into an ERC1155 token.
+    /// @param gid Gauge id.
+    /// @param amount Amount of LP tokens to wrap.
+    /// @return id The resulting ERC1155 token id.
     function mint(
         uint256 gid,
         uint256 amount
@@ -151,10 +172,10 @@ contract WCurveGauge is
         return id;
     }
 
-    /// @notice Burn ERC1155 token to redeem ERC20 token back
-    /// @param id Token id to burn
-    /// @param amount Token amount to burn
-    /// @return rewards CRV rewards harvested
+    /// @notice Unwrap an ERC1155 token back into its underlying LP token.
+    /// @param id ERC1155 token id.
+    /// @param amount Amount of ERC1155 tokens to unwrap.
+    /// @return rewards CRV rewards earned during the period the LP token was wrapped.
     function burn(
         uint256 id,
         uint256 amount
@@ -178,8 +199,9 @@ contract WCurveGauge is
         return rewards;
     }
 
-    /// @notice Mint CRV reward for curve gauge
-    /// @param gauge Curve gauge to mint reward
+    /// @dev Internal function to mint CRV rewards for a curve gauge.
+    /// @param gauge Curve gauge to mint rewards for.
+    /// @param gid Gauge id.
     function _mintCrv(ILiquidityGauge gauge, uint256 gid) internal {
         uint256 balanceBefore = CRV.balanceOf(address(this));
         ILiquidityGaugeMinter(gauge.minter()).mint(address(gauge));

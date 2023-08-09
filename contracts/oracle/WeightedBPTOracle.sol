@@ -18,15 +18,28 @@ import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/balancer/IBalancerVault.sol";
 import "../libraries/balancer/FixedPoint.sol";
 
-/**
- * @author BlueberryProtocol
- * @title Weighted Balancer LP Oracle
- * @notice Oracle contract which privides price feeds of Weighted Balancer LP tokens
- */
+/// @title WeightedBPTOracle
+/// @dev Provides price feeds for Weighted Balancer LP tokens.
+/// @author BlueberryProtocol
+///
+/// This contract fetches and computes the value of a Balancer LP token in terms of USD.
+/// It uses the base oracle to fetch underlying token values and then computes the
+/// value of the LP token using Balancer's formula.
 contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
     using FixedPoint for uint256;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
+    /// @notice Constructs the WeightedBPTOracle contract.
+    /// @dev Initializes the contract with the base oracle address.
+    /// @param _base Address of the base oracle contract.
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Return the USD value of given Balancer Lp, with 18 decimals of precision.
     /// @param token The ERC-20 token to check the value.
@@ -60,6 +73,9 @@ contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
             .divDown(IBalancerPool(token).totalSupply());
     }
 
+    /// @dev Checks for reentrancy by calling a no-op function on the Balancer Vault.
+    ///      This is a preventative measure against potential reentrancy attacks.
+    /// @param vault The Balancer Vault contract instance.
     function checkReentrancy(IBalancerVault vault) internal {
         vault.manageUserBalance(new IBalancerVault.UserBalanceOp[](0));
     }

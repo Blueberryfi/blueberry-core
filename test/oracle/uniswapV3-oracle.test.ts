@@ -28,7 +28,7 @@ describe("Uniswap V3 Oracle", () => {
       CONTRACT_NAMES.UniswapV3AdapterOracle,
       {
         libraries: {
-          UniV3WrappedLibMockup: LibInstance.address,
+          UniV3WrappedLibContainer: LibInstance.address,
         },
       }
     );

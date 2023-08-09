@@ -8,28 +8,42 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
+/// title BlueberryConst
+/// @notice containing all general constants used in Blueberry protocol
 pragma solidity 0.8.16;
 
+/// @dev Common denominator for percentage-based calculations.
 uint256 constant DENOMINATOR = 10000;
 
-uint256 constant MIN_LIQ_THRESHOLD = 8000; // min liquidation threshold, 80%
+/// @dev Minimum threshold for liquidity operations, represented as a fraction of the DENOMINATOR.
+uint256 constant MIN_LIQ_THRESHOLD = 8000; // represent 80%
 
+/// @dev Precision factor to maintain price accuracy.
 uint256 constant PRICE_PRECISION = 1e18;
 
-uint256 constant MAX_PRICE_DEVIATION = 1000; // max price deviation, 10%
+/// @dev Maximum allowed price deviation, represented as a fraction of the DENOMINATOR.
+uint256 constant MAX_PRICE_DEVIATION = 1000; // represent 10%
 
+/// @dev Minimum time interval for specific time-dependent operations.
 uint32 constant MIN_TIME_GAP = 1 hours;
 
+/// @dev Maximum time interval for specific time-dependent operations.
 uint32 constant MAX_TIME_GAP = 2 days;
 
-uint256 constant MAX_FEE_RATE = 2000; // max fee: 20%
+/// @dev Maximum allowed fee rate, represented as a fraction of the DENOMINATOR.
+uint256 constant MAX_FEE_RATE = 2000; // represent 20%
 
+/// @dev Maximum allowed time for vault withdrawal fee calculations.
 uint256 constant MAX_WITHDRAW_VAULT_FEE_WINDOW = 60 days;
 
+/// @dev Maximum delay permitted for swap operations.
 uint32 constant MAX_DELAY_ON_SWAP = 2 hours;
 
-uint32 constant SEQUENCE_GRACE_PERIOD_TIME = 3600;
+/// @dev Allowed grace period time for sequencer operations.
+uint32 constant SEQUENCER_GRACE_PERIOD_TIME = 3600;
 
+/// @dev Precision factor for Chainlink price feed values.
 uint256 constant CHAINLINK_PRICE_FEED_PRECISION = 1e8;
 
+/// @dev Warm-up period before a liquidation repayment can be initiated.
 uint256 constant LIQUIDATION_REPAY_WARM_UP_PERIOD = 4 hours;
