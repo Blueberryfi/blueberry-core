@@ -73,6 +73,8 @@ Copies all the files
 > Create .env file with env var DEPLOY_ACCOUNT_KEY= , 
 ETHERSCAN_API_KEY=
 
+> If needed update the RPC provider in `hardhat.config.js`  and `/test/helpers/index.js` to your own provider. Currently set to ankr mainnet node.
+
 ### Compiles all of the contracts
 > yarn hardhat compile
 
