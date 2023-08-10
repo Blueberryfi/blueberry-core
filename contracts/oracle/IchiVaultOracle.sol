@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./UsingBaseOracle.sol";
 import "./BaseOracleExt.sol";
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../libraries/UniV3/Univ3WrappedLibContainer.sol";
+import "../libraries/UniV3/UniV3WrappedLibContainer.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 
@@ -85,7 +85,7 @@ contract IchiVaultOracle is
         IICHIVault vault
     ) public view returns (uint256) {
         return
-            Univ3WrappedLibContainer.getQuoteAtTick(
+            UniV3WrappedLibContainer.getQuoteAtTick(
                 vault.currentTick(), // current tick
                 uint128(Constants.PRICE_PRECISION), // amountIn
                 vault.token0(), // tokenIn
@@ -105,12 +105,12 @@ contract IchiVaultOracle is
             revert Errors.TOO_LONG_DELAY(twapPeriod);
         if (twapPeriod < Constants.MIN_TIME_GAP)
             revert Errors.TOO_LOW_MEAN(twapPeriod);
-        (int24 twapTick, ) = Univ3WrappedLibContainer.consult(
+        (int24 twapTick, ) = UniV3WrappedLibContainer.consult(
             vault.pool(),
             twapPeriod
         );
         return
-            Univ3WrappedLibContainer.getQuoteAtTick(
+            UniV3WrappedLibContainer.getQuoteAtTick(
                 twapTick,
                 uint128(Constants.PRICE_PRECISION), /// amountIn
                 vault.token0(), /// tokenIn

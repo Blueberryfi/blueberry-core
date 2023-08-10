@@ -58,7 +58,7 @@ async function main(): Promise<void> {
     CONTRACT_NAMES.IchiVaultOracle,
     {
       libraries: {
-        Univ3WrappedLibContainer: deployment.UniV3WrappedLib,
+        UniV3WrappedLibContainer: deployment.UniV3WrappedLib,
       },
     }
   );

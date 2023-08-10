@@ -136,7 +136,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   const IchiVault = await ethers.getContractFactory("MockIchiVault", {
     libraries: {
-      Univ3WrappedLibContainer: LibInstance.address
+      UniV3WrappedLibContainer: LibInstance.address
     }
   });
   ichi_USDC_ICHI_Vault = <MockIchiVault>await IchiVault.deploy(
@@ -175,7 +175,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle, {
     libraries: {
-      Univ3WrappedLibContainer: LibInstance.address
+      UniV3WrappedLibContainer: LibInstance.address
     }
   });
   ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(mockOracle.address);
