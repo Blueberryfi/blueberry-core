@@ -17,15 +17,22 @@ import "./UsingBaseOracle.sol";
 import "../libraries/BBMath.sol";
 import "../interfaces/IBaseOracle.sol";
 
-/**
- * @author BlueberryProtocol
- * @title Uniswap V2 Oracle
- * @notice Oracle contract which privides price feeds of Uni V2 Lp tokens
- * @dev Implented Fair Lp Pricing
- *      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
- */
+/// @author BlueberryProtocol
+/// @title Uniswap V2 Oracle
+/// @notice Oracle contract which privides price feeds of Uni V2 Lp tokens
+/// @dev Implented Fair Lp Pricing
+///      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
 contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
+    
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Return the USD based price of the given input, multiplied by 10**18.
     /// @dev Fair LP Price Formula => Price = 2 * (sqrt(r0 x r1) x sqrt(p0 x p1)) / total supply

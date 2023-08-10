@@ -42,6 +42,10 @@ contract WAuraPools is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                   PUBLIC STORAGE
+    //////////////////////////////////////////////////////////////////////////*/
+
     /// @dev Address to Aura Pools contract
     IAuraPools public auraPools;
     /// @dev Address to AURA token
@@ -57,6 +61,14 @@ contract WAuraPools is
 
     uint public REWARD_MULTIPLIER_DENOMINATOR;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Initializes contract with dependencies
+    /// @param aura_ The AURA token address
+    /// @param auraPools_ The auraPools contract address
+    /// @param stash_aura_ The stash for AURA
     function initialize(
         address aura_,
         address auraPools_,
@@ -71,30 +83,36 @@ contract WAuraPools is
             .REWARD_MULTIPLIER_DENOMINATOR();
     }
 
-    /// @notice Encode pid, auraPerShare to ERC1155 token id
-    /// @param pid Pool id (16-bit)
-    /// @param auraPerShare AURA amount per share, multiplied by 1e18 (240-bit)
+    /// @notice Encodes pool id and AURA per share into an ERC1155 token id
+    /// @param pid The pool id (The first 16-bits)
+    /// @param auraPerShare Amount of AURA per share, multiplied by 1e18 (The last 240-bits)
+    /// @return id The resulting ERC1155 token id
+
     function encodeId(
         uint256 pid,
         uint256 auraPerShare
     ) public pure returns (uint256 id) {
+        // Ensure the pool id and auraPerShare are within expected bounds
         if (pid >= (1 << 16)) revert Errors.BAD_PID(pid);
         if (auraPerShare >= (1 << 240))
             revert Errors.BAD_REWARD_PER_SHARE(auraPerShare);
         return (pid << 240) | auraPerShare;
     }
 
-    /// @notice Decode ERC1155 token id to pid, auraPerShare
-    /// @param id Token id
+    /// @notice Decodes ERC1155 token id to pool id and AURA per share
+    /// @param id The ERC1155 token id
+    /// @return gid The decoded pool id
+    /// @return auraPerShare The decoded amount of AURA per share
     function decodeId(
         uint256 id
     ) public pure returns (uint256 gid, uint256 auraPerShare) {
-        gid = id >> 240; // First 16 bits
-        auraPerShare = id & ((1 << 240) - 1); // Last 240 bits
+        gid = id >> 240; // Extracting the first 16 bits
+        auraPerShare = id & ((1 << 240) - 1); // Extracting the last 240 bits
     }
 
-    /// @notice Get underlying ERC20 token of ERC1155 given token id
-    /// @param id Token id
+    /// @notice Retrieves the underlying ERC20 token of the specified ERC1155 token id
+    /// @param id The ERC1155 token id
+    /// @return uToken Address of the underlying ERC20 token
     function getUnderlyingToken(
         uint256 id
     ) external view override returns (address uToken) {
@@ -102,10 +120,18 @@ contract WAuraPools is
         (uToken, , , , , ) = getPoolInfoFromPoolId(pid);
     }
 
+    /// @notice Gets the Balancer vault for a given BPT token
+    /// @param bpt Address of the BPT token
+    /// @return Vault associated with the provided BPT token
     function getVault(address bpt) public view returns (IBalancerVault) {
         return IBalancerVault(IBalancerPool(bpt).getVault());
     }
 
+    /// @notice Retrieves pool tokens from a given BPT address
+    /// @param bpt Address of the BPT token
+    /// @return tokens Array of token addresses in the pool
+    /// @return balances Corresponding balances of the tokens in the pool
+    /// @return lastChangedBlock The last block when the pool composition changed
     function getPoolTokens(
         address bpt
     )
@@ -120,12 +146,21 @@ contract WAuraPools is
         return getVault(bpt).getPoolTokens(IBalancerPool(bpt).getPoolId());
     }
 
+    /// @notice Retrieves pool id from a BPT token
+    /// @param bpt Address of the BPT token
+    /// @return Pool id associated with the BPT token
     function getBPTPoolId(address bpt) public view returns (bytes32) {
         return IBalancerPool(bpt).getPoolId();
     }
 
-    /// @notice Get pool info from aura booster
-    /// @param pid aura finance pool id
+    /// @notice Fetches pool information using a provided aura finance pool id
+    /// @param pid The aura finance pool id
+    /// @return lptoken Address of the LP token
+    /// @return token Address of the associated token
+    /// @return gauge Address of the gauge
+    /// @return auraRewards Address for AURA rewards
+    /// @return stash Address of the stash
+    /// @return shutdown Boolean indicating if the pool is shut down
     function getPoolInfoFromPoolId(
         uint256 pid
     )
@@ -143,63 +178,69 @@ contract WAuraPools is
         return auraPools.poolInfo(pid);
     }
 
-    /// @notice Get pending reward amount
-    /// @param stRewardPerShare reward per share
-    /// @param rewarder Address of rewarder contract
-    /// @param amount lp amount
-    /// @param lpDecimals lp decimals
+    /// @notice Calculate the amount of pending reward for a given LP amount.
+    /// @param stRewardPerShare The stored reward per share value.
+    /// @param rewarder The address of the rewarder contract.
+    /// @param amount The amount of LP for which reward is being calculated.
+    /// @param lpDecimals The number of decimals of the LP token.
+    /// @return rewards The calculated reward amount.
     function _getPendingReward(
         uint256 stRewardPerShare,
         address rewarder,
         uint256 amount,
         uint256 lpDecimals
     ) internal view returns (uint256 rewards) {
+        /// Retrieve current reward per token from rewarder
         uint256 enRewardPerShare = IAuraRewarder(rewarder).rewardPerToken();
+        /// Calculatethe difference in reward per share
         uint256 share = enRewardPerShare > stRewardPerShare
             ? enRewardPerShare - stRewardPerShare
             : 0;
+        /// Calculate the total rewards base on share and amount.
         rewards = (share * amount) / (10 ** lpDecimals);
     }
 
-    /// @notice Get AURA pending reward
+    /// @notice  Calculate the pending AURA reward amount.
+    /// @dev AuraMinter can mint additional tokens after `inflationProtectionTime` has passed
+    /// And its value is `1749120350`  ==> Thursday 5 June 2025 12:32:30 PM GMT+07:00
     /// @param auraRewarder Address of Aura rewarder contract
-    /// @param balAmount Amount of BAL reward
+    /// @param balAmount The amount of BAL reward for AURA calculation.
     /// @dev AURA token is minted in booster contract following the mint logic in the below
     function _getAuraPendingReward(
         address auraRewarder,
         uint256 balAmount
     ) internal view returns (uint256 mintAmount) {
-        // AURA mint request amount = amount * reward_multiplier / reward_multiplier_denominator
+        /// AURA mint request amount = amount * reward_multiplier / reward_multiplier_denominator
         uint256 mintRequestAmount = (balAmount *
             auraPools.getRewardMultipliers(auraRewarder)) /
             REWARD_MULTIPLIER_DENOMINATOR;
 
-        // AURA token mint logic
-        // e.g. emissionsMinted = 6e25 - 5e25 - 0 = 1e25;
+        /// AURA token mint logic
+        /// e.g. emissionsMinted = 6e25 - 5e25 - 0 = 1e25;
         uint256 totalSupply = AURA.totalSupply();
         uint256 initAmount = AURA.INIT_MINT_AMOUNT();
-        uint256 minterMinted = 0;
+        uint256 minterMinted;
         uint256 reductionPerCliff = AURA.reductionPerCliff();
         uint256 totalCliffs = AURA.totalCliffs();
         uint256 emissionMaxSupply = AURA.EMISSIONS_MAX_SUPPLY();
 
         uint256 emissionsMinted = totalSupply - initAmount - minterMinted;
-        // e.g. reductionPerCliff = 5e25 / 500 = 1e23
-        // e.g. cliff = 1e25 / 1e23 = 100
+        /// e.g. reductionPerCliff = 5e25 / 500 = 1e23
+        /// e.g. cliff = 1e25 / 1e23 = 100
         uint256 cliff = emissionsMinted / reductionPerCliff;
 
-        // e.g. 100 < 500
+        /// e.g. 100 < 500
         if (cliff < totalCliffs) {
-            // e.g. (new) reduction = (500 - 100) * 2.5 + 700 = 1700;
-            // e.g. (new) reduction = (500 - 250) * 2.5 + 700 = 1325;
-            // e.g. (new) reduction = (500 - 400) * 2.5 + 700 = 950;
+            /// e.g. (new) reduction = (500 - 100) * 2.5 + 700 = 1700;
+            /// e.g. (new) reduction = (500 - 250) * 2.5 + 700 = 1325;
+            /// e.g. (new) reduction = (500 - 400) * 2.5 + 700 = 950;
             uint256 reduction = ((totalCliffs - cliff) * 5) / 2 + 700;
-            // e.g. (new) amount = 1e19 * 1700 / 500 =  34e18;
-            // e.g. (new) amount = 1e19 * 1325 / 500 =  26.5e18;
-            // e.g. (new) amount = 1e19 * 950 / 500  =  19e17;
+            /// e.g. (new) amount = 1e19 * 1700 / 500 =  34e18;
+            /// e.g. (new) amount = 1e19 * 1325 / 500 =  26.5e18;
+            /// e.g. (new) amount = 1e19 * 950 / 500  =  19e17;
             mintAmount = (mintRequestAmount * reduction) / totalCliffs;
 
-            // e.g. amtTillMax = 5e25 - 1e25 = 4e25
+            /// e.g. amtTillMax = 5e25 - 1e25 = 4e25
             uint256 amtTillMax = emissionMaxSupply - emissionsMinted;
             if (mintAmount > amtTillMax) {
                 mintAmount = amtTillMax;
@@ -207,10 +248,12 @@ contract WAuraPools is
         }
     }
 
-    /// @notice Return pending rewards from the farming pool
-    /// @dev Reward tokens can be multiple tokens
-    /// @param tokenId Token Id
-    /// @param amount amount of share
+    /// @notice Retrieve pending rewards for a given tokenId and amount.
+    /// @dev The rewards can be split among multiple tokens.
+    /// @param tokenId The ID of the token.
+    /// @param amount The amount of the token.
+    /// @return tokens Array of token addresses.
+    /// @return rewards Array of corresponding reward amounts.
     function pendingRewards(
         uint256 tokenId,
         uint256 amount
@@ -229,7 +272,7 @@ contract WAuraPools is
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
 
-        // BAL reward
+        /// BAL reward
         tokens[0] = IAuraRewarder(auraRewarder).rewardToken();
         rewards[0] = _getPendingReward(
             stAuraPerShare,
@@ -238,21 +281,25 @@ contract WAuraPools is
             lpDecimals
         );
 
-        // AURA reward
+        /// AURA reward
         tokens[1] = address(AURA);
         rewards[1] = _getAuraPendingReward(auraRewarder, rewards[0]);
 
-        // Additional rewards
+        /// Additional rewards
         for (uint256 i; i != extraRewardsCount; ) {
             address rewarder = extraRewards[i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IAuraRewarder(rewarder).rewardToken();
-            rewards[i + 2] = _getPendingReward(
-                stRewardPerShare,
-                rewarder,
-                amount,
-                lpDecimals
-            );
+            if (stRewardPerShare == 0) {
+                rewards[i + 2] = 0;
+            } else {
+                rewards[i + 2] = _getPendingReward(
+                    stRewardPerShare == type(uint).max ? 0 : stRewardPerShare,
+                    rewarder,
+                    amount,
+                    lpDecimals
+                );
+            }
 
             unchecked {
                 ++i;
@@ -260,9 +307,10 @@ contract WAuraPools is
         }
     }
 
-    /// @notice Mint ERC1155 token for the given LP token
-    /// @param pid Aura Pool id
-    /// @param amount Token amount to wrap
+    /// @notice Mint an ERC1155 token corresponding to the provided LP token amount.
+    /// @param pid The ID of the AURA pool.
+    /// @param amount The amount of the LP token to be wrapped.
+    /// @return id The minted ERC1155 token's ID.
     function mint(
         uint256 pid,
         uint256 amount
@@ -279,20 +327,22 @@ contract WAuraPools is
         _ensureApprove(lpToken, address(auraPools), amount);
         auraPools.deposit(pid, amount, true);
 
-        // BAL reward handle logic
+        /// BAL reward handle logic
         uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
             .rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
         _mint(msg.sender, id, amount, "");
 
-        // Store extra rewards info
+        /// Store extra rewards info
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();
         for (uint256 i; i != extraRewardsCount; ) {
             address extraRewarder = IAuraRewarder(auraRewarder).extraRewards(i);
             uint256 rewardPerToken = IAuraRewarder(extraRewarder)
                 .rewardPerToken();
-            accExtPerShare[id][extraRewarder] = rewardPerToken;
+            accExtPerShare[id][extraRewarder] = rewardPerToken == 0
+                ? type(uint).max
+                : rewardPerToken;
 
             _syncExtraReward(extraRewarder);
 
@@ -302,10 +352,11 @@ contract WAuraPools is
         }
     }
 
-    /// @notice Burn ERC1155 token to redeem ERC20 token back
-    /// @param id Token id to burn
-    /// @param amount Token amount to burn
-    /// @return rewardTokens Reward tokens rewards harvested
+    /// @notice Burn the provided ERC1155 token and redeem its underlying ERC20 token.
+    /// @param id The ID of the ERC1155 token to burn.
+    /// @param amount The amount of the ERC1155 token to burn.
+    /// @return rewardTokens An array of reward tokens that the user is eligible to receive.
+    /// @return rewards The corresponding amounts of reward tokens.
     function burn(
         uint256 id,
         uint256 amount
@@ -324,12 +375,12 @@ contract WAuraPools is
             pid
         );
 
-        // Claim Rewards
+        /// Claim Rewards
         IAuraRewarder(auraRewarder).withdraw(amount, true);
-        // Withdraw LP
+        /// Withdraw LP
         auraPools.withdraw(pid, amount);
 
-        // Transfer LP Tokens
+        /// Transfer LP Tokens
         IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
 
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
@@ -345,10 +396,10 @@ contract WAuraPools is
         uint256 storedExtraRewardLength = extraRewards.length;
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
 
-        // Transfer Reward Tokens
+        /// Transfer Reward Tokens
         (rewardTokens, rewards) = pendingRewards(id, amount);
 
-        // Withdraw manually
+        /// Withdraw manually
         if (hasDiffExtraRewards) {
             for (uint256 i; i != storedExtraRewardLength; ) {
                 IAuraExtraRewarder(extraRewards[i]).getReward();
@@ -372,11 +423,15 @@ contract WAuraPools is
         }
     }
 
-    /// @notice Get length of extra rewards
+    /// @notice Get the full set of extra rewards.
+    /// @return An array containing the addresses of extra reward tokens.
     function extraRewardsLength() external view returns (uint256) {
         return extraRewards.length;
     }
 
+    /// @notice Internal function to sync any extra rewards with the contract.
+    /// @param extraReward The address of the extra reward token.
+    /// @dev Adds the extra reward to the internal list if not already present.
     function _syncExtraReward(address extraReward) private {
         if (extraRewardsIdx[extraReward] == 0) {
             extraRewards.push(extraReward);

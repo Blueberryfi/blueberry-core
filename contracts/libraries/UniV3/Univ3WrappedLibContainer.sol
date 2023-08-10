@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.16;
 
-library Univ3WrappedLibContainer {
+library UniV3WrappedLibContainer {
     // TickMath
     /// @dev The minimum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MIN_TICK)
     uint160 internal constant MIN_SQRT_RATIO = 4295128739;

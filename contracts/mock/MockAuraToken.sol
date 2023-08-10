@@ -20,6 +20,10 @@ contract MockAuraToken is ERC20 {
     uint256 public immutable reductionPerCliff;
     uint256 private manuallyMinted;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     constructor() ERC20("Aura Token", "AURA") {
         operator = msg.sender;
         reductionPerCliff = EMISSIONS_MAX_SUPPLY / totalCliffs;

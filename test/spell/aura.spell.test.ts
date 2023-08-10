@@ -198,6 +198,7 @@ describe("Aura Spell", () => {
               borrowAmount: borrowAmount.mul(4),
               farmingPoolId: POOL_ID,
             },
+            1,
           ])
         )
       ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
@@ -217,6 +218,7 @@ describe("Aura Spell", () => {
               borrowAmount: borrowAmount,
               farmingPoolId: POOL_ID,
             },
+            1,
           ])
         )
       ).to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST");
@@ -236,6 +238,7 @@ describe("Aura Spell", () => {
               borrowAmount: borrowAmount,
               farmingPoolId: POOL_ID,
             },
+            1,
           ])
         )
       ).to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST");
@@ -255,6 +258,7 @@ describe("Aura Spell", () => {
               borrowAmount: borrowAmount,
               farmingPoolId: 0,
             },
+            1,
           ])
         )
       ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
@@ -275,6 +279,7 @@ describe("Aura Spell", () => {
             borrowAmount: borrowAmount,
             farmingPoolId: POOL_ID,
           },
+          1,
         ])
       );
 
@@ -330,6 +335,7 @@ describe("Aura Spell", () => {
             borrowAmount: borrowAmount,
             farmingPoolId: POOL_ID,
           },
+          1,
         ])
       );
 

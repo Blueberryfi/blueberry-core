@@ -39,6 +39,10 @@ contract MockBaseRewardPool {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     constructor(uint256 pid_, address stakingToken_, address rewardToken_) {
         pid = pid_;
         stakingToken = IERC20(stakingToken_);

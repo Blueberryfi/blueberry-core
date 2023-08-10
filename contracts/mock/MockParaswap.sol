@@ -8,6 +8,10 @@ import "./MockParaswapTransferProxy.sol";
 contract MockParaswap is IParaswap {
     MockParaswapTransferProxy public tokenTransferProxy;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     constructor(address _transferTokenProxy) {
         tokenTransferProxy = MockParaswapTransferProxy(_transferTokenProxy);
     }

@@ -14,16 +14,14 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
-import "./BaseAdapter.sol";
+import  "./BaseAdapter.sol";
 import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
-import "../libraries/UniV3/Univ3WrappedLibContainer.sol";
+import "../libraries/UniV3/UniV3WrappedLibContainer.sol";
 
-/**
- * @author BlueberryProtocol
- * @title Uniswap V3 Adapter Oracle
- * @notice Oracle contract which provides price feeds of tokens from Uni V3 pool paired with stablecoins
- */
+/// @author BlueberryProtocol
+/// @title Uniswap V3 Adapter Oracle
+/// @notice Oracle contract which provides price feeds of tokens from Uni V3 pool paired with stablecoins
 contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     using SafeCast for uint256;
 
@@ -32,8 +30,16 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     /// @dev Mapping from token address to Uni V3 pool of token/(USDT|USDC|DAI) pair
     mapping(address => address) public stablePools;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+    
     /// @notice Set stablecoin pools for multiple tokens
     /// @param tokens list of tokens to set stablecoin pool references
     /// @param pools list of reference pool addresses
@@ -58,7 +64,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     /// @param token The vault token to get the price of.
     /// @return price USD price of token in 18 decimals.
     function getPrice(address token) external override returns (uint256) {
-        // Maximum cap of timeGap is 2 days(172,800), safe to convert
+        /// Maximum cap of timeGap is 2 days(172,800), safe to convert
         uint32 secondsAgo = timeGaps[token].toUint32();
         if (secondsAgo == 0) revert Errors.NO_MEAN(token);
 
@@ -72,11 +78,11 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         uint8 stableDecimals = IERC20Metadata(stablecoin).decimals();
         uint8 tokenDecimals = IERC20Metadata(token).decimals();
 
-        (int24 arithmeticMeanTick, ) = Univ3WrappedLibContainer.consult(
+        (int24 arithmeticMeanTick, ) = UniV3WrappedLibContainer.consult(
             stablePool,
             secondsAgo
         );
-        uint256 quoteTokenAmountForStable = Univ3WrappedLibContainer
+        uint256 quoteTokenAmountForStable = UniV3WrappedLibContainer
             .getQuoteAtTick(
                 arithmeticMeanTick,
                 uint256(10 ** tokenDecimals).toUint128(),
