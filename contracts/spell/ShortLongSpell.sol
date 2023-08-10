@@ -19,13 +19,11 @@ import "../interfaces/ISoftVault.sol";
 import "../interfaces/IWERC20.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
 
-/**
- * @title Short/Long Spell
- * @author BlueberryProtocol
- * @notice Short/Long Spell is the factory contract that
- * defines how Blueberry Protocol interacts for leveraging
- * an asset either long or short
- */
+/// @title Short/Long Spell
+/// @author BlueberryProtocol
+/// @notice Short/Long Spell is the factory contract that
+///         defines how Blueberry Protocol interacts for leveraging
+///         an asset either long or short
 contract ShortLongSpell is BasicSpell {
     using SafeCast for uint256;
     using SafeCast for int256;

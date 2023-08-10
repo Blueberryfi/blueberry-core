@@ -116,7 +116,8 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
     }
 
     /// @notice Fetch the aggregated USD price of a token.
-    /// If there are multiple valid sources, the function aggregates and ensures the data is within acceptable deviation limits.
+    /// If there are multiple valid sources, the function aggregates
+    /// and ensures the data is within acceptable deviation limits.
     /// @param token Address of the token to fetch the price for.
     /// @return The aggregated USD price of the token, scaled by 10**18.
     function getPrice(address token) external override returns (uint256) {
