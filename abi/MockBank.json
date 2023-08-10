@@ -619,7 +619,7 @@
       {
         "indexed": false,
         "internalType": "bool",
-        "name": "ok",
+        "name": "isWhitelisted",
         "type": "bool"
       }
     ],
@@ -638,7 +638,7 @@
       {
         "indexed": false,
         "internalType": "bool",
-        "name": "ok",
+        "name": "isWhitelisted",
         "type": "bool"
       }
     ],

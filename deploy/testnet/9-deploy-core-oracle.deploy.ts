@@ -16,34 +16,6 @@ async function main(): Promise<void> {
   deployment.CoreOracle = oracle.address;
   writeDeployments(deployment)
 
-  await oracle.setLiqThresholds(
-    [
-      deployment.MockIchiV2,
-      deployment.MockWBTC,
-      deployment.MockWETH,
-      deployment.MockALCX,
-      deployment.MockBAL,
-      deployment.MockSUSHI,
-      deployment.MockCRV,
-      deployment.MockBLB,
-      deployment.MockDAI,
-      deployment.MockUSDD,
-      deployment.MockUSDC,
-    ],
-    [
-      9000,
-      9000,
-      9000,
-      9000,
-      9000,
-      9000,
-      9000,
-      8500,
-      8500,
-      8500,
-      8500,
-    ]
-  )
   await oracle.setRoutes(
     [
       deployment.MockALCX,

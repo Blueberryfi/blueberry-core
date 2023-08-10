@@ -86,10 +86,10 @@ contract IchiVaultOracle is
     ) public view returns (uint256) {
         return
             UniV3WrappedLibContainer.getQuoteAtTick(
-                vault.currentTick(), /// current tick
-                uint128(Constants.PRICE_PRECISION), /// amountIn
-                vault.token0(), /// tokenIn
-                vault.token1() /// tokenOut
+                vault.currentTick(), // current tick
+                uint128(Constants.PRICE_PRECISION), // amountIn
+                vault.token0(), // tokenIn
+                vault.token1() // tokenOut
             );
     }
 
