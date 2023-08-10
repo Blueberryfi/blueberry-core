@@ -124,7 +124,7 @@ async function main(): Promise<void> {
     "UniswapV3AdapterOracle",
     {
       libraries: {
-        Univ3WrappedLibContainer: LibInstance.address,
+        UniV3WrappedLibContainer: LibInstance.address,
       },
     }
   );
