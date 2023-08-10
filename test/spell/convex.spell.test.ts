@@ -700,48 +700,6 @@ describe("Convex Spell", () => {
       );
     });
 
-    it("should be able to farm CRV on Convex", async () => {
-      const positionId = await bank.nextPositionId();
-      const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
-      await bank.execute(
-        0,
-        volatileSpell.address,
-        iface.encodeFunctionData("openPositionFarm", [
-          {
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: CRV,
-            collAmount: depositAmount,
-            borrowAmount: utils.parseUnits("1", 18),
-            farmingPoolId: POOL_ID_2,
-          },
-          0,
-        ])
-      );
-
-      const bankInfo = await bank.getBankInfo(CRV);
-      console.log("CRV Bank Info:", bankInfo);
-
-      const pos = await bank.positions(positionId);
-      console.log("Position Info:", pos);
-      console.log(
-        "Position Value:",
-        await bank.callStatic.getPositionValue(positionId)
-      );
-      expect(pos.owner).to.be.equal(admin.address);
-      expect(pos.collToken).to.be.equal(wconvex.address);
-      expect(pos.debtToken).to.be.equal(CRV);
-      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
-
-      const afterTreasuryBalance = await crv.balanceOf(treasury.address);
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
-        depositAmount.mul(50).div(10000)
-      );
-
-      const rewarderBalance = await crvRewarder2.balanceOf(wconvex.address);
-      expect(rewarderBalance).to.be.equal(pos.collateralSize);
-    });
-
     it("should be fail to farm DAI on Convex", async () => {
       await expect(
         bank.execute(

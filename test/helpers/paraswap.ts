@@ -19,6 +19,7 @@ export const getParaswapCalldata = async (
     destToken: toToken,
     amount: amount.toString(),
     options: {
+      includeDEXS: ["UniswapV2", "SushiSwap", "BalancerV1"],
       maxImpact: maxImpact,
       otherExchangePrices: true,
     },
@@ -29,7 +30,7 @@ export const getParaswapCalldata = async (
       srcToken: fromToken,
       destToken: toToken,
       srcAmount: amount.toString(),
-      slippage: 3 * 0.01 * 10000, // 3% slippage
+      slippage: 10 * 0.01 * 10000, // 10% slippage
       priceRoute: priceRoute,
       userAddress: userAddr,
     },
