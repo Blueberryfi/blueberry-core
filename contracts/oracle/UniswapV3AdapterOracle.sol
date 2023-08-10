@@ -17,7 +17,7 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import  "./BaseAdapter.sol";
 import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
-import "../libraries/UniV3/UniV3WrappedLibContainer.sol";
+import "../libraries/UniV3/Univ3WrappedLibContainer.sol";
 
 /// @author BlueberryProtocol
 /// @title Uniswap V3 Adapter Oracle
@@ -78,11 +78,11 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         uint8 stableDecimals = IERC20Metadata(stablecoin).decimals();
         uint8 tokenDecimals = IERC20Metadata(token).decimals();
 
-        (int24 arithmeticMeanTick, ) = UniV3WrappedLibContainer.consult(
+        (int24 arithmeticMeanTick, ) = Univ3WrappedLibContainer.consult(
             stablePool,
             secondsAgo
         );
-        uint256 quoteTokenAmountForStable = UniV3WrappedLibContainer
+        uint256 quoteTokenAmountForStable = Univ3WrappedLibContainer
             .getQuoteAtTick(
                 arithmeticMeanTick,
                 uint256(10 ** tokenDecimals).toUint128(),

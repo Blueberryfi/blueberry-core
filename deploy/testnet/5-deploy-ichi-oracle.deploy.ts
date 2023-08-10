@@ -10,7 +10,7 @@ async function main(): Promise<void> {
 	// Ichi Lp Oracle
 	const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle, {
 		libraries: {
-			UniV3WrappedLibContainer: deployment.UNI_LIB
+			Univ3WrappedLibContainer: deployment.UNI_LIB
 		}
 	});
 	const ichiVaultOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(deployment.CoreOracle);

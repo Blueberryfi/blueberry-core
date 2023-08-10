@@ -23,7 +23,7 @@ async function main(): Promise<void> {
 
 	const MockIchiVault = await ethers.getContractFactory("MockIchiVault", {
 		libraries: {
-			UniV3WrappedLibContainer: deployment.UNI_LIB
+			Univ3WrappedLibContainer: deployment.UNI_LIB
 		}
 	});
 	const ichiVault = <MockIchiVault>await MockIchiVault.deploy(
