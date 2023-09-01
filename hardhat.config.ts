@@ -138,7 +138,7 @@ const config: HardhatUserConfig = {
     apiKey: {
       mainnet: process.env.ETHERSCAN_API_KEY ?? "",
       buildbear: "verifyContract",
-      phalcon: "83b23ce1-7a86-4118-aeea-39cd05cf188d",
+      phalcon: process.env.PHALCON_API_KEY ?? "",
     },
     customChains: [
       {

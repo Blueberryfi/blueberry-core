@@ -80,7 +80,10 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       name: "WBTCSoftVault",
       isProxy: true,
     },
-    CONTRACT_NAMES.WERC20,
+    {
+      name: CONTRACT_NAMES.WERC20,
+      isProxy: true,
+    },
     {
       name: CONTRACT_NAMES.WIchiFarm,
       isProxy: true,

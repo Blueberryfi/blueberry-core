@@ -4,7 +4,7 @@ import { CONTRACT_NAMES } from "../../constant";
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {
-    deployments: { deploy },
+    deployments: { deploy, get },
     getNamedAccounts,
   } = hre;
   const { deployer } = await getNamedAccounts();
@@ -12,7 +12,17 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await deploy(CONTRACT_NAMES.WERC20, {
     from: deployer,
     log: true,
-    args: [],
+    waitConfirmations: 1,
+    proxy: {
+      owner: (await get("ProxyAdmin")).address,
+      proxyContract: "TransparentUpgradeableProxy",
+      execute: {
+        init: {
+          methodName: "initialize",
+          args: [],
+        },
+      },
+    },
   });
 };
 
