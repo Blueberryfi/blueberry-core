@@ -23,7 +23,7 @@ abstract contract EnsureApprove {
     /// @param spender Address to approve
     /// @param amount Amount to approve
     function _ensureApprove(address token, address spender, uint256 amount) internal {
-        IERC20(token).safeApprove(spender, 0);
-        IERC20(token).safeApprove(spender, amount);
+        IERC20(token).forceApprove(spender, 0);
+        IERC20(token).forceApprove(spender, amount);
     }
 }
