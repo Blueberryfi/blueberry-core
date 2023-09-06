@@ -21,8 +21,12 @@ describe("Fee Manager", () => {
     [admin, alice, treasury] = await ethers.getSigners();
 
     const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
-    config = <ProtocolConfig>(
-      await upgrades.deployProxy(ProtocolConfig, [treasury.address])
+    config = <ProtocolConfig>await upgrades.deployProxy(
+      ProtocolConfig,
+      [treasury.address],
+      {
+        unsafeAllow: ["delegatecall"],
+      }
     );
 
     const MockERC20 = await ethers.getContractFactory("MockERC20");
@@ -33,8 +37,12 @@ describe("Fee Manager", () => {
 
   beforeEach(async () => {
     const FeeManager = await ethers.getContractFactory("FeeManager");
-    feeManager = <FeeManager>(
-      await upgrades.deployProxy(FeeManager, [config.address])
+    feeManager = <FeeManager>await upgrades.deployProxy(
+      FeeManager,
+      [config.address],
+      {
+        unsafeAllow: ["delegatecall"],
+      }
     );
   });
 
@@ -47,7 +55,9 @@ describe("Fee Manager", () => {
     it("should revert deployment when zero address provided as config address", async () => {
       const FeeManager = await ethers.getContractFactory("FeeManager");
       await expect(
-        upgrades.deployProxy(FeeManager, [ethers.constants.AddressZero])
+        upgrades.deployProxy(FeeManager, [ethers.constants.AddressZero], {
+          unsafeAllow: ["delegatecall"],
+        })
       ).to.be.revertedWithCustomError(FeeManager, "ZERO_ADDRESS");
     });
   });

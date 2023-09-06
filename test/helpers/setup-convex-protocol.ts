@@ -205,7 +205,9 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   await tricryptoOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
+  oracle = <CoreOracle>(
+    await upgrades.deployProxy(CoreOracle, { unsafeAllow: ["delegatecall"] })
+  );
   await oracle.deployed();
 
   await oracle.setRoutes(
@@ -241,15 +243,23 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
 
   // Deploy Bank
   const Config = await ethers.getContractFactory("ProtocolConfig");
-  config = <ProtocolConfig>(
-    await upgrades.deployProxy(Config, [treasury.address])
+  config = <ProtocolConfig>await upgrades.deployProxy(
+    Config,
+    [treasury.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
   );
   await config.deployed();
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory("FeeManager");
-  feeManager = <FeeManager>(
-    await upgrades.deployProxy(FeeManager, [config.address])
+  feeManager = <FeeManager>await upgrades.deployProxy(
+    FeeManager,
+    [config.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
   );
   await feeManager.deployed();
   await config.setFeeManager(feeManager.address);
@@ -258,19 +268,29 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     CONTRACT_NAMES.BlueBerryBank
   );
   bank = <BlueBerryBank>(
-    await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address])
+    await upgrades.deployProxy(
+      BlueBerryBank,
+      [oracle.address, config.address],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await bank.deployed();
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-  werc20 = <WERC20>await upgrades.deployProxy(WERC20);
+  werc20 = <WERC20>(
+    await upgrades.deployProxy(WERC20, { unsafeAllow: ["delegatecall"] })
+  );
   await werc20.deployed();
 
   const WConvexPools = await ethers.getContractFactory(
     CONTRACT_NAMES.WConvexPools
   );
-  wconvex = <WConvexPools>(
-    await upgrades.deployProxy(WConvexPools, [CVX, ADDRESS.CVX_BOOSTER])
+  wconvex = <WConvexPools>await upgrades.deployProxy(
+    WConvexPools,
+    [CVX, ADDRESS.CVX_BOOSTER],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
   );
   await wconvex.deployed();
 
@@ -279,15 +299,19 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     CONTRACT_NAMES.ConvexSpell
   );
   convexSpell = <ConvexSpell>(
-    await upgrades.deployProxy(ConvexSpell, [
-      bank.address,
-      werc20.address,
-      WETH,
-      wconvex.address,
-      stableOracle.address,
-      AUGUSTUS_SWAPPER,
-      TOKEN_TRANSFER_PROXY,
-    ])
+    await upgrades.deployProxy(
+      ConvexSpell,
+      [
+        bank.address,
+        werc20.address,
+        WETH,
+        wconvex.address,
+        stableOracle.address,
+        AUGUSTUS_SWAPPER,
+        TOKEN_TRANSFER_PROXY,
+      ],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await convexSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
@@ -316,21 +340,21 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
   );
-  await convexSpell.setCollateralsMaxLTVs(
-    2,
-    [USDC, CRV, DAI],
-    [300, 300, 300]
-  );
+  await convexSpell.setCollateralsMaxLTVs(2, [USDC, CRV, DAI], [300, 300, 300]);
   convexSpellWithVolatileOracle = <ConvexSpell>(
-    await upgrades.deployProxy(ConvexSpell, [
-      bank.address,
-      werc20.address,
-      WETH,
-      wconvex.address,
-      volatileOracle.address,
-      AUGUSTUS_SWAPPER,
-      TOKEN_TRANSFER_PROXY,
-    ])
+    await upgrades.deployProxy(
+      ConvexSpell,
+      [
+        bank.address,
+        werc20.address,
+        WETH,
+        wconvex.address,
+        volatileOracle.address,
+        AUGUSTUS_SWAPPER,
+        TOKEN_TRANSFER_PROXY,
+      ],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await convexSpellWithVolatileOracle.deployed();
   await convexSpellWithVolatileOracle.addStrategy(
@@ -345,45 +369,49 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
 
   // Setup Bank
-  await bank.whitelistSpells([convexSpell.address, convexSpellWithVolatileOracle.address], [true, true]);
+  await bank.whitelistSpells(
+    [convexSpell.address, convexSpellWithVolatileOracle.address],
+    [true, true]
+  );
   await bank.whitelistTokens([USDC, CRV, DAI], [true, true, true]);
   await bank.whitelistERC1155([werc20.address, wconvex.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>(
-    await upgrades.deployProxy(HardVault, [config.address])
+  hardVault = <HardVault>await upgrades.deployProxy(
+    HardVault,
+    [config.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
   );
 
   const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
   usdcSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      CUSDC,
-      "Interest Bearing USDC",
-      "ibUSDC",
-    ])
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await usdcSoftVault.deployed();
   await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
 
   daiSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      CDAI,
-      "Interest Bearing DAI",
-      "ibDAI",
-    ])
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CDAI, "Interest Bearing DAI", "ibDAI"],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await daiSoftVault.deployed();
   await bank.addBank(DAI, daiSoftVault.address, hardVault.address, 8500);
 
   crvSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      CCRV,
-      "Interest Bearing CRV",
-      "ibCRV",
-    ])
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CCRV, "Interest Bearing CRV", "ibCRV"],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await crvSoftVault.deployed();
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);

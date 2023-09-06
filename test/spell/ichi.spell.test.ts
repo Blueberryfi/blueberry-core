@@ -83,40 +83,56 @@ describe("ICHI Angel Vaults Spell", () => {
         CONTRACT_NAMES.IchiSpell
       );
       await expect(
-        upgrades.deployProxy(IchiSpell, [
-          ethers.constants.AddressZero,
-          werc20.address,
-          WETH,
-          wichi.address,
-          UNI_V3_ROUTER,
-        ])
+        upgrades.deployProxy(
+          IchiSpell,
+          [
+            ethers.constants.AddressZero,
+            werc20.address,
+            WETH,
+            wichi.address,
+            UNI_V3_ROUTER,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(IchiSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(IchiSpell, [
-          bank.address,
-          ethers.constants.AddressZero,
-          WETH,
-          wichi.address,
-          UNI_V3_ROUTER,
-        ])
+        upgrades.deployProxy(
+          IchiSpell,
+          [
+            bank.address,
+            ethers.constants.AddressZero,
+            WETH,
+            wichi.address,
+            UNI_V3_ROUTER,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(IchiSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(IchiSpell, [
-          bank.address,
-          werc20.address,
-          ethers.constants.AddressZero,
-          wichi.address,
-          UNI_V3_ROUTER,
-        ])
+        upgrades.deployProxy(
+          IchiSpell,
+          [
+            bank.address,
+            werc20.address,
+            ethers.constants.AddressZero,
+            wichi.address,
+            UNI_V3_ROUTER,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(IchiSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(IchiSpell, [
-          bank.address,
-          werc20.address,
-          WETH,
-          ethers.constants.AddressZero,
-          UNI_V3_ROUTER,
-        ])
+        upgrades.deployProxy(
+          IchiSpell,
+          [
+            bank.address,
+            werc20.address,
+            WETH,
+            ethers.constants.AddressZero,
+            UNI_V3_ROUTER,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(IchiSpell, "ZERO_ADDRESS");
     });
     it("should revert initializing twice", async () => {
@@ -1156,13 +1172,11 @@ describe("ICHI Angel Vaults Spell", () => {
         CONTRACT_NAMES.IchiSpell
       );
       spell = <IchiSpell>(
-        await upgrades.deployProxy(IchiSpell, [
-          bank.address,
-          werc20.address,
-          WETH,
-          wichi.address,
-          UNI_V3_ROUTER,
-        ])
+        await upgrades.deployProxy(
+          IchiSpell,
+          [bank.address, werc20.address, WETH, wichi.address, UNI_V3_ROUTER],
+          { unsafeAllow: ["delegatecall"] }
+        )
       );
       await spell.deployed();
     });

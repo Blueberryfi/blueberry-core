@@ -73,11 +73,11 @@ describe("wAuraPools", () => {
       CONTRACT_NAMES.WAuraPools
     );
     wAuraPools = <WAuraPools>(
-      await upgrades.deployProxy(wAuraPoolsFactory, [
-        aura.address,
-        booster.address,
-        stashToken.address,
-      ])
+      await upgrades.deployProxy(
+        wAuraPoolsFactory,
+        [aura.address, booster.address, stashToken.address],
+        { unsafeAllow: ["delegatecall"] }
+      )
     );
 
     await booster.addPool(
