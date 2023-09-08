@@ -21,15 +21,13 @@ import {
   WConvexPools,
   ConvexSpell,
   Comptroller,
+  MockBToken,
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { deployBTokens } from "./money-market";
 
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
-const CUSDC = ADDRESS.bUSDC;
-const CDAI = ADDRESS.bDAI;
-const CCRV = ADDRESS.bCRV;
 const ETH = ADDRESS.ETH;
 const STETH = ADDRESS.STETH;
 const WETH = ADDRESS.WETH;
@@ -54,6 +52,7 @@ export interface CvxProtocol {
   bank: BlueBerryBank;
   convexSpell: ConvexSpell;
   convexSpellWithVolatileOracle: ConvexSpell;
+  bWeth: MockBToken;
   usdcSoftVault: SoftVault;
   crvSoftVault: SoftVault;
   daiSoftVault: SoftVault;
