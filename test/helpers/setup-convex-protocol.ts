@@ -20,6 +20,7 @@ import {
   CurveTricryptoOracle,
   WConvexPools,
   ConvexSpell,
+  MockBToken,
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 
@@ -28,6 +29,8 @@ const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
 const CCRV = ADDRESS.bCRV;
+const ETH = ADDRESS.ETH;
+const STETH = ADDRESS.STETH;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const USDT = ADDRESS.USDT;
@@ -50,9 +53,11 @@ export interface CvxProtocol {
   bank: BlueBerryBank;
   convexSpell: ConvexSpell;
   convexSpellWithVolatileOracle: ConvexSpell;
+  bWeth: MockBToken;
   usdcSoftVault: SoftVault;
   crvSoftVault: SoftVault;
   daiSoftVault: SoftVault;
+  wethSoftVault: SoftVault;
   hardVault: HardVault;
   feeManager: FeeManager;
   uniV3Lib: UniV3WrappedLib;
@@ -83,6 +88,8 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   let usdcSoftVault: SoftVault;
   let crvSoftVault: SoftVault;
   let daiSoftVault: SoftVault;
+  let wethSoftVault: SoftVault;
+  let bWeth: MockBToken;
   let hardVault: HardVault;
 
   [admin, alice, treasury] = await ethers.getSigners();
@@ -90,6 +97,9 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
   crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
   weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
+
+  const MockBToken = await ethers.getContractFactory("MockBToken");
+  bWeth = <MockBToken>await MockBToken.deploy(WETH);
 
   // Prepare USDC
   // deposit 80 eth -> 80 WETH
@@ -150,8 +160,10 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
   await mockOracle.setPrice(
-    [WETH, USDC, CRV, DAI, USDT, FRAX, CVX, SUSD],
+    [ETH, WETH, STETH, USDC, CRV, DAI, USDT, FRAX, CVX, SUSD],
     [
+      BigNumber.from(10).pow(18).mul(ETH_PRICE),
+      BigNumber.from(10).pow(18).mul(ETH_PRICE),
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
@@ -224,6 +236,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       ADDRESS.CRV_FRAX3Crv,
       ADDRESS.CRV_SUSD,
       ADDRESS.CRV_CRVETH,
+      ADDRESS.CRV_STETH,
     ],
     [
       mockOracle.address,
@@ -238,6 +251,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       stableOracle.address,
       stableOracle.address,
       volatileOracle.address,
+      stableOracle.address,
     ]
   );
 
@@ -330,6 +344,11 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     utils.parseUnits("100", 18),
     utils.parseUnits("2000", 18)
   );
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_STETH,
+    utils.parseUnits("100", 18),
+    utils.parseUnits("2000", 18)
+  );
   await convexSpell.setCollateralsMaxLTVs(
     0,
     [USDC, CRV, DAI],
@@ -341,6 +360,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     [30000, 30000, 30000]
   );
   await convexSpell.setCollateralsMaxLTVs(2, [USDC, CRV, DAI], [300, 300, 300]);
+  await convexSpell.setCollateralsMaxLTVs(3, [USDC, DAI], [30000, 30000]);
   convexSpellWithVolatileOracle = <ConvexSpell>(
     await upgrades.deployProxy(
       ConvexSpell,
@@ -373,7 +393,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     [convexSpell.address, convexSpellWithVolatileOracle.address],
     [true, true]
   );
-  await bank.whitelistTokens([USDC, CRV, DAI], [true, true, true]);
+  await bank.whitelistTokens([WETH, USDC, CRV, DAI], [true, true, true, true]);
   await bank.whitelistERC1155([werc20.address, wconvex.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
@@ -416,6 +436,16 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   await crvSoftVault.deployed();
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
 
+  wethSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bWeth.address, "Interest Bearing WETH", "ibWETH"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await wethSoftVault.deployed();
+  await bank.addBank(WETH, wethSoftVault.address, hardVault.address, 9000);
+
   // Whitelist bank contract on compound
   const compound = <IComptroller>(
     await ethers.getContractAt("IComptroller", ADDRESS.BLB_COMPTROLLER, admin)
@@ -448,6 +478,10 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   await dai.transfer(alice.address, utils.parseUnits("500", 18));
   await daiSoftVault.deposit(utils.parseUnits("5000", 18));
 
+  await weth.deposit({ value: utils.parseUnits("100") });
+  await weth.approve(wethSoftVault.address, ethers.constants.MaxUint256);
+  await wethSoftVault.deposit(utils.parseUnits("10", 18));
+
   console.log(
     "CRV Balance:",
     utils.formatEther(await crv.balanceOf(admin.address))
@@ -477,6 +511,8 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     usdcSoftVault,
     crvSoftVault,
     daiSoftVault,
+    wethSoftVault,
+    bWeth,
     hardVault,
     uniV3Lib: LibInstance,
   };
