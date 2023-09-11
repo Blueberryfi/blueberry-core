@@ -116,31 +116,40 @@ contract ConvexSpell is BasicSpell {
         (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
             lpToken
         );
-        _ensureApprove(param.borrowToken, pool, borrowBalance);
-        if (tokens.length == 2) {
-            uint256[2] memory suppliedAmts;
-            for (uint256 i; i != 2; ++i) {
-                suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                    address(this)
-                );
+
+        {
+            address borrowToken = param.borrowToken;
+            uint256 borrowTokenBalance = IERC20Upgradeable(borrowToken).balanceOf(address(this));
+            require(borrowBalance <= borrowTokenBalance, "impossible");
+            _ensureApprove(param.borrowToken, pool, borrowTokenBalance);
+            if (tokens.length == 2) {
+                uint256[2] memory suppliedAmts;
+                for (uint256 i; i != 2; ++i) {
+                    if (tokens[i] == borrowToken) {
+                        suppliedAmts[i] = borrowTokenBalance;
+                        break;
+                    }
+                }
+                ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
+            } else if (tokens.length == 3) {
+                uint256[3] memory suppliedAmts;
+                for (uint256 i; i != 3; ++i) {
+                    if (tokens[i] == borrowToken) {
+                        suppliedAmts[i] = borrowTokenBalance;
+                        break;
+                    }
+                }
+                ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
+            } else {
+                uint256[4] memory suppliedAmts;
+                for (uint256 i; i != 4; ++i) {
+                    if (tokens[i] == borrowToken) {
+                        suppliedAmts[i] = borrowTokenBalance;
+                        break;
+                    }
+                }
+                ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
             }
-            ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
-        } else if (tokens.length == 3) {
-            uint256[3] memory suppliedAmts;
-            for (uint256 i; i != 3; ++i) {
-                suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                    address(this)
-                );
-            }
-            ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
-        } else {
-            uint256[4] memory suppliedAmts;
-            for (uint256 i; i != 4; ++i) {
-                suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                    address(this)
-                );
-            }
-            ICurvePool(pool).add_liquidity(suppliedAmts, minLPMint);
         }
 
         /// 4. Validate MAX LTV
