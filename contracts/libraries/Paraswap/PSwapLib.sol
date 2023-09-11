@@ -30,6 +30,8 @@ library PSwapLib {
 
         (success, returndata) = augustusSwapper.call(data);
 
+        IERC20(fromToken).approve(tokenTransferProxy, 0);
+
         if (returndata.length > 0) {
             assembly {
                 let returndata_size := mload(returndata)
