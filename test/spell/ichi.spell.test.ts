@@ -160,7 +160,7 @@ describe("ICHI Angel Vaults Spell", () => {
       // Max position is set as 2,000
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
 
-      // Call openPosition with 5 is fail because is below min position size
+      // Call openPosition with 0.1 is fail because is below min position size
       await expect(
         bank.execute(
           0,
@@ -171,7 +171,7 @@ describe("ICHI Angel Vaults Spell", () => {
               collToken: ICHI,
               borrowToken: USDC,
               collAmount: depositAmount.mul(40),
-              borrowAmount: utils.parseUnits("5", 6),
+              borrowAmount: utils.parseUnits("0.1", 6),
               farmingPoolId: 0,
             },
           ])
