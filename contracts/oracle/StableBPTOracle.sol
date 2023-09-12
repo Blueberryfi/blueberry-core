@@ -13,6 +13,7 @@ pragma solidity 0.8.16;
 import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
+import "../interfaces/balancer/IRateProvider.sol";
 import "../interfaces/balancer/IBalancerVault.sol";
 import "../libraries/FixedPointMathLib.sol";
 
@@ -43,11 +44,16 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
 
         (address[] memory tokens, , ) = vault
             .getPoolTokens(pool.getPoolId());
+        address[] memory rateProviders = pool.getRateProviders();
 
         uint256 length = tokens.length;
-        uint256 minPrice = base.getPrice(tokens[0]);
-        for(uint256 i = 1; i != length; ++i) {
+        uint256 minPrice = type(uint256).max;
+        for(uint256 i; i != length; ++i) {
             uint256 price = base.getPrice(tokens[i]);
+            address rateProvider = rateProviders[i];
+            if (rateProvider != address(0)) {
+                price = price.mulWadDown(IRateProvider(rateProvider).getRate());
+            }
             minPrice = (price < minPrice) ? price : minPrice;
         }
         return minPrice.mulWadDown(pool.getRate());
