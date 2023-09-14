@@ -412,10 +412,10 @@ contract WAuraPools is
 
         uint256 rewardTokensLength = rewardTokens.length;
         for (uint256 i; i != rewardTokensLength; ) {
-            IERC20Upgradeable(rewardTokens[i]).safeTransfer(
-                msg.sender,
-                rewards[i]
-            );
+            address rewardToken = rewardTokens[i];
+            IERC20Upgradeable(
+                rewardToken == STASH_AURA ? address(AURA) : rewardToken
+            ).safeTransfer(msg.sender, rewards[i]);
 
             unchecked {
                 ++i;
