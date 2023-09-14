@@ -263,8 +263,8 @@ contract CurveSpell is BasicSpell {
         uint256 amountPosRemove
     ) internal {
         uint256 tokenIndex;
+        uint256 len = tokens.length;
         {
-            uint256 len = tokens.length;
             for (uint256 i; i != len; ++i) {
                 if (tokens[i] == pos.debtToken) {
                     tokenIndex = i;
@@ -274,7 +274,6 @@ contract CurveSpell is BasicSpell {
         }
 
         if (isKilled) {
-            uint256 len = tokens.length;
             if (len == 2) {
                 uint256[2] memory minOuts;
                 ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
