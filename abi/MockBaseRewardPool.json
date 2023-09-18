@@ -15,6 +15,11 @@
         "internalType": "address",
         "name": "rewardToken_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "convex_",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -133,6 +138,19 @@
     "name": "clearExtraRewards",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "convexOrAura",
+    "outputs": [
+      {
+        "internalType": "contract MockConvexToken",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

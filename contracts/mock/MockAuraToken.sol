@@ -23,12 +23,16 @@ contract MockAuraToken is ERC20 {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     constructor() ERC20("Aura Token", "AURA") {
         operator = msg.sender;
         reductionPerCliff = EMISSIONS_MAX_SUPPLY / totalCliffs;
 
         _mint(msg.sender, INIT_MINT_AMOUNT);
+    }
+
+    function setOperator(address _operator) external {
+        operator = _operator;
     }
 
     function mintTestTokens(address to, uint amount) external {

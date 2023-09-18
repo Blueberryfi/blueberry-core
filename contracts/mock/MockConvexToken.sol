@@ -19,10 +19,14 @@ contract MockConvexToken is ERC20 {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     constructor() ERC20("Convex Token", "CVX") {
         operator = msg.sender;
         reductionPerCliff = maxSupply / totalCliffs;
+    }
+
+    function setOperator(address _operator) external {
+        operator = _operator;
     }
 
     function mintTestTokens(address to, uint amount) external {
