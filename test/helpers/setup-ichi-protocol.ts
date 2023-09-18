@@ -1,6 +1,6 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BigNumber, utils } from 'ethers';
-import { ethers, upgrades } from 'hardhat';
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { BigNumber, utils } from "ethers";
+import { ethers, upgrades } from "hardhat";
 import {
   BlueBerryBank,
   CoreOracle,
@@ -20,9 +20,9 @@ import {
   MockIchiV2,
   HardVault,
   FeeManager,
-  UniV3WrappedLib
-} from '../../typechain-types';
-import { ADDRESS, CONTRACT_NAMES } from '../../constant';
+  UniV3WrappedLib,
+} from "../../typechain-types";
+import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 
 const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
@@ -37,22 +37,22 @@ const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
 const ETH_PRICE = 1600;
 
 export interface Protocol {
-  ichi_USDC_ICHI_Vault: MockIchiVault,
-  ichiFarm: MockIchiFarm,
-  werc20: WERC20,
-  wichi: WIchiFarm,
-  mockOracle: MockOracle,
-  ichiOracle: IchiVaultOracle,
-  oracle: CoreOracle,
-  config: ProtocolConfig,
-  bank: BlueBerryBank,
-  ichiSpell: IchiSpell,
-  usdcSoftVault: SoftVault,
-  ichiSoftVault: SoftVault,
-  daiSoftVault: SoftVault,
-  hardVault: HardVault,
-  feeManager: FeeManager,
-  uniV3Lib: UniV3WrappedLib,
+  ichi_USDC_ICHI_Vault: MockIchiVault;
+  ichiFarm: MockIchiFarm;
+  werc20: WERC20;
+  wichi: WIchiFarm;
+  mockOracle: MockOracle;
+  ichiOracle: IchiVaultOracle;
+  oracle: CoreOracle;
+  config: ProtocolConfig;
+  bank: BlueBerryBank;
+  ichiSpell: IchiSpell;
+  usdcSoftVault: SoftVault;
+  ichiSoftVault: SoftVault;
+  daiSoftVault: SoftVault;
+  hardVault: HardVault;
+  feeManager: FeeManager;
+  uniV3Lib: UniV3WrappedLib;
 }
 
 export const setupIchiProtocol = async (): Promise<Protocol> => {
@@ -92,41 +92,45 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   // Prepare USDC
   // deposit 80 eth -> 80 WETH
-  await weth.deposit({ value: utils.parseUnits('100') });
+  await weth.deposit({ value: utils.parseUnits("100") });
 
   // swap 40 WETH -> USDC, 40 WETH -> DAI
   await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
-  const uniV2Router = <IUniswapV2Router02>await ethers.getContractAt(
-    CONTRACT_NAMES.IUniswapV2Router02,
-    ADDRESS.UNI_V2_ROUTER
+  const uniV2Router = <IUniswapV2Router02>(
+    await ethers.getContractAt(
+      CONTRACT_NAMES.IUniswapV2Router02,
+      ADDRESS.UNI_V2_ROUTER
+    )
   );
   await uniV2Router.swapExactTokensForTokens(
-    utils.parseUnits('30'),
+    utils.parseUnits("30"),
     0,
     [WETH, USDC],
     admin.address,
     ethers.constants.MaxUint256
-  )
+  );
   await uniV2Router.swapExactTokensForTokens(
-    utils.parseUnits('30'),
+    utils.parseUnits("30"),
     0,
     [WETH, DAI],
     admin.address,
     ethers.constants.MaxUint256
-  )
+  );
   // Swap 40 weth -> ichi
   await weth.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
-  const sushiRouter = <IUniswapV2Router02>await ethers.getContractAt(
-    CONTRACT_NAMES.IUniswapV2Router02,
-    ADDRESS.SUSHI_ROUTER
+  const sushiRouter = <IUniswapV2Router02>(
+    await ethers.getContractAt(
+      CONTRACT_NAMES.IUniswapV2Router02,
+      ADDRESS.SUSHI_ROUTER
+    )
   );
   await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits('40'),
+    utils.parseUnits("40"),
     0,
     [WETH, ICHIV1],
     admin.address,
     ethers.constants.MaxUint256
-  )
+  );
   await ichiV1.approve(ICHI, ethers.constants.MaxUint256);
   const ichiV1Balance = await ichiV1.balanceOf(admin.address);
   await ichi.convertToV2(ichiV1Balance.div(2));
@@ -136,29 +140,40 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   const IchiVault = await ethers.getContractFactory("MockIchiVault", {
     libraries: {
-      UniV3WrappedLibContainer: LibInstance.address
-    }
+      UniV3WrappedLibContainer: LibInstance.address,
+    },
   });
-  ichi_USDC_ICHI_Vault = <MockIchiVault>await IchiVault.deploy(
-    ADDRESS.UNI_V3_ICHI_USDC,
-    true,
-    true,
-    admin.address,
-    admin.address,
-    3600
-  )
+  ichi_USDC_ICHI_Vault = <MockIchiVault>(
+    await IchiVault.deploy(
+      ADDRESS.UNI_V3_ICHI_USDC,
+      true,
+      true,
+      admin.address,
+      admin.address,
+      3600
+    )
+  );
   await usdc.approve(ichi_USDC_ICHI_Vault.address, utils.parseUnits("1000", 6));
-  await ichi.approve(ichi_USDC_ICHI_Vault.address, utils.parseUnits("1000", 18));
-  await ichi_USDC_ICHI_Vault.deposit(utils.parseUnits("1000", 18), utils.parseUnits("1000", 6), admin.address)
+  await ichi.approve(
+    ichi_USDC_ICHI_Vault.address,
+    utils.parseUnits("1000", 18)
+  );
+  await ichi_USDC_ICHI_Vault.deposit(
+    utils.parseUnits("1000", 18),
+    utils.parseUnits("1000", 6),
+    admin.address
+  );
 
-  ichi_USDC_DAI_Vault = <MockIchiVault>await IchiVault.deploy(
-    ADDRESS.UNI_V3_USDC_DAI,
-    true,
-    true,
-    admin.address,
-    admin.address,
-    3600
-  )
+  ichi_USDC_DAI_Vault = <MockIchiVault>(
+    await IchiVault.deploy(
+      ADDRESS.UNI_V3_USDC_DAI,
+      true,
+      true,
+      admin.address,
+      admin.address,
+      3600
+    )
+  );
 
   const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
   mockOracle = <MockOracle>await MockOracle.deploy();
@@ -170,41 +185,82 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18).mul(5), // $5
       BigNumber.from(10).pow(18), // $1
-    ],
-  )
+    ]
+  );
 
-  const IchiVaultOracle = await ethers.getContractFactory(CONTRACT_NAMES.IchiVaultOracle, {
-    libraries: {
-      UniV3WrappedLibContainer: LibInstance.address
+  const IchiVaultOracle = await ethers.getContractFactory(
+    CONTRACT_NAMES.IchiVaultOracle,
+    {
+      libraries: {
+        UniV3WrappedLibContainer: LibInstance.address,
+      },
     }
-  });
-  ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(mockOracle.address);
+  );
+  ichiOracle = <IchiVaultOracle>(
+    await IchiVaultOracle.deploy(mockOracle.address)
+  );
   await ichiOracle.deployed();
   await ichiOracle.setPriceDeviation(ICHI, 500);
   await ichiOracle.setPriceDeviation(USDC, 500);
   await ichiOracle.setPriceDeviation(DAI, 500);
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
+  oracle = <CoreOracle>(
+    await upgrades.deployProxy(CoreOracle, { unsafeAllow: ["delegatecall"] })
+  );
   await oracle.deployed();
 
   await oracle.setRoutes(
-    [WETH, USDC, ICHI, DAI, ichi_USDC_ICHI_Vault.address, ichi_USDC_DAI_Vault.address],
-    [mockOracle.address, mockOracle.address, mockOracle.address, mockOracle.address, ichiOracle.address, ichiOracle.address]
-  )
+    [
+      WETH,
+      USDC,
+      ICHI,
+      DAI,
+      ichi_USDC_ICHI_Vault.address,
+      ichi_USDC_DAI_Vault.address,
+    ],
+    [
+      mockOracle.address,
+      mockOracle.address,
+      mockOracle.address,
+      mockOracle.address,
+      ichiOracle.address,
+      ichiOracle.address,
+    ]
+  );
   // Deploy Bank
   const Config = await ethers.getContractFactory("ProtocolConfig");
-  config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address]);
+  config = <ProtocolConfig>await upgrades.deployProxy(
+    Config,
+    [treasury.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
+  );
   await config.deployed();
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory("FeeManager");
-  feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address]);
-  await feeManager.deployed()
+  feeManager = <FeeManager>await upgrades.deployProxy(
+    FeeManager,
+    [config.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
+  );
+  await feeManager.deployed();
   await config.setFeeManager(feeManager.address);
 
-  const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-  bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address]);
+  const BlueBerryBank = await ethers.getContractFactory(
+    CONTRACT_NAMES.BlueBerryBank
+  );
+  bank = <BlueBerryBank>(
+    await upgrades.deployProxy(
+      BlueBerryBank,
+      [oracle.address, config.address],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
   await bank.deployed();
 
   // Deploy ICHI wrapper
@@ -219,29 +275,41 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiFarm.add(100, admin.address); // fake pool
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-  werc20 = <WERC20>await upgrades.deployProxy(WERC20);
+  werc20 = <WERC20>(
+    await upgrades.deployProxy(WERC20, { unsafeAllow: ["delegatecall"] })
+  );
   await werc20.deployed();
 
   const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-  wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [
-    ADDRESS.ICHI,
-    ADDRESS.ICHI_FARM,
-    ichiFarm.address
-  ]);
+  wichi = <WIchiFarm>(
+    await upgrades.deployProxy(
+      WIchiFarm,
+      [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
   await wichi.deployed();
 
   // Deploy ICHI spell
   const IchiSpell = await ethers.getContractFactory(CONTRACT_NAMES.IchiSpell);
-  ichiSpell = <IchiSpell>await upgrades.deployProxy(IchiSpell, [
-    bank.address,
-    werc20.address,
-    WETH,
-    wichi.address,
-    UNI_V3_ROUTER
-  ])
+  ichiSpell = <IchiSpell>(
+    await upgrades.deployProxy(
+      IchiSpell,
+      [bank.address, werc20.address, WETH, wichi.address, UNI_V3_ROUTER],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
   await ichiSpell.deployed();
-  await ichiSpell.addStrategy(ichi_USDC_ICHI_Vault.address, utils.parseUnits("10", 18), utils.parseUnits("2000", 18));
-  await ichiSpell.addStrategy(ichi_USDC_DAI_Vault.address, utils.parseUnits("10", 18), utils.parseUnits("2000", 18));
+  await ichiSpell.addStrategy(
+    ichi_USDC_ICHI_Vault.address,
+    utils.parseUnits("10", 18),
+    utils.parseUnits("2000", 18)
+  );
+  await ichiSpell.addStrategy(
+    ichi_USDC_DAI_Vault.address,
+    utils.parseUnits("10", 18),
+    utils.parseUnits("2000", 18)
+  );
   await ichiSpell.setCollateralsMaxLTVs(
     0,
     [USDC, ICHI, DAI],
@@ -254,53 +322,69 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   );
 
   // Setup Bank
-  await bank.whitelistSpells(
-    [ichiSpell.address],
-    [true]
-  )
+  await bank.whitelistSpells([ichiSpell.address], [true]);
   await bank.whitelistTokens([USDC, ICHI, DAI], [true, true, true]);
-  await bank.whitelistERC1155([
-    werc20.address, wichi.address
-  ], true);
+  await bank.whitelistERC1155([werc20.address, wichi.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [
-    config.address,
-  ])
+  hardVault = <HardVault>await upgrades.deployProxy(
+    HardVault,
+    [config.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
+  );
 
   const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
-  usdcSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
-    config.address,
-    CUSDC,
-    "Interest Bearing USDC",
-    "ibUSDC"
-  ])
+  usdcSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
   await usdcSoftVault.deployed();
   await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
 
-  daiSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
-    config.address,
-    CDAI,
-    "Interest Bearing DAI",
-    "ibDAI"
-  ])
+  daiSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CDAI, "Interest Bearing DAI", "ibDAI"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
   await daiSoftVault.deployed();
   await bank.addBank(DAI, daiSoftVault.address, hardVault.address, 8500);
 
-  ichiSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
-    config.address,
-    CICHI,
-    "Interest Bearing ICHI",
-    "ibICHI"
-  ]);
+  ichiSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CICHI, "Interest Bearing ICHI", "ibICHI"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
   await ichiSoftVault.deployed();
   await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
-  const compound = <IComptroller>await ethers.getContractAt("IComptroller", ADDRESS.BLB_COMPTROLLER, admin);
-  await compound._setCreditLimit(bank.address, CUSDC, utils.parseUnits("3000000"));
-  await compound._setCreditLimit(bank.address, CICHI, utils.parseUnits("3000000"));
-  await compound._setCreditLimit(bank.address, CDAI, utils.parseUnits("3000000"));
+  const compound = <IComptroller>(
+    await ethers.getContractAt("IComptroller", ADDRESS.BLB_COMPTROLLER, admin)
+  );
+  await compound._setCreditLimit(
+    bank.address,
+    CUSDC,
+    utils.parseUnits("3000000")
+  );
+  await compound._setCreditLimit(
+    bank.address,
+    CICHI,
+    utils.parseUnits("3000000")
+  );
+  await compound._setCreditLimit(
+    bank.address,
+    CDAI,
+    utils.parseUnits("3000000")
+  );
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits("500", 6));
@@ -314,9 +398,18 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await dai.transfer(alice.address, utils.parseUnits("500", 18));
   await daiSoftVault.deposit(utils.parseUnits("5000", 18));
 
-  console.log("ICHI Balance:", utils.formatEther(await ichi.balanceOf(admin.address)));
-  console.log("USDC Balance:", utils.formatUnits(await usdc.balanceOf(admin.address), 6));
-  console.log("DAI Balance:", utils.formatEther(await dai.balanceOf(admin.address)));
+  console.log(
+    "ICHI Balance:",
+    utils.formatEther(await ichi.balanceOf(admin.address))
+  );
+  console.log(
+    "USDC Balance:",
+    utils.formatUnits(await usdc.balanceOf(admin.address), 6)
+  );
+  console.log(
+    "DAI Balance:",
+    utils.formatEther(await dai.balanceOf(admin.address))
+  );
 
   return {
     ichi_USDC_ICHI_Vault,
@@ -334,6 +427,6 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     ichiSoftVault,
     daiSoftVault,
     hardVault,
-    uniV3Lib: LibInstance
-  }
-}
+    uniV3Lib: LibInstance,
+  };
+};

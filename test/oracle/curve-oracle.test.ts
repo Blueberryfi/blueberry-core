@@ -67,7 +67,9 @@ describe("Curve LP Oracle", () => {
     const CoreOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.CoreOracle
     );
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
+    coreOracle = <CoreOracle>(
+      await upgrades.deployProxy(CoreOracle, { unsafeAllow: ["delegatecall"] })
+    );
     await coreOracle.deployed();
   });
 

@@ -55,7 +55,11 @@ describe("Ichi Vault Oracle", () => {
     const CoreOracleFactory = await ethers.getContractFactory(
       CONTRACT_NAMES.CoreOracle
     );
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracleFactory);
+    coreOracle = <CoreOracle>(
+      await upgrades.deployProxy(CoreOracleFactory, {
+        unsafeAllow: ["delegatecall"],
+      })
+    );
     await coreOracle.deployed();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(

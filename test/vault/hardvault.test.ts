@@ -38,13 +38,21 @@ describe("HardVault", () => {
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
     const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
-    config = <ProtocolConfig>(
-      await upgrades.deployProxy(ProtocolConfig, [treasury.address])
+    config = <ProtocolConfig>await upgrades.deployProxy(
+      ProtocolConfig,
+      [treasury.address],
+      {
+        unsafeAllow: ["delegatecall"],
+      }
     );
 
     const FeeManager = await ethers.getContractFactory("FeeManager");
-    const feeManager = <FeeManager>(
-      await upgrades.deployProxy(FeeManager, [config.address])
+    const feeManager = <FeeManager>await upgrades.deployProxy(
+      FeeManager,
+      [config.address],
+      {
+        unsafeAllow: ["delegatecall"],
+      }
     );
     await feeManager.deployed();
     await config.setFeeManager(feeManager.address);
@@ -53,7 +61,9 @@ describe("HardVault", () => {
 
   beforeEach(async () => {
     const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-    vault = <HardVault>await upgrades.deployProxy(HardVault, [config.address]);
+    vault = <HardVault>await upgrades.deployProxy(HardVault, [config.address], {
+      unsafeAllow: ["delegatecall"],
+    });
     await vault.deployed();
 
     // deposit 50 eth -> 50 WETH
@@ -82,7 +92,9 @@ describe("HardVault", () => {
         CONTRACT_NAMES.HardVault
       );
       await expect(
-        upgrades.deployProxy(HardVault, [ethers.constants.AddressZero])
+        upgrades.deployProxy(HardVault, [ethers.constants.AddressZero], {
+          unsafeAllow: ["delegatecall"],
+        })
       ).to.be.revertedWithCustomError(HardVault, "ZERO_ADDRESS");
 
       expect(await vault.config()).to.be.equal(config.address);
