@@ -74,6 +74,15 @@ const config: HardhatUserConfig = {
           },
         },
       },
+      {
+        version: "0.5.16",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
     ],
   },
   networks: {
@@ -100,6 +109,7 @@ const config: HardhatUserConfig = {
     clear: true,
     flat: true,
     spacing: 2,
+    except: ["IBaseOracle"]
   },
   contractSizer: {
     alphaSort: true,

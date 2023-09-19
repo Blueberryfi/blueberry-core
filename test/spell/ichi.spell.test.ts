@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai, { expect } from "chai";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, utils, Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 import {
   BlueBerryBank,
@@ -26,9 +26,6 @@ import { TickMath } from "@uniswap/v3-sdk";
 chai.use(near);
 chai.use(roughlyNear);
 
-const CUSDC = ADDRESS.bUSDC;
-const CICHI = ADDRESS.bICHI;
-const CDAI = ADDRESS.bDAI;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const USDT = ADDRESS.USDT;
@@ -60,6 +57,9 @@ describe("ICHI Angel Vaults Spell", () => {
   let daiVault: MockIchiVault;
   let protocol: Protocol;
 
+  let bICHI: Contract;
+  let bDAI: Contract;
+
   before(async () => {
     await fork(17089048);
 
@@ -79,6 +79,9 @@ describe("ICHI Angel Vaults Spell", () => {
     wichi = protocol.wichi;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
+
+    bICHI = protocol.bICHI;
+    bDAI = protocol.bDAI;
   });
 
   beforeEach(async () => {});
@@ -330,7 +333,7 @@ describe("ICHI Angel Vaults Spell", () => {
     });
     it("should be able to open a position for ICHI angel vault", async () => {
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
-      const beforeICHIBalance = await ichi.balanceOf(CICHI);
+      const beforeICHIBalance = await ichi.balanceOf(bICHI.address);
       const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
         ichiVault.address,
         bank.address
@@ -353,7 +356,7 @@ describe("ICHI Angel Vaults Spell", () => {
       );
 
       const fee = depositAmount.mul(50).div(10000);
-      const afterICHIBalance = await ichi.balanceOf(CICHI);
+      const afterICHIBalance = await ichi.balanceOf(bICHI.address);
       expect(afterICHIBalance.sub(beforeICHIBalance)).to.be.near(
         depositAmount.sub(fee)
       );
@@ -385,7 +388,7 @@ describe("ICHI Angel Vaults Spell", () => {
       const depositAmount = utils.parseUnits("400", 18); // worth of $400
       const borrowAmount = utils.parseUnits("30", 6);
       const beforeTreasuryBalance = await dai.balanceOf(treasury.address);
-      const beforeDAIBalance = await dai.balanceOf(CDAI);
+      const beforeDAIBalance = await dai.balanceOf(bDAI.address);
       const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
         daiVault.address,
         bank.address
@@ -408,7 +411,7 @@ describe("ICHI Angel Vaults Spell", () => {
       );
 
       const fee = depositAmount.mul(50).div(10000);
-      const afterDAIBalance = await dai.balanceOf(CDAI);
+      const afterDAIBalance = await dai.balanceOf(bDAI.address);
       expect(afterDAIBalance.sub(beforeDAIBalance)).to.be.near(
         depositAmount.sub(fee)
       );
@@ -699,7 +702,7 @@ describe("ICHI Angel Vaults Spell", () => {
 
     it("should be able to open a position for ICHI angel vault", async () => {
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
-      const beforeICHIBalance = await ichi.balanceOf(CICHI);
+      const beforeICHIBalance = await ichi.balanceOf(bICHI.address);
       const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
         ichiVault.address,
         bank.address
@@ -722,7 +725,7 @@ describe("ICHI Angel Vaults Spell", () => {
       );
 
       const fee = depositAmount.mul(50).div(10000);
-      const afterICHIBalance = await ichi.balanceOf(CICHI);
+      const afterICHIBalance = await ichi.balanceOf(bICHI.address);
       expect(afterICHIBalance.sub(beforeICHIBalance)).to.be.near(
         depositAmount.sub(fee).sub(utils.parseUnits("5", 18))
       );
