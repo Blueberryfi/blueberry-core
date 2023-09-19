@@ -28,6 +28,7 @@ const CUSDC = ADDRESS.bUSDC;
 const CDAI = ADDRESS.bDAI;
 const CICHI = ADDRESS.bICHI;
 const WETH = ADDRESS.WETH;
+const wstETH = ADDRESS.wstETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const ICHI = ADDRESS.ICHI;
@@ -38,6 +39,7 @@ const ETH_PRICE = 1600;
 
 export interface Protocol {
   ichi_USDC_ICHI_Vault: MockIchiVault,
+  ichi_USDC_DAI_Vault: MockIchiVault,
   ichiFarm: MockIchiFarm,
   werc20: WERC20,
   wichi: WIchiFarm,
@@ -164,12 +166,13 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
   await mockOracle.setPrice(
-    [WETH, USDC, ICHI, DAI],
+    [WETH, USDC, ICHI, DAI, wstETH],
     [
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18).mul(5), // $5
       BigNumber.from(10).pow(18), // $1
+      BigNumber.from(10).pow(18).mul(ETH_PRICE),
     ],
   )
 
@@ -183,14 +186,15 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiOracle.setPriceDeviation(ICHI, 500);
   await ichiOracle.setPriceDeviation(USDC, 500);
   await ichiOracle.setPriceDeviation(DAI, 500);
+  await ichiOracle.setPriceDeviation(wstETH, 500);
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
   await oracle.deployed();
 
   await oracle.setRoutes(
-    [WETH, USDC, ICHI, DAI, ichi_USDC_ICHI_Vault.address, ichi_USDC_DAI_Vault.address],
-    [mockOracle.address, mockOracle.address, mockOracle.address, mockOracle.address, ichiOracle.address, ichiOracle.address]
+    [WETH, USDC, ICHI, DAI, wstETH, ichi_USDC_ICHI_Vault.address, ichi_USDC_DAI_Vault.address],
+    [mockOracle.address, mockOracle.address, mockOracle.address, mockOracle.address, mockOracle.address, ichiOracle.address, ichiOracle.address]
   )
   // Deploy Bank
   const Config = await ethers.getContractFactory("ProtocolConfig");
@@ -244,13 +248,13 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiSpell.addStrategy(ichi_USDC_DAI_Vault.address, utils.parseUnits("10", 18), utils.parseUnits("2000", 18));
   await ichiSpell.setCollateralsMaxLTVs(
     0,
-    [USDC, ICHI, DAI],
-    [30000, 30000, 30000]
+    [USDC, ICHI, DAI, wstETH, WETH],
+    [30000, 30000, 30000, 30000, 30000]
   );
   await ichiSpell.setCollateralsMaxLTVs(
     1,
-    [USDC, ICHI, DAI],
-    [30000, 30000, 30000]
+    [USDC, ICHI, DAI, wstETH, WETH],
+    [30000, 30000, 30000, 30000, 30000]
   );
 
   // Setup Bank
@@ -258,7 +262,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     [ichiSpell.address],
     [true]
   )
-  await bank.whitelistTokens([USDC, ICHI, DAI], [true, true, true]);
+  await bank.whitelistTokens([USDC, ICHI, DAI, wstETH, WETH], [true, true, true, true, true]);
   await bank.whitelistERC1155([
     werc20.address, wichi.address
   ], true);
@@ -320,6 +324,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   return {
     ichi_USDC_ICHI_Vault,
+    ichi_USDC_DAI_Vault,
     ichiFarm,
     werc20,
     wichi,
