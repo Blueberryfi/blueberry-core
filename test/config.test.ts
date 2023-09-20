@@ -22,8 +22,12 @@ describe("Protocol Config", () => {
 
   beforeEach(async () => {
     const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
-    config = <ProtocolConfig>(
-      await upgrades.deployProxy(ProtocolConfig, [treasury.address])
+    config = <ProtocolConfig>await upgrades.deployProxy(
+      ProtocolConfig,
+      [treasury.address],
+      {
+        unsafeAllow: ["delegatecall"],
+      }
     );
   });
 
@@ -36,7 +40,9 @@ describe("Protocol Config", () => {
     it("should revert when treasury address is invalid", async () => {
       const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
       await expect(
-        upgrades.deployProxy(ProtocolConfig, [ethers.constants.AddressZero])
+        upgrades.deployProxy(ProtocolConfig, [ethers.constants.AddressZero], {
+          unsafeAllow: ["delegatecall"],
+        })
       ).to.be.revertedWithCustomError(ProtocolConfig, "ZERO_ADDRESS");
 
       expect(await config.treasury()).to.be.equal(treasury.address);
@@ -84,9 +90,9 @@ describe("Protocol Config", () => {
     await expect(config.connect(alice).setDepositFee(100)).to.be.revertedWith(
       "Ownable: caller is not the owner"
     );
-    await expect(config.setDepositFee(2500)).to.be.revertedWithCustomError(config, 
-      "RATIO_TOO_HIGH"
-    ).withArgs(2500);
+    await expect(config.setDepositFee(2500))
+      .to.be.revertedWithCustomError(config, "RATIO_TOO_HIGH")
+      .withArgs(2500);
 
     await config.setDepositFee(100);
     expect(await config.depositFee()).to.be.equal(100);
@@ -96,9 +102,9 @@ describe("Protocol Config", () => {
     await expect(config.connect(alice).setWithdrawFee(100)).to.be.revertedWith(
       "Ownable: caller is not the owner"
     );
-    await expect(config.setWithdrawFee(2500)).to.be.revertedWithCustomError(config, 
-      "RATIO_TOO_HIGH"
-    ).withArgs(2500);
+    await expect(config.setWithdrawFee(2500))
+      .to.be.revertedWithCustomError(config, "RATIO_TOO_HIGH")
+      .withArgs(2500);
 
     await config.setWithdrawFee(100);
     expect(await config.withdrawFee()).to.be.equal(100);
@@ -108,9 +114,9 @@ describe("Protocol Config", () => {
     await expect(config.connect(alice).setRewardFee(100)).to.be.revertedWith(
       "Ownable: caller is not the owner"
     );
-    await expect(config.setRewardFee(2500)).to.be.revertedWithCustomError(config, 
-      "RATIO_TOO_HIGH"
-    ).withArgs(2500);
+    await expect(config.setRewardFee(2500))
+      .to.be.revertedWithCustomError(config, "RATIO_TOO_HIGH")
+      .withArgs(2500);
 
     await config.setRewardFee(100);
     expect(await config.rewardFee()).to.be.equal(100);
@@ -120,9 +126,9 @@ describe("Protocol Config", () => {
     await expect(
       config.connect(alice).setFeeDistribution(0, 0, 0)
     ).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(config.setFeeDistribution(0, 4000, 3000)).to.be.revertedWithCustomError(config, 
-      "INVALID_FEE_DISTRIBUTION"
-    );
+    await expect(
+      config.setFeeDistribution(0, 4000, 3000)
+    ).to.be.revertedWithCustomError(config, "INVALID_FEE_DISTRIBUTION");
 
     await config.setFeeDistribution(3000, 4000, 3000);
     expect(await config.treasuryFeeRate()).to.be.equal(3000);

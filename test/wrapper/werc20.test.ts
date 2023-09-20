@@ -11,7 +11,9 @@ describe("Wrapped ERC20", () => {
 
   before(async () => {
     const WERC20 = await ethers.getContractFactory("WERC20");
-    werc20 = <WERC20>await upgrades.deployProxy(WERC20);
+    werc20 = <WERC20>(
+      await upgrades.deployProxy(WERC20, { unsafeAllow: ["delegatecall"] })
+    );
   });
 
   describe("Constructor", () => {

@@ -222,7 +222,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   await tricryptoOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
+  oracle = <CoreOracle>(
+    await upgrades.deployProxy(CoreOracle, { unsafeAllow: ["delegatecall"] })
+  );
   await oracle.deployed();
 
   await oracle.setRoutes(
@@ -257,15 +259,23 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
 
   // Deploy Bank
   const Config = await ethers.getContractFactory("ProtocolConfig");
-  config = <ProtocolConfig>(
-    await upgrades.deployProxy(Config, [treasury.address])
+  config = <ProtocolConfig>await upgrades.deployProxy(
+    Config,
+    [treasury.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
   );
   await config.deployed();
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory("FeeManager");
-  feeManager = <FeeManager>(
-    await upgrades.deployProxy(FeeManager, [config.address])
+  feeManager = <FeeManager>await upgrades.deployProxy(
+    FeeManager,
+    [config.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
   );
   await feeManager.deployed();
   await config.setFeeManager(feeManager.address);
@@ -274,35 +284,53 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     CONTRACT_NAMES.BlueBerryBank
   );
   bank = <BlueBerryBank>(
-    await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address])
+    await upgrades.deployProxy(
+      BlueBerryBank,
+      [oracle.address, config.address],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await bank.deployed();
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-  werc20 = <WERC20>await upgrades.deployProxy(WERC20);
+  werc20 = <WERC20>(
+    await upgrades.deployProxy(WERC20, { unsafeAllow: ["delegatecall"] })
+  );
   await werc20.deployed();
 
   const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
   waura = <WAuraPools>(
-    await upgrades.deployProxy(WAuraPools, [AURA, ADDRESS.AURA_BOOSTER, STASH_AURA])
+    await upgrades.deployProxy(
+      WAuraPools,
+      [AURA, ADDRESS.AURA_BOOSTER, STASH_AURA],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await waura.deployed();
 
   // Deploy CRV spell
   const AuraSpell = await ethers.getContractFactory(CONTRACT_NAMES.AuraSpell);
   auraSpell = <AuraSpell>(
-    await upgrades.deployProxy(AuraSpell, [
-      bank.address,
-      werc20.address,
-      WETH,
-      waura.address,
-      AUGUSTUS_SWAPPER,
-      TOKEN_TRANSFER_PROXY,
-    ])
+    await upgrades.deployProxy(
+      AuraSpell,
+      [
+        bank.address,
+        werc20.address,
+        WETH,
+        waura.address,
+        AUGUSTUS_SWAPPER,
+        TOKEN_TRANSFER_PROXY,
+      ],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await auraSpell.deployed();
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
-  await auraSpell.addStrategy(ADDRESS.BAL_UDU, utils.parseUnits("100", 18), utils.parseUnits("2000", 18));
+  await auraSpell.addStrategy(
+    ADDRESS.BAL_UDU,
+    utils.parseUnits("100", 18),
+    utils.parseUnits("2000", 18)
+  );
   await auraSpell.addStrategy(
     ADDRESS.BAL_AURA_STABLE,
     utils.parseUnits("100", 18),
@@ -325,40 +353,41 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   await bank.whitelistERC1155([werc20.address, waura.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>(
-    await upgrades.deployProxy(HardVault, [config.address])
+  hardVault = <HardVault>await upgrades.deployProxy(
+    HardVault,
+    [config.address],
+    {
+      unsafeAllow: ["delegatecall"],
+    }
   );
 
   const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
   usdcSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      bUSDC.address,
-      "Interest Bearing USDC",
-      "ibUSDC",
-    ])
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await usdcSoftVault.deployed();
   await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
 
   daiSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      bDAI.address,
-      "Interest Bearing DAI",
-      "ibDAI",
-    ])
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CDAI, "Interest Bearing DAI", "ibDAI"],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await daiSoftVault.deployed();
   await bank.addBank(DAI, daiSoftVault.address, hardVault.address, 8500);
 
   crvSoftVault = <SoftVault>(
-    await upgrades.deployProxy(SoftVault, [
-      config.address,
-      bCRV.address,
-      "Interest Bearing CRV",
-      "ibCRV",
-    ])
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, CCRV, "Interest Bearing CRV", "ibCRV"],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
   await crvSoftVault.deployed();
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);

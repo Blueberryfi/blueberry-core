@@ -16,11 +16,11 @@ describe("Wrapped Ichi Farm", () => {
     );
     const WIchiFarm = await ethers.getContractFactory("WIchiFarm");
     wichi = <WIchiFarm>(
-      await upgrades.deployProxy(WIchiFarm, [
-        ADDRESS.ICHI,
-        ADDRESS.ICHI_FARM,
-        ichiFarm.address,
-      ])
+      await upgrades.deployProxy(
+        WIchiFarm,
+        [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address],
+        { unsafeAllow: ["delegatecall"] }
+      )
     );
     await wichi.deployed();
   });
@@ -29,25 +29,25 @@ describe("Wrapped Ichi Farm", () => {
     it("should revert when zero address is provided in params", async () => {
       const WIchiFarm = await ethers.getContractFactory("WIchiFarm");
       await expect(
-        upgrades.deployProxy(WIchiFarm, [
-          ethers.constants.AddressZero,
-          ADDRESS.ICHI_FARM,
-          ichiFarm.address,
-        ])
+        upgrades.deployProxy(
+          WIchiFarm,
+          [ethers.constants.AddressZero, ADDRESS.ICHI_FARM, ichiFarm.address],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(WIchiFarm, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(WIchiFarm, [
-          ADDRESS.ICHI,
-          ethers.constants.AddressZero,
-          ichiFarm.address,
-        ])
+        upgrades.deployProxy(
+          WIchiFarm,
+          [ADDRESS.ICHI, ethers.constants.AddressZero, ichiFarm.address],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(WIchiFarm, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(WIchiFarm, [
-          ADDRESS.ICHI,
-          ADDRESS.ICHI_FARM,
-          ethers.constants.AddressZero,
-        ])
+        upgrades.deployProxy(
+          WIchiFarm,
+          [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ethers.constants.AddressZero],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(WIchiFarm, "ZERO_ADDRESS");
     });
     it("should revert initializing twice", async () => {

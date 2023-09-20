@@ -88,59 +88,79 @@ describe("Curve Spell", () => {
         CONTRACT_NAMES.CurveSpell
       );
       await expect(
-        upgrades.deployProxy(CurveSpell, [
-          ethers.constants.AddressZero,
-          werc20.address,
-          WETH,
-          wgauge.address,
-          stableOracle.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          CurveSpell,
+          [
+            ethers.constants.AddressZero,
+            werc20.address,
+            WETH,
+            wgauge.address,
+            stableOracle.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
-          bank.address,
-          ethers.constants.AddressZero,
-          WETH,
-          wgauge.address,
-          stableOracle.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          CurveSpell,
+          [
+            bank.address,
+            ethers.constants.AddressZero,
+            WETH,
+            wgauge.address,
+            stableOracle.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
-          bank.address,
-          werc20.address,
-          ethers.constants.AddressZero,
-          wgauge.address,
-          stableOracle.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          CurveSpell,
+          [
+            bank.address,
+            werc20.address,
+            ethers.constants.AddressZero,
+            wgauge.address,
+            stableOracle.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
-          bank.address,
-          werc20.address,
-          WETH,
-          ethers.constants.AddressZero,
-          stableOracle.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          CurveSpell,
+          [
+            bank.address,
+            werc20.address,
+            WETH,
+            ethers.constants.AddressZero,
+            stableOracle.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(CurveSpell, [
-          bank.address,
-          werc20.address,
-          WETH,
-          wgauge.address,
-          ethers.constants.AddressZero,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          CurveSpell,
+          [
+            bank.address,
+            werc20.address,
+            WETH,
+            wgauge.address,
+            ethers.constants.AddressZero,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(CurveSpell, "ZERO_ADDRESS");
     });
     it("should revert initializing twice", async () => {
