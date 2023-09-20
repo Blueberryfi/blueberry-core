@@ -16,8 +16,6 @@ import "./CurveBaseOracle.sol";
 /// @author BlueberryProtocol
 /// @notice Oracle contract which privides price feeds of Curve volatile pool LP tokens
 contract CurveTricryptoOracle is CurveBaseOracle {
-    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -56,18 +54,13 @@ contract CurveTricryptoOracle is CurveBaseOracle {
 
         /// Check if the token list length is 3 (tricrypto)
         if (tokens.length == 3) {
-            uint256 wethIndex;
-            uint256[3] memory prices;
-            for (uint256 i; i != 3; ++i) {
-                address token = tokens[i];
-                prices[i] = base.getPrice(token);
-                if (token == WETH) {
-                    wethIndex = i;
-                }
-            }
             return
-                (lpPrice(virtualPrice, prices[0], prices[1], prices[2]) *
-                    1e18) / prices[wethIndex];
+                lpPrice(
+                    virtualPrice,
+                    base.getPrice(tokens[0]),
+                    base.getPrice(tokens[1]),
+                    base.getPrice(tokens[2])
+                );
         }
         revert BlueBerryErrors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
@@ -75,7 +68,7 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     /// @dev Calculates the LP price using provided token prices and virtual price.
     /// @param virtualPrice The virtual price from the pool.
     /// @param p1 Price of the first token.
-    /// @param p2 Price of the second token (usually ETH).
+    /// @param p2 Price of the second token.
     /// @param p3 Price of the third token.
     /// @return The calculated LP price.
     function lpPrice(
