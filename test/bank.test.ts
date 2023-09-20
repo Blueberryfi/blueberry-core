@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai, { expect } from "chai";
-import { BigNumber, constants, utils } from "ethers";
+import { BigNumber, constants, utils, Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 import {
   BlueBerryBank,
@@ -32,7 +32,6 @@ import { TickMath } from "@uniswap/v3-sdk";
 chai.use(near);
 chai.use(roughlyNear);
 
-const CUSDC = ADDRESS.bUSDC;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
@@ -65,6 +64,7 @@ describe("Bank", () => {
   let ichiFarm: MockIchiFarm;
   let ichiVault: MockIchiVault;
   let protocol: Protocol;
+  let bCRV: Contract;
 
   before(async () => {
     [admin, alice, treasury] = await ethers.getSigners();
@@ -88,6 +88,7 @@ describe("Bank", () => {
     ichiSoftVault = protocol.ichiSoftVault;
     daiSoftVault = protocol.daiSoftVault;
     hardVault = protocol.hardVault;
+    bCRV = protocol.bCRV;
   });
 
   beforeEach(async () => {});
@@ -1015,7 +1016,7 @@ describe("Bank", () => {
         const crvSoftVault = <SoftVault>(
           await upgrades.deployProxy(SoftVault, [
             config.address,
-            ADDRESS.bCRV,
+            bCRV.address,
             "Interest Bearing CRV",
             "ibCRV",
           ])

@@ -21,7 +21,7 @@ import {
   HardVault,
   FeeManager,
   UniV3WrappedLib,
-  Comptroller
+  Comptroller,
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from "./money-market";
@@ -56,6 +56,7 @@ export interface Protocol {
   uniV3Lib: UniV3WrappedLib,
   bUSDC: Contract,
   bICHI: Contract,
+  bCRV: Contract,
   bDAI: Contract,
   bMIM: Contract,
   bLINK: Contract,
@@ -98,6 +99,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   let comptroller: Comptroller;
   let bUSDC: Contract;
   let bICHI: Contract;
+  let bCRV: Contract;
   let bDAI: Contract;
   let bMIM: Contract;
   let bLINK: Contract;
@@ -294,6 +296,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   comptroller = bTokens.comptroller;
   bUSDC = bTokens.bUSDC;
   bICHI = bTokens.bICHI;
+  bCRV = bTokens.bCRV;
   bDAI = bTokens.bDAI;
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
@@ -378,6 +381,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     uniV3Lib: LibInstance,
     bUSDC,
     bICHI,
+    bCRV,
     bDAI,
     bMIM,
     bLINK,

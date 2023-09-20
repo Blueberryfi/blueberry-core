@@ -200,6 +200,18 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   );
   console.log("bICHI deployed at: ", bICHI.address);
 
+  // Deploy CRV
+  const bCRV = await deployBToken(
+    ADDRESS.CRV,
+    comptroller.address,
+    IRM.address,
+    "Blueberry CRV",
+    "bCRV",
+    18,
+    bTokenAdmin.address
+  );
+  console.log("bCRV deployed at: ", bCRV.address);
+
   const bDAI = await deployBToken(
     ADDRESS.DAI,
     comptroller.address,
@@ -315,6 +327,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
 
   await comptroller._supportMarket(bUSDC.address, 0);
   await comptroller._supportMarket(bICHI.address, 0);
+  await comptroller._supportMarket(bCRV.address, 0);
   await comptroller._supportMarket(bDAI.address, 0);
   await comptroller._supportMarket(bMIM.address, 0);
   await comptroller._supportMarket(bLINK.address, 0);
@@ -329,6 +342,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     comptroller,
     bUSDC,
     bICHI,
+    bCRV,
     bDAI,
     bMIM,
     bLINK,
