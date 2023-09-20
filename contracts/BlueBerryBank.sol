@@ -490,8 +490,8 @@ contract BlueBerryBank is
         uint256 underlyingAmount;
         if (_isSoftVault(pos.underlyingToken)) {
             underlyingAmount =
-                (ICErc20(banks[pos.debtToken].bToken).exchangeRateStored() *
-                    pos.underlyingVaultShare) /
+                (ICErc20(banks[pos.underlyingToken].bToken)
+                    .exchangeRateStored() * pos.underlyingVaultShare) /
                 Constants.PRICE_PRECISION;
         } else {
             underlyingAmount = pos.underlyingVaultShare;
