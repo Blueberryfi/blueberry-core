@@ -380,7 +380,11 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
   );
-  await convexSpell.setCollateralsMaxLTVs(2, [USDC, CRV, DAI], [300, 300, 300]);
+  await convexSpell.setCollateralsMaxLTVs(
+    2,
+    [USDC, CRV, DAI],
+    [300, 300, 300]
+  );
   convexSpellWithVolatileOracle = <ConvexSpell>(
     await upgrades.deployProxy(
       ConvexSpell,
@@ -429,7 +433,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   usdcSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+      [config.address, bUSDC.address, "Interest Bearing USDC", "ibUSDC"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -439,7 +443,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   daiSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CDAI, "Interest Bearing DAI", "ibDAI"],
+      [config.address, bDAI.address, "Interest Bearing DAI", "ibDAI"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -449,7 +453,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   crvSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CCRV, "Interest Bearing CRV", "ibCRV"],
+      [config.address, bCRV.address, "Interest Bearing CRV", "ibCRV"],
       { unsafeAllow: ["delegatecall"] }
     )
   );

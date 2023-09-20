@@ -315,10 +315,9 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
 
   usdcSoftVault = <SoftVault>(
-
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+      [config.address, bUSDC.address, "Interest Bearing USDC", "ibUSDC"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -327,7 +326,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   daiSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CDAI, "Interest Bearing DAI", "ibDAI"],
+      [config.address, bDAI.address, "Interest Bearing DAI", "ibDAI"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -344,7 +343,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   crvSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CCRV, "Interest Bearing CRV", "ibCRV"],
+      [config.address, bCRV.address, "Interest Bearing CRV", "ibCRV"],
       { unsafeAllow: ["delegatecall"] }
     )
   );

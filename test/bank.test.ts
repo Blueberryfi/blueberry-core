@@ -1020,7 +1020,7 @@ describe("Bank", () => {
 
           await upgrades.deployProxy(
             SoftVault,
-            [config.address, ADDRESS.bCRV, "Interest Bearing CRV", "ibCRV"],
+            [config.address, bCRV.address, "Interest Bearing CRV", "ibCRV"],
             { unsafeAllow: ["delegatecall"] }
           )
         );

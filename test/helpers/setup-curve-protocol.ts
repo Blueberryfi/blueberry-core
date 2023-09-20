@@ -1,4 +1,3 @@
-
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, utils, Contract } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
@@ -21,12 +20,10 @@ import {
   CurveVolatileOracle,
   CurveTricryptoOracle,
   CurveSpell,
-
   Comptroller,
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from "./money-market";
-
 
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
@@ -38,7 +35,6 @@ const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 
 export interface CrvProtocol {
-
   werc20: WERC20,
   wgauge: WCurveGauge,
   mockOracle: MockOracle,
@@ -117,55 +113,51 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
 
   // Prepare USDC
   // deposit 80 eth -> 80 WETH
-  await weth.deposit({ value: utils.parseUnits("100") });
+  await weth.deposit({ value: utils.parseUnits('100') });
 
   // swap 40 WETH -> USDC, 40 WETH -> DAI
   await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
-  const uniV2Router = <IUniswapV2Router02>(
-    await ethers.getContractAt(
-      CONTRACT_NAMES.IUniswapV2Router02,
-      ADDRESS.UNI_V2_ROUTER
-    )
+  const uniV2Router = <IUniswapV2Router02>await ethers.getContractAt(
+    CONTRACT_NAMES.IUniswapV2Router02,
+    ADDRESS.UNI_V2_ROUTER
   );
   await uniV2Router.swapExactTokensForTokens(
-    utils.parseUnits("30"),
+    utils.parseUnits('30'),
     0,
     [WETH, USDC],
     admin.address,
     ethers.constants.MaxUint256
-  );
+  )
   await uniV2Router.swapExactTokensForTokens(
-    utils.parseUnits("30"),
+    utils.parseUnits('30'),
     0,
     [WETH, DAI],
     admin.address,
     ethers.constants.MaxUint256
-  );
+  )
   // Swap 40 weth -> crv
   await weth.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
-  const sushiRouter = <IUniswapV2Router02>(
-    await ethers.getContractAt(
-      CONTRACT_NAMES.IUniswapV2Router02,
-      ADDRESS.SUSHI_ROUTER
-    )
+  const sushiRouter = <IUniswapV2Router02>await ethers.getContractAt(
+    CONTRACT_NAMES.IUniswapV2Router02,
+    ADDRESS.SUSHI_ROUTER
   );
   await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits("40"),
+    utils.parseUnits('40'),
     0,
     [WETH, CRV],
     admin.address,
     ethers.constants.MaxUint256
-  );
+  )
   // Try to swap some crv to usdc -> Swap router test
   await crv.approve(ADDRESS.SUSHI_ROUTER, 0);
   await crv.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
   await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits("10"),
+    utils.parseUnits('10'),
     0,
     [CRV, WETH, USDC],
     admin.address,
     ethers.constants.MaxUint256
-  );
+  )
 
   const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
   const LibInstance = await LinkedLibFactory.deploy();
@@ -181,8 +173,8 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
-    ]
-  );
+    ],
+  )
 
   const CurveStableOracleFactory = await ethers.getContractFactory(
     CONTRACT_NAMES.CurveStableOracle
@@ -224,16 +216,23 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   await oracle.deployed();
 
   await oracle.setRoutes(
-    [WETH, USDC, CRV, DAI, USDT, ADDRESS.CRV_3Crv],
+    [
+      WETH,
+      USDC,
+      CRV,
+      DAI,
+      USDT,
+      ADDRESS.CRV_3Crv
+    ],
     [
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
-      stableOracle.address,
+      stableOracle.address
     ]
-  );
+  )
 
   let bTokens = await deployBTokens(admin.address, oracle.address);
   comptroller = bTokens.comptroller;
@@ -270,7 +269,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
       unsafeAllow: ["delegatecall"],
     }
   );
-  await feeManager.deployed();
+  await feeManager.deployed()
   await config.setFeeManager(feeManager.address);
 
   const BlueBerryBank = await ethers.getContractFactory(
@@ -344,9 +343,14 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   );
 
   // Setup Bank
-  await bank.whitelistSpells([curveSpell.address], [true]);
+  await bank.whitelistSpells(
+    [curveSpell.address],
+    [true]
+  );
   await bank.whitelistTokens([USDC, CRV, DAI], [true, true, true]);
-  await bank.whitelistERC1155([werc20.address, wgauge.address], true);
+  await bank.whitelistERC1155([
+    werc20.address, wgauge.address
+  ], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
   hardVault = <HardVault>await upgrades.deployProxy(
@@ -361,7 +365,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   usdcSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+      [config.address, bUSDC.address, "Interest Bearing USDC", "ibUSDC"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -371,7 +375,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   daiSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CDAI, "Interest Bearing DAI", "ibDAI"],
+      [config.address, bDAI.address, "Interest Bearing DAI", "ibDAI"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -381,7 +385,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   crvSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CCRV, "Interest Bearing CRV", "ibCRV"],
+      [config.address, bCRV.address, "Interest Bearing CRV", "ibCRV"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -389,24 +393,9 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
-  const compound = <IComptroller>(
-    await ethers.getContractAt("IComptroller", ADDRESS.BLB_COMPTROLLER, admin)
-  );
-  await compound._setCreditLimit(
-    bank.address,
-    CUSDC,
-    utils.parseUnits("3000000")
-  );
-  await compound._setCreditLimit(
-    bank.address,
-    CCRV,
-    utils.parseUnits("3000000")
-  );
-  await compound._setCreditLimit(
-    bank.address,
-    CDAI,
-    utils.parseUnits("3000000")
-  );
+  await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits("3000000"));
+  await comptroller._setCreditLimit(bank.address, bCRV.address, utils.parseUnits("3000000"));
+  await comptroller._setCreditLimit(bank.address, bDAI.address, utils.parseUnits("3000000"));
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits("500", 6));
@@ -420,18 +409,9 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   await dai.transfer(alice.address, utils.parseUnits("500", 18));
   await daiSoftVault.deposit(utils.parseUnits("5000", 18));
 
-  console.log(
-    "CRV Balance:",
-    utils.formatEther(await crv.balanceOf(admin.address))
-  );
-  console.log(
-    "USDC Balance:",
-    utils.formatUnits(await usdc.balanceOf(admin.address), 6)
-  );
-  console.log(
-    "DAI Balance:",
-    utils.formatEther(await dai.balanceOf(admin.address))
-  );
+  console.log("CRV Balance:", utils.formatEther(await crv.balanceOf(admin.address)));
+  console.log("USDC Balance:", utils.formatUnits(await usdc.balanceOf(admin.address), 6));
+  console.log("DAI Balance:", utils.formatEther(await dai.balanceOf(admin.address)));
 
   return {
     werc20,

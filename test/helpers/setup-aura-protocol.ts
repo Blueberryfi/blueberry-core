@@ -365,7 +365,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   usdcSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+      [config.address, bUSDC.address, "Interest Bearing USDC", "ibUSDC"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -375,7 +375,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   daiSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CDAI, "Interest Bearing DAI", "ibDAI"],
+      [config.address, bDAI.address, "Interest Bearing DAI", "ibDAI"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -385,7 +385,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   crvSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, CCRV, "Interest Bearing CRV", "ibCRV"],
+      [config.address, bCRV.address, "Interest Bearing CRV", "ibCRV"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
