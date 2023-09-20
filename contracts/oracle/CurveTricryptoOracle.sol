@@ -13,14 +13,15 @@ pragma solidity 0.8.16;
 import "./CurveBaseOracle.sol";
 
 /// @title Curve Volatile Oracle
-/// @author BlueberryProtocol 
+/// @author BlueberryProtocol
 /// @notice Oracle contract which privides price feeds of Curve volatile pool LP tokens
 contract CurveTricryptoOracle is CurveBaseOracle {
-    
+    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructor initializes the CurveBaseOracle with the provided parameters.
     /// @param base_ The address of the base oracle.
     /// @param addressProvider_ The address of the curve address provider.
@@ -46,20 +47,27 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     /// @param crvLp The ERC-20 Curve LP token address.
     /// @return The USD value of the Curve LP token.
     function getPrice(address crvLp) external override returns (uint256) {
-        (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
+        (
+            address pool,
+            address[] memory tokens,
+            uint256 virtualPrice
+        ) = _getPoolInfo(crvLp);
         _checkReentrant(pool, tokens.length);
 
         /// Check if the token list length is 3 (tricrypto)
         if (tokens.length == 3) {
-            /// tokens[2] is WETH
-            uint256 ethPrice = base.getPrice(tokens[2]);
+            uint256 wethIndex;
+            uint256[3] memory prices;
+            for (uint256 i; i != 3; ++i) {
+                address token = tokens[i];
+                prices[i] = base.getPrice(token);
+                if (token == WETH) {
+                    wethIndex = i;
+                }
+            }
             return
-                (lpPrice(
-                    virtualPrice,
-                    base.getPrice(tokens[1]),
-                    ethPrice,
-                    base.getPrice(tokens[0])
-                ) * 1e18) / ethPrice;
+                (lpPrice(virtualPrice, prices[0], prices[1], prices[2]) *
+                    1e18) / prices[wethIndex];
         }
         revert BlueBerryErrors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
