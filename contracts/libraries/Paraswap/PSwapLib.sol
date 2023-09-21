@@ -47,6 +47,10 @@ library PSwapLib {
     ) internal returns (uint256) {
         _approve(IERC20(data.fromToken), tokenTransferProxy, data.fromAmount);
 
-        return IParaswap(augustusSwapper).megaSwap(data);
+        uint256 result = IParaswap(augustusSwapper).megaSwap(data);
+
+        IERC20(data.fromToken).approve(tokenTransferProxy, 0);
+
+        return result;
     }
 }
