@@ -46,7 +46,9 @@ describe("Core Oracle", () => {
     const CoreOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.CoreOracle
     );
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
+    coreOracle = <CoreOracle>(
+      await upgrades.deployProxy(CoreOracle, { unsafeAllow: ["delegatecall"] })
+    );
 
     const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
     werc20 = <WERC20>await WERC20.deploy();

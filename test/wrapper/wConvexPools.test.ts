@@ -66,10 +66,11 @@ describe("WConvexPools", () => {
       CONTRACT_NAMES.WConvexPools
     );
     wConvexPools = <WConvexPools>(
-      await upgrades.deployProxy(WConvexPoolsFactory, [
-        cvx.address,
-        booster.address,
-      ])
+      await upgrades.deployProxy(
+        WConvexPoolsFactory,
+        [cvx.address, booster.address],
+        { unsafeAllow: ["delegatecall"] }
+      )
     );
 
     await booster.addPool(

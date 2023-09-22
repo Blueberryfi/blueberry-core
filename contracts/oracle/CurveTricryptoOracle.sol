@@ -13,14 +13,13 @@ pragma solidity 0.8.16;
 import "./CurveBaseOracle.sol";
 
 /// @title Curve Volatile Oracle
-/// @author BlueberryProtocol 
+/// @author BlueberryProtocol
 /// @notice Oracle contract which privides price feeds of Curve volatile pool LP tokens
 contract CurveTricryptoOracle is CurveBaseOracle {
-    
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructor initializes the CurveBaseOracle with the provided parameters.
     /// @param base_ The address of the base oracle.
     /// @param addressProvider_ The address of the curve address provider.
@@ -46,20 +45,22 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     /// @param crvLp The ERC-20 Curve LP token address.
     /// @return The USD value of the Curve LP token.
     function getPrice(address crvLp) external override returns (uint256) {
-        (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
+        (
+            address pool,
+            address[] memory tokens,
+            uint256 virtualPrice
+        ) = _getPoolInfo(crvLp);
         _checkReentrant(pool, tokens.length);
 
         /// Check if the token list length is 3 (tricrypto)
         if (tokens.length == 3) {
-            /// tokens[2] is WETH
-            uint256 ethPrice = base.getPrice(tokens[2]);
             return
-                (lpPrice(
+                lpPrice(
                     virtualPrice,
+                    base.getPrice(tokens[0]),
                     base.getPrice(tokens[1]),
-                    ethPrice,
-                    base.getPrice(tokens[0])
-                ) * 1e18) / ethPrice;
+                    base.getPrice(tokens[2])
+                );
         }
         revert BlueBerryErrors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
@@ -67,7 +68,7 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     /// @dev Calculates the LP price using provided token prices and virtual price.
     /// @param virtualPrice The virtual price from the pool.
     /// @param p1 Price of the first token.
-    /// @param p2 Price of the second token (usually ETH).
+    /// @param p2 Price of the second token.
     /// @param p3 Price of the third token.
     /// @return The calculated LP price.
     function lpPrice(
