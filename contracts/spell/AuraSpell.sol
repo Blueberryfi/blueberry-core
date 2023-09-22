@@ -222,7 +222,7 @@ contract AuraSpell is BasicSpell {
                     uint256[] memory minAmountsOut,
                     address[] memory tokens,
                     uint256 borrowTokenIndex
-                ) = _getExitPoolParams(param.borrowToken, lpToken);
+                ) = _getExitPoolParams(param, lpToken);
 
                 wAuraPools.getVault(lpToken).exitPool(
                     IBalancerPool(lpToken).getPoolId(),
@@ -346,15 +346,17 @@ contract AuraSpell is BasicSpell {
     }
 
     /// @dev Calculate the parameters required for exiting a Balancer pool.
-    /// @param borrowToken The token to be borrowed
+    /// @param param Close position param
     /// @param lpToken The LP token for the Balancer pool
     /// @return minAmountsOut Minimum amounts to receive for each token upon exiting
     /// @return tokens List of tokens in the Balancer pool
     /// @return exitTokenIndex Index of the borrowToken in the tokens list
     function _getExitPoolParams(
-        address borrowToken,
+        ClosePosParam calldata param,
         address lpToken
     ) internal view returns (uint256[] memory, address[] memory, uint256) {
+        address borrowToken = param.borrowToken;
+        uint256 amountOutMin = param.amountOutMin;
         (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
 
         uint256 length = tokens.length;
@@ -362,7 +364,10 @@ contract AuraSpell is BasicSpell {
         uint256 exitTokenIndex;
 
         for (uint256 i; i != length; ) {
-            if (tokens[i] == borrowToken) break;
+            if (tokens[i] == borrowToken) {
+                minAmountsOut[i] = amountOutMin;
+                break;
+            }
 
             if (tokens[i] != lpToken) ++exitTokenIndex;
 
