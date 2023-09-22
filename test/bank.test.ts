@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import chai, { expect } from "chai";
-import { BigNumber, constants, utils } from "ethers";
+import { BigNumber, constants, utils, Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 import {
   BlueBerryBank,
@@ -32,7 +32,6 @@ import { TickMath } from "@uniswap/v3-sdk";
 chai.use(near);
 chai.use(roughlyNear);
 
-const CUSDC = ADDRESS.bUSDC;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
@@ -65,6 +64,7 @@ describe("Bank", () => {
   let ichiFarm: MockIchiFarm;
   let ichiVault: MockIchiVault;
   let protocol: Protocol;
+  let bCRV: Contract;
 
   before(async () => {
     [admin, alice, treasury] = await ethers.getSigners();
@@ -88,6 +88,7 @@ describe("Bank", () => {
     ichiSoftVault = protocol.ichiSoftVault;
     daiSoftVault = protocol.daiSoftVault;
     hardVault = protocol.hardVault;
+    bCRV = protocol.bCRV;
   });
 
   beforeEach(async () => {});
@@ -98,17 +99,19 @@ describe("Bank", () => {
         CONTRACT_NAMES.BlueBerryBank
       );
       await expect(
-        upgrades.deployProxy(BlueBerryBank, [
-          ethers.constants.AddressZero,
-          config.address,
-        ])
+        upgrades.deployProxy(
+          BlueBerryBank,
+          [ethers.constants.AddressZero, config.address],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(BlueBerryBank, "ZERO_ADDRESS");
 
       await expect(
-        upgrades.deployProxy(BlueBerryBank, [
-          oracle.address,
-          ethers.constants.AddressZero,
-        ])
+        upgrades.deployProxy(
+          BlueBerryBank,
+          [oracle.address, ethers.constants.AddressZero],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(BlueBerryBank, "ZERO_ADDRESS");
     });
     it("should initialize states on constructor", async () => {
@@ -116,10 +119,11 @@ describe("Bank", () => {
         CONTRACT_NAMES.BlueBerryBank
       );
       const bank = <BlueBerryBank>(
-        await upgrades.deployProxy(BlueBerryBank, [
-          oracle.address,
-          config.address,
-        ])
+        await upgrades.deployProxy(
+          BlueBerryBank,
+          [oracle.address, config.address],
+          { unsafeAllow: ["delegatecall"] }
+        )
       );
       await bank.deployed();
 
@@ -1013,12 +1017,12 @@ describe("Bank", () => {
           CONTRACT_NAMES.SoftVault
         );
         const crvSoftVault = <SoftVault>(
-          await upgrades.deployProxy(SoftVault, [
-            config.address,
-            ADDRESS.bCRV,
-            "Interest Bearing CRV",
-            "ibCRV",
-          ])
+
+          await upgrades.deployProxy(
+            SoftVault,
+            [config.address, bCRV.address, "Interest Bearing CRV", "ibCRV"],
+            { unsafeAllow: ["delegatecall"] }
+          )
         );
         await crvSoftVault.deployed();
 

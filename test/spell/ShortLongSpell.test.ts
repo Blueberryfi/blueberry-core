@@ -36,7 +36,9 @@ describe("ShortLongSpell", () => {
     [owner, alice] = await ethers.getSigners();
 
     const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-    werc20 = <WERC20>await upgrades.deployProxy(WERC20);
+    werc20 = <WERC20>(
+      await upgrades.deployProxy(WERC20, { unsafeAllow: ["delegatecall"] })
+    );
 
     const MockWethFactory = await ethers.getContractFactory(
       CONTRACT_NAMES.MockWETH
@@ -67,13 +69,17 @@ describe("ShortLongSpell", () => {
     );
 
     spell = <ShortLongSpell>(
-      await upgrades.deployProxy(ShortLongSpellFactory, [
-        bank.address,
-        werc20.address,
-        weth.address,
-        augustusSwapper.address,
-        tokenTransferProxy.address,
-      ])
+      await upgrades.deployProxy(
+        ShortLongSpellFactory,
+        [
+          bank.address,
+          werc20.address,
+          weth.address,
+          augustusSwapper.address,
+          tokenTransferProxy.address,
+        ],
+        { unsafeAllow: ["delegatecall"] }
+      )
     );
   });
 
@@ -88,61 +94,81 @@ describe("ShortLongSpell", () => {
 
     it("should revert when bank is address(0)", async () => {
       await expect(
-        upgrades.deployProxy(ShortLongSpellFactory, [
-          constants.AddressZero,
-          werc20.address,
-          weth.address,
-          augustusSwapper.address,
-          tokenTransferProxy.address,
-        ])
+        upgrades.deployProxy(
+          ShortLongSpellFactory,
+          [
+            constants.AddressZero,
+            werc20.address,
+            weth.address,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when werc20 is address(0)", async () => {
       await expect(
-        upgrades.deployProxy(ShortLongSpellFactory, [
-          bank.address,
-          constants.AddressZero,
-          weth.address,
-          augustusSwapper.address,
-          tokenTransferProxy.address,
-        ])
+        upgrades.deployProxy(
+          ShortLongSpellFactory,
+          [
+            bank.address,
+            constants.AddressZero,
+            weth.address,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when weth is address(0)", async () => {
       await expect(
-        upgrades.deployProxy(ShortLongSpellFactory, [
-          bank.address,
-          werc20.address,
-          constants.AddressZero,
-          augustusSwapper.address,
-          tokenTransferProxy.address,
-        ])
+        upgrades.deployProxy(
+          ShortLongSpellFactory,
+          [
+            bank.address,
+            werc20.address,
+            constants.AddressZero,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when augustus swapper is address(0)", async () => {
       await expect(
-        upgrades.deployProxy(ShortLongSpellFactory, [
-          bank.address,
-          werc20.address,
-          weth.address,
-          constants.AddressZero,
-          tokenTransferProxy.address,
-        ])
+        upgrades.deployProxy(
+          ShortLongSpellFactory,
+          [
+            bank.address,
+            werc20.address,
+            weth.address,
+            constants.AddressZero,
+            tokenTransferProxy.address,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 
     it("should revert when token transfer proxy is address(0)", async () => {
       await expect(
-        upgrades.deployProxy(ShortLongSpellFactory, [
-          bank.address,
-          werc20.address,
-          weth.address,
-          augustusSwapper.address,
-          constants.AddressZero,
-        ])
+        upgrades.deployProxy(
+          ShortLongSpellFactory,
+          [
+            bank.address,
+            werc20.address,
+            weth.address,
+            augustusSwapper.address,
+            constants.AddressZero,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
 

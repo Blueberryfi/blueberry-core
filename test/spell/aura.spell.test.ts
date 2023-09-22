@@ -32,9 +32,6 @@ chai.use(roughlyNear);
 
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
-const CUSDC = ADDRESS.bUSDC;
-const CDAI = ADDRESS.bDAI;
-const CCRV = ADDRESS.bCRV;
 const BAL = ADDRESS.BAL;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
@@ -105,44 +102,60 @@ describe("Aura Spell", () => {
         CONTRACT_NAMES.AuraSpell
       );
       await expect(
-        upgrades.deployProxy(AuraSpell, [
-          ethers.constants.AddressZero,
-          werc20.address,
-          WETH,
-          waura.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          AuraSpell,
+          [
+            ethers.constants.AddressZero,
+            werc20.address,
+            WETH,
+            waura.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(AuraSpell, [
-          bank.address,
-          ethers.constants.AddressZero,
-          WETH,
-          waura.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          AuraSpell,
+          [
+            bank.address,
+            ethers.constants.AddressZero,
+            WETH,
+            waura.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(AuraSpell, [
-          bank.address,
-          werc20.address,
-          ethers.constants.AddressZero,
-          waura.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          AuraSpell,
+          [
+            bank.address,
+            werc20.address,
+            ethers.constants.AddressZero,
+            waura.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(AuraSpell, [
-          bank.address,
-          werc20.address,
-          WETH,
-          ethers.constants.AddressZero,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          AuraSpell,
+          [
+            bank.address,
+            werc20.address,
+            WETH,
+            ethers.constants.AddressZero,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(spell, "ZERO_ADDRESS");
     });
     it("should revert initializing twice", async () => {

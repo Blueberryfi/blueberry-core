@@ -58,7 +58,9 @@ describe("Balancer Pair Oracle", () => {
     const CoreOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.CoreOracle
     );
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
+    coreOracle = <CoreOracle>(
+      await upgrades.deployProxy(CoreOracle, { unsafeAllow: ["delegatecall"] })
+    );
 
     const WeightedBPTOracleFactory = await ethers.getContractFactory(
       CONTRACT_NAMES.WeightedBPTOracle

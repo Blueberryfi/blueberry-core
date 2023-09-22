@@ -3,8 +3,13 @@ import { BigNumber, utils } from "ethers";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { ChainlinkAdapterOracle, IFeedRegistry } from "../../typechain-types";
+import {
+  ChainlinkAdapterOracle,
+  IFeedRegistry,
+  IWstETH,
+} from "../../typechain-types";
 import ChainlinkFeedABI from "../../abi/IFeedRegistry.json";
+import WstETHABI from "../../abi/IWstETH.json";
 
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
@@ -19,11 +24,13 @@ describe("Chainlink Adapter Oracle", () => {
   let alice: SignerWithAddress;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
   let chainlinkFeedOracle: IFeedRegistry;
+  let wstETH: IWstETH;
   before(async () => {
     [admin, alice] = await ethers.getSigners();
     chainlinkFeedOracle = <IFeedRegistry>(
       await ethers.getContractAt(ChainlinkFeedABI, ADDRESS.ChainlinkRegistry)
     );
+    wstETH = <IWstETH>await ethers.getContractAt(WstETHABI, ADDRESS.wstETH);
   });
 
   beforeEach(async () => {
@@ -35,9 +42,14 @@ describe("Chainlink Adapter Oracle", () => {
     );
     await chainlinkAdapterOracle.deployed();
 
+    await chainlinkAdapterOracle.setTokenRemappings(
+      [ADDRESS.wstETH],
+      [ADDRESS.stETH]
+    );
+
     await chainlinkAdapterOracle.setTimeGap(
-      [ADDRESS.USDC, ADDRESS.UNI],
-      [OneDay, OneDay]
+      [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.stETH],
+      [OneDay, OneDay, OneDay]
     );
   });
 
@@ -211,6 +223,30 @@ describe("Chainlink Adapter Oracle", () => {
       ).to.be.roughlyNear(price);
       console.log("UNI Price:", utils.formatUnits(price, 18));
     });
+
+    it("wstETH price feeds / based 10^18", async () => {
+      const decimals = await chainlinkFeedOracle.decimals(
+        ADDRESS.stETH,
+        ADDRESS.CHAINLINK_USD
+      );
+      const stETHData = await chainlinkFeedOracle.latestRoundData(
+        ADDRESS.stETH,
+        ADDRESS.CHAINLINK_USD
+      );
+      const stEthPerToken = await wstETH.stEthPerToken();
+      const price = await chainlinkAdapterOracle.callStatic.getPrice(
+        ADDRESS.wstETH
+      );
+
+      expect(
+        stETHData.answer
+          .mul(BigNumber.from(10).pow(18))
+          .mul(stEthPerToken)
+          .div(BigNumber.from(10).pow(18 + decimals))
+      ).to.be.roughlyNear(price);
+      console.log("wstETH Price:", utils.formatUnits(price, 18));
+    });
+
     it("CRV price feeds", async () => {
       await chainlinkAdapterOracle.setTimeGap([ADDRESS.CRV], [OneDay]);
       await chainlinkAdapterOracle.setTokenRemappings(

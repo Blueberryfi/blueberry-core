@@ -36,9 +36,6 @@ chai.use(roughlyNear);
 
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
-const CUSDC = ADDRESS.bUSDC;
-const CDAI = ADDRESS.bDAI;
-const CCRV = ADDRESS.bCRV;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
@@ -114,59 +111,79 @@ describe("Convex Spell", () => {
         CONTRACT_NAMES.ConvexSpell
       );
       await expect(
-        upgrades.deployProxy(ConvexSpell, [
-          ethers.constants.AddressZero,
-          werc20.address,
-          WETH,
-          wconvex.address,
-          stableOracle.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          ConvexSpell,
+          [
+            ethers.constants.AddressZero,
+            werc20.address,
+            WETH,
+            wconvex.address,
+            stableOracle.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(ConvexSpell, [
-          bank.address,
-          ethers.constants.AddressZero,
-          WETH,
-          wconvex.address,
-          stableOracle.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          ConvexSpell,
+          [
+            bank.address,
+            ethers.constants.AddressZero,
+            WETH,
+            wconvex.address,
+            stableOracle.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(ConvexSpell, [
-          bank.address,
-          werc20.address,
-          ethers.constants.AddressZero,
-          wconvex.address,
-          stableOracle.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          ConvexSpell,
+          [
+            bank.address,
+            werc20.address,
+            ethers.constants.AddressZero,
+            wconvex.address,
+            stableOracle.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(ConvexSpell, [
-          bank.address,
-          werc20.address,
-          WETH,
-          ethers.constants.AddressZero,
-          stableOracle.address,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          ConvexSpell,
+          [
+            bank.address,
+            werc20.address,
+            WETH,
+            ethers.constants.AddressZero,
+            stableOracle.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(ConvexSpell, [
-          bank.address,
-          werc20.address,
-          WETH,
-          wconvex.address,
-          ethers.constants.AddressZero,
-          AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY,
-        ])
+        upgrades.deployProxy(
+          ConvexSpell,
+          [
+            bank.address,
+            werc20.address,
+            WETH,
+            wconvex.address,
+            ethers.constants.AddressZero,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(ConvexSpell, "ZERO_ADDRESS");
     });
     it("should revert initializing twice", async () => {

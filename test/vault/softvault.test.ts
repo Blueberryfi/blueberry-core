@@ -41,14 +41,22 @@ describe("SoftVault", () => {
     cUSDC = <ICErc20>await ethers.getContractAt("ICErc20", CUSDC);
 
     const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
-    config = <ProtocolConfig>(
-      await upgrades.deployProxy(ProtocolConfig, [treasury.address])
+    config = <ProtocolConfig>await upgrades.deployProxy(
+      ProtocolConfig,
+      [treasury.address],
+      {
+        unsafeAllow: ["delegatecall"],
+      }
     );
     config.startVaultWithdrawFee();
 
     const FeeManager = await ethers.getContractFactory("FeeManager");
-    const feeManager = <FeeManager>(
-      await upgrades.deployProxy(FeeManager, [config.address])
+    const feeManager = <FeeManager>await upgrades.deployProxy(
+      FeeManager,
+      [config.address],
+      {
+        unsafeAllow: ["delegatecall"],
+      }
     );
     await feeManager.deployed();
     await config.setFeeManager(feeManager.address);
@@ -57,12 +65,11 @@ describe("SoftVault", () => {
   beforeEach(async () => {
     const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
     vault = <SoftVault>(
-      await upgrades.deployProxy(SoftVault, [
-        config.address,
-        CUSDC,
-        "Interest Bearing USDC",
-        "ibUSDC",
-      ])
+      await upgrades.deployProxy(
+        SoftVault,
+        [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+        { unsafeAllow: ["delegatecall"] }
+      )
     );
     await vault.deployed();
 
@@ -92,20 +99,28 @@ describe("SoftVault", () => {
         CONTRACT_NAMES.SoftVault
       );
       await expect(
-        upgrades.deployProxy(SoftVault, [
-          config.address,
-          ethers.constants.AddressZero,
-          "Interest Bearing USDC",
-          "ibUSDC",
-        ])
+        upgrades.deployProxy(
+          SoftVault,
+          [
+            config.address,
+            ethers.constants.AddressZero,
+            "Interest Bearing USDC",
+            "ibUSDC",
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(SoftVault, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(SoftVault, [
-          ethers.constants.AddressZero,
-          CUSDC,
-          "Interest Bearing USDC",
-          "ibUSDC",
-        ])
+        upgrades.deployProxy(
+          SoftVault,
+          [
+            ethers.constants.AddressZero,
+            CUSDC,
+            "Interest Bearing USDC",
+            "ibUSDC",
+          ],
+          { unsafeAllow: ["delegatecall"] }
+        )
       ).to.be.revertedWithCustomError(SoftVault, "ZERO_ADDRESS");
     });
     it("should set bToken along with uToken in constructor", async () => {
