@@ -19,8 +19,8 @@ import "../libraries/Paraswap/PSwapLib.sol";
 
 /// @title ConvexSpell
 /// @author BlueberryProtocol
-/// @notice This contract serves as the factory for defining how the Blueberry Protocol 
-///         interacts with Convex pools. It handles strategies, interactions with external contracts, 
+/// @notice This contract serves as the factory for defining how the Blueberry Protocol
+///         interacts with Convex pools. It handles strategies, interactions with external contracts,
 ///         and facilitates operations related to liquidity provision.
 contract ConvexSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -43,7 +43,7 @@ contract ConvexSpell is BasicSpell {
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-        
+
     /// @notice Initializes the ConvexSpell contract with required parameters.
     /// @param bank_ Address of the bank contract.
     /// @param werc20_ Address of the wrapped ERC20 contract.
@@ -157,7 +157,10 @@ contract ConvexSpell is BasicSpell {
             if (pos.collToken != address(wConvexPools))
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
             bank.takeCollateral(pos.collateralSize);
-            (address[] memory rewardTokens, ) = wConvexPools.burn(pos.collId, pos.collateralSize);
+            (address[] memory rewardTokens, ) = wConvexPools.burn(
+                pos.collId,
+                pos.collateralSize
+            );
             // distribute multiple rewards to users
             uint256 tokensLength = rewardTokens.length;
             for (uint256 i; i != tokensLength; ++i) {
@@ -174,12 +177,14 @@ contract ConvexSpell is BasicSpell {
 
     /// @notice Closes an existing liquidity position, unstakes from Curve gauge, and swaps rewards.
     /// @param param Struct containing all required parameters for closing a position.
-    /// @param expectedRewards List of expected reward amounts for each token.
+    /// @param amounts List of expected reward amounts for each token.
     /// @param swapDatas Swap data for each reward token.
+    /// @param isKilled If the convex pool is killed
     function closePositionFarm(
         ClosePosParam calldata param,
-        uint256[] calldata expectedRewards,
-        bytes[] calldata swapDatas
+        uint256[] calldata amounts,
+        bytes[] calldata swapDatas,
+        bool isKilled
     )
         external
         existingStrategy(param.strategyId)
@@ -202,10 +207,28 @@ contract ConvexSpell is BasicSpell {
         );
 
         /// 2. Swap rewards tokens to debt token
-        _sellRewards(rewardTokens, expectedRewards, swapDatas);
+        _sellRewards(rewardTokens, amounts, swapDatas);
 
         /// 3. Remove liquidity
-        _removeLiquidity(param, pos, crvLp, amountPosRemove);
+        address[] memory tokens = _removeLiquidity(
+            param,
+            isKilled,
+            pos,
+            crvLp,
+            amountPosRemove
+        );
+
+        if (isKilled) {
+            for (uint256 i; i != tokens.length; ++i) {
+                if (tokens[i] != pos.debtToken) {
+                    _swapOnParaswap(
+                        tokens[i],
+                        amounts[i + rewardTokens.length],
+                        swapDatas[i + rewardTokens.length]
+                    );
+                }
+            }
+        }
 
         /// 4. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
@@ -230,17 +253,20 @@ contract ConvexSpell is BasicSpell {
 
     /// @dev Removes liquidity from a Curve pool for a given position.
     /// @param param Contains data required to close the position.
+    /// @param isKilled If the convex pool is killed
     /// @param pos Data structure representing the current bank position.
     /// @param crvLp Address of the Curve LP token.
-    /// @param amountPosRemove Amount of LP tokens to be removed from the pool. 
+    /// @param amountPosRemove Amount of LP tokens to be removed from the pool.
     ///        If set to max, will remove all available LP tokens.
     function _removeLiquidity(
         ClosePosParam memory param,
+        bool isKilled,
         IBank.Position memory pos,
         address crvLp,
         uint256 amountPosRemove
-    ) internal {
-        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
+    ) internal returns (address[] memory tokens) {
+        address pool;
+        (pool, tokens, ) = crvOracle.getPoolInfo(
             crvLp
         );
 
@@ -249,29 +275,44 @@ contract ConvexSpell is BasicSpell {
         }
 
         int128 tokenIndex;
-        uint256 tokensLength = tokens.length;
-        for (uint256 i; i != tokensLength; ++i) {
+        uint256 len = tokens.length;
+        for (uint256 i; i != len; ++i) {
             if (tokens[i] == pos.debtToken) {
                 tokenIndex = int128(uint128(i));
                 break;
             }
         }
 
-        /// Removes liquidity from the Curve pool for the specified token.
-        ICurvePool(pool).remove_liquidity_one_coin(
-            amountPosRemove,
-            int128(tokenIndex),
-            param.amountOutMin
-        );
+        if (isKilled) {
+            if (len == 2) {
+                uint256[2] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else if (len == 3) {
+                uint256[3] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else if (len == 4) {
+                uint256[4] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else {
+                revert("Invalid pool length");
+            }
+        } else {
+            /// Removes liquidity from the Curve pool for the specified token.
+            ICurvePool(pool).remove_liquidity_one_coin(
+                amountPosRemove,
+                int128(tokenIndex),
+                param.amountOutMin
+            );
+        }
     }
 
     /// @dev Internal function Sells the accumulated reward tokens.
     /// @param rewardTokens An array of addresses of the reward tokens to be sold.
-    /// @param expectedRewards Array containing the expected amounts of each reward token.
+    /// @param amounts Array containing the expected amounts of each reward token.
     /// @param swapDatas Data required for performing the swaps.
     function _sellRewards(
         address[] memory rewardTokens,
-        uint[] calldata expectedRewards,
+        uint256[] calldata amounts,
         bytes[] calldata swapDatas
     ) internal {
         uint256 tokensLength = rewardTokens.length;
@@ -281,21 +322,29 @@ contract ConvexSpell is BasicSpell {
             /// Apply any potential fees on the reward.
             _doCutRewardsFee(sellToken);
 
-            uint expectedReward = expectedRewards[i];
+            uint256 expectedReward = amounts[i];
             /// If the expected reward is zero, skip to the next token.
-            if (expectedReward == 0) continue;
-            /// Swap the reward token for another desired token. If the swap fails, revert with an error.
-            if (
-                !PSwapLib.swap(
-                    augustusSwapper,
-                    tokenTransferProxy,
-                    sellToken,
-                    expectedReward,
-                    swapDatas[i]
-                )
-            ) revert Errors.SWAP_FAILED(sellToken);
-            /// Refund any leftover (dust) amounts after the swap to the contract owner
-            _doRefund(sellToken);
+            _swapOnParaswap(sellToken, expectedReward, swapDatas[i]);
         }
+    }
+
+    function _swapOnParaswap(
+        address token,
+        uint256 amount,
+        bytes calldata swapData
+    ) internal {
+        if (amount == 0) return;
+        if (
+            !PSwapLib.swap(
+                augustusSwapper,
+                tokenTransferProxy,
+                token,
+                amount,
+                swapData
+            )
+        ) revert Errors.SWAP_FAILED(token);
+
+        // Refund rest amount to owner
+        _doRefund(token);
     }
 }

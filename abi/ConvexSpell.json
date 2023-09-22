@@ -389,13 +389,18 @@
       },
       {
         "internalType": "uint256[]",
-        "name": "expectedRewards",
+        "name": "amounts",
         "type": "uint256[]"
       },
       {
         "internalType": "bytes[]",
         "name": "swapDatas",
         "type": "bytes[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "isKilled",
+        "type": "bool"
       }
     ],
     "name": "closePositionFarm",

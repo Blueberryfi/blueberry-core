@@ -499,6 +499,7 @@ describe("Convex Spell", () => {
             },
             expectedAmounts,
             swapDatas.map((item) => item.data),
+            false,
           ])
         )
       ).to.be.revertedWith("Not enough coins removed");
@@ -524,6 +525,7 @@ describe("Convex Spell", () => {
             },
             [],
             [],
+            false,
           ])
         )
       )
@@ -551,6 +553,7 @@ describe("Convex Spell", () => {
             },
             [],
             [],
+            false,
           ])
         )
       )
@@ -628,6 +631,7 @@ describe("Convex Spell", () => {
             },
             expectedAmounts,
             swapDatas.map((item) => item.data),
+            false,
           ])
         )
       ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
@@ -695,6 +699,7 @@ describe("Convex Spell", () => {
           },
           expectedAmounts,
           swapDatas.map((item) => item.data),
+          false,
         ])
       );
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
