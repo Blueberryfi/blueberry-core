@@ -103,14 +103,14 @@ contract CurveSpell is BasicSpell {
 
         // 3. Add liquidity on curve
         address borrowToken = param.borrowToken;
-        _ensureApprove(param.borrowToken, pool, borrowBalance);
+        uint256 borrowTokenBalance = IERC20Upgradeable(borrowToken).balanceOf(address(this));
+        require(borrowBalance <= borrowTokenBalance, "impossible");
+        _ensureApprove(param.borrowToken, pool, borrowTokenBalance);
         if (tokens.length == 2) {
             uint256[2] memory suppliedAmts;
             for (uint256 i = 0; i < 2; i++) {
                 if (tokens[i] == borrowToken) {
-                    suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                        address(this)
-                    );
+                    suppliedAmts[i] = borrowTokenBalance;
                     break;
                 }
             }
@@ -119,9 +119,7 @@ contract CurveSpell is BasicSpell {
             uint256[3] memory suppliedAmts;
             for (uint256 i = 0; i < 3; i++) {
                 if (tokens[i] == borrowToken) {
-                    suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                        address(this)
-                    );
+                    suppliedAmts[i] = borrowTokenBalance;
                     break;
                 }
             }
@@ -130,9 +128,7 @@ contract CurveSpell is BasicSpell {
             uint256[4] memory suppliedAmts;
             for (uint256 i = 0; i < 4; i++) {
                 if (tokens[i] == borrowToken) {
-                    suppliedAmts[i] = IERC20Upgradeable(tokens[i]).balanceOf(
-                        address(this)
-                    );
+                    suppliedAmts[i] = borrowTokenBalance;
                     break;
                 }
             }
