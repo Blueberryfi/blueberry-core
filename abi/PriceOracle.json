@@ -1,13 +1,14 @@
 [
   {
+    "constant": true,
     "inputs": [
       {
-        "internalType": "address",
-        "name": "token",
+        "internalType": "contract BToken",
+        "name": "bToken",
         "type": "address"
       }
     ],
-    "name": "getPrice",
+    "name": "getUnderlyingPrice",
     "outputs": [
       {
         "internalType": "uint256",
@@ -15,7 +16,8 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
+    "payable": false,
+    "stateMutability": "view",
     "type": "function"
   }
 ]

@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "./BaseAdapter.sol";
 import "../interfaces/IBaseOracle.sol";
+import "../interfaces/IWstETH.sol";
 import "../interfaces/chainlink/IFeedRegistry.sol";
 
 /// @title ChainlinkAdapterOracle for L1 Chains
@@ -37,6 +38,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     ///      For example, WETH may be remapped to ETH, WBTC to BTC, etc.
     mapping(address => address) public remappedTokens;
 
+    /// @dev WstETH address
+    address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      EVENTS
     //////////////////////////////////////////////////////////////////////////*/
@@ -56,7 +60,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @param registry_ Chainlink feed registry address.
     constructor(IFeedRegistry registry_) {
         if (address(registry_) == address(0)) revert Errors.ZERO_ADDRESS();
@@ -120,6 +124,12 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
             revert Errors.PRICE_OUTDATED(token_);
         if (answer <= 0) revert Errors.PRICE_NEGATIVE(token_);
         if (answeredInRound < roundID) revert Errors.PRICE_OUTDATED(token_);
+
+        if (token_ == WSTETH) {
+            return
+                ((answer.toUint256() * Constants.PRICE_PRECISION) *
+                    IWstETH(WSTETH).stEthPerToken()) / 10 ** (18 + decimals);
+        }
 
         return
             (answer.toUint256() * Constants.PRICE_PRECISION) / 10 ** decimals;

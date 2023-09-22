@@ -31,9 +31,6 @@ import { getParaswapCalldata } from "../helpers/paraswap";
 chai.use(near);
 chai.use(roughlyNear);
 
-const CUSDC = ADDRESS.bUSDC;
-const CDAI = ADDRESS.bDAI;
-const CCRV = ADDRESS.bCRV;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;

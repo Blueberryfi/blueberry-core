@@ -16,6 +16,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../libraries/UniversalERC20.sol";
 
 abstract contract EnsureApprove {
+    using SafeERC20 for IERC20;
+
     /// @dev Reset approval to zero and then approve spender with amount
     /// @param token Address of token to approve
     /// @param spender Address to approve
