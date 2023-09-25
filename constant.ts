@@ -68,6 +68,7 @@ export enum CONTRACT_NAMES {
   IUniswapV2Pair = "IUniswapV2Pair",
   IUniswapV2Router02 = "IUniswapV2Router02",
   IUniswapV3Pool = "IUniswapV3Pool",
+  IUniswapV3Router = "IUniswapV3Router",
   IICHIVault = "IICHIVault",
 }
 
@@ -198,6 +199,7 @@ export const ADDRESS = {
   UNI_V3_ICHI_USDC: "0x8f0350c8Be74B4cB0458cbf04d16753000fDA9d0",
   UNI_V3_USDC_DAI: "0x5777d92f208679db4b9778590fa3cab3ac9e2168",
   UNI_V3_USDC_CRV: "0x9445bd19767f73dcae6f2de90e6cd31192f62589",
+  UNI_V3_USDC_WSTETH: "0x4622Df6fB2d9Bee0DCDaCF545aCDB6a2b2f4f863",
 
   // Oracle
   Keep3rV1Oracle: "0x73353801921417F465377c8d898c6f4C0270282C",

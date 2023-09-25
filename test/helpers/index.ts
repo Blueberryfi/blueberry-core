@@ -57,6 +57,13 @@ export const generateRandomAddress = () => {
   return Wallet.createRandom().address
 };
 
+export const impersonateAccount = async (account: string) => {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [account],
+  });
+};
+
 export * from "./setup-ichi-protocol";
 export * from "./setup-curve-protocol";
 export * from "./setup-convex-protocol";
