@@ -21,7 +21,6 @@ import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { evm_mine_blocks, fork } from "../helpers";
 import { Protocol, setupIchiProtocol } from "../helpers/setup-ichi-protocol";
-import { TickMath } from "@uniswap/v3-sdk";
 
 chai.use(near);
 chai.use(roughlyNear);
@@ -36,7 +35,6 @@ const ICHIV1 = ADDRESS.ICHI_FARM;
 const UNI_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
 
 const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
-const ETH_PRICE = 1600;
 
 describe("ICHI Angel Vaults Spell", () => {
   let admin: SignerWithAddress;
@@ -59,12 +57,14 @@ describe("ICHI Angel Vaults Spell", () => {
   let daiVault: MockIchiVault;
   let usdcVault: MockIchiVault;
   let wstETHVault: MockIchiVault;
+  let wethVault: MockIchiVault;
   let protocol: Protocol;
 
   let bICHI: Contract;
   let bDAI: Contract;
   let bUSDC: Contract;
   let bWstETH: Contract;
+  let bWETH: Contract;
 
   before(async () => {
     await fork();
@@ -85,6 +85,7 @@ describe("ICHI Angel Vaults Spell", () => {
     daiVault = protocol.ichi_USDC_DAI_Vault;
     usdcVault = protocol.ichi_USDC_DAI_Vault;
     wstETHVault = protocol.ichi_USDC_WSTETH_Vault;
+    wethVault = protocol.ichi_USDC_WETH_Vault;
     wichi = protocol.wichi;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
@@ -93,6 +94,7 @@ describe("ICHI Angel Vaults Spell", () => {
     bDAI = protocol.bDAI;
     bUSDC = protocol.bUSDC;
     bWstETH = protocol.bWstETH;
+    bWETH = protocol.bWETH;
   });
 
   beforeEach(async () => {});
@@ -526,6 +528,61 @@ describe("ICHI Angel Vaults Spell", () => {
       console.log("Position Info", pos);
 
       const afterTreasuryBalance = await wstETH.balanceOf(treasury.address);
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
+        depositAmount.mul(50).div(10000)
+      );
+    });
+    it("should be able to open a position for WETH angel vault", async () => {
+      await weth.approve(bank.address, ethers.constants.MaxUint256);
+      const depositAmount = utils.parseUnits("0.2", 18);
+      const borrowAmount = utils.parseUnits("30", 6);
+      const beforeTreasuryBalance = await weth.balanceOf(treasury.address);
+      const beforeWETHBalance = await weth.balanceOf(bWETH.address);
+      const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
+        wethVault.address,
+        bank.address
+      );
+      // Isolated collateral: WETH
+      // Borrow: USDC
+      await bank.execute(
+        0,
+        spell.address,
+        iface.encodeFunctionData("openPosition", [
+          {
+            strategyId: 3,
+            collToken: WETH,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: 0,
+          },
+        ])
+      );
+
+      const fee = depositAmount.mul(50).div(10000);
+      const afterWETHBalance = await weth.balanceOf(bWETH.address);
+      expect(afterWETHBalance.sub(beforeWETHBalance)).to.be.near(
+        depositAmount.sub(fee)
+      );
+
+      const positionId = (await bank.nextPositionId()).sub(1); // 3
+      const pos = await bank.positions(positionId);
+      const afterWrappedTokenBalance = await werc20.balanceOfERC20(
+        wethVault.address,
+        bank.address
+      );
+      expect(pos.owner).to.be.equal(admin.address);
+      expect(pos.collToken).to.be.equal(werc20.address);
+      expect(pos.collId).to.be.equal(BigNumber.from(wethVault.address));
+      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+      expect(
+        afterWrappedTokenBalance.sub(beforeWrappedTokenBalance)
+      ).to.be.equal(pos.collateralSize);
+      const bankInfo = await bank.banks(USDC);
+      console.log("Bank Info", bankInfo, await bank.banks(WETH));
+      console.log("Position Info", pos);
+
+      const afterTreasuryBalance = await weth.balanceOf(treasury.address);
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
         depositAmount.mul(50).div(10000)
       );
