@@ -17,7 +17,6 @@ import {
   ERC20,
 } from "../../typechain-types";
 import { roughlyNear } from "../assertions/roughlyNear";
-import { setupIchiProtocol } from "../helpers/setup-ichi-protocol";
 
 chai.use(roughlyNear);
 
@@ -41,7 +40,6 @@ describe("Ichi Vault Oracle", () => {
   let usdc: ERC20;
 
   before(async () => {
-    await setupIchiProtocol();
     [admin, user] = await ethers.getSigners();
 
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
@@ -118,6 +116,25 @@ describe("Ichi Vault Oracle", () => {
 
     swapRouter = <ISwapRouter>(
       await ethers.getContractAt("ISwapRouter", ADDRESS.UNI_V3_ROUTER)
+    );
+
+    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
+    await weth.deposit({ value: utils.parseUnits("20") });
+
+    // swap 40 weth -> usdc
+    await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
+    const uniV2Router = <IUniswapV2Router02>(
+      await ethers.getContractAt(
+        CONTRACT_NAMES.IUniswapV2Router02,
+        ADDRESS.UNI_V2_ROUTER
+      )
+    );
+    await uniV2Router.swapExactTokensForTokens(
+      utils.parseUnits("20"),
+      0,
+      [WETH, USDC],
+      admin.address,
+      ethers.constants.MaxUint256
     );
   });
 
@@ -303,7 +320,7 @@ describe("Ichi Vault Oracle", () => {
 
     it("Swap tokens on Uni V3 Pool to manipulate pool reserves", async () => {
       // Prepare USDC
-      // deposit 80 eth -> 80 WETH
+      // deposit 900 eth -> 900 WETH
       usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
       weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
       await weth.deposit({ value: utils.parseUnits("900") });
