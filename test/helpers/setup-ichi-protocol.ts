@@ -407,12 +407,13 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiSoftVault.deployed();
   await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address, 9000);
 
-  wstETHSoftVault = <SoftVault>await upgrades.deployProxy(SoftVault, [
-    config.address,
-    bWstETH.address,
-    "Interest Bearing WstETH",
-    "ibWstETH"
-  ]);
+  wstETHSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bWstETH.address, "Interest Bearing WstETH", "ibWstETH"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
   await wstETHSoftVault.deployed();
   await bank.addBank(wstETH, wstETHSoftVault.address, hardVault.address, 9000);
 
