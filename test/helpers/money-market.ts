@@ -1,3 +1,4 @@
+import { BErc20Delegator } from "./../../typechain-types/contracts/money-market/BErc20Delegator";
 import { BigNumber, utils } from "ethers";
 import { ethers } from "hardhat";
 
@@ -140,7 +141,11 @@ async function deployWrapped(
   return bWrappedNativeDelegator;
 }
 
-export async function deployBTokens(admin: string, baseOracle: string) {
+export async function deployBTokens(
+  admin: string,
+  baseOracle: string,
+  extraTokens: { token: string; symbol: string }[] = []
+) {
   const unitroller = await deployUnitroller();
   const comptroller = await deployComptroller();
   const bTokenAdmin = await deployBTokenAdmin(admin);
@@ -336,6 +341,21 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   );
   console.log("bWstETH deployed at: ", bWstETH.address);
 
+  const extraBTokens = await Promise.all(
+    extraTokens.map(
+      async ({ token, symbol }) =>
+        await deployBToken(
+          token,
+          comptroller.address,
+          IRM.address,
+          `Blueberry ${symbol}`,
+          `b${symbol}`,
+          18,
+          bTokenAdmin.address
+        )
+    )
+  );
+
   await comptroller._supportMarket(bUSDC.address, 0);
   await comptroller._supportMarket(bICHI.address, 0);
   await comptroller._supportMarket(bCRV.address, 0);
@@ -349,6 +369,11 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   await comptroller._supportMarket(bWETH.address, 0);
   await comptroller._supportMarket(bWBTC.address, 0);
   await comptroller._supportMarket(bWstETH.address, 0);
+  await Promise.all(
+    extraBTokens.map(
+      async (bToken) => await comptroller._supportMarket(bToken.address, 0)
+    )
+  );
 
   return {
     comptroller,
@@ -365,5 +390,6 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     bWETH,
     bWBTC,
     bWstETH,
+    extraBTokens,
   };
 }

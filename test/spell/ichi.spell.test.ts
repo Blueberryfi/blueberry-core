@@ -58,6 +58,7 @@ describe("ICHI Angel Vaults Spell", () => {
   let usdcVault: MockIchiVault;
   let wstETHVault: MockIchiVault;
   let wethVault: MockIchiVault;
+  let ichiLpTokenVault: MockIchiVault;
   let protocol: Protocol;
 
   let bICHI: Contract;
@@ -65,6 +66,7 @@ describe("ICHI Angel Vaults Spell", () => {
   let bUSDC: Contract;
   let bWstETH: Contract;
   let bWETH: Contract;
+  let bICHI_Vault_LP: Contract;
 
   before(async () => {
     await fork();
@@ -95,6 +97,7 @@ describe("ICHI Angel Vaults Spell", () => {
     bUSDC = protocol.bUSDC;
     bWstETH = protocol.bWstETH;
     bWETH = protocol.bWETH;
+    bICHI_Vault_LP = protocol.bICHI_Vault_LP;
   });
 
   beforeEach(async () => {});
@@ -583,6 +586,62 @@ describe("ICHI Angel Vaults Spell", () => {
       console.log("Position Info", pos);
 
       const afterTreasuryBalance = await weth.balanceOf(treasury.address);
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
+        depositAmount.mul(50).div(10000)
+      );
+    });
+    it("should be able to open a position for ichi_USDC_ICHI_Vault angel vault", async () => {
+      await ichiVault.approve(bank.address, ethers.constants.MaxUint256);
+      const balance = await ichiVault.balanceOf(admin.address);
+      const depositAmount = balance;
+      const borrowAmount = utils.parseUnits("30", 6);
+      const beforeTreasuryBalance = await ichiVault.balanceOf(treasury.address);
+      const beforeLPBalance = await ichiVault.balanceOf(bICHI_Vault_LP.address);
+      const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
+        ichiVault.address,
+        bank.address
+      );
+      // Isolated collateral: ichi_USDC_ICHI_Vault
+      // Borrow: USDC
+      await bank.execute(
+        0,
+        spell.address,
+        iface.encodeFunctionData("openPosition", [
+          {
+            strategyId: 0,
+            collToken: ichiVault.address,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: 0,
+          },
+        ])
+      );
+
+      const fee = depositAmount.mul(50).div(10000);
+      const afterLPBalance = await ichiVault.balanceOf(bICHI_Vault_LP.address);
+      expect(afterLPBalance.sub(beforeLPBalance)).to.be.near(
+        depositAmount.sub(fee)
+      );
+
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const pos = await bank.positions(positionId);
+      const afterWrappedTokenBalance = await werc20.balanceOfERC20(
+        ichiVault.address,
+        bank.address
+      );
+      expect(pos.owner).to.be.equal(admin.address);
+      expect(pos.collToken).to.be.equal(werc20.address);
+      expect(pos.collId).to.be.equal(BigNumber.from(ichiVault.address));
+      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+      expect(
+        afterWrappedTokenBalance.sub(beforeWrappedTokenBalance)
+      ).to.be.equal(pos.collateralSize);
+      const bankInfo = await bank.banks(USDC);
+      console.log("Bank Info", bankInfo, await bank.banks(WETH));
+      console.log("Position Info", pos);
+
+      const afterTreasuryBalance = await ichiVault.balanceOf(treasury.address);
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
         depositAmount.mul(50).div(10000)
       );
