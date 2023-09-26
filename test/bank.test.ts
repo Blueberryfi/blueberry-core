@@ -1163,9 +1163,9 @@ describe("Bank", () => {
     });
     describe("Accrue", () => {
       it("anyone can call accrue functions by tokens", async () => {
-        await expect(bank.accrue(ADDRESS.WETH))
+        await expect(bank.accrue(ADDRESS.SUSHI))
           .to.be.revertedWithCustomError(bank, "BANK_NOT_LISTED")
-          .withArgs(ADDRESS.WETH);
+          .withArgs(ADDRESS.SUSHI);
 
         await bank.accrueAll([USDC, ICHI]);
       });
