@@ -247,7 +247,10 @@ export const ADDRESS = {
   CVX_Frax3Crv_Id: 32,
   CVX_Susd_Id: 4,
   CVX_CrvEth_Id: 61,
+  CVX_FraxEth_Id: 128,
   CVX_EthStEth_Id: 25,
+  CVX_MIM_Id: 40,
+  CVX_CvxCrv_Id: 157,
 
   // Aura
   AURA_BOOSTER: "0xA57b8d98dAE62B26Ec3bcC4a365338157060B234",

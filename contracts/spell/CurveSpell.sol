@@ -15,7 +15,6 @@ import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWCurveGauge.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
-import "../libraries/UniversalERC20.sol";
 
 /**
  * @title CurveSpell
@@ -108,17 +107,27 @@ contract CurveSpell is BasicSpell {
             address borrowToken = param.borrowToken;
             _ensureApprove(borrowToken, pool, borrowBalance);
             uint256 ethValue;
-            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(
-                address(this)
-            );
-            if (IERC20(borrowToken).isETH()) {
-                ethValue = tokenBalance;
+            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(address(this));
+            require(borrowBalance <= tokenBalance, "impossible");
+            if (borrowToken == WETH) {
+                bool hasEth;
+                uint256 tokenLength = tokens.length;
+                for (uint256 i; i != tokenLength; ++i) {
+                    if (tokens[i] == ETH) {
+                        hasEth = true;
+                        break;
+                    }
+                }
+                if (hasEth) {
+                    IWETH(borrowToken).withdraw(tokenBalance);
+                    ethValue = tokenBalance;
+                }
             }
 
             if (tokens.length == 2) {
                 uint256[2] memory suppliedAmts;
                 for (uint256 i; i < 2; i++) {
-                    if (tokens[i] == borrowToken) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -130,7 +139,7 @@ contract CurveSpell is BasicSpell {
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
                 for (uint256 i; i < 3; i++) {
-                    if (tokens[i] == borrowToken) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -142,7 +151,7 @@ contract CurveSpell is BasicSpell {
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
                 for (uint256 i; i < 4; i++) {
-                    if (tokens[i] == borrowToken) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -312,6 +321,10 @@ contract CurveSpell is BasicSpell {
                 int128(uint128(tokenIndex)),
                 param.amountOutMin
             );
+        }
+
+        if (tokens[uint128(tokenIndex)] == ETH) {
+            IWETH(WETH).deposit{value: address(this).balance}();
         }
     }
 

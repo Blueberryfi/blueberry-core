@@ -1,6 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   BlueBerryBank,
+  IWETH,
   ERC20,
   ConvexSpell,
   WConvexPools,
@@ -9,7 +10,7 @@ import {
   ProtocolConfig,
 } from "../../../../typechain-types";
 import { ethers } from "hardhat";
-import { ADDRESS } from "../../../../constant";
+import { ADDRESS, CONTRACT_NAMES } from "../../../../constant";
 import {
   CvxProtocol,
   setupCvxProtocol,
@@ -26,41 +27,59 @@ import { getParaswapCalldata } from "../../../helpers/paraswap";
 chai.use(near);
 chai.use(roughlyNear);
 
-const ETH = ADDRESS.ETH;
 const WETH = ADDRESS.WETH;
 const DAI = ADDRESS.DAI;
-const POOL_ID = ADDRESS.CVX_EthStEth_Id;
+const WBTC = ADDRESS.WBTC;
+const WstETH = ADDRESS.wstETH;
+const LINK = ADDRESS.LINK;
+const POOL_ID_STETH = ADDRESS.CVX_EthStEth_Id;
+const POOL_ID_FRXETH = ADDRESS.CVX_FraxEth_Id;
+const POOL_ID_MIM = ADDRESS.CVX_MIM_Id;
+const POOL_ID_CVXCRV = ADDRESS.CVX_CvxCrv_Id;
 
-describe("Convex Spell - ETH/stETH", () => {
+describe("Convex Spells", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
 
   let dai: ERC20;
+  let wbtc: ERC20;
+  let wstETH: ERC20;
+  let link: ERC20;
+  let weth: IWETH;
   let spell: ConvexSpell;
   let wconvex: WConvexPools;
   let bank: BlueBerryBank;
   let protocol: CvxProtocol;
   let cvxBooster: ICvxPools;
-  let crvRewarder: IRewarder;
+  let crvRewarder1: IRewarder;
+  let crvRewarder2: IRewarder;
   let config: ProtocolConfig;
   const depositAmount = utils.parseUnits("1000", 18); // DAI
   const borrowAmount = utils.parseUnits("1", 18); // ETH
   const iface = new ethers.utils.Interface(SpellABI);
 
-  const STRATEGY_ID = 3;
-
   before(async () => {
     await fork();
 
     [admin, alice, treasury] = await ethers.getSigners();
+
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
+    wbtc = <ERC20>await ethers.getContractAt("ERC20", WBTC);
+    wstETH = <ERC20>await ethers.getContractAt("ERC20", WstETH);
+    link = <ERC20>await ethers.getContractAt("ERC20", LINK);
+    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
+
     cvxBooster = <ICvxPools>(
       await ethers.getContractAt("ICvxPools", ADDRESS.CVX_BOOSTER)
     );
-    const poolInfo = await cvxBooster.poolInfo(POOL_ID);
-    crvRewarder = <IRewarder>(
-      await ethers.getContractAt("IRewarder", poolInfo.crvRewards)
+    const poolInfo1 = await cvxBooster.poolInfo(POOL_ID_STETH);
+    crvRewarder1 = <IRewarder>(
+      await ethers.getContractAt("IRewarder", poolInfo1.crvRewards)
+    );
+    const poolInfo2 = await cvxBooster.poolInfo(POOL_ID_FRXETH);
+    crvRewarder2 = <IRewarder>(
+      await ethers.getContractAt("IRewarder", poolInfo2.crvRewards)
     );
 
     protocol = await setupCvxProtocol();
@@ -70,9 +89,13 @@ describe("Convex Spell - ETH/stETH", () => {
     config = protocol.config;
 
     await dai.approve(bank.address, ethers.constants.MaxUint256);
+    await weth.approve(bank.address, ethers.constants.MaxUint256);
+    await wbtc.approve(bank.address, ethers.constants.MaxUint256);
+    await wstETH.approve(bank.address, ethers.constants.MaxUint256);
+    await link.approve(bank.address, ethers.constants.MaxUint256);
   });
 
-  it("should be able to farm ETH on Convex", async () => {
+  it("should be able to farm ETH on Convex ETH/stETH pool", async () => {
     const positionId = await bank.nextPositionId();
     const beforeTreasuryBalance = await dai.balanceOf(treasury.address);
     await bank.execute(
@@ -80,12 +103,12 @@ describe("Convex Spell - ETH/stETH", () => {
       spell.address,
       iface.encodeFunctionData("openPositionFarm", [
         {
-          strategyId: STRATEGY_ID,
+          strategyId: 4,
           collToken: DAI,
           borrowToken: WETH,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
-          farmingPoolId: POOL_ID,
+          farmingPoolId: POOL_ID_STETH,
         },
         0,
       ])
@@ -110,7 +133,7 @@ describe("Convex Spell - ETH/stETH", () => {
       depositAmount.mul(50).div(10000)
     );
 
-    const rewarderBalance = await crvRewarder.balanceOf(wconvex.address);
+    const rewarderBalance = await crvRewarder1.balanceOf(wconvex.address);
     expect(rewarderBalance).to.be.equal(pos.collateralSize);
   });
 
@@ -120,7 +143,7 @@ describe("Convex Spell - ETH/stETH", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     const position = await bank.positions(positionId);
 
-    const totalEarned = await crvRewarder.earned(wconvex.address);
+    const totalEarned = await crvRewarder1.earned(wconvex.address);
     console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
 
     const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(
@@ -171,7 +194,7 @@ describe("Convex Spell - ETH/stETH", () => {
       iface.encodeFunctionData("closePositionFarm", [
         {
           param: {
-            strategyId: STRATEGY_ID,
+            strategyId: 4,
             collToken: DAI,
             borrowToken: WETH,
             amountRepay: ethers.constants.MaxUint256,
@@ -203,4 +226,72 @@ describe("Convex Spell - ETH/stETH", () => {
       withdrawFee
     );
   });
+
+  it("should be able to farm ETH on Convex frxETH/ETH pool", async () => {
+    await testFarm(
+      3,                                  // Strategy ID
+      WBTC,                               // Collateral Token
+      WETH,                               // Borrow Token
+      utils.parseUnits("0.1", 8),         // Deposit Amount
+      utils.parseUnits("0.2", 18),        // Borrow Amount
+      POOL_ID_FRXETH,                     // Pool ID
+      wbtc,                               // Collateral Token Contract
+      crvRewarder2,                       // Pool Rewarder
+    );
+  });
+
+  async function testFarm(
+    strategyId: number,
+    collToken: string,
+    borrowToken: string,
+    depositAmount: BigNumber,
+    borrowAmount: BigNumber,
+    poolId: number,
+    colTokenContract: ERC20,
+    crvRewarder: IRewarder,
+  ) {
+    const positionId = await bank.nextPositionId();
+    const beforeTreasuryBalance = await colTokenContract.balanceOf(
+      treasury.address
+    );
+    await bank.execute(
+      0,
+      spell.address,
+      iface.encodeFunctionData("openPositionFarm", [
+        {
+          strategyId,
+          collToken,
+          borrowToken,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: poolId,
+        },
+        0,
+      ])
+    );
+
+    const bankInfo = await bank.getBankInfo(borrowToken);
+    console.log("Bank Info:", bankInfo);
+
+    const pos = await bank.positions(positionId);
+    console.log("Position Info:", pos);
+    console.log(
+      "Position Value:",
+      await bank.callStatic.getPositionValue(positionId)
+    );
+    expect(pos.owner).to.be.equal(admin.address);
+    expect(pos.collToken).to.be.equal(wconvex.address);
+    expect(pos.debtToken).to.be.equal(borrowToken);
+    expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+
+    const afterTreasuryBalance = await colTokenContract.balanceOf(
+      treasury.address
+    );
+    expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
+      depositAmount.mul(50).div(10000)
+    );
+
+    const rewarderBalance = await crvRewarder.balanceOf(wconvex.address);
+    expect(rewarderBalance).to.be.equal(pos.collateralSize);
+  }
 });
