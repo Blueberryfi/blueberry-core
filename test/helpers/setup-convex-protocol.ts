@@ -257,6 +257,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       FRAX,
       CVX,
       SUSD,
+      ADDRESS.CRV_3Crv
     ],
     [
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
@@ -266,6 +267,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
       BigNumber.from(10).pow(18).mul(BTC_PRICE),
       BigNumber.from(10).pow(18).mul(LINK_PRICE),
+      BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
@@ -346,6 +348,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       ADDRESS.CRV_SUSD,
       ADDRESS.CRV_CRVETH,
       ADDRESS.CRV_STETH,
+      ADDRESS.CRV_MIM3CRV,
     ],
     [
       mockOracle.address,
@@ -366,6 +369,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       stableOracle.address,
       stableOracle.address,
       volatileOracle.address,
+      stableOracle.address,
       stableOracle.address,
     ]
   );

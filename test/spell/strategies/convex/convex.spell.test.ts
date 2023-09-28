@@ -393,7 +393,7 @@ describe("Convex Spells", () => {
     );
   });
 
-  it.skip("should be able to farm DAI on Convex MIM3CRV pool collateral MIM", async () => {
+  it("should be able to farm DAI on Convex MIM3CRV pool collateral MIM", async () => {
     await testFarm(
       5,
       MIM,
@@ -406,7 +406,7 @@ describe("Convex Spells", () => {
     );
   });
 
-  it.skip("should be able to harvest on Convex", async () => {
+  it("should be able to harvest on Convex", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
@@ -421,7 +421,7 @@ describe("Convex Spells", () => {
     );
   });
 
-  it.skip("should be able to farm USDC on Convex MIM3CRV pool collateral MIM", async () => {
+  it("should be able to farm USDC on Convex MIM3CRV pool collateral MIM", async () => {
     await testFarm(
       5,
       MIM,
@@ -434,7 +434,7 @@ describe("Convex Spells", () => {
     );
   });
 
-  it.skip("should be able to harvest on Convex", async () => {
+  it("should be able to harvest on Convex", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
