@@ -35,6 +35,10 @@ const WBTC = ADDRESS.WBTC;
 const WstETH = ADDRESS.wstETH;
 const LINK = ADDRESS.LINK;
 const MIM = ADDRESS.MIM;
+const CRV_STETH = ADDRESS.CRV_STETH;
+const CRV_FRXETH = ADDRESS.CRV_FRXETH;
+const CRV_MIM3CRV = ADDRESS.CRV_MIM3CRV;
+const CRV_CVXCRV = ADDRESS.CRV_CVXCRV_CRV;
 const POOL_ID_STETH = ADDRESS.CVX_EthStEth_Id;
 const POOL_ID_FRXETH = ADDRESS.CVX_FraxEth_Id;
 const POOL_ID_MIM = ADDRESS.CVX_MIM_Id;
@@ -52,6 +56,10 @@ describe("Convex Spells", () => {
   let wstETH: ERC20;
   let link: ERC20;
   let mim: ERC20;
+  let crvStEth: ERC20;
+  let crvFrxEth: ERC20;
+  let crvMim3Crv: ERC20;
+  let crvCvxCrv: ERC20;
   let weth: IWETH;
   let spell: ConvexSpell;
   let wconvex: WConvexPools;
@@ -63,6 +71,7 @@ describe("Convex Spells", () => {
   let crvRewarder3: IRewarder;
   let crvRewarder4: IRewarder;
   let config: ProtocolConfig;
+  let balance: BigNumber;
   const iface = new ethers.utils.Interface(SpellABI);
 
   before(async () => {
@@ -77,6 +86,10 @@ describe("Convex Spells", () => {
     wstETH = <ERC20>await ethers.getContractAt("ERC20", WstETH);
     link = <ERC20>await ethers.getContractAt("ERC20", LINK);
     mim = <ERC20>await ethers.getContractAt("ERC20", MIM);
+    crvStEth = <ERC20>await ethers.getContractAt("ERC20", CRV_STETH);
+    crvFrxEth = <ERC20>await ethers.getContractAt("ERC20", CRV_FRXETH);
+    crvMim3Crv = <ERC20>await ethers.getContractAt("ERC20", CRV_MIM3CRV);
+    crvCvxCrv = <ERC20>await ethers.getContractAt("ERC20", CRV_CVXCRV);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
     cvxBooster = <ICvxPools>(
@@ -111,6 +124,10 @@ describe("Convex Spells", () => {
     await wbtc.approve(bank.address, ethers.constants.MaxUint256);
     await wstETH.approve(bank.address, ethers.constants.MaxUint256);
     await link.approve(bank.address, ethers.constants.MaxUint256);
+    await crvStEth.approve(bank.address, ethers.constants.MaxUint256);
+    await crvFrxEth.approve(bank.address, ethers.constants.MaxUint256);
+    await crvMim3Crv.approve(bank.address, ethers.constants.MaxUint256);
+    await crvCvxCrv.approve(bank.address, ethers.constants.MaxUint256);
   });
 
   it("should be able to farm ETH on Convex stETH/ETH pool collateral WBTC", async () => {
@@ -250,6 +267,35 @@ describe("Convex Spells", () => {
       weth,
       utils.parseUnits("0.1", 18),
       link
+    );
+  });
+
+  it("should be able to farm ETH on Convex stETH/ETH pool collateral vault LP", async () => {
+    balance = await crvStEth.balanceOf(admin.address);
+    await testFarm(
+      4,
+      CRV_STETH,
+      WETH,
+      balance,
+      utils.parseUnits("0.5", 18),
+      POOL_ID_STETH,
+      crvStEth,
+      crvRewarder1
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      4,
+      CRV_STETH,
+      WETH,
+      balance,
+      crvRewarder1,
+      weth,
+      utils.parseUnits("0.1", 18),
+      crvStEth
     );
   });
 
@@ -393,7 +439,36 @@ describe("Convex Spells", () => {
     );
   });
 
-  it("should be able to farm DAI on Convex MIM3CRV pool collateral MIM", async () => {
+  it("should be able to farm ETH on Convex frxETH/ETH pool collateral vault LP", async () => {
+    balance = await crvFrxEth.balanceOf(admin.address);
+    await testFarm(
+      3,
+      CRV_FRXETH,
+      WETH,
+      balance,
+      utils.parseUnits("0.5", 18),
+      POOL_ID_FRXETH,
+      crvFrxEth,
+      crvRewarder2
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      3,
+      CRV_FRXETH,
+      WETH,
+      balance,
+      crvRewarder2,
+      weth,
+      utils.parseUnits("0.1", 18),
+      crvFrxEth
+    );
+  });
+
+  it("should be able to farm DAI on Convex MIM/3CRV pool collateral MIM", async () => {
     await testFarm(
       5,
       MIM,
@@ -421,7 +496,36 @@ describe("Convex Spells", () => {
     );
   });
 
-  it("should be able to farm USDC on Convex MIM3CRV pool collateral MIM", async () => {
+  it.skip("should be able to farm DAI on Convex MIM/3CRV pool collateral vault LP", async () => {
+    balance = await crvMim3Crv.balanceOf(admin.address);
+    await testFarm(
+      5,
+      CRV_MIM3CRV,
+      DAI,
+      balance.div(2),
+      utils.parseUnits("1000", 18),
+      POOL_ID_MIM,
+      crvMim3Crv,
+      crvRewarder3
+    );
+  });
+
+  it.skip("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      5,
+      CRV_MIM3CRV,
+      DAI,
+      balance.div(2),
+      crvRewarder3,
+      dai,
+      utils.parseUnits("100", 18),
+      crvMim3Crv
+    );
+  });
+
+  it("should be able to farm USDC on Convex MIM/3CRV pool collateral MIM", async () => {
     await testFarm(
       5,
       MIM,
@@ -446,6 +550,35 @@ describe("Convex Spells", () => {
       usdc,
       utils.parseUnits("100", 6),
       mim
+    );
+  });
+
+  it.skip("should be able to farm USDC on Convex MIM/3CRV pool collateral vault LP", async () => {
+    balance = await crvMim3Crv.balanceOf(admin.address);
+    await testFarm(
+      5,
+      CRV_MIM3CRV,
+      USDC,
+      balance,
+      utils.parseUnits("1000", 6),
+      POOL_ID_MIM,
+      crvMim3Crv,
+      crvRewarder3
+    );
+  });
+
+  it.skip("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      5,
+      CRV_MIM3CRV,
+      USDC,
+      balance,
+      crvRewarder3,
+      usdc,
+      utils.parseUnits("100", 6),
+      crvMim3Crv
     );
   });
 
@@ -558,6 +691,35 @@ describe("Convex Spells", () => {
       crv,
       utils.parseUnits("10", 18),
       link
+    );
+  });
+
+  it("should be able to farm CRV on Convex cvxCRV/CRV pool collateral vault LP", async () => {
+    balance = await crvCvxCrv.balanceOf(admin.address);
+    await testFarm(
+      6,
+      CRV_CVXCRV,
+      CRV,
+      balance,
+      utils.parseUnits("100", 18),
+      POOL_ID_CVXCRV,
+      crvCvxCrv,
+      crvRewarder4
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      6,
+      CRV_CVXCRV,
+      CRV,
+      balance,
+      crvRewarder4,
+      crv,
+      utils.parseUnits("10", 18),
+      crvCvxCrv
     );
   });
 

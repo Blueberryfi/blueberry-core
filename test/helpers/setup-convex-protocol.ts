@@ -12,6 +12,7 @@ import {
   IComptroller,
   ERC20,
   IUniswapV2Router02,
+  ICurvePool,
   HardVault,
   FeeManager,
   UniV3WrappedLib,
@@ -112,6 +113,10 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   let wstETHSoftVault: SoftVault;
   let wethSoftVault: SoftVault;
   let wbtcSoftVault: SoftVault;
+  let crvStEthSoftVault: SoftVault;
+  let crvFrxEthSoftVault: SoftVault;
+  let crvMim3CrvSoftVault: SoftVault;
+  let crvCvxCrvSoftVault: SoftVault;
   let hardVault: HardVault;
 
   let comptroller: Comptroller;
@@ -128,6 +133,10 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   let bWETH: Contract;
   let bWBTC: Contract;
   let bWstETH: Contract;
+  let bCrvStEth: Contract;
+  let bCrvFrxEth: Contract;
+  let bCrvMim3Crv: Contract;
+  let bCrvCvxCrv: Contract;
 
   [admin, alice, treasury] = await ethers.getSigners();
   usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
@@ -257,7 +266,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       FRAX,
       CVX,
       SUSD,
-      ADDRESS.CRV_3Crv
+      ADDRESS.CRV_3Crv,
     ],
     [
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
@@ -374,7 +383,12 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     ]
   );
 
-  let bTokens = await deployBTokens(admin.address, oracle.address);
+  let bTokens = await deployBTokens(admin.address, oracle.address, [
+    { token: ADDRESS.CRV_STETH, symbol: "CRVSTETH" },
+    { token: ADDRESS.CRV_FRXETH, symbol: "CRVFRXETH" },
+    { token: ADDRESS.CRV_MIM3CRV, symbol: "CRVMIM3CRV" },
+    { token: ADDRESS.CRV_CVXCRV_CRV, symbol: "CRVCVXCRV" },
+  ]);
   comptroller = bTokens.comptroller;
   bUSDC = bTokens.bUSDC;
   bICHI = bTokens.bICHI;
@@ -389,6 +403,10 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   bWETH = bTokens.bWETH;
   bWBTC = bTokens.bWBTC;
   bWstETH = bTokens.bWstETH;
+  bCrvStEth = bTokens.extraBTokens[0];
+  bCrvFrxEth = bTokens.extraBTokens[1];
+  bCrvMim3Crv = bTokens.extraBTokens[2];
+  bCrvCvxCrv = bTokens.extraBTokens[3];
 
   // Deploy Bank
   const Config = await ethers.getContractFactory("ProtocolConfig");
@@ -481,10 +499,55 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     );
     await convexSpell.setCollateralsMaxLTVs(
       i,
-      [USDC, CRV, DAI, WBTC, WstETH, LINK, WETH, MIM],
-      [30000, 30000, 30000, 30000, 30000, 30000, 30000, 30000]
+      [USDC, CRV, DAI, WBTC, WstETH, LINK, WETH, MIM, curveLPs[i]],
+      [30000, 30000, 30000, 30000, 30000, 30000, 30000, 30000, 30000]
     );
   }
+
+  poolInfo = await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRXETH);
+  const crvFrxEthPool = <ICurvePool>(
+    await ethers.getContractAt(CONTRACT_NAMES.ICurvePool, poolInfo.pool)
+  );
+  await crvFrxEthPool["add_liquidity(uint256[2],uint256)"](
+    [utils.parseUnits("10", 18), 0],
+    0,
+    {
+      value: utils.parseUnits("10", 18),
+    }
+  );
+
+  poolInfo = await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_STETH);
+  const crvStEthPool = <ICurvePool>(
+    await ethers.getContractAt(CONTRACT_NAMES.ICurvePool, poolInfo.pool)
+  );
+  await crvStEthPool["add_liquidity(uint256[2],uint256)"](
+    [utils.parseUnits("10", 18), 0],
+    0,
+    {
+      value: utils.parseUnits("10", 18),
+    }
+  );
+
+  poolInfo = await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_MIM3CRV);
+  const crvMim3CrvPool = <ICurvePool>(
+    await ethers.getContractAt(CONTRACT_NAMES.ICurvePool, poolInfo.pool)
+  );
+  await mim.approve(poolInfo.pool, utils.parseUnits("500", 18));
+  await crvMim3CrvPool["add_liquidity(uint256[2],uint256)"](
+    [utils.parseUnits("500", 18), 0],
+    0
+  );
+
+  poolInfo = await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXCRV_CRV);
+  const crvCvxCrvPool = <ICurvePool>(
+    await ethers.getContractAt(CONTRACT_NAMES.ICurvePool, poolInfo.pool)
+  );
+  await crv.approve(poolInfo.pool, utils.parseUnits("100", 18));
+  await crvCvxCrvPool["add_liquidity(uint256[2],uint256)"](
+    [utils.parseUnits("100", 18), 0],
+    0
+  );
+
   convexSpellWithVolatileOracle = <ConvexSpell>(
     await upgrades.deployProxy(
       ConvexSpell,
@@ -518,8 +581,21 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     [true, true]
   );
   await bank.whitelistTokens(
-    [USDC, CRV, DAI, WBTC, WstETH, LINK, WETH, MIM],
-    [true, true, true, true, true, true, true, true]
+    [
+      USDC,
+      CRV,
+      DAI,
+      WBTC,
+      WstETH,
+      LINK,
+      WETH,
+      MIM,
+      ADDRESS.CRV_STETH,
+      ADDRESS.CRV_FRXETH,
+      ADDRESS.CRV_MIM3CRV,
+      ADDRESS.CRV_CVXCRV_CRV,
+    ],
+    [true, true, true, true, true, true, true, true, true, true, true, true]
   );
   await bank.whitelistERC1155([werc20.address, wconvex.address], true);
 
@@ -612,6 +688,86 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
   await wbtcSoftVault.deployed();
   await bank.addBank(WBTC, wbtcSoftVault.address, hardVault.address, 9000);
+
+  crvStEthSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [
+        config.address,
+        bCrvStEth.address,
+        "Interest Bearing CRVSTETH",
+        "ibCRVSTETH",
+      ],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await crvStEthSoftVault.deployed();
+  await bank.addBank(
+    ADDRESS.CRV_STETH,
+    crvStEthSoftVault.address,
+    hardVault.address,
+    9000
+  );
+
+  crvFrxEthSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [
+        config.address,
+        bCrvFrxEth.address,
+        "Interest Bearing CRVFRXETH",
+        "ibCRVFRXETH",
+      ],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await crvFrxEthSoftVault.deployed();
+  await bank.addBank(
+    ADDRESS.CRV_FRXETH,
+    crvFrxEthSoftVault.address,
+    hardVault.address,
+    9000
+  );
+
+  crvMim3CrvSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [
+        config.address,
+        bCrvMim3Crv.address,
+        "Interest Bearing CRVMIM3CRV",
+        "ibCRVMIM3CRV",
+      ],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await crvMim3CrvSoftVault.deployed();
+  await bank.addBank(
+    ADDRESS.CRV_MIM3CRV,
+    crvMim3CrvSoftVault.address,
+    hardVault.address,
+    9000
+  );
+
+  crvCvxCrvSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [
+        config.address,
+        bCrvCvxCrv.address,
+        "Interest Bearing CRVCVXCRV",
+        "ibCRVCVXCRV",
+      ],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await crvCvxCrvSoftVault.deployed();
+  await bank.addBank(
+    ADDRESS.CRV_CVXCRV_CRV,
+    crvCvxCrvSoftVault.address,
+    hardVault.address,
+    9000
+  );
 
   // Whitelist bank contract on compound
   await comptroller._setCreditLimit(
