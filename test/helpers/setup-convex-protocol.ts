@@ -25,6 +25,7 @@ import {
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { deployBTokens } from "./money-market";
+import { impersonateAccount } from ".";
 
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
@@ -203,6 +204,13 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     admin.address,
     ethers.constants.MaxUint256
   );
+
+  // Transfer wstETH from whale
+  const wstETHWhale = "0x176F3DAb24a159341c0509bB36B833E7fdd0a132";
+  await impersonateAccount(wstETHWhale);
+  const whale = await ethers.getSigner(wstETHWhale);
+  let wstETH = <ERC20>await ethers.getContractAt("ERC20", WstETH);
+  await wstETH.connect(whale).transfer(admin.address, utils.parseUnits('30'));
 
   const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
   const LibInstance = await LinkedLibFactory.deploy();

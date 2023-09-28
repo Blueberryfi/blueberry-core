@@ -55,8 +55,6 @@ describe("Convex Spells", () => {
   let crvRewarder1: IRewarder;
   let crvRewarder2: IRewarder;
   let config: ProtocolConfig;
-  const depositAmount = utils.parseUnits("1000", 18); // DAI
-  const borrowAmount = utils.parseUnits("1", 18); // ETH
   const iface = new ethers.utils.Interface(SpellABI);
 
   before(async () => {
@@ -95,148 +93,283 @@ describe("Convex Spells", () => {
     await link.approve(bank.address, ethers.constants.MaxUint256);
   });
 
-  it("should be able to farm ETH on Convex ETH/stETH pool", async () => {
-    const positionId = await bank.nextPositionId();
-    const beforeTreasuryBalance = await dai.balanceOf(treasury.address);
-    await bank.execute(
-      0,
-      spell.address,
-      iface.encodeFunctionData("openPositionFarm", [
-        {
-          strategyId: 4,
-          collToken: DAI,
-          borrowToken: WETH,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId: POOL_ID_STETH,
-        },
-        0,
-      ])
+  it("should be able to farm ETH on Convex stETH/ETH pool collateral WBTC", async () => {
+    await testFarm(
+      4,
+      WBTC,
+      WETH,
+      utils.parseUnits("0.1", 8),
+      utils.parseUnits("1", 18),
+      POOL_ID_STETH,
+      wbtc,
+      crvRewarder1
     );
-
-    const bankInfo = await bank.getBankInfo(WETH);
-    console.log("WETH Bank Info:", bankInfo);
-
-    const pos = await bank.positions(positionId);
-    console.log("Position Info:", pos);
-    console.log(
-      "Position Value:",
-      await bank.callStatic.getPositionValue(positionId)
-    );
-    expect(pos.owner).to.be.equal(admin.address);
-    expect(pos.collToken).to.be.equal(wconvex.address);
-    expect(pos.debtToken).to.be.equal(WETH);
-    expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
-
-    const afterTreasuryBalance = await dai.balanceOf(treasury.address);
-    expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
-      depositAmount.mul(50).div(10000)
-    );
-
-    const rewarderBalance = await crvRewarder1.balanceOf(wconvex.address);
-    expect(rewarderBalance).to.be.equal(pos.collateralSize);
   });
 
   it("should be able to harvest on Convex", async () => {
-    await evm_mine_blocks(1000);
-
     const positionId = (await bank.nextPositionId()).sub(1);
-    const position = await bank.positions(positionId);
-
-    const totalEarned = await crvRewarder1.earned(wconvex.address);
-    console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
-
-    const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(
-      position.collId,
-      position.collateralSize
-    );
-    console.log("Pending Rewards", pendingRewardsInfo);
-
-    const rewardFeeRatio = await config.rewardFee();
-
-    const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
-      reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)
-    );
-
-    const swapDatas = await Promise.all(
-      pendingRewardsInfo.tokens.map((token, idx) => {
-        if (expectedAmounts[idx].gt(0)) {
-          return getParaswapCalldata(
-            token,
-            WETH,
-            expectedAmounts[idx],
-            spell.address,
-            100
-          );
-        } else {
-          return {
-            data: "0x00",
-          };
-        }
-      })
-    );
-
-    // Manually transfer ETH rewards to spell
-    await admin.sendTransaction({
-      from: admin.address,
-      to: spell.address,
-      value: utils.parseUnits("0.1", 18),
-    });
-
-    const beforeTreasuryBalance = await dai.balanceOf(treasury.address);
-    const beforeETHBalance = await admin.getBalance();
-    const beforeDaiBalance = await dai.balanceOf(admin.address);
-
-    const iface = new ethers.utils.Interface(SpellABI);
-    await bank.execute(
+    await testHarvest(
       positionId,
-      spell.address,
-      iface.encodeFunctionData("closePositionFarm", [
-        {
-          param: {
-            strategyId: 4,
-            collToken: DAI,
-            borrowToken: WETH,
-            amountRepay: ethers.constants.MaxUint256,
-            amountPosRemove: ethers.constants.MaxUint256,
-            amountShareWithdraw: ethers.constants.MaxUint256,
-            amountOutMin: 1,
-            amountToSwap: 0,
-            swapData: '0x',
-          },
-          amounts: expectedAmounts,
-          swapDatas: swapDatas.map((item) => item.data),
-          isKilled: false,
-        },
-      ])
-    );
-    const afterETHBalance = await admin.getBalance();
-    const afterDaiBalance = await dai.balanceOf(admin.address);
-    console.log("ETH Balance Change:", afterETHBalance.sub(beforeETHBalance));
-    console.log("DAI Balance Change:", afterDaiBalance.sub(beforeDaiBalance));
-    const depositFee = depositAmount.mul(50).div(10000);
-    const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
-    expect(afterDaiBalance.sub(beforeDaiBalance)).to.be.gte(
-      depositAmount.sub(depositFee).sub(withdrawFee)
-    );
-
-    const afterTreasuryBalance = await dai.balanceOf(treasury.address);
-    // Plus rewards fee
-    expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
-      withdrawFee
+      4,
+      WBTC,
+      WETH,
+      utils.parseUnits("0.1", 8),
+      crvRewarder1,
+      weth,
+      utils.parseUnits("0.1", 18),
+      wbtc,
     );
   });
 
-  it("should be able to farm ETH on Convex frxETH/ETH pool", async () => {
+  it("should be able to farm ETH on Convex stETH/ETH pool collateral wstETH", async () => {
     await testFarm(
-      3,                                  // Strategy ID
-      WBTC,                               // Collateral Token
-      WETH,                               // Borrow Token
-      utils.parseUnits("0.1", 8),         // Deposit Amount
-      utils.parseUnits("0.2", 18),        // Borrow Amount
-      POOL_ID_FRXETH,                     // Pool ID
-      wbtc,                               // Collateral Token Contract
-      crvRewarder2,                       // Pool Rewarder
+      4,
+      WstETH,
+      WETH,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("0.5", 18),
+      POOL_ID_STETH,
+      wstETH,
+      crvRewarder1
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      4,
+      WstETH,
+      WETH,
+      utils.parseUnits("1", 18),
+      crvRewarder1,
+      weth,
+      utils.parseUnits("0.1", 18),
+      wstETH,
+    );
+  });
+
+  it("should be able to farm ETH on Convex stETH/ETH pool collateral WETH", async () => {
+    await testFarm(
+      4,
+      WETH,
+      WETH,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("0.5", 18),
+      POOL_ID_STETH,
+      weth,
+      crvRewarder1
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      4,
+      WETH,
+      WETH,
+      utils.parseUnits("1", 18),
+      crvRewarder1,
+      weth,
+      utils.parseUnits("0.1", 18),
+      weth,
+    );
+  });
+
+  it("should be able to farm ETH on Convex stETH/ETH pool collateral DAI", async () => {
+    await testFarm(
+      4,
+      DAI,
+      WETH,
+      utils.parseUnits("1000", 18),
+      utils.parseUnits("1", 18),
+      POOL_ID_STETH,
+      dai,
+      crvRewarder1
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      4,
+      DAI,
+      WETH,
+      utils.parseUnits("1000", 18),
+      crvRewarder1,
+      weth,
+      utils.parseUnits("0.1", 18),
+      dai,
+    );
+  });
+
+  it("should be able to farm ETH on Convex stETH/ETH pool collateral LINK", async () => {
+    await testFarm(
+      4,
+      LINK,
+      WETH,
+      utils.parseUnits("500", 18),
+      utils.parseUnits("0.5", 18),
+      POOL_ID_STETH,
+      link,
+      crvRewarder1
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      4,
+      LINK,
+      WETH,
+      utils.parseUnits("500", 18),
+      crvRewarder1,
+      weth,
+      utils.parseUnits("0.1", 18),
+      link,
+    );
+  });
+
+  it("should be able to farm ETH on Convex frxETH/ETH pool collateral WBTC", async () => {
+    await testFarm(
+      3,
+      WBTC,
+      WETH,
+      utils.parseUnits("0.1", 8),
+      utils.parseUnits("0.2", 18),
+      POOL_ID_FRXETH,
+      wbtc,
+      crvRewarder2
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      3,
+      WBTC,
+      WETH,
+      utils.parseUnits("0.1", 8),
+      crvRewarder2,
+      weth,
+      utils.parseUnits("0.1", 18),
+      wbtc,
+    );
+  });
+
+  it("should be able to farm ETH on Convex frxETH/ETH pool collateral WstETH", async () => {
+    await testFarm(
+      3,
+      WstETH,
+      WETH,
+      utils.parseUnits("0.5", 18),
+      utils.parseUnits("0.2", 18),
+      POOL_ID_FRXETH,
+      wstETH,
+      crvRewarder2
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      3,
+      WstETH,
+      WETH,
+      utils.parseUnits("0.5", 18),
+      crvRewarder2,
+      weth,
+      utils.parseUnits("0.1", 18),
+      wstETH,
+    );
+  });
+
+  it("should be able to farm ETH on Convex frxETH/ETH pool collateral WETH", async () => {
+    await testFarm(
+      3,
+      WETH,
+      WETH,
+      utils.parseUnits("0.5", 18),
+      utils.parseUnits("0.2", 18),
+      POOL_ID_FRXETH,
+      weth,
+      crvRewarder2
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      3,
+      WETH,
+      WETH,
+      utils.parseUnits("0.5", 18),
+      crvRewarder2,
+      weth,
+      utils.parseUnits("0.1", 18),
+      weth,
+    );
+  });
+
+  it("should be able to farm ETH on Convex frxETH/ETH pool collateral DAI", async () => {
+    await testFarm(
+      3,
+      DAI,
+      WETH,
+      utils.parseUnits("1000", 18),
+      utils.parseUnits("1", 18),
+      POOL_ID_FRXETH,
+      dai,
+      crvRewarder2
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      3,
+      DAI,
+      WETH,
+      utils.parseUnits("1000", 18),
+      crvRewarder2,
+      weth,
+      utils.parseUnits("0.1", 18),
+      dai,
+    );
+  });
+
+  it("should be able to farm ETH on Convex frxETH/ETH pool collateral LINK", async () => {
+    await testFarm(
+      3,
+      LINK,
+      WETH,
+      utils.parseUnits("500", 18),
+      utils.parseUnits("1", 18),
+      POOL_ID_FRXETH,
+      link,
+      crvRewarder2
+    );
+  });
+
+  it("should be able to harvest on Convex", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testHarvest(
+      positionId,
+      3,
+      LINK,
+      WETH,
+      utils.parseUnits("500", 18),
+      crvRewarder2,
+      weth,
+      utils.parseUnits("0.1", 18),
+      link,
     );
   });
 
@@ -247,8 +380,8 @@ describe("Convex Spells", () => {
     depositAmount: BigNumber,
     borrowAmount: BigNumber,
     poolId: number,
-    colTokenContract: ERC20,
-    crvRewarder: IRewarder,
+    colTokenContract: any,
+    crvRewarder: IRewarder
   ) {
     const positionId = await bank.nextPositionId();
     const beforeTreasuryBalance = await colTokenContract.balanceOf(
@@ -293,5 +426,95 @@ describe("Convex Spells", () => {
 
     const rewarderBalance = await crvRewarder.balanceOf(wconvex.address);
     expect(rewarderBalance).to.be.equal(pos.collateralSize);
+  }
+
+  async function testHarvest(
+    positionId: BigNumber,
+    strategyId: number,
+    collToken: string,
+    borrowToken: string,
+    depositAmount: BigNumber,
+    crvRewarder: IRewarder,
+    rewardToken: any,
+    rewardAmount: BigNumber,
+    collTokenContract: any,
+  ) {
+    await evm_mine_blocks(1000);
+
+    const position = await bank.positions(positionId);
+
+    const totalEarned = await crvRewarder.earned(wconvex.address);
+    console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
+
+    const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(
+      position.collId,
+      position.collateralSize
+    );
+    console.log("Pending Rewards", pendingRewardsInfo);
+
+    const rewardFeeRatio = await config.rewardFee();
+
+    const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
+      reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)
+    );
+
+    const swapDatas = await Promise.all(
+      pendingRewardsInfo.tokens.map((token, idx) => {
+        if (expectedAmounts[idx].gt(0)) {
+          return getParaswapCalldata(
+            token,
+            borrowToken,
+            expectedAmounts[idx],
+            spell.address,
+            100
+          );
+        } else {
+          return {
+            data: "0x00",
+          };
+        }
+      })
+    );
+
+    // Manually transfer reward to spell
+    await rewardToken.transfer(spell.address, rewardAmount);
+
+    const beforeTreasuryBalance = await collTokenContract.balanceOf(treasury.address);
+    const beforeETHBalance = await admin.getBalance();
+    const beforeColBalance = await collTokenContract.balanceOf(admin.address);
+
+    const iface = new ethers.utils.Interface(SpellABI);
+    await bank.execute(
+      positionId,
+      spell.address,
+      iface.encodeFunctionData("closePositionFarm", [
+        {
+          strategyId,
+          collToken,
+          borrowToken,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+          amountToSwap: 0,
+          swapData: '0x',
+        },
+      ])
+    );
+    const afterETHBalance = await admin.getBalance();
+    const afterColBalance = await collTokenContract.balanceOf(admin.address);
+    console.log("ETH Balance Change:", afterETHBalance.sub(beforeETHBalance));
+    console.log("Collateral Balance Change:", afterColBalance.sub(beforeColBalance));
+    const depositFee = depositAmount.mul(50).div(10000);
+    const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
+    expect(afterColBalance.sub(beforeColBalance)).to.be.gte(
+      depositAmount.sub(depositFee).sub(withdrawFee)
+    );
+
+    const afterTreasuryBalance = await collTokenContract.balanceOf(treasury.address);
+    // Plus rewards fee
+    expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
+      withdrawFee
+    );
   }
 });
