@@ -36,9 +36,11 @@ const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const USDT = ADDRESS.USDT;
 const DAI = ADDRESS.DAI;
+const MIM = ADDRESS.MIM;
 const SUSD = ADDRESS.SUSD;
 const FRAX = ADDRESS.FRAX;
 const CRV = ADDRESS.CRV;
+const CVXCRV = ADDRESS.CVXCRV;
 const CVX = ADDRESS.CVX;
 const WBTC = ADDRESS.WBTC;
 const WstETH = ADDRESS.wstETH;
@@ -104,6 +106,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   let bank: BlueBerryBank;
   let usdcSoftVault: SoftVault;
   let crvSoftVault: SoftVault;
+  let mimSoftVault: SoftVault;
   let daiSoftVault: SoftVault;
   let linkSoftVault: SoftVault;
   let wstETHSoftVault: SoftVault;
@@ -175,6 +178,13 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   await uniV2Router.swapExactTokensForTokens(
     utils.parseUnits("10"),
     0,
+    [WETH, MIM],
+    admin.address,
+    ethers.constants.MaxUint256
+  );
+  await uniV2Router.swapExactTokensForTokens(
+    utils.parseUnits("10"),
+    0,
     [WETH, LINK],
     admin.address,
     ethers.constants.MaxUint256
@@ -206,11 +216,22 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
 
   // Transfer wstETH from whale
-  const wstETHWhale = "0x176F3DAb24a159341c0509bB36B833E7fdd0a132";
+  const wstETHWhale = "0x5fEC2f34D80ED82370F733043B6A536d7e9D7f8d";
+  await admin.sendTransaction({
+    to: wstETHWhale,
+    value: utils.parseEther("10"),
+  });
   await impersonateAccount(wstETHWhale);
-  const whale = await ethers.getSigner(wstETHWhale);
+  const whale1 = await ethers.getSigner(wstETHWhale);
   let wstETH = <ERC20>await ethers.getContractAt("ERC20", WstETH);
-  await wstETH.connect(whale).transfer(admin.address, utils.parseUnits('30'));
+  await wstETH.connect(whale1).transfer(admin.address, utils.parseUnits("30"));
+
+  // Transfer MIM from whale
+  const mimWhale = "0x5f0DeE98360d8200b20812e174d139A1a633EDd2";
+  await impersonateAccount(mimWhale);
+  const whale2 = await ethers.getSigner(mimWhale);
+  let mim = <ERC20>await ethers.getContractAt("ERC20", MIM);
+  await mim.connect(whale2).transfer(admin.address, utils.parseUnits("10000"));
 
   const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
   const LibInstance = await LinkedLibFactory.deploy();
@@ -219,7 +240,24 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
   await mockOracle.setPrice(
-    [ETH, WETH, STETH, WstETH, FRXETH, WBTC, LINK, USDC, CRV, DAI, USDT, FRAX, CVX, SUSD],
+    [
+      ETH,
+      WETH,
+      STETH,
+      WstETH,
+      FRXETH,
+      WBTC,
+      LINK,
+      USDC,
+      CRV,
+      CVXCRV,
+      DAI,
+      MIM,
+      USDT,
+      FRAX,
+      CVX,
+      SUSD,
+    ],
     [
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
@@ -228,6 +266,8 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
       BigNumber.from(10).pow(18).mul(BTC_PRICE),
       BigNumber.from(10).pow(18).mul(LINK_PRICE),
+      BigNumber.from(10).pow(18), // $1
+      BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
@@ -291,6 +331,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       USDC,
       CRV,
       DAI,
+      MIM,
       USDT,
       FRAX,
       CVX,
@@ -299,6 +340,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       WstETH,
       LINK,
       ADDRESS.CRV_FRXETH,
+      ADDRESS.CRV_CVXCRV_CRV,
       ADDRESS.CRV_3Crv,
       ADDRESS.CRV_FRAX3Crv,
       ADDRESS.CRV_SUSD,
@@ -317,6 +359,8 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
+      mockOracle.address,
+      stableOracle.address,
       stableOracle.address,
       stableOracle.address,
       stableOracle.address,
@@ -433,8 +477,8 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     );
     await convexSpell.setCollateralsMaxLTVs(
       i,
-      [USDC, CRV, DAI, WBTC, WstETH, LINK, WETH],
-      [30000, 30000, 30000, 30000, 30000, 30000, 30000]
+      [USDC, CRV, DAI, WBTC, WstETH, LINK, WETH, MIM],
+      [30000, 30000, 30000, 30000, 30000, 30000, 30000, 30000]
     );
   }
   convexSpellWithVolatileOracle = <ConvexSpell>(
@@ -469,7 +513,10 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     [convexSpell.address, convexSpellWithVolatileOracle.address],
     [true, true]
   );
-  await bank.whitelistTokens([USDC, CRV, DAI, WBTC, WstETH, LINK, WETH], [true, true, true, true, true, true, true]);
+  await bank.whitelistTokens(
+    [USDC, CRV, DAI, WBTC, WstETH, LINK, WETH, MIM],
+    [true, true, true, true, true, true, true, true]
+  );
   await bank.whitelistERC1155([werc20.address, wconvex.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
@@ -511,6 +558,16 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
   await crvSoftVault.deployed();
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
+
+  mimSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bMIM.address, "Interest Bearing MIM", "ibMIM"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await mimSoftVault.deployed();
+  await bank.addBank(MIM, mimSoftVault.address, hardVault.address, 8500);
 
   linkSoftVault = <SoftVault>(
     await upgrades.deployProxy(
