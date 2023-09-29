@@ -242,15 +242,15 @@ contract ConvexSpell is BasicSpell {
     }
 
     /// @notice Closes an existing liquidity position, unstakes from Curve gauge, and swaps rewards.
-    /// @param param Struct containing all required parameters for closing a position.
+    /// @param closePosParam Struct containing all required parameters for closing a position.
     function closePositionFarm(
-        ClosePositionFarmParam calldata param
+        ClosePositionFarmParam calldata closePosParam
     )
         external
-        existingStrategy(param.param.strategyId)
-        existingCollateral(param.param.strategyId, param.param.collToken)
+        existingStrategy(closePosParam.param.strategyId)
+        existingCollateral(closePosParam.param.strategyId, closePosParam.param.collToken)
     {
-        address crvLp = strategies[param.param.strategyId].vault;
+        address crvLp = strategies[closePosParam.param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collToken != address(wConvexPools)) {
             revert Errors.INCORRECT_COLTOKEN(pos.collToken);
@@ -259,54 +259,54 @@ contract ConvexSpell is BasicSpell {
             revert Errors.INCORRECT_UNDERLYING(crvLp);
         }
 
-        uint256 amountPosRemove = param.param.amountPosRemove;
+        uint256 amountPosRemove = closePosParam.param.amountPosRemove;
 
         /// 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
         bank.takeCollateral(amountPosRemove);
         (address[] memory rewardTokens,) = wConvexPools.burn(pos.collId, amountPosRemove);
 
         /// 2. Swap rewards tokens to debt token
-        _sellRewards(rewardTokens, param);
+        _sellRewards(rewardTokens, closePosParam);
 
         /// 3. Remove liquidity
         address[] memory tokens = _removeLiquidity(
-            param.param,
-            param.isKilled,
+            closePosParam.param,
+            closePosParam.isKilled,
             pos,
             crvLp,
             amountPosRemove
         );
 
-        if (param.isKilled) {
+        if (closePosParam.isKilled) {
             for (uint256 i; i != tokens.length; ++i) {
                 if (tokens[i] != pos.debtToken) {
                     _swapOnParaswap(
                         tokens[i],
-                        param.amounts[i + rewardTokens.length],
-                        param.swapDatas[i + rewardTokens.length]
+                        closePosParam.amounts[i + rewardTokens.length],
+                        closePosParam.swapDatas[i + rewardTokens.length]
                     );
                 }
             }
         }
 
         /// 4. Withdraw isolated collateral from Bank
-        _doWithdraw(param.param.collToken, param.param.amountShareWithdraw);
+        _doWithdraw(closePosParam.param.collToken, closePosParam.param.amountShareWithdraw);
 
         /// 5. Repay
         {
             /// Compute repay amount if MAX_INT is supplied (max debt)
-            uint256 amountRepay = param.param.amountRepay;
+            uint256 amountRepay = closePosParam.param.amountRepay;
             if (amountRepay == type(uint256).max) {
                 amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
             }
-            _doRepay(param.param.borrowToken, amountRepay);
+            _doRepay(closePosParam.param.borrowToken, amountRepay);
         }
 
-        _validateMaxLTV(param.param.strategyId);
+        _validateMaxLTV(closePosParam.param.strategyId);
 
         /// 6. Refund
-        _doRefund(param.param.borrowToken);
-        _doRefund(param.param.collToken);
+        _doRefund(closePosParam.param.borrowToken);
+        _doRefund(closePosParam.param.collToken);
         _doRefund(CVX);
     }
 
@@ -404,10 +404,10 @@ contract ConvexSpell is BasicSpell {
 
     /// @dev Internal function Sells the accumulated reward tokens.
     /// @param rewardTokens An array of addresses of the reward tokens to be sold.
-    /// @param param Struct containing all required parameters for closing a position.
+    /// @param closePosParam Struct containing all required parameters for closing a position.
     function _sellRewards(
         address[] memory rewardTokens,
-        ClosePositionFarmParam calldata param
+        ClosePositionFarmParam calldata closePosParam
     ) internal {
         uint256 tokensLength = rewardTokens.length;
         for (uint256 i; i != tokensLength; ++i) {
@@ -416,10 +416,10 @@ contract ConvexSpell is BasicSpell {
             /// Apply any potential fees on the reward.
             _doCutRewardsFee(sellToken);
 
-            if (sellToken != param.param.borrowToken) {
-                uint256 expectedReward = param.amounts[i];
+            if (sellToken != closePosParam.param.borrowToken) {
+                uint256 expectedReward = closePosParam.amounts[i];
                 /// If the expected reward is zero, skip to the next token.
-                _swapOnParaswap(sellToken, expectedReward, param.swapDatas[i]);
+                _swapOnParaswap(sellToken, expectedReward, closePosParam.swapDatas[i]);
             }
         }
     }
