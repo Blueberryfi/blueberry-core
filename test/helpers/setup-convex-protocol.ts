@@ -749,6 +749,14 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     9000
   );
 
+  const crvMim3Crv = <ERC20>await ethers.getContractAt("ERC20", ADDRESS.CRV_MIM3CRV);
+  const balance = await crvMim3Crv.balanceOf(admin.address);
+  console.log("===> balance:", balance);
+  await crvMim3Crv.approve(crvMim3CrvSoftVault.address, ethers.constants.MaxUint256);
+  console.log("===> approved");
+  await crvMim3CrvSoftVault.deposit(balance);
+  console.log("===> deposited");
+
   crvCvxCrvSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
