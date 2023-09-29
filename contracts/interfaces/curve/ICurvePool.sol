@@ -3,11 +3,11 @@
 pragma solidity 0.8.16;
 
 interface ICurvePool {
-    function add_liquidity(uint256[2] calldata, uint256) external;
+    function add_liquidity(uint256[2] calldata, uint256) external payable;
 
-    function add_liquidity(uint256[3] calldata, uint256) external;
+    function add_liquidity(uint256[3] calldata, uint256) external payable;
 
-    function add_liquidity(uint256[4] calldata, uint256) external;
+    function add_liquidity(uint256[4] calldata, uint256) external payable;
 
     function remove_liquidity(uint256, uint256[2] calldata) external;
 
