@@ -14,7 +14,7 @@
     ],
     "name": "add_liquidity",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -32,7 +32,7 @@
     ],
     "name": "add_liquidity",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -50,7 +50,7 @@
     ],
     "name": "add_liquidity",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {

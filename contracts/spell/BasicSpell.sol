@@ -20,6 +20,7 @@ import "../utils/EnsureApprove.sol";
 import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
+import "../interfaces/IWETH.sol";
 
 /// @title BasicSpell
 /// @author BlueberryProtocol
@@ -90,6 +91,8 @@ abstract contract BasicSpell is
     IWERC20 public werc20;
     /// Address of the Wrapped Ether contract.
     address public WETH;
+    /// ETH address
+    address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     /// @dev strategyId => vault
     Strategy[] public strategies;

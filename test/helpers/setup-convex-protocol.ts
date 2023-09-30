@@ -380,11 +380,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
   );
-  await convexSpell.setCollateralsMaxLTVs(
-    2,
-    [USDC, CRV, DAI],
-    [300, 300, 300]
-  );
+  await convexSpell.setCollateralsMaxLTVs(2, [USDC, CRV, DAI], [300, 300, 300]);
   convexSpellWithVolatileOracle = <ConvexSpell>(
     await upgrades.deployProxy(
       ConvexSpell,
