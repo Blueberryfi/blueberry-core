@@ -50,6 +50,9 @@ export const swapEth = async (
   signer: SignerWithAddress,
   maxImpact?: number
 ): Promise<BigNumberish> => {
+  if (toToken === ADDRESS.ETH) {
+    return amount;
+  }
   if (toToken === ADDRESS.WETH) {
     const weth = <IWETH>(
       await ethers.getContractAt(CONTRACT_NAMES.IWETH, ADDRESS.WETH)

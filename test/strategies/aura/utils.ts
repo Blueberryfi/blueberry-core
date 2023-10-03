@@ -1,6 +1,11 @@
 import { ethers, upgrades } from "hardhat";
 import { utils } from "ethers";
-import { WERC20, WAuraPools, AuraSpell } from "../../../typechain-types";
+import {
+  WERC20,
+  WAuraPools,
+  AuraSpell,
+  ICvxPools,
+} from "../../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../../constant";
 import { StrategyInfo, setupBasicBank } from "../utils";
 
@@ -8,7 +13,8 @@ export const strategies: StrategyInfo[] = [
   {
     type: "Pseudo-Neutral",
     address: ADDRESS.BAL_OHM_WETH,
-    borrowAssets: [ADDRESS.OHM, ADDRESS.WETH],
+    poolId: ADDRESS.AURA_OHM_ETH_POOL_ID,
+    borrowAssets: [ADDRESS.OHM /*, ADDRESS.WETH*/],
     collateralAssets: [ADDRESS.DAI],
     maxLtv: 500,
     maxStrategyBorrow: 5_000_000,
@@ -48,6 +54,10 @@ export const setupStrategy = async () => {
     )
   );
 
+  const auraBooster = <ICvxPools>(
+    await ethers.getContractAt("ICvxPools", ADDRESS.AURA_BOOSTER)
+  );
+
   // Setup Bank
   await protocol.bank.whitelistSpells([auraSpell.address], [true]);
   await protocol.bank.whitelistERC1155([werc20.address, waura.address], true);
@@ -58,7 +68,7 @@ export const setupStrategy = async () => {
     await auraSpell.addStrategy(
       strategy.address,
       utils.parseUnits("100", 18),
-      utils.parseUnits("2000", 18)
+      utils.parseUnits("20000", 18)
     );
 
     await auraSpell.setCollateralsMaxLTVs(
@@ -72,5 +82,6 @@ export const setupStrategy = async () => {
     protocol,
     auraSpell,
     waura,
+    auraBooster,
   };
 };

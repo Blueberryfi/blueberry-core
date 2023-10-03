@@ -1,10 +1,11 @@
 import { ethers, upgrades } from "hardhat";
-import { utils } from "ethers";
+import { BigNumber, BigNumberish, utils } from "ethers";
 import {
   CoreOracle,
   ChainlinkAdapterOracle,
   UniswapV3AdapterOracle,
   WeightedBPTOracle,
+  BandAdapterOracle,
   ProtocolConfig,
   SoftVault,
   HardVault,
@@ -30,8 +31,8 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   );
 
   await chainlinkAdapterOracle.setTokenRemappings(
-    [ADDRESS.WETH],
-    [ADDRESS.ETH]
+    [ADDRESS.WETH, ADDRESS.WBTC],
+    [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC]
   );
 
   await chainlinkAdapterOracle.setTimeGap(
@@ -42,8 +43,25 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.DAI,
       ADDRESS.BAL,
       ADDRESS.FRAX,
+      ADDRESS.CRV,
+      ADDRESS.MIM,
+      ADDRESS.LINK,
+      ADDRESS.SUSHI,
+      ADDRESS.CHAINLINK_BTC,
     ],
-    [OneDay, OneDay, OneDay, OneDay, OneDay, OneDay]
+    [
+      OneDay,
+      OneDay,
+      OneDay,
+      OneDay,
+      OneDay,
+      OneDay,
+      OneDay,
+      OneDay,
+      OneDay,
+      OneDay,
+      OneDay,
+    ]
   );
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -68,10 +86,13 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   );
 
   await uniswapV3AdapterOracle.setStablePools(
-    [ADDRESS.OHM],
-    [ADDRESS.UNI_V3_OHM_WETH]
+    [ADDRESS.OHM, ADDRESS.ICHI],
+    [ADDRESS.UNI_V3_OHM_WETH, ADDRESS.UNI_V3_ICHI_USDC]
   );
-  await uniswapV3AdapterOracle.setTimeGap([ADDRESS.OHM], [OneHour]);
+  await uniswapV3AdapterOracle.setTimeGap(
+    [ADDRESS.OHM, ADDRESS.ICHI],
+    [OneHour, OneHour]
+  );
 
   const WeightedBPTOracleFactory = await ethers.getContractFactory(
     CONTRACT_NAMES.WeightedBPTOracle
@@ -80,25 +101,49 @@ export const setupOracles = async (): Promise<CoreOracle> => {
     await WeightedBPTOracleFactory.deploy(oracle.address)
   );
 
+  const BandAdapterOracle = await ethers.getContractFactory(
+    "BandAdapterOracle"
+  );
+  const bandOracle = <BandAdapterOracle>(
+    await BandAdapterOracle.deploy(ADDRESS.BandStdRef)
+  );
+
+  await bandOracle.setSymbols([ADDRESS.ALCX], ["ALCX"]);
+  await bandOracle.setTimeGap([ADDRESS.ALCX], [OneDay]);
+
   await oracle.setRoutes(
     [
-      ADDRESS.WETH,
       ADDRESS.USDC,
+      ADDRESS.ICHI,
+      ADDRESS.CRV,
       ADDRESS.DAI,
-      ADDRESS.USDT,
-      ADDRESS.BAL,
-      ADDRESS.FRAX,
+      ADDRESS.MIM,
+      ADDRESS.LINK,
       ADDRESS.OHM,
+      ADDRESS.SUSHI,
+      ADDRESS.BAL,
+      ADDRESS.ALCX,
+      ADDRESS.WETH,
+      ADDRESS.WBTC,
+      ADDRESS.USDT,
+      ADDRESS.FRAX,
       ADDRESS.BAL_OHM_WETH,
     ],
     [
       chainlinkAdapterOracle.address,
-      chainlinkAdapterOracle.address,
+      uniswapV3AdapterOracle.address,
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       uniswapV3AdapterOracle.address,
+      chainlinkAdapterOracle.address,
+      chainlinkAdapterOracle.address,
+      bandOracle.address,
+      chainlinkAdapterOracle.address,
+      chainlinkAdapterOracle.address,
+      chainlinkAdapterOracle.address,
+      chainlinkAdapterOracle.address,
       weightedOracle.address,
     ]
   );
@@ -244,9 +289,25 @@ export const setupBasicBank = async (): Promise<Protocol> => {
   };
 };
 
+export const getTokenAmountFromUSD = async (
+  token: ERC20,
+  oracle: CoreOracle,
+  usdAmount: BigNumberish
+): Promise<BigNumber> => {
+  const price = await oracle.callStatic.getPrice(token.address);
+  const decimals = await token.decimals();
+
+  return utils
+    .parseEther(usdAmount.toString())
+    .mul(utils.parseEther("1"))
+    .div(price)
+    .div(utils.parseUnits("1", 18 - decimals));
+};
+
 export type StrategyInfo = {
   type: string;
   address: string;
+  poolId?: number;
   borrowAssets: string[];
   collateralAssets: string[];
   maxLtv: number;
