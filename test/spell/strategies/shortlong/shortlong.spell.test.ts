@@ -41,6 +41,7 @@ describe("ShortLong Spell", () => {
   let crv: ERC20;
   let dai: ERC20;
   let wbtc: ERC20;
+  let weth: ERC20;
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: ShortLongSpell;
@@ -60,6 +61,7 @@ describe("ShortLong Spell", () => {
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
     wbtc = <ERC20>await ethers.getContractAt("ERC20", WBTC);
+    weth = <ERC20>await ethers.getContractAt("ERC20", WETH);
 
     protocol = await setupShortLongProtocol();
     bank = protocol.bank;
@@ -72,6 +74,7 @@ describe("ShortLong Spell", () => {
     await usdc.approve(bank.address, ethers.constants.MaxUint256);
     await crv.approve(bank.address, ethers.constants.MaxUint256);
     await wbtc.approve(bank.address, ethers.constants.MaxUint256);
+    await weth.approve(bank.address, ethers.constants.MaxUint256);
     await dai.approve(bank.address, ethers.constants.MaxUint256);
   });
 
@@ -101,6 +104,64 @@ describe("ShortLong Spell", () => {
       dai,
       utils.parseUnits("10", 18),
       wbtc
+    );
+  });
+
+  it("should be able to farm DAI (collateral: WETH, borrowToken: DAI)", async () => {
+    await testFarm(
+      1,
+      WETH,
+      DAI,
+      LINK,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("100", 18),
+      0,
+      weth
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      1,
+      WETH,
+      DAI,
+      LINK,
+      linkSoftVault,
+      utils.parseUnits("1", 18),
+      dai,
+      utils.parseUnits("10", 18),
+      weth
+    );
+  });
+
+  it("should be able to farm DAI (collateral: DAI, borrowToken: DAI)", async () => {
+    await testFarm(
+      1,
+      DAI,
+      DAI,
+      LINK,
+      utils.parseUnits("1000", 18),
+      utils.parseUnits("100", 18),
+      0,
+      dai
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      1,
+      DAI,
+      DAI,
+      LINK,
+      linkSoftVault,
+      utils.parseUnits("1", 18),
+      dai,
+      utils.parseUnits("10", 18),
+      dai
     );
   });
 

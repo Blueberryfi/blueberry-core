@@ -97,6 +97,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   let daiSoftVault: SoftVault;
   let linkSoftVault: SoftVault;
   let wbtcSoftVault: SoftVault;
+  let wethSoftVault: SoftVault;
   let hardVault: HardVault;
 
   let comptroller: Comptroller;
@@ -386,11 +387,26 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   );
   await wbtcSoftVault.deployed();
 
+  wethSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bWETH.address, "Interest Bearing WETH", "ibWETH"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await wethSoftVault.deployed();
+
   await mockOracle.setPrice(
-    [daiSoftVault.address, wbtcSoftVault.address, linkSoftVault.address],
+    [
+      daiSoftVault.address,
+      wbtcSoftVault.address,
+      wethSoftVault.address,
+      linkSoftVault.address,
+    ],
     [
       BigNumber.from(10).pow(16), // $1
       BigNumber.from(10).pow(16).mul(BTC_PRICE),
+      BigNumber.from(10).pow(16).mul(ETH_PRICE),
       BigNumber.from(10).pow(16).mul(LINK_PRICE),
     ]
   );
@@ -443,6 +459,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
   await bank.addBank(LINK, linkSoftVault.address, hardVault.address, 9000);
   await bank.addBank(WBTC, wbtcSoftVault.address, hardVault.address, 9000);
+  await bank.addBank(WETH, wethSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
   await comptroller._setCreditLimit(
