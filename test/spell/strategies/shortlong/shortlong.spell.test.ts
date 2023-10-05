@@ -1,7 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   BlueBerryBank,
-  MockOracle,
   WERC20,
   ERC20,
   ShortLongSpell,
@@ -28,27 +27,27 @@ chai.use(roughlyNear);
 const WBTC = ADDRESS.WBTC;
 const LINK = ADDRESS.LINK;
 const WETH = ADDRESS.WETH;
-const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
-const CRV = ADDRESS.CRV;
+const WstETH = ADDRESS.wstETH;
 
 describe("ShortLong Spell", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
 
-  let usdc: ERC20;
-  let crv: ERC20;
   let dai: ERC20;
   let wbtc: ERC20;
   let weth: ERC20;
+  let link: ERC20;
+  let wstETH: ERC20;
   let werc20: WERC20;
-  let mockOracle: MockOracle;
   let spell: ShortLongSpell;
   let bank: BlueBerryBank;
   let protocol: ShortLongProtocol;
   let daiSoftVault: SoftVault;
   let linkSoftVault: SoftVault;
+  let wbtcSoftVault: SoftVault;
+  let wstETHSoftVault: SoftVault;
 
   const iface = new ethers.utils.Interface(SpellABI);
 
@@ -56,29 +55,145 @@ describe("ShortLong Spell", () => {
     await fork();
 
     [admin, alice, treasury] = await ethers.getSigners();
-    usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
-    crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
-    usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
     wbtc = <ERC20>await ethers.getContractAt("ERC20", WBTC);
     weth = <ERC20>await ethers.getContractAt("ERC20", WETH);
+    link = <ERC20>await ethers.getContractAt("ERC20", LINK);
+    wstETH = <ERC20>await ethers.getContractAt("ERC20", WstETH);
 
     protocol = await setupShortLongProtocol();
     bank = protocol.bank;
     spell = protocol.shortLongSpell;
     werc20 = protocol.werc20;
-    mockOracle = protocol.mockOracle;
     daiSoftVault = protocol.daiSoftVault;
     linkSoftVault = protocol.linkSoftVault;
+    wbtcSoftVault = protocol.wbtcSoftVault;
+    wstETHSoftVault = protocol.wstETHSoftVault;
 
-    await usdc.approve(bank.address, ethers.constants.MaxUint256);
-    await crv.approve(bank.address, ethers.constants.MaxUint256);
     await wbtc.approve(bank.address, ethers.constants.MaxUint256);
     await weth.approve(bank.address, ethers.constants.MaxUint256);
     await dai.approve(bank.address, ethers.constants.MaxUint256);
+    await link.approve(bank.address, ethers.constants.MaxUint256);
+    await wstETH.approve(bank.address, ethers.constants.MaxUint256);
   });
 
-  it("should be able to farm DAI (collateral: WBTC, borrowToken: DAI)", async () => {
+  it("should be able to long DAI + earn wstETH (collateral: WBTC, borrowToken: DAI)", async () => {
+    await testFarm(
+      4,
+      WBTC,
+      DAI,
+      WstETH,
+      utils.parseUnits("0.1", 8),
+      utils.parseUnits("100", 18),
+      0,
+      wbtc
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      4,
+      WBTC,
+      DAI,
+      WstETH,
+      wstETHSoftVault,
+      utils.parseUnits("0.1", 8),
+      dai,
+      utils.parseUnits("10", 18),
+      wbtc
+    );
+  });
+
+  it("should be able to long DAI + earn wstETH (collateral: WstETH, borrowToken: DAI)", async () => {
+    await testFarm(
+      4,
+      WstETH,
+      DAI,
+      WstETH,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("100", 18),
+      0,
+      wstETH
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      4,
+      WstETH,
+      DAI,
+      WstETH,
+      wstETHSoftVault,
+      utils.parseUnits("1", 18),
+      dai,
+      utils.parseUnits("10", 18),
+      wstETH
+    );
+  });
+
+  it("should be able to long DAI + earn wstETH (collateral: WETH, borrowToken: DAI)", async () => {
+    await testFarm(
+      4,
+      WETH,
+      DAI,
+      WstETH,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("100", 18),
+      0,
+      weth
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      4,
+      WETH,
+      DAI,
+      WstETH,
+      wstETHSoftVault,
+      utils.parseUnits("1", 18),
+      dai,
+      utils.parseUnits("10", 18),
+      weth
+    );
+  });
+
+  it("should be able to long DAI + earn wstETH (collateral: DAI, borrowToken: DAI)", async () => {
+    await testFarm(
+      4,
+      DAI,
+      DAI,
+      WstETH,
+      utils.parseUnits("1000", 18),
+      utils.parseUnits("100", 18),
+      0,
+      dai
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      4,
+      DAI,
+      DAI,
+      WstETH,
+      wstETHSoftVault,
+      utils.parseUnits("1", 18),
+      dai,
+      utils.parseUnits("10", 18),
+      dai
+    );
+  });
+
+  it("should be able to long DAI + earn LINK (collateral: WBTC, borrowToken: DAI)", async () => {
     await testFarm(
       1,
       WBTC,
@@ -107,7 +222,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to farm DAI (collateral: WETH, borrowToken: DAI)", async () => {
+  it("should be able to long DAI + earn LINK (collateral: WETH, borrowToken: DAI)", async () => {
     await testFarm(
       1,
       WETH,
@@ -136,7 +251,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to farm DAI (collateral: DAI, borrowToken: DAI)", async () => {
+  it("should be able to long DAI + earn LINK (collateral: DAI, borrowToken: DAI)", async () => {
     await testFarm(
       1,
       DAI,
@@ -161,6 +276,296 @@ describe("ShortLong Spell", () => {
       utils.parseUnits("1", 18),
       dai,
       utils.parseUnits("10", 18),
+      dai
+    );
+  });
+
+  it("should be able to short DAI + earn LINK (collateral: wstETH, borrowToken: LINK)", async () => {
+    await testFarm(
+      2,
+      WstETH,
+      LINK,
+      DAI,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("20", 18),
+      0,
+      wstETH
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      2,
+      WstETH,
+      LINK,
+      DAI,
+      daiSoftVault,
+      utils.parseUnits("1", 18),
+      link,
+      utils.parseUnits("2", 18),
+      wstETH
+    );
+  });
+
+  it("should be able to short DAI + earn LINK (collateral: WBTC, borrowToken: LINK)", async () => {
+    await testFarm(
+      2,
+      WBTC,
+      LINK,
+      DAI,
+      utils.parseUnits("0.1", 8),
+      utils.parseUnits("20", 18),
+      0,
+      wbtc
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      2,
+      WBTC,
+      LINK,
+      DAI,
+      daiSoftVault,
+      utils.parseUnits("0.1", 8),
+      link,
+      utils.parseUnits("2", 18),
+      wbtc
+    );
+  });
+
+  it("should be able to short DAI + earn LINK (collateral: WETH, borrowToken: LINK)", async () => {
+    await testFarm(
+      2,
+      WETH,
+      LINK,
+      DAI,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("20", 18),
+      0,
+      weth
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      2,
+      WETH,
+      LINK,
+      DAI,
+      daiSoftVault,
+      utils.parseUnits("1", 18),
+      link,
+      utils.parseUnits("2", 18),
+      weth
+    );
+  });
+
+  it("should be able to short DAI + earn LINK (collateral: DAI, borrowToken: LINK)", async () => {
+    await testFarm(
+      2,
+      DAI,
+      LINK,
+      DAI,
+      utils.parseUnits("1000", 18),
+      utils.parseUnits("20", 18),
+      0,
+      dai
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      2,
+      DAI,
+      LINK,
+      DAI,
+      daiSoftVault,
+      utils.parseUnits("1000", 18),
+      link,
+      utils.parseUnits("2", 18),
+      dai
+    );
+  });
+
+  it("should be able to long DAI + earn wBTC (collateral: WETH, borrowToken: DAI)", async () => {
+    await testFarm(
+      3,
+      WETH,
+      DAI,
+      WBTC,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("100", 18),
+      0,
+      weth
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      3,
+      WETH,
+      DAI,
+      WBTC,
+      wbtcSoftVault,
+      utils.parseUnits("1", 18),
+      dai,
+      utils.parseUnits("10", 18),
+      weth
+    );
+  });
+
+  it("should be able to long DAI + earn wBTC (collateral: WBTC, borrowToken: DAI)", async () => {
+    await testFarm(
+      3,
+      WBTC,
+      DAI,
+      WBTC,
+      utils.parseUnits("0.1", 8),
+      utils.parseUnits("100", 18),
+      0,
+      wbtc
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      3,
+      WBTC,
+      DAI,
+      WBTC,
+      wbtcSoftVault,
+      utils.parseUnits("0.1", 8),
+      dai,
+      utils.parseUnits("10", 18),
+      wbtc
+    );
+  });
+
+  it("should be able to long DAI + earn wBTC (collateral: DAI, borrowToken: DAI)", async () => {
+    await testFarm(
+      3,
+      DAI,
+      DAI,
+      WBTC,
+      utils.parseUnits("1000", 18),
+      utils.parseUnits("100", 18),
+      0,
+      dai
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      3,
+      DAI,
+      DAI,
+      WBTC,
+      wbtcSoftVault,
+      utils.parseUnits("1000", 18),
+      dai,
+      utils.parseUnits("10", 18),
+      dai
+    );
+  });
+
+  it("should be able to short DAI + earn WBTC (collateral: WETH, borrowToken: WBTC)", async () => {
+    await testFarm(
+      2,
+      WETH,
+      WBTC,
+      DAI,
+      utils.parseUnits("1", 18),
+      utils.parseUnits("0.01", 8),
+      0,
+      weth
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      2,
+      WETH,
+      WBTC,
+      DAI,
+      daiSoftVault,
+      utils.parseUnits("1", 18),
+      wbtc,
+      utils.parseUnits("0.001", 8),
+      weth
+    );
+  });
+
+  it("should be able to short DAI + earn WBTC (collateral: WBTC, borrowToken: WBTC)", async () => {
+    await testFarm(
+      2,
+      WBTC,
+      WBTC,
+      DAI,
+      utils.parseUnits("0.1", 8),
+      utils.parseUnits("0.01", 8),
+      0,
+      wbtc
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      2,
+      WBTC,
+      WBTC,
+      DAI,
+      daiSoftVault,
+      utils.parseUnits("0.1", 8),
+      wbtc,
+      utils.parseUnits("0.001", 8),
+      wbtc
+    );
+  });
+
+  it("should be able to short DAI + earn WBTC (collateral: DAI, borrowToken: WBTC)", async () => {
+    await testFarm(
+      2,
+      DAI,
+      WBTC,
+      DAI,
+      utils.parseUnits("1000", 18),
+      utils.parseUnits("0.01", 8),
+      0,
+      dai
+    );
+  });
+
+  it("should be able to close position", async () => {
+    const positionId = (await bank.nextPositionId()).sub(1);
+    await testClosePosition(
+      positionId,
+      2,
+      DAI,
+      WBTC,
+      DAI,
+      daiSoftVault,
+      utils.parseUnits("1000", 18),
+      wbtc,
+      utils.parseUnits("0.001", 8),
       dai
     );
   });
@@ -235,7 +640,7 @@ describe("ShortLong Spell", () => {
     depositAmount: BigNumber,
     rewardToken: any,
     rewardAmount: BigNumber,
-    collTokenContract: any
+    collTokenContract: any,
   ) {
     await evm_mine_blocks(10000);
     const position = await bank.positions(positionId);
@@ -250,10 +655,9 @@ describe("ShortLong Spell", () => {
     const beforeTreasuryBalance = await collTokenContract.balanceOf(
       treasury.address
     );
-    const beforeColTokenBalance = await collTokenContract.balanceOf(
+    const beforeColBalance = await collTokenContract.balanceOf(
       admin.address
     );
-    const beforeBorrowTokenBalance = await rewardToken.balanceOf(admin.address);
 
     const swapData = await getParaswapCalldata(
       swapToken,
@@ -280,21 +684,16 @@ describe("ShortLong Spell", () => {
         swapData.data,
       ])
     );
-    const afterColTokenBalance = await collTokenContract.balanceOf(
+    const afterColBalance = await collTokenContract.balanceOf(
       admin.address
     );
-    const afterBorrowTokenBalance = await rewardToken.balanceOf(admin.address);
     console.log(
-      "Collateral Token Balance Change:",
-      afterColTokenBalance.sub(beforeColTokenBalance)
-    );
-    console.log(
-      "Borrow Token Balance Change:",
-      afterBorrowTokenBalance.sub(beforeBorrowTokenBalance)
+      "Col Token Balance Change:",
+      afterColBalance.sub(beforeColBalance)
     );
     const depositFee = depositAmount.mul(50).div(10000);
     const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
-    expect(afterBorrowTokenBalance.sub(beforeBorrowTokenBalance)).to.be.gte(
+    expect(afterColBalance.sub(beforeColBalance)).to.be.gte(
       depositAmount.sub(depositFee).sub(withdrawFee)
     );
 
