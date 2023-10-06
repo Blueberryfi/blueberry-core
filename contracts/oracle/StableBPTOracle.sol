@@ -16,6 +16,7 @@ import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/balancer/IRateProvider.sol";
 import "../interfaces/balancer/IBalancerVault.sol";
 import "../libraries/FixedPointMathLib.sol";
+import "hardhat/console.sol";
 
 /// @title Stable Balancer LP Oracle
 /// @author BlueberryProtocol
@@ -49,10 +50,13 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
         uint256 length = tokens.length;
         uint256 minPrice = type(uint256).max;
         for(uint256 i; i != length; ++i) {
+            if (tokens[i] == token) {
+                continue;
+            }
             uint256 price = base.getPrice(tokens[i]);
             address rateProvider = rateProviders[i];
             if (rateProvider != address(0)) {
-                price = price.mulWadDown(IRateProvider(rateProvider).getRate());
+                price = price.divWadDown(IRateProvider(rateProvider).getRate());
             }
             minPrice = (price < minPrice) ? price : minPrice;
         }

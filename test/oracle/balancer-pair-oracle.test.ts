@@ -10,6 +10,7 @@ import {
   CompStableBPTOracle,
 } from "../../typechain-types";
 import { roughlyNear } from "../assertions/roughlyNear";
+import { fork } from "../helpers";
 
 chai.use(roughlyNear);
 
@@ -23,6 +24,8 @@ describe("Balancer Pair Oracle", () => {
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
   before(async () => {
+    await fork();
+
     const ChainlinkAdapterOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.ChainlinkAdapterOracle
     );
@@ -46,8 +49,9 @@ describe("Balancer Pair Oracle", () => {
     );
 
     await chainlinkAdapterOracle.setTokenRemappings(
-      [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.wstETH, ADDRESS.WBTC],
+      [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.wstETH, ADDRESS.ankrETH, ADDRESS.WBTC],
       [
+        ADDRESS.CHAINLINK_ETH,
         ADDRESS.CHAINLINK_ETH,
         ADDRESS.CHAINLINK_ETH,
         ADDRESS.CHAINLINK_ETH,
@@ -98,8 +102,10 @@ describe("Balancer Pair Oracle", () => {
         ADDRESS.WBTC,
         ADDRESS.BAL,
         ADDRESS.wstETH,
+        ADDRESS.ankrETH,
       ],
       [
+        chainlinkAdapterOracle.address,
         chainlinkAdapterOracle.address,
         chainlinkAdapterOracle.address,
         chainlinkAdapterOracle.address,
@@ -123,12 +129,13 @@ describe("Balancer Pair Oracle", () => {
       );
     });
 
-    it("Balancer AURA Stable Lp Price", async () => {
+    it.only("Balancer AURA Stable Lp Price", async () => {
       let price = await stableOracle.callStatic.getPrice(
-        ADDRESS.BAL_WSTETH_STABLE
+        // ADDRESS.BAL_WSTETH_STABLE
+        ADDRESS.BAL_WSTETH_ANKRETH_STABLE
       );
       console.log(
-        "Balancer wstETH-WETH LP Price:",
+        "Balancer wstETH-ankrETH LP Price:",
         utils.formatUnits(price, 18)
       );
     });

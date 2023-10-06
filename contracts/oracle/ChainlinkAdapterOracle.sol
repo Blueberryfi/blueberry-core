@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./BaseAdapter.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/IWstETH.sol";
+import "../interfaces/IAnkrETH.sol";
 import "../interfaces/chainlink/IFeedRegistry.sol";
 
 /// @title ChainlinkAdapterOracle for L1 Chains
@@ -40,6 +41,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
 
     /// @dev WstETH address
     address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
+
+    /// @dev ankrETH address
+    address public constant ANKRETH = 0xE95A203B1a91a908F9B9CE46459d101078c2c3cb;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      EVENTS
@@ -129,6 +133,10 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
             return
                 ((answer.toUint256() * Constants.PRICE_PRECISION) *
                     IWstETH(WSTETH).stEthPerToken()) / 10 ** (18 + decimals);
+        } else if (token_ == ANKRETH) {
+            return
+                ((answer.toUint256() * Constants.PRICE_PRECISION) *
+                    IAnkrETH(ANKRETH).sharesToBonds(1e18)) / 10 ** (18 + decimals);
         }
 
         return
