@@ -129,9 +129,18 @@ describe("Balancer Pair Oracle", () => {
       );
     });
 
-    it.only("Balancer AURA Stable Lp Price", async () => {
+    it("Balancer WstETH Stable Lp Price", async () => {
       let price = await stableOracle.callStatic.getPrice(
-        // ADDRESS.BAL_WSTETH_STABLE
+        ADDRESS.BAL_WSTETH_STABLE
+      );
+      console.log(
+        "Balancer WstETH Stable LP Price:",
+        utils.formatUnits(price, 18)
+      );
+    });
+
+    it("Balancer wstETH-ankrETH Lp Price", async () => {
+      let price = await stableOracle.callStatic.getPrice(
         ADDRESS.BAL_WSTETH_ANKRETH_STABLE
       );
       console.log(
