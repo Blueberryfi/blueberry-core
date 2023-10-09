@@ -337,6 +337,19 @@
   },
   {
     "inputs": [],
+    "name": "augustusSwapper",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "bank",
     "outputs": [
       {
@@ -386,6 +399,16 @@
             "internalType": "uint256",
             "name": "amountOutMin",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountToSwap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "swapData",
+            "type": "bytes"
           }
         ],
         "internalType": "struct BasicSpell.ClosePosParam",
@@ -436,6 +459,16 @@
             "internalType": "uint256",
             "name": "amountOutMin",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountToSwap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "swapData",
+            "type": "bytes"
           }
         ],
         "internalType": "struct BasicSpell.ClosePosParam",
@@ -491,6 +524,16 @@
       {
         "internalType": "address",
         "name": "uniV3Router_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "augustusSwapper_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenTransferProxy_",
         "type": "address"
       }
     ],
@@ -823,6 +866,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenTransferProxy",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

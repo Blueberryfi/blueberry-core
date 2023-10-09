@@ -247,6 +247,8 @@ describe("ShortLong Spell mainnet fork", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
             "0x00",
           ])
@@ -270,6 +272,8 @@ describe("ShortLong Spell mainnet fork", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
             "0x00",
           ])
@@ -326,6 +330,8 @@ describe("ShortLong Spell mainnet fork", () => {
             amountPosRemove: position.collateralSize.div(2),
             amountShareWithdraw: position.underlyingVaultShare.div(2),
             amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
           },
           swapData.data,
         ])
@@ -392,6 +398,8 @@ describe("ShortLong Spell mainnet fork", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
             swapData.data,
           ])
@@ -446,6 +454,8 @@ describe("ShortLong Spell mainnet fork", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
           },
           swapData.data,
         ])

@@ -44,12 +44,9 @@ contract ConvexSpell is BasicSpell {
     /// @dev address of CVX token
     address public CVX;
 
-    /// @dev paraswap AugustusSwapper address for token swaps
-    address public augustusSwapper;
-    /// @dev paraswap TokenTransferProxy address for efficient token transfers
-    address public tokenTransferProxy;
     /// @dev Curve Zap Depositor for USD metapools
-    address public constant CURVE_ZAP_DEPOSITOR = 0xA79828DF1850E8a3A3064576f380D90aECDD3359;
+    address public constant CURVE_ZAP_DEPOSITOR =
+        0xA79828DF1850E8a3A3064576f380D90aECDD3359;
     /// @dev 3CRV token address
     address public constant _3CRV = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
     /// @dev DAI token address
@@ -80,7 +77,13 @@ contract ConvexSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_);
+        __BasicSpell_init(
+            bank_,
+            werc20_,
+            weth_,
+            augustusSwapper_,
+            tokenTransferProxy_
+        );
         if (wConvexPools_ == address(0) || crvOracle_ == address(0))
             revert Errors.ZERO_ADDRESS();
 
@@ -88,9 +91,6 @@ contract ConvexSpell is BasicSpell {
         CVX = address(wConvexPools.CVX());
         crvOracle = ICurveOracle(crvOracle_);
         IWConvexPools(wConvexPools_).setApprovalForAll(address(bank_), true);
-
-        augustusSwapper = augustusSwapper_;
-        tokenTransferProxy = tokenTransferProxy_;
     }
 
     /// @notice Adds a new strategy to the spell.
@@ -172,7 +172,11 @@ contract ConvexSpell is BasicSpell {
                         suppliedAmts[3] = tokenBalance;
                     }
                     _ensureApprove(borrowToken, pool, 0);
-                    _ensureApprove(borrowToken, CURVE_ZAP_DEPOSITOR, borrowBalance);
+                    _ensureApprove(
+                        borrowToken,
+                        CURVE_ZAP_DEPOSITOR,
+                        borrowBalance
+                    );
                     ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).add_liquidity(
                         pool,
                         suppliedAmts,
@@ -181,31 +185,49 @@ contract ConvexSpell is BasicSpell {
                 } else {
                     uint256[2] memory suppliedAmts;
                     for (uint256 i; i < 2; i++) {
-                        if ((tokens[i] == borrowToken) || (tokens[i] == ETH && isBorrowTokenWeth)) {
+                        if (
+                            (tokens[i] == borrowToken) ||
+                            (tokens[i] == ETH && isBorrowTokenWeth)
+                        ) {
                             suppliedAmts[i] = tokenBalance;
                             break;
                         }
                     }
-                    ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, _minLPMint);
+                    ICurvePool(pool).add_liquidity{value: ethValue}(
+                        suppliedAmts,
+                        _minLPMint
+                    );
                 }
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
                 for (uint256 i; i < 3; i++) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && isBorrowTokenWeth)) {
+                    if (
+                        (tokens[i] == borrowToken) ||
+                        (tokens[i] == ETH && isBorrowTokenWeth)
+                    ) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, _minLPMint);
+                ICurvePool(pool).add_liquidity{value: ethValue}(
+                    suppliedAmts,
+                    _minLPMint
+                );
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
                 for (uint256 i; i < 4; i++) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && isBorrowTokenWeth)) {
+                    if (
+                        (tokens[i] == borrowToken) ||
+                        (tokens[i] == ETH && isBorrowTokenWeth)
+                    ) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, _minLPMint);
+                ICurvePool(pool).add_liquidity{value: ethValue}(
+                    suppliedAmts,
+                    _minLPMint
+                );
             }
         }
 
@@ -248,7 +270,10 @@ contract ConvexSpell is BasicSpell {
     )
         external
         existingStrategy(closePosParam.param.strategyId)
-        existingCollateral(closePosParam.param.strategyId, closePosParam.param.collToken)
+        existingCollateral(
+            closePosParam.param.strategyId,
+            closePosParam.param.collToken
+        )
     {
         address crvLp = strategies[closePosParam.param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
@@ -263,7 +288,10 @@ contract ConvexSpell is BasicSpell {
 
         /// 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
         bank.takeCollateral(amountPosRemove);
-        (address[] memory rewardTokens,) = wConvexPools.burn(pos.collId, amountPosRemove);
+        (address[] memory rewardTokens, ) = wConvexPools.burn(
+            pos.collId,
+            amountPosRemove
+        );
 
         /// 2. Swap rewards tokens to debt token
         _sellRewards(rewardTokens, closePosParam);
@@ -290,9 +318,19 @@ contract ConvexSpell is BasicSpell {
         }
 
         /// 4. Withdraw isolated collateral from Bank
-        _doWithdraw(closePosParam.param.collToken, closePosParam.param.amountShareWithdraw);
+        _doWithdraw(
+            closePosParam.param.collToken,
+            closePosParam.param.amountShareWithdraw
+        );
 
-        /// 5. Repay
+        /// 5. Swap some collateral to repay debt(for negative PnL)
+        _swapCollToDebt(
+            closePosParam.param.collToken,
+            closePosParam.param.amountToSwap,
+            closePosParam.param.swapData
+        );
+
+        /// 6. Repay
         {
             /// Compute repay amount if MAX_INT is supplied (max debt)
             uint256 amountRepay = closePosParam.param.amountRepay;
@@ -304,7 +342,7 @@ contract ConvexSpell is BasicSpell {
 
         _validateMaxLTV(closePosParam.param.strategyId);
 
-        /// 6. Refund
+        /// 7. Refund
         _doRefund(closePosParam.param.borrowToken);
         _doRefund(closePosParam.param.collToken);
         _doRefund(CVX);
@@ -325,9 +363,7 @@ contract ConvexSpell is BasicSpell {
         uint256 amountPosRemove
     ) internal returns (address[] memory tokens) {
         address pool;
-        (pool, tokens, ) = crvOracle.getPoolInfo(
-            crvLp
-        );
+        (pool, tokens, ) = crvOracle.getPoolInfo(crvLp);
 
         if (amountPosRemove == type(uint256).max) {
             amountPosRemove = IERC20(crvLp).balanceOf(address(this));
@@ -346,7 +382,11 @@ contract ConvexSpell is BasicSpell {
             if (len == 2) {
                 if (tokens[1] == _3CRV) {
                     uint256[4] memory minOuts;
-                    ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).remove_liquidity(pool, amountPosRemove, minOuts);
+                    ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).remove_liquidity(
+                        pool,
+                        amountPosRemove,
+                        minOuts
+                    );
                     return _getMetaPoolTokens(tokens[0]);
                 } else {
                     uint256[2] memory minOuts;
@@ -394,7 +434,9 @@ contract ConvexSpell is BasicSpell {
         }
     }
 
-    function _getMetaPoolTokens(address token) internal pure returns (address[] memory tokens) {
+    function _getMetaPoolTokens(
+        address token
+    ) internal pure returns (address[] memory tokens) {
         tokens = new address[](4);
         tokens[0] = token;
         tokens[1] = DAI;
@@ -419,7 +461,11 @@ contract ConvexSpell is BasicSpell {
             if (sellToken != closePosParam.param.borrowToken) {
                 uint256 expectedReward = closePosParam.amounts[i];
                 /// If the expected reward is zero, skip to the next token.
-                _swapOnParaswap(sellToken, expectedReward, closePosParam.swapDatas[i]);
+                _swapOnParaswap(
+                    sellToken,
+                    expectedReward,
+                    closePosParam.swapDatas[i]
+                );
             }
         }
     }

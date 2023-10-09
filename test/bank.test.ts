@@ -469,6 +469,8 @@ describe("Bank", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -516,6 +518,8 @@ describe("Bank", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -563,6 +567,8 @@ describe("Bank", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -1124,6 +1130,8 @@ describe("Bank", () => {
                 amountPosRemove: ethers.constants.MaxUint256,
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: 1,
+                amountToSwap: 0,
+                swapData: '0x',
               },
             ])
           )
@@ -1143,6 +1151,8 @@ describe("Bank", () => {
                 amountPosRemove: ethers.constants.MaxUint256,
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: 1,
+                amountToSwap: 0,
+                swapData: '0x',
               },
             ])
           )

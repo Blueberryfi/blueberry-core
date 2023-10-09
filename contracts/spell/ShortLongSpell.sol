@@ -33,20 +33,15 @@ contract ShortLongSpell is BasicSpell {
                                    PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev paraswap AugustusSwapper address
-    address public augustusSwapper;
-
-    /// @dev paraswap TokenTransferProxy address
-    address public tokenTransferProxy;
-
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
+
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -70,7 +65,13 @@ contract ShortLongSpell is BasicSpell {
         augustusSwapper = augustusSwapper_;
         tokenTransferProxy = tokenTransferProxy_;
 
-        __BasicSpell_init(bank_, werc20_, weth_);
+        __BasicSpell_init(
+            bank_,
+            werc20_,
+            weth_,
+            augustusSwapper_,
+            tokenTransferProxy_
+        );
     }
 
     /// @notice Internal function to swap token using paraswap assets
@@ -130,11 +131,11 @@ contract ShortLongSpell is BasicSpell {
     /// @dev This function first deposits an isolated underlying asset to Blueberry Money Market,
     /// then borrows tokens from it. The borrowed tokens are swapped for another token using
     /// ParaSwap and the resulting tokens are deposited into the softvault.
-    /// 
+    ///
     /// Pre-conditions:
     /// - Strategy for `param.strategyId` must exist.
     /// - Collateral for `param.strategyId` and `param.collToken` must exist.
-    /// 
+    ///
     /// @param param Parameters required to open the position, described in the `OpenPosParam` struct from {BasicSpell}.
     /// @param swapData Specific data needed for the ParaSwap swap, structured in the `bytes` format from {PSwapLib}.
     function openPosition(
@@ -204,7 +205,10 @@ contract ShortLongSpell is BasicSpell {
         /// 4. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 
-        /// 5. Repay
+        /// 5. Swap some collateral to repay debt(for negative PnL)
+        _swapCollToDebt(param.collToken, param.amountToSwap, param.swapData);
+
+        /// 6. Repay
         {
             uint256 amountRepay = param.amountRepay;
             if (amountRepay == type(uint256).max) {
@@ -215,20 +219,20 @@ contract ShortLongSpell is BasicSpell {
 
         _validateMaxLTV(param.strategyId);
 
-        /// 6. Refund
+        /// 7. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
     }
 
     /// @notice Externally callable function to close a position using provided parameters and swap data.
-    /// @dev This function is a higher-level action that internally calls `_withdraw` to manage the closing 
-    /// of a position. It ensures the given strategy and collateral exist, and then carries out the required 
+    /// @dev This function is a higher-level action that internally calls `_withdraw` to manage the closing
+    /// of a position. It ensures the given strategy and collateral exist, and then carries out the required
     /// operations to close the position.
-    /// 
+    ///
     /// Pre-conditions:
     /// - Strategy for `param.strategyId` must exist.
     /// - Collateral for `param.strategyId` and `param.collToken` must exist.
-    /// 
+    ///
     /// @param param Parameters required to close the position, described in the `ClosePosParam` struct.
     /// @param swapData Specific data needed for the ParaSwap swap.
     function closePosition(
