@@ -21,6 +21,7 @@ import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
 import "../interfaces/IWETH.sol";
+import "../libraries/Paraswap/PSwapLib.sol";
 
 /// @title BasicSpell
 /// @author BlueberryProtocol
@@ -71,6 +72,8 @@ abstract contract BasicSpell is
     /// @param amountPosRemove Amount of position to withdraw.
     /// @param amountShareWithdraw Amount of isolated collateral tokens to withdraw.
     /// @param amountOutMin Minimum amount to receive after the operation (used to handle slippage).
+    /// @param amountToSwap Collateral amount to swap to repay debt for negative PnL
+    /// @param swapData Paraswap sawp data to swap collateral to borrow token
     struct ClosePosParam {
         uint256 strategyId;
         address collToken;
@@ -79,6 +82,8 @@ abstract contract BasicSpell is
         uint256 amountPosRemove;
         uint256 amountShareWithdraw;
         uint256 amountOutMin;
+        uint256 amountToSwap;
+        bytes swapData;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -94,9 +99,14 @@ abstract contract BasicSpell is
     /// ETH address
     address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
+    /// @dev paraswap AugustusSwapper Address
+    address public augustusSwapper;
+    /// @dev paraswap TokenTransferProxy Address
+    address public tokenTransferProxy;
+
     /// @dev strategyId => vault
     Strategy[] public strategies;
-    /// @dev Mapping from strategy ID to collateral token and its maximum Loan-To-Value ratio. 
+    /// @dev Mapping from strategy ID to collateral token and its maximum Loan-To-Value ratio.
     /// Note: LTV is in base 1e4 to provide precision.
     mapping(uint256 => mapping(address => uint256)) public maxLTV;
 
@@ -167,10 +177,14 @@ abstract contract BasicSpell is
     /// @param bank_ The address of the bank contract.
     /// @param werc20_ The address of the wrapped ERC20 contract.
     /// @param weth_ The address of the wrapped Ether token.
+    /// @param augustusSwapper_ Address of the paraswap AugustusSwapper.
+    /// @param tokenTransferProxy_ Address of the paraswap TokenTransferProxy.
     function __BasicSpell_init(
         IBank bank_,
         address werc20_,
-        address weth_
+        address weth_,
+        address augustusSwapper_,
+        address tokenTransferProxy_
     ) internal onlyInitializing {
         if (
             address(bank_) == address(0) ||
@@ -183,6 +197,8 @@ abstract contract BasicSpell is
         bank = bank_;
         werc20 = IWERC20(werc20_);
         WETH = weth_;
+        augustusSwapper = augustusSwapper_;
+        tokenTransferProxy = tokenTransferProxy_;
 
         IWERC20(werc20_).setApprovalForAll(address(bank_), true);
     }
@@ -351,6 +367,28 @@ abstract contract BasicSpell is
         }
     }
 
+    /// @notice Internal function Withdraw specified collateral from the bank.
+    /// @dev Only withdraws the collateral if the amount specified is greater than zero.
+    /// @param collToken Address of the isolated collateral token to be withdrawn.
+    /// @param amount Amount of tokens to be withdrawn.
+    /// @param swapData Paraswap calldata
+    function _swapCollToDebt(
+        address collToken,
+        uint256 amount,
+        bytes calldata swapData
+    ) internal {
+        if (amount > 0 && swapData.length != 0) {
+            // Even the swap failed, continue rest operations, beacuse this swap is used to repay debt for negative PnL
+            PSwapLib.swap(
+                augustusSwapper,
+                tokenTransferProxy,
+                collToken,
+                amount,
+                swapData
+            );
+        }
+    }
+
     /// @notice Internal function Borrow specified tokens from the bank for the current executor.
     /// @dev The borrowing happens only if the specified amount is greater than zero.
     /// @param token Address of the token to be borrowed.
@@ -366,7 +404,7 @@ abstract contract BasicSpell is
     }
 
     /// @notice Internall function Repay specified tokens to the bank for the current executor.
-    /// @dev Ensures approval of tokens to the bank and repays them. 
+    /// @dev Ensures approval of tokens to the bank and repays them.
     ///      Only repays if the specified amount is greater than zero.
     /// @param token Address of the token to be repaid to the bank.
     /// @param amount Amount of tokens to repay.
@@ -378,8 +416,8 @@ abstract contract BasicSpell is
     }
 
     /// @notice Internal function Deposit collateral tokens into the bank.
-    /// @dev Ensures approval of tokens to the werc20 contract, mints them, 
-    ///      and then deposits them as collateral in the bank. 
+    /// @dev Ensures approval of tokens to the werc20 contract, mints them,
+    ///      and then deposits them as collateral in the bank.
     ///      Only deposits if the specified amount is greater than zero.
     /// @param token Address of the collateral token to be deposited.
     /// @param amount Amount of collateral tokens to deposit.
@@ -396,7 +434,7 @@ abstract contract BasicSpell is
     }
 
     /// @notice Internal function Withdraw collateral tokens from the bank.
-    /// @dev Burns the withdrawn tokens from werc20 contract after retrieval. 
+    /// @dev Burns the withdrawn tokens from werc20 contract after retrieval.
     ///      Only withdraws if the specified amount is greater than zero.
     /// @param token Address of the collateral token to be withdrawn.
     /// @param amount Amount of collateral tokens to withdraw.

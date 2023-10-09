@@ -34,11 +34,6 @@ contract CurveSpell is BasicSpell {
     /// @dev address of CRV token
     address public CRV;
 
-    /// @dev paraswap AugustusSwapper address
-    address public augustusSwapper;
-    /// @dev paraswap TokenTransferProxy address
-    address public tokenTransferProxy;
-
     function initialize(
         IBank bank_,
         address werc20_,
@@ -48,7 +43,13 @@ contract CurveSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_);
+        __BasicSpell_init(
+            bank_,
+            werc20_,
+            weth_,
+            augustusSwapper_,
+            tokenTransferProxy_
+        );
         if (wCurveGauge_ == address(0) || crvOracle_ == address(0))
             revert Errors.ZERO_ADDRESS();
 
@@ -166,7 +167,7 @@ contract CurveSpell is BasicSpell {
     }
 
     function closePositionFarm(
-        ClosePosParam memory param,
+        ClosePosParam calldata param,
         uint256[] calldata amounts,
         bytes[] calldata swapDatas,
         bool isKilled,
@@ -236,7 +237,10 @@ contract CurveSpell is BasicSpell {
         // 5. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 
-        // 6. Repay
+        // 6. Swap some collateral to repay debt(for negative PnL)
+        _swapCollToDebt(param.collToken, param.amountToSwap, param.swapData);
+
+        // 7. Repay
         {
             // Compute repay amount if MAX_INT is supplied (max debt)
             uint256 amountRepay = param.amountRepay;
@@ -248,7 +252,7 @@ contract CurveSpell is BasicSpell {
 
         _validateMaxLTV(param.strategyId);
 
-        // 7. Refund
+        // 8. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
         _doRefund(CRV);

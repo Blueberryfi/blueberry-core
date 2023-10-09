@@ -290,7 +290,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   ichiSpell = <IchiSpell>(
     await upgrades.deployProxy(
       IchiSpell,
-      [bank.address, werc20.address, WETH, wichi.address, UNI_V3_ROUTER],
+      [bank.address, werc20.address, WETH, wichi.address, UNI_V3_ROUTER, ADDRESS.AUGUSTUS_SWAPPER, ADDRESS.TOKEN_TRANSFER_PROXY],
       { unsafeAllow: ["delegatecall"] }
     )
   );

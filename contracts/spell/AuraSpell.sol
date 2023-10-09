@@ -35,11 +35,6 @@ contract AuraSpell is BasicSpell {
     /// @dev Address of Stash AURA token
     address public STASH_AURA;
 
-    /// @dev paraswap AugustusSwapper Address
-    address public augustusSwapper;
-    /// @dev paraswap TokenTransferProxy Address
-    address public tokenTransferProxy;
-
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -59,16 +54,19 @@ contract AuraSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_);
+        __BasicSpell_init(
+            bank_,
+            werc20_,
+            weth_,
+            augustusSwapper_,
+            tokenTransferProxy_
+        );
         if (wAuraPools_ == address(0)) revert Errors.ZERO_ADDRESS();
 
         wAuraPools = IWAuraPools(wAuraPools_);
         AURA = address(wAuraPools.AURA());
         STASH_AURA = wAuraPools.STASH_AURA();
         IWAuraPools(wAuraPools_).setApprovalForAll(address(bank_), true);
-
-        augustusSwapper = augustusSwapper_;
-        tokenTransferProxy = tokenTransferProxy_;
     }
 
     /// @notice Allows the owner to add a new strategy.
@@ -244,7 +242,10 @@ contract AuraSpell is BasicSpell {
         /// 5. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 
-        /// 6. Withdraw collateral from the bank and repay the borrowed amount
+        /// 6. Swap some collateral to repay debt(for negative PnL)
+        _swapCollToDebt(param.collToken, param.amountToSwap, param.swapData);
+
+        /// 7. Withdraw collateral from the bank and repay the borrowed amount
         {
             /// Compute repay amount if MAX_INT is supplied (max debt)
             uint256 amountRepay = param.amountRepay;
@@ -257,7 +258,7 @@ contract AuraSpell is BasicSpell {
         /// Ensure that the Loan to Value (LTV) ratio remains within accepted boundaries
         _validateMaxLTV(param.strategyId);
 
-        /// 7. Refund any remaining tokens to the owner
+        /// 8. Refund any remaining tokens to the owner
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
     }
