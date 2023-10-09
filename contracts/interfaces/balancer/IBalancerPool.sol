@@ -14,4 +14,6 @@ interface IBalancerPool {
     function getActualSupply() external view returns (uint256);
 
     function getNormalizedWeights() external view returns (uint256[] memory);
+
+    function getRateProviders() external view returns (address[] memory);
 }
