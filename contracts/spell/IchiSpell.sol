@@ -46,7 +46,7 @@ contract IchiSpell is BasicSpell {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -62,14 +62,24 @@ contract IchiSpell is BasicSpell {
     /// @param weth_ Address of WETH.
     /// @param wichiFarm_ Address of ICHI farm wrapper.
     /// @param uniV3Router_ Address of the Uniswap V3 router.
+    /// @param augustusSwapper_ Augustus Swapper address
+    /// @param tokenTransferProxy_ Token Transfer Proxy address
     function initialize(
         IBank bank_,
         address werc20_,
         address weth_,
         address wichiFarm_,
-        address uniV3Router_
+        address uniV3Router_,
+        address augustusSwapper_,
+        address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_);
+        __BasicSpell_init(
+            bank_,
+            werc20_,
+            weth_,
+            augustusSwapper_,
+            tokenTransferProxy_
+        );
         if (wichiFarm_ == address(0)) revert Errors.ZERO_ADDRESS();
 
         wIchiFarm = IWIchiFarm(wichiFarm_);
@@ -192,7 +202,7 @@ contract IchiSpell is BasicSpell {
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }
 
-    /// @notice Handles the withdrawal logic, including withdrawing 
+    /// @notice Handles the withdrawal logic, including withdrawing
     ///         from the ICHI vault, swapping tokens, and repaying the debt.
     /// @param param Parameters required for the withdrawal operation.
     /// @dev param struct found in {BasicSpell}.
@@ -245,12 +255,15 @@ contract IchiSpell is BasicSpell {
         /// 5. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 
-        /// 6. Repay
+        /// 6. Swap some collateral to repay debt(for negative PnL)
+        _swapCollToDebt(param.collToken, param.amountToSwap, param.swapData);
+
+        /// 7. Repay
         _doRepay(param.borrowToken, amountRepay);
 
         _validateMaxLTV(param.strategyId);
 
-        /// 7. Refund
+        /// 8. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
     }

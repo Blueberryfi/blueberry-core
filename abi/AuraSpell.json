@@ -272,6 +272,19 @@
   },
   {
     "inputs": [],
+    "name": "ETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "STASH_AURA",
     "outputs": [
       {
@@ -383,6 +396,16 @@
             "internalType": "uint256",
             "name": "amountOutMin",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountToSwap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "swapData",
+            "type": "bytes"
           }
         ],
         "internalType": "struct BasicSpell.ClosePosParam",

@@ -259,6 +259,19 @@
   },
   {
     "inputs": [],
+    "name": "CURVE_ZAP_DEPOSITOR",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "CVX",
     "outputs": [
       {
@@ -272,7 +285,72 @@
   },
   {
     "inputs": [],
+    "name": "DAI",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "USDC",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "USDT",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "WETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "_3CRV",
     "outputs": [
       {
         "internalType": "address",
@@ -337,54 +415,76 @@
       {
         "components": [
           {
-            "internalType": "uint256",
-            "name": "strategyId",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "strategyId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "collToken",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "borrowToken",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amountRepay",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amountPosRemove",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amountShareWithdraw",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amountOutMin",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amountToSwap",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes",
+                "name": "swapData",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct BasicSpell.ClosePosParam",
+            "name": "param",
+            "type": "tuple"
           },
           {
-            "internalType": "address",
-            "name": "collToken",
-            "type": "address"
+            "internalType": "uint256[]",
+            "name": "amounts",
+            "type": "uint256[]"
           },
           {
-            "internalType": "address",
-            "name": "borrowToken",
-            "type": "address"
+            "internalType": "bytes[]",
+            "name": "swapDatas",
+            "type": "bytes[]"
           },
           {
-            "internalType": "uint256",
-            "name": "amountRepay",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amountPosRemove",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amountShareWithdraw",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amountOutMin",
-            "type": "uint256"
+            "internalType": "bool",
+            "name": "isKilled",
+            "type": "bool"
           }
         ],
-        "internalType": "struct BasicSpell.ClosePosParam",
-        "name": "param",
+        "internalType": "struct ConvexSpell.ClosePositionFarmParam",
+        "name": "closePosParam",
         "type": "tuple"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "expectedRewards",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "swapDatas",
-        "type": "bytes[]"
       }
     ],
     "name": "closePositionFarm",

@@ -10,12 +10,13 @@
 
 pragma solidity 0.8.16;
 
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./BasicSpell.sol";
 import "../interfaces/ICurveOracle.sol";
+import "../interfaces/ICurveZapDepositor.sol";
 import "../interfaces/IWConvexPools.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
-import "../libraries/UniversalERC20.sol";
 
 /// @title ConvexSpell
 /// @author BlueberryProtocol
@@ -23,7 +24,14 @@ import "../libraries/UniversalERC20.sol";
 ///         interacts with Convex pools. It handles strategies, interactions with external contracts,
 ///         and facilitates operations related to liquidity provision.
 contract ConvexSpell is BasicSpell {
-    using UniversalERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+
+    struct ClosePositionFarmParam {
+        ClosePosParam param;
+        uint256[] amounts;
+        bytes[] swapDatas;
+        bool isKilled;
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -36,10 +44,17 @@ contract ConvexSpell is BasicSpell {
     /// @dev address of CVX token
     address public CVX;
 
-    /// @dev paraswap AugustusSwapper address for token swaps
-    address public augustusSwapper;
-    /// @dev paraswap TokenTransferProxy address for efficient token transfers
-    address public tokenTransferProxy;
+    /// @dev Curve Zap Depositor for USD metapools
+    address public constant CURVE_ZAP_DEPOSITOR =
+        0xA79828DF1850E8a3A3064576f380D90aECDD3359;
+    /// @dev 3CRV token address
+    address public constant _3CRV = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
+    /// @dev DAI token address
+    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    /// @dev USDC token address
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    /// @dev USDT token address
+    address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -62,7 +77,13 @@ contract ConvexSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_);
+        __BasicSpell_init(
+            bank_,
+            werc20_,
+            weth_,
+            augustusSwapper_,
+            tokenTransferProxy_
+        );
         if (wConvexPools_ == address(0) || crvOracle_ == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
@@ -71,77 +92,143 @@ contract ConvexSpell is BasicSpell {
         CVX = address(wConvexPools.CVX());
         crvOracle = ICurveOracle(crvOracle_);
         IWConvexPools(wConvexPools_).setApprovalForAll(address(bank_), true);
-
-        augustusSwapper = augustusSwapper_;
-        tokenTransferProxy = tokenTransferProxy_;
     }
 
     /// @notice Adds a new strategy to the spell.
     /// @param crvLp Address of the Curve LP token for the strategy.
     /// @param minPosSize Minimum position size in USD for the strategy (with 1e18 precision).
     /// @param maxPosSize Maximum position size in USD for the strategy (with 1e18 precision).
-    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address crvLp,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
     /// @notice Adds liquidity to a Curve pool with two underlying tokens and stakes in Curve gauge.
     /// @param param Struct containing all required parameters for opening a position.
     /// @param minLPMint Minimum LP tokens expected to mint for slippage control.
-    function openPositionFarm(OpenPosParam calldata param, uint256 minLPMint)
+    function openPositionFarm(
+        OpenPosParam calldata param,
+        uint256 minLPMint
+    )
         external
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
         uint256 _minLPMint = minLPMint;
         Strategy memory strategy = strategies[param.strategyId];
-        (address lpToken,,,,,) = wConvexPools.getPoolInfoFromPoolId(param.farmingPoolId);
+        (address lpToken, , , , , ) = wConvexPools.getPoolInfoFromPoolId(
+            param.farmingPoolId
+        );
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
 
         /// 2. Borrow specific amounts
-        uint256 borrowBalance = _doBorrow(param.borrowToken, param.borrowAmount);
+        uint256 borrowBalance = _doBorrow(
+            param.borrowToken,
+            param.borrowAmount
+        );
 
-        (address pool, address[] memory tokens,) = crvOracle.getPoolInfo(lpToken);
+        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
+            lpToken
+        );
 
         /// 3. Add liquidity on curve, get crvLp
         {
             address borrowToken = param.borrowToken;
             _ensureApprove(borrowToken, pool, borrowBalance);
             uint256 ethValue;
-            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(address(this));
-            if (IERC20(borrowToken).isETH()) {
-                ethValue = tokenBalance;
+            uint256 tokenBalance = IERC20(borrowToken).balanceOf(address(this));
+            require(borrowBalance <= tokenBalance, "impossible");
+            bool isBorrowTokenWeth = borrowToken == WETH;
+            if (isBorrowTokenWeth) {
+                bool hasEth;
+                uint256 tokenLength = tokens.length;
+                for (uint256 i; i != tokenLength; ++i) {
+                    if (tokens[i] == ETH) {
+                        hasEth = true;
+                        break;
+                    }
+                }
+                if (hasEth) {
+                    IWETH(borrowToken).withdraw(tokenBalance);
+                    ethValue = tokenBalance;
+                }
             }
 
             if (tokens.length == 2) {
-                uint256[2] memory suppliedAmts;
-                for (uint256 i; i < 2; i++) {
-                    if (tokens[i] == borrowToken) {
-                        suppliedAmts[i] = tokenBalance;
-                        break;
+                if (tokens[1] == _3CRV) {
+                    uint256[4] memory suppliedAmts;
+                    if (tokens[0] == borrowToken) {
+                        suppliedAmts[0] = tokenBalance;
+                    } else if (DAI == borrowToken) {
+                        suppliedAmts[1] = tokenBalance;
+                    } else if (USDC == borrowToken) {
+                        suppliedAmts[2] = tokenBalance;
+                    } else {
+                        suppliedAmts[3] = tokenBalance;
                     }
+                    _ensureApprove(borrowToken, pool, 0);
+                    _ensureApprove(
+                        borrowToken,
+                        CURVE_ZAP_DEPOSITOR,
+                        borrowBalance
+                    );
+                    ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).add_liquidity(
+                        pool,
+                        suppliedAmts,
+                        _minLPMint
+                    );
+                } else {
+                    uint256[2] memory suppliedAmts;
+                    for (uint256 i; i < 2; i++) {
+                        if (
+                            (tokens[i] == borrowToken) ||
+                            (tokens[i] == ETH && isBorrowTokenWeth)
+                        ) {
+                            suppliedAmts[i] = tokenBalance;
+                            break;
+                        }
+                    }
+                    ICurvePool(pool).add_liquidity{value: ethValue}(
+                        suppliedAmts,
+                        _minLPMint
+                    );
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, _minLPMint);
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
                 for (uint256 i; i < 3; i++) {
-                    if (tokens[i] == borrowToken) {
+                    if (
+                        (tokens[i] == borrowToken) ||
+                        (tokens[i] == ETH && isBorrowTokenWeth)
+                    ) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, _minLPMint);
+                ICurvePool(pool).add_liquidity{value: ethValue}(
+                    suppliedAmts,
+                    _minLPMint
+                );
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
                 for (uint256 i; i < 4; i++) {
-                    if (tokens[i] == borrowToken) {
+                    if (
+                        (tokens[i] == borrowToken) ||
+                        (tokens[i] == ETH && isBorrowTokenWeth)
+                    ) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, _minLPMint);
+                ICurvePool(pool).add_liquidity{value: ethValue}(
+                    suppliedAmts,
+                    _minLPMint
+                );
             }
         }
 
@@ -153,7 +240,7 @@ contract ConvexSpell is BasicSpell {
         /// 6. Take out existing collateral and burn
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
-            (uint256 pid,) = wConvexPools.decodeId(pos.collId);
+            (uint256 pid, ) = wConvexPools.decodeId(pos.collId);
             if (param.farmingPoolId != pid) {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             }
@@ -161,7 +248,10 @@ contract ConvexSpell is BasicSpell {
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
             }
             bank.takeCollateral(pos.collateralSize);
-            (address[] memory rewardTokens,) = wConvexPools.burn(pos.collId, pos.collateralSize);
+            (address[] memory rewardTokens, ) = wConvexPools.burn(
+                pos.collId,
+                pos.collateralSize
+            );
             // distribute multiple rewards to users
             uint256 tokensLength = rewardTokens.length;
             for (uint256 i; i != tokensLength; ++i) {
@@ -177,15 +267,18 @@ contract ConvexSpell is BasicSpell {
     }
 
     /// @notice Closes an existing liquidity position, unstakes from Curve gauge, and swaps rewards.
-    /// @param param Struct containing all required parameters for closing a position.
-    /// @param expectedRewards List of expected reward amounts for each token.
-    /// @param swapDatas Swap data for each reward token.
+    /// @param closePosParam Struct containing all required parameters for closing a position.
     function closePositionFarm(
-        ClosePosParam calldata param,
-        uint256[] calldata expectedRewards,
-        bytes[] calldata swapDatas
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        address crvLp = strategies[param.strategyId].vault;
+        ClosePositionFarmParam calldata closePosParam
+    )
+        external
+        existingStrategy(closePosParam.param.strategyId)
+        existingCollateral(
+            closePosParam.param.strategyId,
+            closePosParam.param.collToken
+        )
+    {
+        address crvLp = strategies[closePosParam.param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collToken != address(wConvexPools)) {
             revert Errors.INCORRECT_COLTOKEN(pos.collToken);
@@ -194,77 +287,173 @@ contract ConvexSpell is BasicSpell {
             revert Errors.INCORRECT_UNDERLYING(crvLp);
         }
 
-        uint256 amountPosRemove = param.amountPosRemove;
+        uint256 amountPosRemove = closePosParam.param.amountPosRemove;
 
         /// 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
         bank.takeCollateral(amountPosRemove);
-        (address[] memory rewardTokens,) = wConvexPools.burn(pos.collId, amountPosRemove);
+        (address[] memory rewardTokens, ) = wConvexPools.burn(
+            pos.collId,
+            amountPosRemove
+        );
 
         /// 2. Swap rewards tokens to debt token
-        _sellRewards(rewardTokens, expectedRewards, swapDatas);
+        _sellRewards(rewardTokens, closePosParam);
 
         /// 3. Remove liquidity
-        _removeLiquidity(param, pos, crvLp, amountPosRemove);
+        address[] memory tokens = _removeLiquidity(
+            closePosParam.param,
+            closePosParam.isKilled,
+            pos,
+            crvLp,
+            amountPosRemove
+        );
+
+        if (closePosParam.isKilled) {
+            for (uint256 i; i != tokens.length; ++i) {
+                if (tokens[i] != pos.debtToken) {
+                    _swapOnParaswap(
+                        tokens[i],
+                        closePosParam.amounts[i + rewardTokens.length],
+                        closePosParam.swapDatas[i + rewardTokens.length]
+                    );
+                }
+            }
+        }
 
         /// 4. Withdraw isolated collateral from Bank
-        _doWithdraw(param.collToken, param.amountShareWithdraw);
+        _doWithdraw(
+            closePosParam.param.collToken,
+            closePosParam.param.amountShareWithdraw
+        );
 
-        /// 5. Repay
+        /// 5. Swap some collateral to repay debt(for negative PnL)
+        _swapCollToDebt(
+            closePosParam.param.collToken,
+            closePosParam.param.amountToSwap,
+            closePosParam.param.swapData
+        );
+
+        /// 6. Repay
         {
             /// Compute repay amount if MAX_INT is supplied (max debt)
-            uint256 amountRepay = param.amountRepay;
+            uint256 amountRepay = closePosParam.param.amountRepay;
             if (amountRepay == type(uint256).max) {
                 amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
             }
-            _doRepay(param.borrowToken, amountRepay);
+            _doRepay(closePosParam.param.borrowToken, amountRepay);
         }
 
-        _validateMaxLTV(param.strategyId);
+        _validateMaxLTV(closePosParam.param.strategyId);
 
-        /// 6. Refund
-        _doRefund(param.borrowToken);
-        _doRefund(param.collToken);
+        /// 7. Refund
+        _doRefund(closePosParam.param.borrowToken);
+        _doRefund(closePosParam.param.collToken);
         _doRefund(CVX);
     }
 
     /// @dev Removes liquidity from a Curve pool for a given position.
     /// @param param Contains data required to close the position.
+    /// @param isKilled If the convex pool is killed
     /// @param pos Data structure representing the current bank position.
     /// @param crvLp Address of the Curve LP token.
     /// @param amountPosRemove Amount of LP tokens to be removed from the pool.
     ///        If set to max, will remove all available LP tokens.
     function _removeLiquidity(
         ClosePosParam memory param,
+        bool isKilled,
         IBank.Position memory pos,
         address crvLp,
         uint256 amountPosRemove
-    ) internal {
-        (address pool, address[] memory tokens,) = crvOracle.getPoolInfo(crvLp);
+    ) internal returns (address[] memory tokens) {
+        address pool;
+        (pool, tokens, ) = crvOracle.getPoolInfo(crvLp);
 
         if (amountPosRemove == type(uint256).max) {
             amountPosRemove = IERC20(crvLp).balanceOf(address(this));
         }
 
         int128 tokenIndex;
-        uint256 tokensLength = tokens.length;
-        for (uint256 i; i != tokensLength; ++i) {
+        uint256 len = tokens.length;
+        for (uint256 i; i != len; ++i) {
             if (tokens[i] == pos.debtToken) {
                 tokenIndex = int128(uint128(i));
                 break;
             }
         }
 
-        /// Removes liquidity from the Curve pool for the specified token.
-        ICurvePool(pool).remove_liquidity_one_coin(amountPosRemove, int128(tokenIndex), param.amountOutMin);
+        if (isKilled) {
+            if (len == 2) {
+                if (tokens[1] == _3CRV) {
+                    uint256[4] memory minOuts;
+                    ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).remove_liquidity(
+                        pool,
+                        amountPosRemove,
+                        minOuts
+                    );
+                    return _getMetaPoolTokens(tokens[0]);
+                } else {
+                    uint256[2] memory minOuts;
+                    ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+                }
+            } else if (len == 3) {
+                uint256[3] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else if (len == 4) {
+                uint256[4] memory minOuts;
+                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
+            } else {
+                revert("Invalid pool length");
+            }
+        } else if (len == 2 && tokens[1] == _3CRV) {
+            int128 index;
+            if (tokens[0] == param.borrowToken) {
+                index = 0;
+            } else if (DAI == param.borrowToken) {
+                index = 1;
+            } else if (USDC == param.borrowToken) {
+                index = 2;
+            } else {
+                index = 3;
+            }
+            _ensureApprove(pool, CURVE_ZAP_DEPOSITOR, amountPosRemove);
+            ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).remove_liquidity_one_coin(
+                pool,
+                amountPosRemove,
+                index,
+                param.amountOutMin
+            );
+            return _getMetaPoolTokens(tokens[0]);
+        } else {
+            /// Removes liquidity from the Curve pool for the specified token.
+            ICurvePool(pool).remove_liquidity_one_coin(
+                amountPosRemove,
+                tokenIndex,
+                param.amountOutMin
+            );
+        }
+
+        if (tokens[uint128(tokenIndex)] == ETH) {
+            IWETH(WETH).deposit{value: address(this).balance}();
+        }
+    }
+
+    function _getMetaPoolTokens(
+        address token
+    ) internal pure returns (address[] memory tokens) {
+        tokens = new address[](4);
+        tokens[0] = token;
+        tokens[1] = DAI;
+        tokens[2] = USDC;
+        tokens[3] = USDT;
     }
 
     /// @dev Internal function Sells the accumulated reward tokens.
     /// @param rewardTokens An array of addresses of the reward tokens to be sold.
-    /// @param expectedRewards Array containing the expected amounts of each reward token.
-    /// @param swapDatas Data required for performing the swaps.
-    function _sellRewards(address[] memory rewardTokens, uint256[] calldata expectedRewards, bytes[] calldata swapDatas)
-        internal
-    {
+    /// @param closePosParam Struct containing all required parameters for closing a position.
+    function _sellRewards(
+        address[] memory rewardTokens,
+        ClosePositionFarmParam calldata closePosParam
+    ) internal {
         uint256 tokensLength = rewardTokens.length;
         for (uint256 i; i != tokensLength; ++i) {
             address sellToken = rewardTokens[i];
@@ -272,15 +461,35 @@ contract ConvexSpell is BasicSpell {
             /// Apply any potential fees on the reward.
             _doCutRewardsFee(sellToken);
 
-            uint256 expectedReward = expectedRewards[i];
-            /// If the expected reward is zero, skip to the next token.
-            if (expectedReward == 0) continue;
-            /// Swap the reward token for another desired token. If the swap fails, revert with an error.
-            if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, sellToken, expectedReward, swapDatas[i])) {
-                revert Errors.SWAP_FAILED(sellToken);
+            if (sellToken != closePosParam.param.borrowToken) {
+                uint256 expectedReward = closePosParam.amounts[i];
+                /// If the expected reward is zero, skip to the next token.
+                _swapOnParaswap(
+                    sellToken,
+                    expectedReward,
+                    closePosParam.swapDatas[i]
+                );
             }
-            /// Refund any leftover (dust) amounts after the swap to the contract owner
-            _doRefund(sellToken);
         }
+    }
+
+    function _swapOnParaswap(
+        address token,
+        uint256 amount,
+        bytes calldata swapData
+    ) internal {
+        if (amount == 0) return;
+        if (
+            !PSwapLib.swap(
+                augustusSwapper,
+                tokenTransferProxy,
+                token,
+                amount,
+                swapData
+            )
+        ) revert Errors.SWAP_FAILED(token);
+
+        // Refund rest amount to owner
+        _doRefund(token);
     }
 }

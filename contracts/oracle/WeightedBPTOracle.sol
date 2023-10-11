@@ -68,9 +68,15 @@ contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
                 .powDown(weights[i])
             );
         }
-        return invariant
-            .mulDown(temp)
-            .divDown(IBalancerPool(token).totalSupply());
+        try IBalancerPool(token).getActualSupply() returns (uint256 supply) {
+            return invariant
+                .mulDown(temp)
+                .divDown(supply);
+        } catch {
+            return invariant
+                .mulDown(temp)
+                .divDown(IBalancerPool(token).totalSupply());
+        }
     }
 
     /// @dev Checks for reentrancy by calling a no-op function on the Balancer Vault.

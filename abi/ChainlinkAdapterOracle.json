@@ -147,6 +147,19 @@
   },
   {
     "inputs": [],
+    "name": "ANKRETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "USD",
     "outputs": [
       {

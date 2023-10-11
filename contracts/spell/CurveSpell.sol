@@ -33,11 +33,6 @@ contract CurveSpell is BasicSpell {
     /// @dev address of CRV token
     address public CRV;
 
-    /// @dev paraswap AugustusSwapper address
-    address public augustusSwapper;
-    /// @dev paraswap TokenTransferProxy address
-    address public tokenTransferProxy;
-
     function initialize(
         IBank bank_,
         address werc20_,
@@ -47,7 +42,13 @@ contract CurveSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_);
+        __BasicSpell_init(
+            bank_,
+            werc20_,
+            weth_,
+            augustusSwapper_,
+            tokenTransferProxy_
+        );
         if (wCurveGauge_ == address(0) || crvOracle_ == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
@@ -67,7 +68,11 @@ contract CurveSpell is BasicSpell {
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+    function addStrategy(
+        address crvLp,
+        uint256 minPosSize,
+        uint256 maxPosSize
+    ) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
@@ -75,7 +80,10 @@ contract CurveSpell is BasicSpell {
      * @notice Add liquidity to Curve pool with 2 underlying tokens, with staking to Curve gauge
      * @param minLPMint Desired LP token amount (slippage control)
      */
-    function openPositionFarm(OpenPosParam calldata param, uint256 minLPMint)
+    function openPositionFarm(
+        OpenPosParam calldata param,
+        uint256 minLPMint
+    )
         external
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
@@ -84,20 +92,25 @@ contract CurveSpell is BasicSpell {
         if (wCurveGauge.getLpFromGaugeId(param.farmingPoolId) != lp) {
             revert Errors.INCORRECT_LP(lp);
         }
-        (address pool, address[] memory tokens,) = crvOracle.getPoolInfo(lp);
+        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(lp);
 
         // 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
 
         // 2. Borrow specific amounts
-        uint256 borrowBalance = _doBorrow(param.borrowToken, param.borrowAmount);
+        uint256 borrowBalance = _doBorrow(
+            param.borrowToken,
+            param.borrowAmount
+        );
 
         // 3. Add liquidity on curve
         {
             address borrowToken = param.borrowToken;
             _ensureApprove(borrowToken, pool, borrowBalance);
             uint256 ethValue;
-            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(address(this));
+            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(
+                address(this)
+            );
             if (IERC20(borrowToken).isETH()) {
                 ethValue = tokenBalance;
             }
@@ -110,7 +123,10 @@ contract CurveSpell is BasicSpell {
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, minLPMint);
+                ICurvePool(pool).add_liquidity{value: ethValue}(
+                    suppliedAmts,
+                    minLPMint
+                );
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
                 for (uint256 i; i < 3; i++) {
@@ -119,7 +135,10 @@ contract CurveSpell is BasicSpell {
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, minLPMint);
+                ICurvePool(pool).add_liquidity{value: ethValue}(
+                    suppliedAmts,
+                    minLPMint
+                );
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
                 for (uint256 i; i < 4; i++) {
@@ -128,7 +147,10 @@ contract CurveSpell is BasicSpell {
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(suppliedAmts, minLPMint);
+                ICurvePool(pool).add_liquidity{value: ethValue}(
+                    suppliedAmts,
+                    minLPMint
+                );
             }
         }
 
@@ -141,7 +163,7 @@ contract CurveSpell is BasicSpell {
         // 6. Take out collateral and burn
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
-            (uint256 decodedGid,) = wCurveGauge.decodeId(pos.collId);
+            (uint256 decodedGid, ) = wCurveGauge.decodeId(pos.collId);
             if (param.farmingPoolId != decodedGid) {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             }
@@ -161,12 +183,16 @@ contract CurveSpell is BasicSpell {
     }
 
     function closePositionFarm(
-        ClosePosParam memory param,
+        ClosePosParam calldata param,
         uint256[] calldata amounts,
         bytes[] calldata swapDatas,
         bool isKilled,
         uint256 deadline
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+    )
+        external
+        existingStrategy(param.strategyId)
+        existingCollateral(param.strategyId, param.collToken)
+    {
         if (block.timestamp > deadline) revert Errors.EXPIRED(deadline);
 
         address crvLp = strategies[param.strategyId].vault;
@@ -191,7 +217,7 @@ contract CurveSpell is BasicSpell {
             address[] memory tokens;
             {
                 address pool;
-                (pool, tokens,) = crvOracle.getPoolInfo(crvLp);
+                (pool, tokens, ) = crvOracle.getPoolInfo(crvLp);
 
                 // 3. Calculate actual amount to remove
                 uint256 amountPosRemove = param.amountPosRemove;
@@ -200,14 +226,25 @@ contract CurveSpell is BasicSpell {
                 }
 
                 // 4. Remove liquidity
-                _removeLiquidity(param, isKilled, pool, tokens, pos, amountPosRemove);
+                _removeLiquidity(
+                    param,
+                    isKilled,
+                    pool,
+                    tokens,
+                    pos,
+                    amountPosRemove
+                );
             }
 
             if (isKilled) {
                 uint256 len = tokens.length;
                 for (uint256 i; i != len; ++i) {
                     if (tokens[i] != pos.debtToken) {
-                        _swapOnParaswap(tokens[i], amounts[i + 1], swapDatas[i + 1]);
+                        _swapOnParaswap(
+                            tokens[i],
+                            amounts[i + 1],
+                            swapDatas[i + 1]
+                        );
                     }
                 }
             }
@@ -216,7 +253,10 @@ contract CurveSpell is BasicSpell {
         // 5. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 
-        // 6. Repay
+        // 6. Swap some collateral to repay debt(for negative PnL)
+        _swapCollToDebt(param.collToken, param.amountToSwap, param.swapData);
+
+        // 7. Repay
         {
             // Compute repay amount if MAX_INT is supplied (max debt)
             uint256 amountRepay = param.amountRepay;
@@ -228,7 +268,7 @@ contract CurveSpell is BasicSpell {
 
         _validateMaxLTV(param.strategyId);
 
-        // 7. Refund
+        // 8. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
         _doRefund(CRV);
@@ -243,8 +283,8 @@ contract CurveSpell is BasicSpell {
         uint256 amountPosRemove
     ) internal {
         uint256 tokenIndex;
+        uint256 len = tokens.length;
         {
-            uint256 len = tokens.length;
             for (uint256 i; i != len; ++i) {
                 if (tokens[i] == pos.debtToken) {
                     tokenIndex = i;
@@ -254,7 +294,6 @@ contract CurveSpell is BasicSpell {
         }
 
         if (isKilled) {
-            uint256 len = tokens.length;
             if (len == 2) {
                 uint256[2] memory minOuts;
                 ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
@@ -268,13 +307,29 @@ contract CurveSpell is BasicSpell {
                 revert("Invalid pool length");
             }
         } else {
-            ICurvePool(pool).remove_liquidity_one_coin(amountPosRemove, int128(uint128(tokenIndex)), param.amountOutMin);
+            ICurvePool(pool).remove_liquidity_one_coin(
+                amountPosRemove,
+                int128(uint128(tokenIndex)),
+                param.amountOutMin
+            );
         }
     }
 
-    function _swapOnParaswap(address token, uint256 amount, bytes calldata swapData) internal {
+    function _swapOnParaswap(
+        address token,
+        uint256 amount,
+        bytes calldata swapData
+    ) internal {
         if (amount == 0) return;
-        if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, token, amount, swapData)) {
+        if (
+            !PSwapLib.swap(
+                augustusSwapper,
+                tokenTransferProxy,
+                token,
+                amount,
+                swapData
+            )
+        ) {
             revert Errors.SWAP_FAILED(token);
         }
 

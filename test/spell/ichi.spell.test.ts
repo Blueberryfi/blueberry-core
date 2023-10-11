@@ -100,6 +100,8 @@ describe("ICHI Angel Vaults Spell", () => {
             WETH,
             wichi.address,
             UNI_V3_ROUTER,
+            ADDRESS.AUGUSTUS_SWAPPER,
+            ADDRESS.TOKEN_TRANSFER_PROXY,
           ],
           { unsafeAllow: ["delegatecall"] }
         )
@@ -113,6 +115,8 @@ describe("ICHI Angel Vaults Spell", () => {
             WETH,
             wichi.address,
             UNI_V3_ROUTER,
+            ADDRESS.AUGUSTUS_SWAPPER,
+            ADDRESS.TOKEN_TRANSFER_PROXY,
           ],
           { unsafeAllow: ["delegatecall"] }
         )
@@ -126,6 +130,8 @@ describe("ICHI Angel Vaults Spell", () => {
             ethers.constants.AddressZero,
             wichi.address,
             UNI_V3_ROUTER,
+            ADDRESS.AUGUSTUS_SWAPPER,
+            ADDRESS.TOKEN_TRANSFER_PROXY,
           ],
           { unsafeAllow: ["delegatecall"] }
         )
@@ -139,6 +145,8 @@ describe("ICHI Angel Vaults Spell", () => {
             WETH,
             ethers.constants.AddressZero,
             UNI_V3_ROUTER,
+            ADDRESS.AUGUSTUS_SWAPPER,
+            ADDRESS.TOKEN_TRANSFER_PROXY,
           ],
           { unsafeAllow: ["delegatecall"] }
         )
@@ -151,7 +159,9 @@ describe("ICHI Angel Vaults Spell", () => {
           werc20.address,
           WETH,
           ethers.constants.AddressZero,
-          UNI_V3_ROUTER
+          UNI_V3_ROUTER,
+          ADDRESS.AUGUSTUS_SWAPPER,
+          ADDRESS.TOKEN_TRANSFER_PROXY,
         )
       ).to.be.revertedWith("Initializable: contract is already initialized");
     });
@@ -485,6 +495,8 @@ describe("ICHI Angel Vaults Spell", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -510,6 +522,8 @@ describe("ICHI Angel Vaults Spell", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -535,6 +549,8 @@ describe("ICHI Angel Vaults Spell", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -564,6 +580,8 @@ describe("ICHI Angel Vaults Spell", () => {
               amountPosRemove: positionInfo.collateralSize.div(3),
               amountShareWithdraw: 0,
               amountOutMin: utils.parseEther("10000"),
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -596,6 +614,8 @@ describe("ICHI Angel Vaults Spell", () => {
             amountPosRemove: positionInfo.collateralSize.div(3),
             amountShareWithdraw: 0,
             amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
           },
         ])
       );
@@ -630,6 +650,8 @@ describe("ICHI Angel Vaults Spell", () => {
             amountPosRemove: positionInfo.collateralSize.div(3),
             amountShareWithdraw: positionInfo.underlyingVaultShare.div(3),
             amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
           },
         ])
       );
@@ -685,6 +707,8 @@ describe("ICHI Angel Vaults Spell", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
           },
         ])
       );
@@ -787,6 +811,8 @@ describe("ICHI Angel Vaults Spell", () => {
             amountPosRemove: 1,
             amountShareWithdraw: positionInfo.underlyingVaultShare.div(3),
             amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
           },
         ])
       );
@@ -809,6 +835,8 @@ describe("ICHI Angel Vaults Spell", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
           },
         ])
       );
@@ -922,6 +950,8 @@ describe("ICHI Angel Vaults Spell", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -947,6 +977,8 @@ describe("ICHI Angel Vaults Spell", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
           ])
         )
@@ -1067,6 +1099,8 @@ describe("ICHI Angel Vaults Spell", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
           },
         ])
       );
@@ -1238,7 +1272,7 @@ describe("ICHI Angel Vaults Spell", () => {
       spell = <IchiSpell>(
         await upgrades.deployProxy(
           IchiSpell,
-          [bank.address, werc20.address, WETH, wichi.address, UNI_V3_ROUTER],
+          [bank.address, werc20.address, WETH, wichi.address, UNI_V3_ROUTER, ADDRESS.AUGUSTUS_SWAPPER, ADDRESS.TOKEN_TRANSFER_PROXY],
           { unsafeAllow: ["delegatecall"] }
         )
       );

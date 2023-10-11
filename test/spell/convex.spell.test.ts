@@ -489,16 +489,21 @@ describe("Convex Spell", () => {
           spell.address,
           iface.encodeFunctionData("closePositionFarm", [
             {
-              strategyId: 0,
-              collToken: CRV,
-              borrowToken: USDC,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: utils.parseUnits("1000", 18),
+              param: {
+                strategyId: 0,
+                collToken: CRV,
+                borrowToken: USDC,
+                amountRepay: ethers.constants.MaxUint256,
+                amountPosRemove: ethers.constants.MaxUint256,
+                amountShareWithdraw: ethers.constants.MaxUint256,
+                amountOutMin: utils.parseUnits("1000", 18),
+                amountToSwap: 0,
+                swapData: '0x',
+              },
+              amounts: expectedAmounts,
+              swapDatas: swapDatas.map((item) => item.data),
+              isKilled: false,
             },
-            expectedAmounts,
-            swapDatas.map((item) => item.data),
           ])
         )
       ).to.be.revertedWith("Not enough coins removed");
@@ -514,16 +519,21 @@ describe("Convex Spell", () => {
           spell.address,
           iface.encodeFunctionData("closePositionFarm", [
             {
-              strategyId: 5,
-              collToken: CRV,
-              borrowToken: USDC,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: utils.parseUnits("1000", 18),
+              param: {
+                strategyId: 5,
+                collToken: CRV,
+                borrowToken: USDC,
+                amountRepay: ethers.constants.MaxUint256,
+                amountPosRemove: ethers.constants.MaxUint256,
+                amountShareWithdraw: ethers.constants.MaxUint256,
+                amountOutMin: utils.parseUnits("1000", 18),
+                amountToSwap: 0,
+                swapData: '0x',
+              },
+              amounts: [],
+              swapDatas: [],
+              isKilled: false,
             },
-            [],
-            [],
           ])
         )
       )
@@ -541,16 +551,21 @@ describe("Convex Spell", () => {
           spell.address,
           iface.encodeFunctionData("closePositionFarm", [
             {
-              strategyId: 0,
-              collToken: WETH,
-              borrowToken: USDC,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: utils.parseUnits("1000", 18),
+              param: {
+                strategyId: 0,
+                collToken: WETH,
+                borrowToken: USDC,
+                amountRepay: ethers.constants.MaxUint256,
+                amountPosRemove: ethers.constants.MaxUint256,
+                amountShareWithdraw: ethers.constants.MaxUint256,
+                amountOutMin: utils.parseUnits("1000", 18),
+                amountToSwap: 0,
+                swapData: '0x',
+              },
+              amounts: [],
+              swapDatas: [],
+              isKilled: false,
             },
-            [],
-            [],
           ])
         )
       )
@@ -618,16 +633,21 @@ describe("Convex Spell", () => {
           spell.address,
           iface.encodeFunctionData("closePositionFarm", [
             {
-              strategyId: 0,
-              collToken: CRV,
-              borrowToken: USDC,
-              amountRepay: debtAmount.div(2),
-              amountPosRemove: position.collateralSize.div(2),
-              amountShareWithdraw: position.underlyingVaultShare.div(2),
-              amountOutMin: 1,
+              param: {
+                strategyId: 0,
+                collToken: CRV,
+                borrowToken: USDC,
+                amountRepay: debtAmount.div(2),
+                amountPosRemove: position.collateralSize.div(2),
+                amountShareWithdraw: position.underlyingVaultShare.div(2),
+                amountOutMin: 1,
+                amountToSwap: 0,
+                swapData: '0x',
+              },
+              amounts: expectedAmounts,
+              swapDatas: swapDatas.map((item) => item.data),
+              isKilled: false,
             },
-            expectedAmounts,
-            swapDatas.map((item) => item.data),
           ])
         )
       ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
@@ -685,16 +705,21 @@ describe("Convex Spell", () => {
         spell.address,
         iface.encodeFunctionData("closePositionFarm", [
           {
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: USDC,
-            amountRepay: ethers.constants.MaxUint256,
-            amountPosRemove: ethers.constants.MaxUint256,
-            amountShareWithdraw: ethers.constants.MaxUint256,
-            amountOutMin: 1,
+            param: {
+              strategyId: 0,
+              collToken: CRV,
+              borrowToken: USDC,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
+            },
+            amounts: expectedAmounts,
+            swapDatas: swapDatas.map((item) => item.data),
+            isKilled: false,
           },
-          expectedAmounts,
-          swapDatas.map((item) => item.data),
         ])
       );
       const afterUSDCBalance = await usdc.balanceOf(admin.address);

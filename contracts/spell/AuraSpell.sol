@@ -35,11 +35,6 @@ contract AuraSpell is BasicSpell {
     /// @dev Address of Stash AURA token
     address public STASH_AURA;
 
-    /// @dev paraswap AugustusSwapper Address
-    address public augustusSwapper;
-    /// @dev paraswap TokenTransferProxy Address
-    address public tokenTransferProxy;
-
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -59,16 +54,19 @@ contract AuraSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_);
+        __BasicSpell_init(
+            bank_,
+            werc20_,
+            weth_,
+            augustusSwapper_,
+            tokenTransferProxy_
+        );
         if (wAuraPools_ == address(0)) revert Errors.ZERO_ADDRESS();
 
         wAuraPools = IWAuraPools(wAuraPools_);
         AURA = address(wAuraPools.AURA());
         STASH_AURA = wAuraPools.STASH_AURA();
         IWAuraPools(wAuraPools_).setApprovalForAll(address(bank_), true);
-
-        augustusSwapper = augustusSwapper_;
-        tokenTransferProxy = tokenTransferProxy_;
     }
 
     /// @notice Allows the owner to add a new strategy.
@@ -208,8 +206,11 @@ contract AuraSpell is BasicSpell {
                 param.amountPosRemove
             );
 
+            /// 2. Swap each reward token for the debt token
+            _sellRewards(rewardTokens, expectedRewards, swapDatas);
+
             {
-                /// 2. Determine the exact amount of position to remove
+                /// 3. Determine the exact amount of position to remove
                 uint256 amountPosRemove = param.amountPosRemove;
                 if (amountPosRemove == type(uint256).max) {
                     amountPosRemove = IERC20Upgradeable(lpToken).balanceOf(
@@ -217,12 +218,12 @@ contract AuraSpell is BasicSpell {
                     );
                 }
 
-                /// 3. Parameters for removing liquidity
+                /// 4. Parameters for removing liquidity
                 (
                     uint256[] memory minAmountsOut,
                     address[] memory tokens,
                     uint256 borrowTokenIndex
-                ) = _getExitPoolParams(param.borrowToken, lpToken);
+                ) = _getExitPoolParams(param, lpToken);
 
                 wAuraPools.getVault(lpToken).exitPool(
                     IBalancerPool(lpToken).getPoolId(),
@@ -238,36 +239,13 @@ contract AuraSpell is BasicSpell {
             }
         }
 
-        /// 4. Swap each reward token for the debt token
-        uint256 rewardTokensLength = rewardTokens.length;
-        for (uint256 i; i != rewardTokensLength; ) {
-            address sellToken = rewardTokens[i];
-            if (sellToken == STASH_AURA) sellToken = AURA;
-
-            _doCutRewardsFee(sellToken);
-            if (
-                expectedRewards[i] != 0 &&
-                !PSwapLib.swap(
-                    augustusSwapper,
-                    tokenTransferProxy,
-                    sellToken,
-                    expectedRewards[i],
-                    swapDatas[i]
-                )
-            ) revert Errors.SWAP_FAILED(sellToken);
-
-            /// Refund rest (dust) amount to owner
-            _doRefund(sellToken);
-
-            unchecked {
-                ++i;
-            }
-        }
-
         /// 5. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 
-        /// 6. Withdraw collateral from the bank and repay the borrowed amount
+        /// 6. Swap some collateral to repay debt(for negative PnL)
+        _swapCollToDebt(param.collToken, param.amountToSwap, param.swapData);
+
+        /// 7. Withdraw collateral from the bank and repay the borrowed amount
         {
             /// Compute repay amount if MAX_INT is supplied (max debt)
             uint256 amountRepay = param.amountRepay;
@@ -280,7 +258,7 @@ contract AuraSpell is BasicSpell {
         /// Ensure that the Loan to Value (LTV) ratio remains within accepted boundaries
         _validateMaxLTV(param.strategyId);
 
-        /// 7. Refund any remaining tokens to the owner
+        /// 8. Refund any remaining tokens to the owner
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
     }
@@ -346,15 +324,17 @@ contract AuraSpell is BasicSpell {
     }
 
     /// @dev Calculate the parameters required for exiting a Balancer pool.
-    /// @param borrowToken The token to be borrowed
+    /// @param param Close position param
     /// @param lpToken The LP token for the Balancer pool
     /// @return minAmountsOut Minimum amounts to receive for each token upon exiting
     /// @return tokens List of tokens in the Balancer pool
     /// @return exitTokenIndex Index of the borrowToken in the tokens list
     function _getExitPoolParams(
-        address borrowToken,
+        ClosePosParam calldata param,
         address lpToken
     ) internal view returns (uint256[] memory, address[] memory, uint256) {
+        address borrowToken = param.borrowToken;
+        uint256 amountOutMin = param.amountOutMin;
         (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
 
         uint256 length = tokens.length;
@@ -362,7 +342,10 @@ contract AuraSpell is BasicSpell {
         uint256 exitTokenIndex;
 
         for (uint256 i; i != length; ) {
-            if (tokens[i] == borrowToken) break;
+            if (tokens[i] == borrowToken) {
+                minAmountsOut[i] = amountOutMin;
+                break;
+            }
 
             if (tokens[i] != lpToken) ++exitTokenIndex;
 
@@ -372,5 +355,36 @@ contract AuraSpell is BasicSpell {
         }
 
         return (minAmountsOut, tokens, exitTokenIndex);
+    }
+
+    function _sellRewards(
+        address[] memory rewardTokens,
+        uint256[] calldata expectedRewards,
+        bytes[] calldata swapDatas
+    ) internal {
+        uint256 rewardTokensLength = rewardTokens.length;
+        for (uint256 i; i != rewardTokensLength; ) {
+            address sellToken = rewardTokens[i];
+            if (sellToken == STASH_AURA) sellToken = AURA;
+
+            _doCutRewardsFee(sellToken);
+            if (
+                expectedRewards[i] != 0 &&
+                !PSwapLib.swap(
+                    augustusSwapper,
+                    tokenTransferProxy,
+                    sellToken,
+                    expectedRewards[i],
+                    swapDatas[i]
+                )
+            ) revert Errors.SWAP_FAILED(sellToken);
+
+            /// Refund rest (dust) amount to owner
+            _doRefund(sellToken);
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 }

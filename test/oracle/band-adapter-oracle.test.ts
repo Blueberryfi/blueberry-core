@@ -8,6 +8,7 @@ import BandOracleABI from "../../abi/IStdReference.json";
 
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
+import { fork } from "../helpers";
 
 chai.use(near);
 chai.use(roughlyNear);
@@ -22,6 +23,8 @@ describe("Base Oracle / Band Adapter Oracle", () => {
   let bandBaseOracle: IStdReference;
 
   before(async () => {
+    await fork(1, 17089048);
+
     [admin, alice] = await ethers.getSigners();
     bandBaseOracle = <IStdReference>(
       await ethers.getContractAt(BandOracleABI, ADDRESS.BandStdRef)

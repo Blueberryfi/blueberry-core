@@ -21,6 +21,7 @@ import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
 import "../interfaces/IWETH.sol";
 import "../libraries/UniversalERC20.sol";
+import "../libraries/Paraswap/PSwapLib.sol";
 
 /// @title BasicSpell
 /// @author BlueberryProtocol
@@ -67,6 +68,8 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
     /// @param amountPosRemove Amount of position to withdraw.
     /// @param amountShareWithdraw Amount of isolated collateral tokens to withdraw.
     /// @param amountOutMin Minimum amount to receive after the operation (used to handle slippage).
+    /// @param amountToSwap Collateral amount to swap to repay debt for negative PnL
+    /// @param swapData Paraswap sawp data to swap collateral to borrow token
     struct ClosePosParam {
         uint256 strategyId;
         address collToken;
@@ -75,6 +78,8 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
         uint256 amountPosRemove;
         uint256 amountShareWithdraw;
         uint256 amountOutMin;
+        uint256 amountToSwap;
+        bytes swapData;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -87,6 +92,13 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
     IWERC20 public werc20;
     /// Address of the Wrapped Ether contract.
     address public WETH;
+    /// ETH address
+    address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
+    /// @dev paraswap AugustusSwapper Address
+    address public augustusSwapper;
+    /// @dev paraswap TokenTransferProxy Address
+    address public tokenTransferProxy;
 
     /// @dev strategyId => vault
     Strategy[] public strategies;
@@ -150,16 +162,28 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
     /// @param bank_ The address of the bank contract.
     /// @param werc20_ The address of the wrapped ERC20 contract.
     /// @param weth_ The address of the wrapped Ether token.
-    function __BasicSpell_init(IBank bank_, address werc20_, address weth_) internal onlyInitializing {
-        if (address(bank_) == address(0) || address(werc20_) == address(0) || address(weth_) == address(0)) {
-            revert Errors.ZERO_ADDRESS();
-        }
+    /// @param augustusSwapper_ Address of the paraswap AugustusSwapper.
+    /// @param tokenTransferProxy_ Address of the paraswap TokenTransferProxy.
+    function __BasicSpell_init(
+        IBank bank_,
+        address werc20_,
+        address weth_,
+        address augustusSwapper_,
+        address tokenTransferProxy_
+    ) internal onlyInitializing {
+        if (
+            address(bank_) == address(0) ||
+            address(werc20_) == address(0) ||
+            address(weth_) == address(0)
+        ) revert Errors.ZERO_ADDRESS();
 
         __Ownable_init();
 
         bank = bank_;
         werc20 = IWERC20(werc20_);
         WETH = weth_;
+        augustusSwapper = augustusSwapper_;
+        tokenTransferProxy = tokenTransferProxy_;
 
         IWERC20(werc20_).setApprovalForAll(address(bank_), true);
     }
@@ -303,6 +327,28 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
     function _doWithdraw(address token, uint256 amount) internal {
         if (amount > 0) {
             bank.withdrawLend(token, amount);
+        }
+    }
+
+    /// @notice Internal function Withdraw specified collateral from the bank.
+    /// @dev Only withdraws the collateral if the amount specified is greater than zero.
+    /// @param collToken Address of the isolated collateral token to be withdrawn.
+    /// @param amount Amount of tokens to be withdrawn.
+    /// @param swapData Paraswap calldata
+    function _swapCollToDebt(
+        address collToken,
+        uint256 amount,
+        bytes calldata swapData
+    ) internal {
+        if (amount > 0 && swapData.length != 0) {
+            // Even the swap failed, continue rest operations, beacuse this swap is used to repay debt for negative PnL
+            PSwapLib.swap(
+                augustusSwapper,
+                tokenTransferProxy,
+                collToken,
+                amount,
+                swapData
+            );
         }
     }
 
