@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/convex/IRewarder.sol";
 import "./MockVirtualBalanceRewardPool.sol";
+import "./MockConvexToken.sol";
 
 contract MockBaseRewardPool {
     using SafeERC20 for IERC20;
@@ -34,6 +35,8 @@ contract MockBaseRewardPool {
 
     address[] public extraRewards;
 
+    MockConvexToken public convexOrAura;
+
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
@@ -42,11 +45,18 @@ contract MockBaseRewardPool {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
-    constructor(uint256 pid_, address stakingToken_, address rewardToken_) {
+
+    constructor(
+        uint256 pid_,
+        address stakingToken_,
+        address rewardToken_,
+        address convex_
+    ) {
         pid = pid_;
         stakingToken = IERC20(stakingToken_);
         rewardToken = IERC20(rewardToken_);
+
+        convexOrAura = MockConvexToken(convex_);
     }
 
     function setReward(address user, uint amount) external {
@@ -192,6 +202,8 @@ contract MockBaseRewardPool {
         if (reward > 0) {
             rewards[_account] = 0;
             rewardToken.safeTransfer(_account, reward);
+
+            convexOrAura.mint(_account, reward);
             emit RewardPaid(_account, reward);
         }
 

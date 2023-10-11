@@ -61,6 +61,13 @@ contract WAuraPools is
 
     uint public REWARD_MULTIPLIER_DENOMINATOR;
 
+    /// @dev AURA reward per share by pid
+    mapping(uint256 => uint256) public auraPerShareByPid;
+    /// token id => auraPerShareDebt;
+    mapping(uint256 => uint256) public auraPerShareDebt;
+    /// @dev pid => last bal reward per token
+    mapping(uint256 => uint256) public lastBalPerTokenByPid;
+
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -210,6 +217,7 @@ contract WAuraPools is
         address auraRewarder,
         uint256 balAmount
     ) internal view returns (uint256 mintAmount) {
+        if (balAmount == 0) return 0;
         /// AURA mint request amount = amount * reward_multiplier / reward_multiplier_denominator
         uint256 mintRequestAmount = (balAmount *
             auraPools.getRewardMultipliers(auraRewarder)) /
@@ -248,6 +256,44 @@ contract WAuraPools is
         }
     }
 
+    function _getAllocatedAURA(
+        uint256 pid,
+        uint256 stBalPerShare,
+        uint256 amount
+    ) internal view returns (uint256 mintAmount) {
+        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
+            pid
+        );
+        uint256 currentDeposits = IAuraRewarder(auraRewarder).balanceOf(
+            address(this)
+        );
+
+        if (currentDeposits == 0) {
+            return 0;
+        }
+
+        uint256 auraPerShare = auraPerShareByPid[pid] -
+            auraPerShareDebt[encodeId(pid, stBalPerShare)];
+
+        uint256 lastBalPerToken = lastBalPerTokenByPid[pid];
+
+        uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
+        uint256 earned = _getPendingReward(
+            lastBalPerToken,
+            auraRewarder,
+            currentDeposits,
+            lpDecimals
+        );
+
+        if (earned != 0) {
+            uint256 auraReward = _getAuraPendingReward(auraRewarder, earned);
+
+            auraPerShare += (auraReward * 1e18) / currentDeposits;
+        }
+
+        return (auraPerShare * amount) / 1e18;
+    }
+
     /// @notice Retrieve pending rewards for a given tokenId and amount.
     /// @dev The rewards can be split among multiple tokens.
     /// @param tokenId The ID of the token.
@@ -283,7 +329,7 @@ contract WAuraPools is
 
         /// AURA reward
         tokens[1] = address(AURA);
-        rewards[1] = _getAuraPendingReward(auraRewarder, rewards[0]);
+        rewards[1] = _getAllocatedAURA(pid, stAuraPerShare, amount);
 
         /// Additional rewards
         for (uint256 i; i != extraRewardsCount; ) {
@@ -315,6 +361,8 @@ contract WAuraPools is
         uint256 pid,
         uint256 amount
     ) external nonReentrant returns (uint256 id) {
+        _updateAuraReward(pid);
+
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
@@ -350,6 +398,8 @@ contract WAuraPools is
                 ++i;
             }
         }
+
+        auraPerShareDebt[id] += auraPerShareByPid[pid];
     }
 
     /// @notice Burn the provided ERC1155 token and redeem its underlying ERC20 token.
@@ -368,7 +418,11 @@ contract WAuraPools is
         if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
         }
+        (rewardTokens, rewards) = pendingRewards(id, amount);
         (uint256 pid, ) = decodeId(id);
+
+        _updateAuraReward(pid);
+
         _burn(msg.sender, id, amount);
 
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
@@ -397,7 +451,6 @@ contract WAuraPools is
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
 
         /// Transfer Reward Tokens
-        (rewardTokens, rewards) = pendingRewards(id, amount);
 
         /// Withdraw manually
         if (hasDiffExtraRewards) {
@@ -437,5 +490,28 @@ contract WAuraPools is
             extraRewards.push(extraReward);
             extraRewardsIdx[extraReward] = extraRewards.length;
         }
+    }
+
+    function _updateAuraReward(uint256 pid) private {
+        (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
+        uint256 currentDeposits = IAuraRewarder(auraRewarder).balanceOf(
+            address(this)
+        );
+
+        lastBalPerTokenByPid[pid] = IAuraRewarder(auraRewarder)
+            .rewardPerToken();
+
+        if (currentDeposits == 0) {
+            return;
+        }
+
+        uint cvxBalBefore = AURA.balanceOf(address(this));
+
+        // Claim extra rewards at withdrawal
+        IAuraRewarder(auraRewarder).getReward(address(this), false);
+
+        uint256 auraReward = AURA.balanceOf(address(this)) - cvxBalBefore;
+
+        auraPerShareByPid[pid] += (auraReward * 1e18) / currentDeposits;
     }
 }

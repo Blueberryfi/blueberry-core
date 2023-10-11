@@ -43,14 +43,22 @@ describe("wAuraPools", () => {
     );
     stashToken = await MockStashTokenFactory.deploy();
 
+    const MockConvexTokenFactory = await ethers.getContractFactory(
+      "MockAuraToken"
+    );
+    aura = await MockConvexTokenFactory.deploy();
+
     const MockBaseRewardPoolFactory = await ethers.getContractFactory(
       "MockBaseRewardPool"
     );
     auraRewarder = await MockBaseRewardPoolFactory.deploy(
       0,
       stakingToken.address,
-      rewardToken.address
+      rewardToken.address,
+      aura.address
     );
+
+    await aura.setOperator(auraRewarder.address);
 
     const MockVirtualBalanceRewardPoolFactory = await ethers.getContractFactory(
       "MockVirtualBalanceRewardPool"
@@ -62,10 +70,6 @@ describe("wAuraPools", () => {
 
     await auraRewarder.addExtraReward(extraRewarder.address);
 
-    const MockConvexTokenFactory = await ethers.getContractFactory(
-      "MockAuraToken"
-    );
-    aura = await MockConvexTokenFactory.deploy();
     const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
     booster = await MockBoosterFactory.deploy();
 
@@ -199,6 +203,12 @@ describe("wAuraPools", () => {
     const auraPerShare = utils.parseEther("100");
     const tokenId = auraPerShare; // pid: 0
     const amount = utils.parseEther("100");
+    const pid = 0;
+
+    beforeEach(async () => {
+      await auraRewarder.setRewardPerToken(auraPerShare);
+      await wAuraPools.mint(pid, amount);
+    });
 
     it("return zero at initial stage", async () => {
       const res = await wAuraPools.pendingRewards(tokenId, amount);
@@ -261,7 +271,7 @@ describe("wAuraPools", () => {
           .div(BigNumber.from(10).pow(18));
       });
 
-      it("return 0 if AURA total supply is initial amount", async () => {
+      it("return earned amount if AURA total supply is initial amount", async () => {
         const res = await wAuraPools.pendingRewards(tokenId, amount);
         expect(res[1][0]).to.be.eq(reward0);
         expect(res[1][1]).to.be.eq(await getAuraMintAmount(reward0));
@@ -282,12 +292,22 @@ describe("wAuraPools", () => {
 
         const auraMaxSupply = await aura.EMISSIONS_MAX_SUPPLY();
 
-        reward0 = rewardPerToken
-          .sub(auraPerShare)
+        await lpToken.mintWithAmount(auraMaxSupply);
+        await lpToken.approve(wAuraPools.address, auraMaxSupply);
+
+        await wAuraPools.mint(pid, auraMaxSupply.sub(amount));
+
+        await auraRewarder.setRewardPerToken(utils.parseEther("200"));
+
+        reward0 = utils
+          .parseEther("200")
+          .sub(rewardPerToken)
           .mul(auraMaxSupply)
           .div(BigNumber.from(10).pow(18));
 
-        const res = await wAuraPools.pendingRewards(tokenId, auraMaxSupply);
+        const newTokenId = rewardPerToken;
+
+        const res = await wAuraPools.pendingRewards(newTokenId, auraMaxSupply);
         expect(res[1][0]).to.be.eq(reward0);
         expect(res[1][1]).to.be.eq(await getAuraMintAmount(reward0));
       });
@@ -302,10 +322,10 @@ describe("wAuraPools", () => {
     });
 
     describe("calculate extraRewards", () => {
-      const tokenId = 0;
       const pid = 0;
       const amount = utils.parseEther("100");
       const prevRewardPerToken = utils.parseEther("50");
+      const tokenId = auraPerShare;
 
       beforeEach(async () => {
         await extraRewarder.setRewardPerToken(prevRewardPerToken);
@@ -439,8 +459,7 @@ describe("wAuraPools", () => {
       await auraRewarder.setRewardPerToken(newauraRewardPerToken);
       await extraRewarder.setRewardPerToken(newExtraRewardPerToken);
 
-      const res = await wAuraPools.pendingRewards(tokenId, amount);
-      await aura.mintTestTokensManually(wAuraPools.address, res[1][1]);
+      const res = await wAuraPools.pendingRewards(tokenId, mintAmount);
       await auraRewarder.setReward(wAuraPools.address, res[1][0]);
       await extraRewarder.setReward(wAuraPools.address, res[1][2]);
     });

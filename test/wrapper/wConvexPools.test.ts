@@ -36,14 +36,22 @@ describe("WConvexPools", () => {
     rewardToken = await MockERC20Factory.deploy("", "", 18);
     extraRewardToken = await MockERC20Factory.deploy("", "", 18);
 
+    const MockConvexTokenFactory = await ethers.getContractFactory(
+      "MockConvexToken"
+    );
+    cvx = await MockConvexTokenFactory.deploy();
+
     const MockBaseRewardPoolFactory = await ethers.getContractFactory(
       "MockBaseRewardPool"
     );
     crvRewards = await MockBaseRewardPoolFactory.deploy(
       0,
       stakingToken.address,
-      rewardToken.address
+      rewardToken.address,
+      cvx.address
     );
+
+    await cvx.setOperator(crvRewards.address);
 
     const MockVirtualBalanceRewardPoolFactory = await ethers.getContractFactory(
       "MockVirtualBalanceRewardPool"
@@ -55,10 +63,6 @@ describe("WConvexPools", () => {
 
     await crvRewards.addExtraReward(extraRewarder.address);
 
-    const MockConvexTokenFactory = await ethers.getContractFactory(
-      "MockConvexToken"
-    );
-    cvx = await MockConvexTokenFactory.deploy();
     const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
     booster = await MockBoosterFactory.deploy();
 
@@ -101,27 +105,27 @@ describe("WConvexPools", () => {
   describe("#encodeId", () => {
     it("encode id", async () => {
       const pid = BigNumber.from(1);
-      const cvxPerShare = BigNumber.from(100);
+      const crvPerShare = BigNumber.from(100);
 
-      const id = pid.mul(BigNumber.from(2).pow(240)).add(cvxPerShare);
-      expect(await wConvexPools.encodeId(pid, cvxPerShare)).to.be.eq(id);
+      const id = pid.mul(BigNumber.from(2).pow(240)).add(crvPerShare);
+      expect(await wConvexPools.encodeId(pid, crvPerShare)).to.be.eq(id);
     });
 
     it("reverts if pid is equal or greater than 2 ^ 16", async () => {
       const pid = BigNumber.from(2).pow(16);
-      const cvxPerShare = BigNumber.from(100);
+      const crvPerShare = BigNumber.from(100);
 
       await expect(
-        wConvexPools.encodeId(pid, cvxPerShare)
+        wConvexPools.encodeId(pid, crvPerShare)
       ).to.be.revertedWithCustomError(wConvexPools, "BAD_PID");
     });
 
-    it("reverts if cvxPerShare is equal or greater than 2 ^ 240", async () => {
+    it("reverts if crvPerShare is equal or greater than 2 ^ 240", async () => {
       const pid = BigNumber.from(2).pow(2);
-      const cvxPerShare = BigNumber.from(2).pow(240);
+      const crvPerShare = BigNumber.from(2).pow(240);
 
       await expect(
-        wConvexPools.encodeId(pid, cvxPerShare)
+        wConvexPools.encodeId(pid, crvPerShare)
       ).to.be.revertedWithCustomError(wConvexPools, "BAD_REWARD_PER_SHARE");
     });
   });
@@ -129,12 +133,12 @@ describe("WConvexPools", () => {
   describe("#decodeId", () => {
     it("decode id", async () => {
       const pid = BigNumber.from(1);
-      const cvxPerShare = BigNumber.from(100);
+      const crvPerShare = BigNumber.from(100);
 
-      const id = pid.mul(BigNumber.from(2).pow(240)).add(cvxPerShare);
+      const id = pid.mul(BigNumber.from(2).pow(240)).add(crvPerShare);
       const res = await wConvexPools.decodeId(id);
       expect(res[0]).to.be.eq(pid);
-      expect(res[1]).to.be.eq(cvxPerShare);
+      expect(res[1]).to.be.eq(crvPerShare);
     });
   });
 
@@ -153,9 +157,9 @@ describe("WConvexPools", () => {
 
     it("get underlying token", async () => {
       const pid = BigNumber.from(1);
-      const cvxPerShare = BigNumber.from(100);
+      const crvPerShare = BigNumber.from(100);
 
-      const id = pid.mul(BigNumber.from(2).pow(240)).add(cvxPerShare);
+      const id = pid.mul(BigNumber.from(2).pow(240)).add(crvPerShare);
       expect(await wConvexPools.getUnderlyingToken(id)).to.be.eq(lptoken);
     });
   });
@@ -183,9 +187,15 @@ describe("WConvexPools", () => {
   });
 
   describe("#pendingRewards", () => {
-    const cvxPerShare = utils.parseEther("100");
-    const tokenId = cvxPerShare; // pid: 0
+    const crvPerShare = utils.parseEther("100");
+    const tokenId = crvPerShare; // pid: 0
+    const pid = 0;
     const amount = utils.parseEther("100");
+
+    beforeEach(async () => {
+      await crvRewards.setRewardPerToken(crvPerShare);
+      await wConvexPools.mint(pid, amount);
+    });
 
     it("return zero at initial stage", async () => {
       const res = await wConvexPools.pendingRewards(tokenId, amount);
@@ -203,7 +213,7 @@ describe("WConvexPools", () => {
         const res = await wConvexPools.pendingRewards(tokenId, amount);
         expect(res[1][0]).to.be.eq(
           rewardPerToken
-            .sub(cvxPerShare)
+            .sub(crvPerShare)
             .mul(amount)
             .div(BigNumber.from(10).pow(18))
         );
@@ -220,7 +230,7 @@ describe("WConvexPools", () => {
         const res = await wConvexPools.pendingRewards(tokenId, amount);
         expect(res[1][0]).to.be.eq(
           rewardPerToken
-            .sub(cvxPerShare)
+            .sub(crvPerShare)
             .mul(amount)
             .div(BigNumber.from(10).pow(8))
         );
@@ -243,12 +253,12 @@ describe("WConvexPools", () => {
         await crvRewards.setRewardPerToken(rewardPerToken);
 
         reward0 = rewardPerToken
-          .sub(cvxPerShare)
+          .sub(crvPerShare)
           .mul(amount)
           .div(BigNumber.from(10).pow(18));
       });
 
-      it("return 0 if CVX total supply is zero", async () => {
+      it("return earned amount if CVX total supply is zero", async () => {
         const res = await wConvexPools.pendingRewards(tokenId, amount);
         expect(res[1][0]).to.be.eq(reward0);
         expect(res[1][1]).to.be.eq(reward0);
@@ -277,18 +287,28 @@ describe("WConvexPools", () => {
         await cvx.mintTestTokens(stakingToken.address, cvxSupply);
 
         const cvxMaxSupply = await cvx.maxSupply();
+
+        await lpToken.mintWithAmount(cvxMaxSupply);
+        await lpToken.approve(wConvexPools.address, cvxMaxSupply);
+
+        await wConvexPools.mint(pid, cvxMaxSupply.sub(amount));
+
+        await crvRewards.setRewardPerToken(utils.parseEther("200"));
+
         const reductionPerCliff = await cvx.reductionPerCliff();
         const totalCliffs = await cvx.totalCliffs();
         const cliff = cvxSupply.div(reductionPerCliff);
 
         expect(cliff.lt(totalCliffs)).to.be.true;
 
-        reward0 = rewardPerToken
-          .sub(cvxPerShare)
+        reward0 = utils
+          .parseEther("200")
+          .sub(rewardPerToken)
           .mul(cvxMaxSupply)
           .div(BigNumber.from(10).pow(18));
 
-        const res = await wConvexPools.pendingRewards(tokenId, cvxMaxSupply);
+        const newTokenId = rewardPerToken;
+        const res = await wConvexPools.pendingRewards(newTokenId, cvxMaxSupply);
         expect(res[1][0]).to.be.eq(reward0);
         expect(res[1][1]).to.be.eq(cvxMaxSupply.sub(cvxSupply));
       });
@@ -303,10 +323,10 @@ describe("WConvexPools", () => {
     });
 
     describe("calculate extraRewards", () => {
-      const tokenId = 0;
       const pid = 0;
       const amount = utils.parseEther("100");
       const prevRewardPerToken = utils.parseEther("50");
+      const tokenId = crvPerShare;
 
       beforeEach(async () => {
         await extraRewarder.setRewardPerToken(prevRewardPerToken);
@@ -442,8 +462,7 @@ describe("WConvexPools", () => {
       await crvRewards.setRewardPerToken(newCrvRewardPerToken);
       await extraRewarder.setRewardPerToken(newExtraRewardPerToken);
 
-      const res = await wConvexPools.pendingRewards(tokenId, amount);
-      await cvx.mintTestTokens(wConvexPools.address, res[1][1]);
+      const res = await wConvexPools.pendingRewards(tokenId, mintAmount);
       await crvRewards.setReward(wConvexPools.address, res[1][0]);
       await extraRewarder.setReward(wConvexPools.address, res[1][2]);
     });
