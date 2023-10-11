@@ -12,7 +12,6 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
@@ -21,18 +20,15 @@ import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
 import "../interfaces/IWETH.sol";
+import "../libraries/UniversalERC20.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
 
 /// @title BasicSpell
 /// @author BlueberryProtocol
 /// @notice BasicSpell is the abstract contract that other spells utilize
 /// @dev It extends functionalities from ERC1155NaiveReceiver, OwnableUpgradeable and EnsureApprove
-abstract contract BasicSpell is
-    ERC1155NaiveReceiver,
-    OwnableUpgradeable,
-    EnsureApprove
-{
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, EnsureApprove {
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    STRUCTS
@@ -119,32 +115,19 @@ abstract contract BasicSpell is
     /// @param vault Address of the vault where assets are held.
     /// @param minPosSize Minimum size of the position in USD.
     /// @param maxPosSize Maximum size of the position in USD.
-    event StrategyAdded(
-        uint256 strategyId,
-        address vault,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    );
+    event StrategyAdded(uint256 strategyId, address vault, uint256 minPosSize, uint256 maxPosSize);
 
     /// @notice This event is emitted when a strategy's min/max position size is updated.
     /// @param strategyId Unique identifier for the strategy.
     /// @param minPosSize Minimum size of the position in USD.
     /// @param maxPosSize Maximum size of the position in USD.
-    event StrategyPosSizeUpdated(
-        uint256 strategyId,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    );
+    event StrategyPosSizeUpdated(uint256 strategyId, uint256 minPosSize, uint256 maxPosSize);
 
     /// @notice This event is emitted when a strategy's collateral max LTV is updated.
     /// @param strategyId Unique identifier for the strategy.
     /// @param collaterals Array of collateral token addresses.
     /// @param maxLTVs Array of maximum LTVs corresponding to the collaterals. (base 1e4)
-    event CollateralsMaxLTVSet(
-        uint256 strategyId,
-        address[] collaterals,
-        uint256[] maxLTVs
-    );
+    event CollateralsMaxLTVSet(uint256 strategyId, address[] collaterals, uint256[] maxLTVs);
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -153,8 +136,9 @@ abstract contract BasicSpell is
     /// @dev Modifier to ensure the provided strategyId exists within the strategies array.
     /// @param strategyId The ID of the strategy to validate.
     modifier existingStrategy(uint256 strategyId) {
-        if (strategyId >= strategies.length)
+        if (strategyId >= strategies.length) {
             revert Errors.STRATEGY_NOT_EXIST(address(this), strategyId);
+        }
 
         _;
     }
@@ -163,8 +147,9 @@ abstract contract BasicSpell is
     /// @param strategyId The ID of the strategy to validate.
     /// @param col Address of the collateral token.
     modifier existingCollateral(uint256 strategyId, address col) {
-        if (maxLTV[strategyId][col] == 0)
+        if (maxLTV[strategyId][col] == 0) {
             revert Errors.COLLATERAL_NOT_EXIST(strategyId, col);
+        }
 
         _;
     }
@@ -209,27 +194,12 @@ abstract contract BasicSpell is
     /// @param vault The address of the vault associated with this strategy.
     /// @param minPosSize The minimum position size (USD value) for this strategy. Value is based on 1e18.
     /// @param maxPosSize The maximum position size (USD value) for this strategy. Value is based on 1e18.
-    function _addStrategy(
-        address vault,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    ) internal {
+    function _addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) internal {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
-        strategies.push(
-            Strategy({
-                vault: vault,
-                minPositionSize: minPosSize,
-                maxPositionSize: maxPosSize
-            })
-        );
-        emit StrategyAdded(
-            strategies.length - 1,
-            vault,
-            minPosSize,
-            maxPosSize
-        );
+        strategies.push(Strategy({vault: vault, minPositionSize: minPosSize, maxPositionSize: maxPosSize}));
+        emit StrategyAdded(strategies.length - 1, vault, minPosSize, maxPosSize);
     }
 
     /// @notice Update the position sizes for a specific strategy.
@@ -237,11 +207,11 @@ abstract contract BasicSpell is
     /// @param strategyId ID of the strategy to be updated.
     /// @param minPosSize New minimum position size for the strategy.
     /// @param maxPosSize New maximum position size for the strategy.
-    function setPosSize(
-        uint256 strategyId,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    ) external existingStrategy(strategyId) onlyOwner {
+    function setPosSize(uint256 strategyId, uint256 minPosSize, uint256 maxPosSize)
+        external
+        existingStrategy(strategyId)
+        onlyOwner
+    {
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
         strategies[strategyId].minPositionSize = minPosSize;
@@ -254,13 +224,14 @@ abstract contract BasicSpell is
     /// @param strategyId ID of the strategy for which the maxLTVs are being set.
     /// @param collaterals Array of addresses for each collateral token.
     /// @param maxLTVs Array of maxLTV values corresponding to each collateral token.
-    function setCollateralsMaxLTVs(
-        uint256 strategyId,
-        address[] memory collaterals,
-        uint256[] memory maxLTVs
-    ) external existingStrategy(strategyId) onlyOwner {
-        if (collaterals.length != maxLTVs.length || collaterals.length == 0)
+    function setCollateralsMaxLTVs(uint256 strategyId, address[] memory collaterals, uint256[] memory maxLTVs)
+        external
+        existingStrategy(strategyId)
+        onlyOwner
+    {
+        if (collaterals.length != maxLTVs.length || collaterals.length == 0) {
             revert Errors.INPUT_ARRAY_MISMATCH();
+        }
 
         for (uint256 i = 0; i < collaterals.length; i++) {
             if (collaterals[i] == address(0)) revert Errors.ZERO_ADDRESS();
@@ -275,16 +246,14 @@ abstract contract BasicSpell is
     /// @dev If the debtValue of the position is greater than permissible, the transaction will revert.
     /// @param strategyId Strategy ID to validate against.
     function _validateMaxLTV(uint256 strategyId) internal {
-        uint positionId = bank.POSITION_ID();
+        uint256 positionId = bank.POSITION_ID();
         IBank.Position memory pos = bank.getPositionInfo(positionId);
         uint256 debtValue = bank.getDebtValue(positionId);
-        uint uValue = bank.getIsolatedCollateralValue(positionId);
+        uint256 uValue = bank.getIsolatedCollateralValue(positionId);
 
-        if (
-            debtValue >
-            (uValue * maxLTV[strategyId][pos.underlyingToken]) /
-                Constants.DENOMINATOR
-        ) revert Errors.EXCEED_MAX_LTV();
+        if (debtValue > (uValue * maxLTV[strategyId][pos.underlyingToken]) / Constants.DENOMINATOR) {
+            revert Errors.EXCEED_MAX_LTV();
+        }
     }
 
     /// @notice Internal function to validate if the current position size is within the strategy's bounds.
@@ -296,34 +265,30 @@ abstract contract BasicSpell is
         /// Get previous position size
         uint256 prevPosSize;
         if (pos.collToken != address(0)) {
-            prevPosSize = bank.oracle().getWrappedTokenValue(
-                pos.collToken,
-                pos.collId,
-                pos.collateralSize
-            );
+            prevPosSize = bank.oracle().getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
         }
 
         /// Get newly added position size
         uint256 addedPosSize;
-        IERC20Upgradeable lpToken = IERC20Upgradeable(strategy.vault);
+        IERC20 lpToken = IERC20(strategy.vault);
         uint256 lpBalance = lpToken.balanceOf(address(this));
         uint256 lpPrice = bank.oracle().getPrice(address(lpToken));
-        addedPosSize =
-            (lpPrice * lpBalance) /
-            10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
+        addedPosSize = (lpPrice * lpBalance) / 10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
         // Check if position size is within bounds
-        if (prevPosSize + addedPosSize > strategy.maxPositionSize)
+        if (prevPosSize + addedPosSize > strategy.maxPositionSize) {
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
-        if (prevPosSize + addedPosSize < strategy.minPositionSize)
+        }
+        if (prevPosSize + addedPosSize < strategy.minPositionSize) {
             revert Errors.EXCEED_MIN_POS_SIZE(strategyId);
+        }
     }
 
     /// @notice Internal function to refund the specified tokens to the current executor of the bank.
     /// @param token Address of the token to refund.
     function _doRefund(address token) internal {
-        uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
+        uint256 balance = IERC20(token).universalBalanceOf(address(this));
         if (balance > 0) {
-            IERC20Upgradeable(token).safeTransfer(bank.EXECUTOR(), balance);
+            IERC20(token).universalTransfer(bank.EXECUTOR(), balance);
         }
     }
 
@@ -331,9 +296,7 @@ abstract contract BasicSpell is
     /// @param token Address of the reward token.
     /// @return left Amount remaining after the fee cut.
     function _doCutRewardsFee(address token) internal returns (uint256 left) {
-        uint256 rewardsBalance = IERC20Upgradeable(token).balanceOf(
-            address(this)
-        );
+        uint256 rewardsBalance = IERC20(token).balanceOf(address(this));
         if (rewardsBalance > 0) {
             _ensureApprove(token, address(bank.feeManager()), rewardsBalance);
             left = bank.feeManager().doCutRewardsFee(token, rewardsBalance);
@@ -394,12 +357,13 @@ abstract contract BasicSpell is
     /// @param token Address of the token to be borrowed.
     /// @param amount Amount of tokens to borrow.
     /// @return borrowedAmount Actual amount of tokens borrowed.
-    function _doBorrow(
-        address token,
-        uint256 amount
-    ) internal returns (uint256 borrowedAmount) {
+    function _doBorrow(address token, uint256 amount) internal returns (uint256 borrowedAmount) {
         if (amount > 0) {
-            borrowedAmount = bank.borrow(token, amount);
+            bool isETH = IERC20(token).isETH();
+            borrowedAmount = bank.borrow(isETH ? WETH : token, amount);
+            if (isETH) {
+                IWETH(WETH).withdraw(borrowedAmount);
+            }
         }
     }
 
@@ -410,8 +374,12 @@ abstract contract BasicSpell is
     /// @param amount Amount of tokens to repay.
     function _doRepay(address token, uint256 amount) internal {
         if (amount > 0) {
-            _ensureApprove(token, address(bank), amount);
-            bank.repay(token, amount);
+            bool isETH = IERC20(token).isETH();
+            if (isETH) {
+                IWETH(WETH).deposit{value: amount}();
+            }
+            _ensureApprove(isETH ? WETH : token, address(bank), amount);
+            bank.repay(isETH ? WETH : token, amount);
         }
     }
 
@@ -425,11 +393,7 @@ abstract contract BasicSpell is
         if (amount > 0) {
             _ensureApprove(token, address(werc20), amount);
             werc20.mint(token, amount);
-            bank.putCollateral(
-                address(werc20),
-                uint256(uint160(token)),
-                amount
-            );
+            bank.putCollateral(address(werc20), uint256(uint160(token)), amount);
         }
     }
 
@@ -457,27 +421,21 @@ abstract contract BasicSpell is
     /// @param strategyId The ID of the strategy being used.
     /// @param collToken Address of the isolated collateral token.
     /// @param collShareAmount Amount of isolated collateral to reduce.
-    function reducePosition(
-        uint256 strategyId,
-        address collToken,
-        uint256 collShareAmount
-    ) external {
+    function reducePosition(uint256 strategyId, address collToken, uint256 collShareAmount) external {
         /// Validate strategy id
         IBank.Position memory pos = bank.getCurrentPositionInfo();
-        address unwrappedCollToken = IERC20Wrapper(pos.collToken)
-            .getUnderlyingToken(pos.collId);
-        if (strategies[strategyId].vault != unwrappedCollToken)
+        address unwrappedCollToken = IERC20Wrapper(pos.collToken).getUnderlyingToken(pos.collId);
+        if (strategies[strategyId].vault != unwrappedCollToken) {
             revert Errors.INCORRECT_STRATEGY_ID(strategyId);
+        }
 
         _doWithdraw(collToken, collShareAmount);
         _doRefund(collToken);
         _validateMaxLTV(strategyId);
     }
 
-    /// @dev Fallback function. Can only receive ETH from WETH contract.
-    receive() external payable {
-        if (msg.sender != WETH) revert Errors.NOT_FROM_WETH(msg.sender);
-    }
+    /// @dev Fallback function.
+    receive() external payable {}
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
     ///      variables without shifting down storage in the inheritance chain.

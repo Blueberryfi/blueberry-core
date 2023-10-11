@@ -84,8 +84,9 @@ contract ConvexSpell is BasicSpell {
             augustusSwapper_,
             tokenTransferProxy_
         );
-        if (wConvexPools_ == address(0) || crvOracle_ == address(0))
+        if (wConvexPools_ == address(0) || crvOracle_ == address(0)) {
             revert Errors.ZERO_ADDRESS();
+        }
 
         wConvexPools = IWConvexPools(wConvexPools_);
         CVX = address(wConvexPools.CVX());
@@ -132,11 +133,11 @@ contract ConvexSpell is BasicSpell {
             param.borrowAmount
         );
 
-        /// 3. Add liquidity on curve, get crvLp
         (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(
             lpToken
         );
 
+        /// 3. Add liquidity on curve, get crvLp
         {
             address borrowToken = param.borrowToken;
             _ensureApprove(borrowToken, pool, borrowBalance);
@@ -240,10 +241,12 @@ contract ConvexSpell is BasicSpell {
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
             (uint256 pid, ) = wConvexPools.decodeId(pos.collId);
-            if (param.farmingPoolId != pid)
+            if (param.farmingPoolId != pid) {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
-            if (pos.collToken != address(wConvexPools))
+            }
+            if (pos.collToken != address(wConvexPools)) {
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            }
             bank.takeCollateral(pos.collateralSize);
             (address[] memory rewardTokens, ) = wConvexPools.burn(
                 pos.collId,
@@ -257,7 +260,7 @@ contract ConvexSpell is BasicSpell {
         }
 
         /// 7. Deposit on Convex Pool, Put wrapped collateral tokens on Blueberry Bank
-        uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
+        uint256 lpAmount = IERC20(lpToken).balanceOf(address(this));
         _ensureApprove(lpToken, address(wConvexPools), lpAmount);
         uint256 id = wConvexPools.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wConvexPools), id, lpAmount);
