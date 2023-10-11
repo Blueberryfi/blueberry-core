@@ -499,6 +499,11 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     bDAI.address,
     utils.parseUnits("3000000")
   );
+  await comptroller._setCreditLimit(
+    bank.address,
+    bWETH.address,
+    utils.parseUnits("3000000")
+  );
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits("500", 6));
@@ -514,7 +519,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
 
   await weth.deposit({ value: utils.parseUnits("100") });
   await weth.approve(wethSoftVault.address, ethers.constants.MaxUint256);
-  await wethSoftVault.deposit(utils.parseUnits("10", 18));
+  await wethSoftVault.deposit(utils.parseUnits("100", 18));
 
   console.log(
     "CRV Balance:",
