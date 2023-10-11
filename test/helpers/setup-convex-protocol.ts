@@ -20,7 +20,6 @@ import {
   CurveTricryptoOracle,
   WConvexPools,
   ConvexSpell,
-  MockBToken,
   Comptroller,
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
@@ -55,7 +54,6 @@ export interface CvxProtocol {
   bank: BlueBerryBank;
   convexSpell: ConvexSpell;
   convexSpellWithVolatileOracle: ConvexSpell;
-  bWeth: MockBToken;
   usdcSoftVault: SoftVault;
   crvSoftVault: SoftVault;
   daiSoftVault: SoftVault;
@@ -103,7 +101,6 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   let crvSoftVault: SoftVault;
   let daiSoftVault: SoftVault;
   let wethSoftVault: SoftVault;
-  let bWeth: MockBToken;
   let hardVault: HardVault;
 
   let comptroller: Comptroller;
@@ -125,9 +122,6 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
   crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
   weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-
-  const MockBToken = await ethers.getContractFactory("MockBToken");
-  bWeth = <MockBToken>await MockBToken.deploy(WETH);
 
   // Prepare USDC
   // deposit 80 eth -> 80 WETH
@@ -482,7 +476,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   wethSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
-      [config.address, bWeth.address, "Interest Bearing WETH", "ibWETH"],
+      [config.address, bWETH.address, "Interest Bearing WETH", "ibWETH"],
       { unsafeAllow: ["delegatecall"] }
     )
   );
@@ -552,7 +546,6 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     crvSoftVault,
     daiSoftVault,
     wethSoftVault,
-    bWeth,
     hardVault,
     uniV3Lib: LibInstance,
     bUSDC,
