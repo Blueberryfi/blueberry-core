@@ -289,11 +289,10 @@ contract AuraSpell is BasicSpell {
                 amountsIn[j] = IERC20(tokens[i]).balanceOf(address(this));
                 if (amountsIn[j] > 0) {
                     _ensureApprove(tokens[i], vault, amountsIn[j]);
+                    maxAmountsIn[i] = amountsIn[j];
                 }
                 ++j;
             } else isLPIncluded = true;
-
-            maxAmountsIn[i] = IERC20(tokens[i]).balanceOf(address(this));
 
             unchecked {
                 ++i;
