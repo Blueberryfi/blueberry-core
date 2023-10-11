@@ -71,7 +71,7 @@ describe("Convex Spell", () => {
   let config: ProtocolConfig;
 
   before(async () => {
-    await fork(17089048);
+    await fork(1, 17089048);
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);

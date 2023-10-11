@@ -75,7 +75,7 @@ describe("Convex Spells", () => {
   const iface = new ethers.utils.Interface(SpellABI);
 
   before(async () => {
-    await fork(17089048);
+    await fork(1, 17089048);
 
     [admin, alice, treasury] = await ethers.getSigners();
 
