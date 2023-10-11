@@ -1,6 +1,6 @@
 import axios from "axios";
 import { ethers } from "hardhat";
-import { constructSimpleSDK } from "@paraswap/sdk";
+import { SwapSide, constructSimpleSDK } from "@paraswap/sdk";
 import { BigNumber, BigNumberish } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
@@ -23,7 +23,13 @@ export const getParaswapCalldata = async (
     destToken: toToken,
     amount: amount.toString(),
     options: {
-      includeDEXS: ["UniswapV2", "SushiSwap", "BalancerV1"],
+      includeDEXS: [
+        "UniswapV3",
+        "UniswapV2",
+        "SushiSwap",
+        "BalancerV1",
+        "BalancerV2",
+      ],
       maxImpact: maxImpact,
       otherExchangePrices: true,
     },
@@ -92,4 +98,41 @@ export const swapEth = async (
   });
 
   return BigNumber.from(priceRoute.destAmount).mul(90).div(100);
+};
+
+export const getParaswapCalldataToBuy = async (
+  fromToken: string,
+  toToken: string,
+  toAmount: BigNumberish,
+  userAddr: string,
+  maxImpact?: number
+) => {
+  const priceRoute = await paraswapSdk.swap.getRate({
+    srcToken: fromToken,
+    destToken: toToken,
+    amount: toAmount.toString(),
+    side: SwapSide.BUY,
+    options: {
+      includeDEXS: ["UniswapV3", "UniswapV2", "BalancerV1"],
+      maxImpact: maxImpact,
+      otherExchangePrices: true,
+    },
+  });
+
+  const calldata = await paraswapSdk.swap.buildTx(
+    {
+      srcToken: fromToken,
+      destToken: toToken,
+      destAmount: toAmount.toString(),
+      slippage: 10 * 0.01 * 10000, // 10% slippage
+      priceRoute: priceRoute,
+      userAddress: userAddr,
+    },
+    { ignoreChecks: true, ignoreGasEstimate: true }
+  );
+
+  return {
+    srcAmount: (priceRoute as any).srcAmount,
+    calldata,
+  };
 };

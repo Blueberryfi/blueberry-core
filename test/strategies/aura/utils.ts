@@ -68,7 +68,7 @@ export const setupStrategy = async () => {
     await auraSpell.addStrategy(
       strategy.address,
       utils.parseUnits("100", 18),
-      utils.parseUnits("20000", 18)
+      utils.parseUnits("200000", 18)
     );
 
     await auraSpell.setCollateralsMaxLTVs(

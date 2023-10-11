@@ -110,17 +110,11 @@ contract AuraSpell is BasicSpell {
             uint256 _minimumBPT = minimumBPT;
             IBalancerVault vault = wAuraPools.getVault(lpToken);
 
-            (address[] memory tokens, uint256[] memory balances, ) = wAuraPools
-                .getPoolTokens(lpToken);
+            (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
             (
                 uint256[] memory maxAmountsIn,
                 uint256[] memory amountsIn
-            ) = _getJoinPoolParamsAndApprove(
-                    address(vault),
-                    tokens,
-                    balances,
-                    lpToken
-                );
+            ) = _getJoinPoolParamsAndApprove(address(vault), tokens, lpToken);
 
             vault.joinPool(
                 wAuraPools.getBPTPoolId(lpToken),
@@ -263,14 +257,12 @@ contract AuraSpell is BasicSpell {
     /// @dev Calculate the parameters required for joining a Balancer pool.
     /// @param vault Address of the Balancer vault
     /// @param tokens List of tokens in the Balancer pool
-    /// @param balances Balances of tokens in the Balancer pool
     /// @param lpToken The LP token for the Balancer pool
     /// @return maxAmountsIn Maximum amounts to deposit for each token
     /// @return amountsIn Amounts of each token to deposit
     function _getJoinPoolParamsAndApprove(
         address vault,
         address[] memory tokens,
-        uint256[] memory balances,
         address lpToken
     ) internal returns (uint256[] memory, uint256[] memory) {
         uint256 i;
