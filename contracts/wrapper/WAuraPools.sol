@@ -418,6 +418,7 @@ contract WAuraPools is
         if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
         }
+        (rewardTokens, rewards) = pendingRewards(id, amount);
         (uint256 pid, ) = decodeId(id);
 
         _updateAuraReward(pid);
@@ -450,7 +451,6 @@ contract WAuraPools is
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
 
         /// Transfer Reward Tokens
-        (rewardTokens, rewards) = pendingRewards(id, amount);
 
         /// Withdraw manually
         if (hasDiffExtraRewards) {
