@@ -82,7 +82,7 @@ describe("Convex Spell - ETH/stETH", () => {
         {
           strategyId: STRATEGY_ID,
           collToken: DAI,
-          borrowToken: ETH,
+          borrowToken: WETH,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
           farmingPoolId: POOL_ID,
@@ -140,7 +140,7 @@ describe("Convex Spell - ETH/stETH", () => {
         if (expectedAmounts[idx].gt(0)) {
           return getParaswapCalldata(
             token,
-            ETH,
+            WETH,
             expectedAmounts[idx],
             spell.address,
             100
@@ -170,16 +170,21 @@ describe("Convex Spell - ETH/stETH", () => {
       spell.address,
       iface.encodeFunctionData("closePositionFarm", [
         {
-          strategyId: STRATEGY_ID,
-          collToken: DAI,
-          borrowToken: ETH,
-          amountRepay: ethers.constants.MaxUint256,
-          amountPosRemove: ethers.constants.MaxUint256,
-          amountShareWithdraw: ethers.constants.MaxUint256,
-          amountOutMin: 1,
+          param: {
+            strategyId: STRATEGY_ID,
+            collToken: DAI,
+            borrowToken: WETH,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
+          },
+          amounts: expectedAmounts,
+          swapDatas: swapDatas.map((item) => item.data),
+          isKilled: false,
         },
-        expectedAmounts,
-        swapDatas.map((item) => item.data),
       ])
     );
     const afterETHBalance = await admin.getBalance();
