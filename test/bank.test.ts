@@ -860,7 +860,7 @@ describe("Bank", () => {
       await mockOracle.setPrice(
         [ICHI],
         [
-          BigNumber.from(10).pow(17).mul(7), // $0.7
+          BigNumber.from(10).pow(17).mul(6), // $0.6
         ]
       );
       risk = await bank.callStatic.getPositionRisk(positionId);

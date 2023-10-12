@@ -168,7 +168,7 @@ describe("ShortLong Spell mainnet fork", () => {
       const swapData = await getParaswapCalldata(
         CRV,
         DAI,
-        borrowAmount,
+        utils.parseUnits("100", 18),
         spell.address,
         100
       );
@@ -182,7 +182,7 @@ describe("ShortLong Spell mainnet fork", () => {
             collToken: USDC,
             borrowToken: CRV,
             collAmount: depositAmount,
-            borrowAmount: borrowAmount,
+            borrowAmount: utils.parseUnits("100", 18),
             farmingPoolId: 0,
           },
           swapData.data,
