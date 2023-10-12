@@ -295,7 +295,7 @@ describe("ShortLong Spell mainnet fork", () => {
       ).div(2);
 
       // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits("3", 18));
+      await crv.transfer(spell.address, utils.parseUnits("15", 18));
 
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -366,7 +366,7 @@ describe("ShortLong Spell mainnet fork", () => {
       ).div(2);
 
       // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits("3", 18));
+      await crv.transfer(spell.address, utils.parseUnits("10", 18));
 
       await mockOracle.setPrice(
         [daiSoftVault.address, USDC],
@@ -419,7 +419,7 @@ describe("ShortLong Spell mainnet fork", () => {
       );
 
       // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits("3", 18));
+      await crv.transfer(spell.address, utils.parseUnits("10", 18));
 
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
