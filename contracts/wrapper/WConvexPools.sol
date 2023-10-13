@@ -50,10 +50,10 @@ contract WConvexPools is
     IConvex public CVX;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
-    /// @dev Extra rewards addresses
-    address[] public extraRewards;
-    /// @dev The index of extra rewards
-    mapping(address => uint256) public extraRewardsIdx;
+    /// @dev Extra rewards addresses (pid => address[])
+    mapping(uint256 => address[]) public extraRewards;
+    /// @dev The index of extra rewards (pid => extraRewardsIdx)
+    mapping(uint256 => mapping(address => uint256)) public extraRewardsIdx;
     /// @dev CVX reward per share by pid
     mapping(uint256 => uint256) public cvxPerShareByPid;
     /// token id => cvxPerShareDebt;
@@ -236,7 +236,7 @@ contract WConvexPools is
             pid
         );
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
-        uint256 extraRewardsCount = extraRewards.length;
+        uint256 extraRewardsCount = extraRewards[pid].length;
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
 
@@ -254,7 +254,7 @@ contract WConvexPools is
         rewards[1] = _getAllocatedCVX(pid, stCrvPerShare, amount);
 
         for (uint256 i; i < extraRewardsCount; ) {
-            address rewarder = extraRewards[i];
+            address rewarder = extraRewards[pid][i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IRewarder(rewarder).rewardToken();
             if (stRewardPerShare == 0) {
@@ -310,7 +310,7 @@ contract WConvexPools is
                 ? type(uint256).max
                 : rewardPerToken;
 
-            _syncExtraReward(extraRewarder);
+            _syncExtraReward(pid, extraRewarder);
 
             unchecked {
                 ++i;
@@ -357,13 +357,13 @@ contract WConvexPools is
         uint256 extraRewardsCount = IRewarder(cvxRewarder).extraRewardsLength();
 
         for (uint256 i; i < extraRewardsCount; ) {
-            _syncExtraReward(IRewarder(cvxRewarder).extraRewards(i));
+            _syncExtraReward(pid, IRewarder(cvxRewarder).extraRewards(i));
 
             unchecked {
                 ++i;
             }
         }
-        uint256 storedExtraRewardLength = extraRewards.length;
+        uint256 storedExtraRewardLength = extraRewards[pid].length;
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
 
         /// Transfer Reward Tokens
@@ -371,7 +371,7 @@ contract WConvexPools is
         /// Withdraw manually
         if (hasDiffExtraRewards) {
             for (uint256 i; i < storedExtraRewardLength; ) {
-                ICvxExtraRewarder(extraRewards[i]).getReward();
+                ICvxExtraRewarder(extraRewards[pid][i]).getReward();
 
                 unchecked {
                     ++i;
@@ -394,15 +394,15 @@ contract WConvexPools is
 
     /// Gets the length of the extra rewards array
     /// @return Length of the extra rewards array
-    function extraRewardsLength() external view returns (uint256) {
-        return extraRewards.length;
+    function extraRewardsLength(uint256 pid) external view returns (uint256) {
+        return extraRewards[pid].length;
     }
 
     /// Internal function to synchronize extra rewards
-    function _syncExtraReward(address extraReward) private {
-        if (extraRewardsIdx[extraReward] == 0) {
-            extraRewards.push(extraReward);
-            extraRewardsIdx[extraReward] = extraRewards.length;
+    function _syncExtraReward(uint pid, address extraReward) private {
+        if (extraRewardsIdx[pid][extraReward] == 0) {
+            extraRewards[pid].push(extraReward);
+            extraRewardsIdx[pid][extraReward] = extraRewards[pid].length;
         }
     }
 

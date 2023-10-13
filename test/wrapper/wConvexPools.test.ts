@@ -411,11 +411,11 @@ describe("WConvexPools", () => {
         await wConvexPools.accExtPerShare(tokenId, extraRewarder.address)
       ).to.be.eq(extraRewardPerToken);
 
-      expect(await wConvexPools.extraRewardsLength()).to.be.eq(1);
+      expect(await wConvexPools.extraRewardsLength(pid)).to.be.eq(1);
       expect(
-        await wConvexPools.extraRewardsIdx(extraRewarder.address)
+        await wConvexPools.extraRewardsIdx(pid, extraRewarder.address)
       ).to.be.eq(1);
-      expect(await wConvexPools.extraRewards(0)).to.be.eq(
+      expect(await wConvexPools.extraRewards(pid, 0)).to.be.eq(
         extraRewarder.address
       );
     });
@@ -424,11 +424,11 @@ describe("WConvexPools", () => {
       await wConvexPools.mint(pid, amount);
       await wConvexPools.mint(pid, amount);
 
-      expect(await wConvexPools.extraRewardsLength()).to.be.eq(1);
+      expect(await wConvexPools.extraRewardsLength(pid)).to.be.eq(1);
       expect(
-        await wConvexPools.extraRewardsIdx(extraRewarder.address)
+        await wConvexPools.extraRewardsIdx(pid, extraRewarder.address)
       ).to.be.eq(1);
-      expect(await wConvexPools.extraRewards(0)).to.be.eq(
+      expect(await wConvexPools.extraRewards(pid, 0)).to.be.eq(
         extraRewarder.address
       );
     });

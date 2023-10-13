@@ -23,7 +23,6 @@ import {
   evm_increaseTime,
   evm_mine_blocks,
   fork,
-  latestBlockNumber,
   setTokenBalance,
 } from "../../helpers";
 import { getTokenAmountFromUSD } from "../utils";
@@ -167,7 +166,9 @@ describe("Aura Spell Strategy test", () => {
             await collateralToken
               .connect(bob)
               .approve(bank.address, ethers.constants.MaxUint256);
+          });
 
+          beforeEach(async () => {
             snapshotId = await network.provider.send("evm_snapshot");
           });
 
@@ -289,7 +290,7 @@ describe("Aura Spell Strategy test", () => {
               strategyInfo.poolId ?? "0"
             );
 
-            await evm_increaseTime(86400);
+            await evm_increaseTime(8640);
 
             const position = await bank.positions(positionId);
             const bobPosition = await bank.positions(bobPositionId);
@@ -319,28 +320,22 @@ describe("Aura Spell Strategy test", () => {
             console.log("Alice Pending Rewards", alicePendingRewardsInfoBefore);
             console.log("Bob Pending Rewards", bobPendingRewardsInfoBefore);
 
-            await setTokenBalance(borrowToken, bank, utils.parseEther("1000"));
+            await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
 
             const aliceAuraBalanceBefore = await aura.balanceOf(alice.address);
             const bobAuraBalanceBefore = await aura.balanceOf(bob.address);
-            await bank.connect(alice).execute(
+
+            await closePosition(
+              alice,
               positionId,
-              spell.address,
-              spell.interface.encodeFunctionData("closePositionFarm", [
-                {
-                  strategyId: i,
-                  collToken: collateralToken.address,
-                  borrowToken: borrowToken.address,
-                  amountRepay: ethers.constants.MaxUint256,
-                  amountPosRemove: ethers.constants.MaxUint256,
-                  amountShareWithdraw: ethers.constants.MaxUint256,
-                  amountOutMin: 1,
-                  amountToSwap: 0,
-                  swapData: "0x",
-                },
-                expectedAmounts,
-                swapDatas.map((item) => item.data),
-              ])
+              ethers.constants.MaxUint256,
+              ethers.constants.MaxUint256,
+              ethers.constants.MaxUint256,
+              1,
+              0,
+              "0x",
+              expectedAmounts,
+              swapDatas.map((item) => item.data)
             );
 
             const bobPendingRewardsInfoAfter =
@@ -362,241 +357,237 @@ describe("Aura Spell Strategy test", () => {
             expect(bobPendingRewardsInfoAfter.rewards[1]).gte(
               bobPendingRewardsInfoBefore.rewards[1]
             );
+
+            await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
+            await closePosition(
+              bob,
+              bobPositionId,
+              ethers.constants.MaxUint256,
+              ethers.constants.MaxUint256,
+              ethers.constants.MaxUint256,
+              1,
+              0,
+              "0x",
+              expectedAmounts,
+              swapDatas.map((item) => item.data)
+            );
+
+            const bobAuraBalanceAfter = await aura.balanceOf(bob.address);
+            expect(bobAuraBalanceAfter.sub(bobAuraBalanceBefore)).gte(
+              rewardAmountWithoutFee(bobPendingRewardsInfoAfter.rewards[1])
+            );
           });
 
-          // // https://github.com/sherlock-audit/2023-05-blueberry-judging/issues/29
-          // it("Do not fail when new reward added after deposit", async () => {
-          //   // Check extra reward count, and if it's 0, add mock rewarder
-          //   const extraRewarderLen = await auraRewarder.extraRewardsLength();
-          //   const rewardManager = await ethers.getImpersonatedSigner(
-          //     await auraRewarder.rewardManager()
-          //   );
-          //   let extraRewardAddedManually = false;
+          // https://github.com/sherlock-audit/2023-05-blueberry-judging/issues/29
+          it("Do not fail when new reward added after deposit", async () => {
+            // Check extra reward count, and if it's 0, add mock rewarder
+            const extraRewarderLen = await auraRewarder.extraRewardsLength();
+            const rewardManager = await ethers.getImpersonatedSigner(
+              await auraRewarder.rewardManager()
+            );
+            let extraRewardAddedManually = false;
 
-          //   if (extraRewarderLen.eq(0)) {
-          //     await auraRewarder
-          //       .connect(rewardManager)
-          //       .addExtraReward(extraRewarder1.address);
-          //     extraRewardAddedManually = true;
-          //   }
+            if (extraRewarderLen.eq(0)) {
+              await auraRewarder
+                .connect(rewardManager)
+                .addExtraReward(extraRewarder1.address);
+              extraRewardAddedManually = true;
+            }
 
-          //   const operator = await ethers.getImpersonatedSigner(
-          //     auraBooster.address
-          //   );
+            const positionId = await openPosition(
+              alice,
+              depositAmount,
+              borrowAmount,
+              strategyInfo.poolId ?? "0"
+            );
 
-          //   const rewardTokenAddr = await auraRewarder.rewardToken();
+            await evm_increaseTime(8640);
 
-          //   const rewardToken = <ERC20>(
-          //     await ethers.getContractAt("ERC20", rewardTokenAddr)
-          //   );
-          //   await setTokenBalance(
-          //     rewardToken,
-          //     auraRewarder,
-          //     utils.parseEther("10000")
-          //   );
+            if (extraRewardAddedManually) {
+              await extraRewarder1.setRewardPerToken(utils.parseEther("1.5"));
+            }
 
-          //   await auraRewarder
-          //     .connect(operator)
-          //     .queueNewRewards(utils.parseEther("10000"));
+            const position = await bank.positions(positionId);
 
-          //   const positionId = await openPosition(
-          //     alice,
-          //     depositAmount,
-          //     borrowAmount,
-          //     strategyInfo.poolId ?? "0"
-          //   );
+            const pendingRewardsInfo = await waura.callStatic.pendingRewards(
+              position.collId,
+              position.collateralSize
+            );
 
-          //   await evm_increaseTime(86400);
+            if (extraRewardAddedManually) {
+              await extraRewarder1.setReward(
+                waura.address,
+                pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
+              );
+              await setTokenBalance(
+                extraRewardToken1,
+                extraRewarder1,
+                pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
+              );
+            } else {
+              extraRewardToken1 = <MockERC20>(
+                await ethers.getContractAt(
+                  "MockERC20",
+                  pendingRewardsInfo.tokens[2]
+                )
+              );
+            }
 
-          //   if (extraRewardAddedManually) {
-          //     await extraRewarder1.setRewardPerToken(utils.parseEther("2"));
-          //   }
+            await auraRewarder
+              .connect(rewardManager)
+              .addExtraReward(extraRewarder2.address);
 
-          //   const position = await bank.positions(positionId);
+            expect(await auraRewarder.extraRewardsLength()).gte(2);
 
-          //   const pendingRewardsInfo = await waura.callStatic.pendingRewards(
-          //     position.collId,
-          //     position.collateralSize
-          //   );
+            const pendingRewardsInfoAfterAdd =
+              await waura.callStatic.pendingRewards(
+                position.collId,
+                position.collateralSize
+              );
+            expect(pendingRewardsInfoAfterAdd.rewards[2]).gte(
+              pendingRewardsInfo.rewards[2]
+            );
 
-          //   if (extraRewardAddedManually) {
-          //     await extraRewarder1.setReward(
-          //       alice.address,
-          //       pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
-          //     );
-          //     await setTokenBalance(
-          //       extraRewardToken1,
-          //       extraRewarder1,
-          //       pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
-          //     );
-          //   } else {
-          //     extraRewardToken1 = <MockERC20>(
-          //       await ethers.getContractAt(
-          //         "MockERC20",
-          //         pendingRewardsInfo.tokens[2]
-          //       )
-          //     );
-          //   }
+            const expectedAmounts = pendingRewardsInfo.rewards.map(
+              (reward) => 0
+            );
 
-          //   await auraRewarder
-          //     .connect(rewardManager)
-          //     .addExtraReward(extraRewarder2.address);
+            const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+              data: "0x",
+            }));
 
-          //   await waura.callStatic.pendingRewards(
-          //     position.collId,
-          //     position.collateralSize
-          //   );
+            console.log("Pending Rewards: ", pendingRewardsInfo);
+            console.log(
+              "Pending Rewards After new extra rewarder added: ",
+              pendingRewardsInfoAfterAdd
+            );
 
-          //   const expectedAmounts = pendingRewardsInfo.rewards.map(
-          //     (reward) => 0
-          //   );
+            await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
 
-          //   const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
-          //     data: "0x",
-          //   }));
+            await closePosition(
+              alice,
+              positionId,
+              ethers.constants.MaxUint256,
+              ethers.constants.MaxUint256,
+              ethers.constants.MaxUint256,
+              1,
+              0,
+              "0x",
+              expectedAmounts,
+              swapDatas.map((item) => item.data)
+            );
+          });
 
-          //   console.log("Pending Rewards", pendingRewardsInfo);
+          // https://github.com/sherlock-audit/2023-04-blueberry-judging/issues/128
+          it("Withdraw extra rewards even they were removed", async () => {
+            // Check extra reward count, and if it's 0, add mock rewarder
+            const extraRewarderLen = await auraRewarder.extraRewardsLength();
+            const rewardManager = await ethers.getImpersonatedSigner(
+              await auraRewarder.rewardManager()
+            );
+            let extraRewardAddedManually = false;
 
-          //   await setTokenBalance(borrowToken, bank, utils.parseEther("10000"));
+            if (extraRewarderLen.eq(0)) {
+              await auraRewarder
+                .connect(rewardManager)
+                .addExtraReward(extraRewarder1.address);
+              extraRewardAddedManually = true;
+            }
 
-          //   await closePosition(
-          //     alice,
-          //     positionId,
-          //     ethers.constants.MaxUint256,
-          //     ethers.constants.MaxUint256,
-          //     ethers.constants.MaxUint256,
-          //     1,
-          //     0,
-          //     "0x",
-          //     expectedAmounts,
-          //     swapDatas.map((item) => item.data)
-          //   );
-          // });
+            const positionId = await openPosition(
+              alice,
+              depositAmount,
+              borrowAmount,
+              strategyInfo.poolId ?? "0"
+            );
 
-          // // https://github.com/sherlock-audit/2023-04-blueberry-judging/issues/128
-          // it("Withdraw extra rewards even they were removed", async () => {
-          //   // Check extra reward count, and if it's 0, add mock rewarder
-          //   const extraRewarderLen = await auraRewarder.extraRewardsLength();
-          //   const rewardManager = await ethers.getImpersonatedSigner(
-          //     await auraRewarder.rewardManager()
-          //   );
-          //   let extraRewardAddedManually = false;
+            await evm_increaseTime(8640);
 
-          //   if (extraRewarderLen.eq(0)) {
-          //     await auraRewarder
-          //       .connect(rewardManager)
-          //       .addExtraReward(extraRewarder1.address);
-          //     extraRewardAddedManually = true;
-          //   }
+            await extraRewarder1.setRewardPerToken(utils.parseEther("2"));
 
-          //   const operator = await ethers.getImpersonatedSigner(
-          //     auraBooster.address
-          //   );
+            const position = await bank.positions(positionId);
 
-          //   const rewardTokenAddr = await auraRewarder.rewardToken();
+            const pendingRewardsInfo = await waura.callStatic.pendingRewards(
+              position.collId,
+              position.collateralSize
+            );
 
-          //   const rewardToken = <ERC20>(
-          //     await ethers.getContractAt("ERC20", rewardTokenAddr)
-          //   );
-          //   await setTokenBalance(
-          //     rewardToken,
-          //     auraRewarder,
-          //     utils.parseEther("10000")
-          //   );
+            extraRewardToken1 = <MockERC20>(
+              await ethers.getContractAt(
+                "MockERC20",
+                pendingRewardsInfo.tokens[2]
+              )
+            );
 
-          //   await auraRewarder
-          //     .connect(operator)
-          //     .queueNewRewards(utils.parseEther("10000"));
+            if (extraRewardAddedManually) {
+              await extraRewarder1.setReward(
+                waura.address,
+                pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
+              );
+              await setTokenBalance(
+                extraRewardToken1,
+                extraRewarder1,
+                pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
+              );
+            }
 
-          //   const positionId = await openPosition(
-          //     alice,
-          //     depositAmount,
-          //     borrowAmount,
-          //     strategyInfo.poolId ?? "0"
-          //   );
+            await auraRewarder.connect(rewardManager).clearExtraRewards();
+            expect(await auraRewarder.extraRewardsLength()).eq(
+              BigNumber.from(0)
+            );
 
-          //   await evm_increaseTime(86400);
+            const pendingRewardsInfoAfterRemoval =
+              await waura.callStatic.pendingRewards(
+                position.collId,
+                position.collateralSize
+              );
 
-          //   if (extraRewardAddedManually) {
-          //     await extraRewarder1.setRewardPerToken(utils.parseEther("2"));
-          //   }
+            console.log("Pending Rewards: ", pendingRewardsInfo);
+            expect(pendingRewardsInfo.rewards[2].gt(0)).to.be.true;
+            expect(pendingRewardsInfo.rewards[2]).lte(
+              pendingRewardsInfoAfterRemoval.rewards[2]
+            );
 
-          //   const position = await bank.positions(positionId);
+            const expectedAmounts = pendingRewardsInfo.rewards.map(
+              (reward) => 0
+            );
 
-          //   const pendingRewardsInfo = await waura.callStatic.pendingRewards(
-          //     position.collId,
-          //     position.collateralSize
-          //   );
+            const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+              data: "0x",
+            }));
 
-          //   extraRewardToken1 = <MockERC20>(
-          //     await ethers.getContractAt(
-          //       "MockERC20",
-          //       pendingRewardsInfo.tokens[2]
-          //     )
-          //   );
+            console.log(
+              "Pending Rewards After removal: ",
+              pendingRewardsInfoAfterRemoval
+            );
 
-          //   if (extraRewardAddedManually) {
-          //     await extraRewarder1.setReward(
-          //       alice.address,
-          //       pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
-          //     );
-          //     await setTokenBalance(
-          //       extraRewardToken1,
-          //       extraRewarder1,
-          //       pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
-          //     );
-          //   }
+            const rewardTokenBalanceBefore = await extraRewardToken1.balanceOf(
+              alice.address
+            );
 
-          //   await auraRewarder.connect(rewardManager).clearExtraRewards();
+            await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
 
-          //   const pendingRewardsInfoAfterRemoval =
-          //     await waura.callStatic.pendingRewards(
-          //       position.collId,
-          //       position.collateralSize
-          //     );
+            await closePosition(
+              alice,
+              positionId,
+              ethers.constants.MaxUint256,
+              ethers.constants.MaxUint256,
+              ethers.constants.MaxUint256,
+              1,
+              0,
+              "0x",
+              expectedAmounts,
+              swapDatas.map((item) => item.data)
+            );
 
-          //   expect(pendingRewardsInfo.rewards[2]).gt(0);
-          //   expect(pendingRewardsInfo.rewards[2]).lte(
-          //     pendingRewardsInfoAfterRemoval.rewards[2]
-          //   );
+            const rewardTokenBalanceAfter = await extraRewardToken1.balanceOf(
+              alice.address
+            );
 
-          //   const expectedAmounts = pendingRewardsInfo.rewards.map(
-          //     (reward) => 0
-          //   );
-
-          //   const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
-          //     data: "0x",
-          //   }));
-
-          //   console.log("Pending Rewards", pendingRewardsInfo);
-
-          //   await setTokenBalance(borrowToken, bank, utils.parseEther("10000"));
-
-          //   const rewardTokenBalanceBefore = await extraRewardToken1.balanceOf(
-          //     alice.address
-          //   );
-
-          //   await closePosition(
-          //     alice,
-          //     positionId,
-          //     ethers.constants.MaxUint256,
-          //     ethers.constants.MaxUint256,
-          //     ethers.constants.MaxUint256,
-          //     1,
-          //     0,
-          //     "0x",
-          //     expectedAmounts,
-          //     swapDatas.map((item) => item.data)
-          //   );
-
-          //   const rewardTokenBalanceAfter = await extraRewardToken1.balanceOf(
-          //     alice.address
-          //   );
-
-          //   expect(rewardTokenBalanceAfter.sub(rewardTokenBalanceBefore)).gte(
-          //     rewardAmountWithoutFee(pendingRewardsInfo.rewards[2])
-          //   );
-          // });
+            expect(rewardTokenBalanceAfter.sub(rewardTokenBalanceBefore)).gte(
+              rewardAmountWithoutFee(pendingRewardsInfo.rewards[2])
+            );
+          });
 
           afterEach(async () => {
             await network.provider.send("evm_revert", [snapshotId]);
