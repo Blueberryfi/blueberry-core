@@ -17,9 +17,12 @@ import {
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { deployBTokens } from "../helpers/money-market";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { swapEth } from "../helpers/paraswap";
+import { faucetToken } from "../helpers/paraswap";
+import { setTokenBalance } from "../helpers";
 
 const OneDay = 86400;
+// Use Two days time gap for chainlink, because we may increase timestamp manually to test reward amount
+const TwoDays = OneDay * 2;
 const OneHour = 3600;
 
 export const setupOracles = async (): Promise<CoreOracle> => {
@@ -50,17 +53,17 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.CHAINLINK_BTC,
     ],
     [
-      OneDay,
-      OneDay,
-      OneDay,
-      OneDay,
-      OneDay,
-      OneDay,
-      OneDay,
-      OneDay,
-      OneDay,
-      OneDay,
-      OneDay,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
     ]
   );
 
@@ -203,7 +206,8 @@ export const setupVaults = async (
       await ethers.getContractAt("ERC20", await bToken.underlying())
     );
     tokens.push(underlyingToken);
-    const amount = await swapEth(
+
+    const amount = await faucetToken(
       underlyingToken.address,
       utils.parseEther("20"),
       signer,

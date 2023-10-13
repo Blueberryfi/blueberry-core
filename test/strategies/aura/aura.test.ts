@@ -1,4 +1,5 @@
 import { ethers, network } from "hardhat";
+import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, BigNumberish, utils } from "ethers";
 import {
@@ -11,16 +12,19 @@ import {
   CoreOracle,
   IRewarder,
   ProtocolConfig,
+  MockVirtualBalanceRewardPool,
+  MockERC20,
 } from "../../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../../constant";
 import { setupStrategy, strategies } from "./utils";
-import { getParaswapCalldataToBuy, swapEth } from "../../helpers/paraswap";
+import { getParaswapCalldataToBuy } from "../../helpers/paraswap";
 import {
-  currentTime,
+  addEthToContract,
   evm_increaseTime,
   evm_mine_blocks,
   fork,
   latestBlockNumber,
+  setTokenBalance,
 } from "../../helpers";
 import { getTokenAmountFromUSD } from "../utils";
 
@@ -56,10 +60,13 @@ describe("Aura Spell Strategy test", () => {
 
   let collateralToken: ERC20;
   let borrowToken: ERC20;
-  let collateralSymbol: string;
-  let borrowTokenSymbol: string;
   let depositAmount: BigNumber;
   let borrowAmount: BigNumber;
+  let rewardFeePct: BigNumber;
+  let extraRewarder1: MockVirtualBalanceRewardPool;
+  let extraRewarder2: MockVirtualBalanceRewardPool;
+  let extraRewardToken1: MockERC20;
+  let extraRewardToken2: MockERC20;
 
   before(async () => {
     await fork();
@@ -72,6 +79,7 @@ describe("Aura Spell Strategy test", () => {
     spell = strategy.auraSpell;
     waura = strategy.waura;
     config = strategy.protocol.config;
+    rewardFeePct = await config.rewardFee();
 
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
     aura = <ERC20>await ethers.getContractAt("ERC20", AURA);
@@ -80,6 +88,8 @@ describe("Aura Spell Strategy test", () => {
       await ethers.getContractAt(CONTRACT_NAMES.IWETH, ADDRESS.WETH)
     );
     auraBooster = strategy.auraBooster;
+
+    await addEthToContract(admin, utils.parseEther("1"), auraBooster.address);
   });
 
   for (let i = 0; i < strategies.length; i += 1) {
@@ -97,9 +107,6 @@ describe("Aura Spell Strategy test", () => {
             borrowToken = <ERC20>(
               await ethers.getContractAt("ERC20", strategyInfo.borrowAssets[l])
             );
-
-            collateralSymbol = await collateralToken.symbol();
-            borrowTokenSymbol = await borrowToken.symbol();
 
             depositAmount = await getTokenAmountFromUSD(
               collateralToken,
@@ -120,16 +127,43 @@ describe("Aura Spell Strategy test", () => {
               await ethers.getContractAt("IRewarder", poolInfo.crvRewards)
             );
 
-            await swapEth(
-              collateralToken.address,
-              utils.parseEther("30"),
-              alice
+            await addEthToContract(
+              admin,
+              utils.parseEther("1"),
+              await auraRewarder.rewardManager()
+            );
+
+            const MockERC20 = await ethers.getContractFactory("MockERC20");
+            extraRewardToken1 = await MockERC20.deploy("Mock", "MOCK", 18);
+            extraRewardToken2 = await MockERC20.deploy("Mock", "MOCK", 18);
+
+            const MockVirtualBalanceRewardPool =
+              await ethers.getContractFactory("MockVirtualBalanceRewardPool");
+            extraRewarder1 = await MockVirtualBalanceRewardPool.deploy(
+              auraRewarder.address,
+              extraRewardToken1.address
+            );
+            extraRewarder1.setRewardPerToken(utils.parseEther("1"));
+            extraRewarder2 = await MockVirtualBalanceRewardPool.deploy(
+              auraRewarder.address,
+              extraRewardToken1.address
+            );
+            extraRewarder2.setRewardPerToken(utils.parseEther("1"));
+
+            await setTokenBalance(
+              collateralToken,
+              alice,
+              utils.parseEther("1000000")
+            );
+            await setTokenBalance(
+              collateralToken,
+              bob,
+              utils.parseEther("1000000")
             );
             await collateralToken
               .connect(alice)
               .approve(bank.address, ethers.constants.MaxUint256);
 
-            await swapEth(collateralToken.address, utils.parseEther("30"), bob);
             await collateralToken
               .connect(bob)
               .approve(bank.address, ethers.constants.MaxUint256);
@@ -206,118 +240,165 @@ describe("Aura Spell Strategy test", () => {
             );
           });
 
-          // // https://github.com/sherlock-audit/2023-07-blueberry-judging/issues/109
-          // it("Validate keeping AURA reward after others claimed reward", async () => {
-          //   const aliceDepositAmount = await getTokenAmountFromUSD(
-          //     collateralToken,
-          //     oracle,
-          //     "3000"
-          //   );
-          //   const aliceBorrowAmount = await getTokenAmountFromUSD(
-          //     borrowToken,
-          //     oracle,
-          //     "4000"
-          //   );
+          // https://github.com/sherlock-audit/2023-07-blueberry-judging/issues/109
+          it("Validate keeping AURA reward after others claimed reward", async () => {
+            // Notify big reward amount to get bigger AURA reward
+            const operator = await ethers.getImpersonatedSigner(
+              auraBooster.address
+            );
 
-          //   // const bobDepositAmount = await getTokenAmountFromUSD(
-          //   //   collateralToken,
-          //   //   oracle,
-          //   //   "3000"
-          //   // );
-          //   // const bobBorrowAmount = await getTokenAmountFromUSD(
-          //   //   borrowToken,
-          //   //   oracle,
-          //   //   "4000"
-          //   // );
+            const rewardTokenAddr = await auraRewarder.rewardToken();
 
-          //   const positionId = await openPosition(
-          //     alice,
-          //     aliceDepositAmount,
-          //     aliceBorrowAmount,
-          //     strategyInfo.poolId ?? "0"
-          //   );
-          //   // const bobPositionId = await openPosition(
-          //   //   bob,
-          //   //   bobDepositAmount,
-          //   //   bobBorrowAmount,
-          //   //   strategyInfo.poolId ?? "0"
-          //   // );
+            const rewardToken = <ERC20>(
+              await ethers.getContractAt("ERC20", rewardTokenAddr)
+            );
+            await setTokenBalance(
+              rewardToken,
+              auraRewarder,
+              utils.parseEther("10000")
+            );
 
-          //   const t1 = await currentTime();
-          //   await evm_increaseTime(86400 * 30);
+            await auraRewarder
+              .connect(operator)
+              .queueNewRewards(utils.parseEther("10000"));
 
-          //   const t2 = await currentTime();
+            const aliceDepositAmount = await getTokenAmountFromUSD(
+              collateralToken,
+              oracle,
+              "3000"
+            );
+            const aliceBorrowAmount = await getTokenAmountFromUSD(
+              borrowToken,
+              oracle,
+              "4000"
+            );
 
-          //   console.log("time:", t1, t2);
-          //   const position = await bank.positions(positionId);
-          //   // const bobPosition = await bank.positions(bobPositionId);
+            const bobDepositAmount = aliceDepositAmount;
+            const bobBorrowAmount = aliceBorrowAmount;
 
-          //   const totalEarned = await auraRewarder.earned(waura.address);
-          //   console.log(
-          //     "Wrapper Total Earned:",
-          //     utils.formatUnits(totalEarned)
-          //   );
+            const positionId = await openPosition(
+              alice,
+              aliceDepositAmount,
+              aliceBorrowAmount,
+              strategyInfo.poolId ?? "0"
+            );
+            const bobPositionId = await openPosition(
+              bob,
+              bobDepositAmount,
+              bobBorrowAmount,
+              strategyInfo.poolId ?? "0"
+            );
 
-          //   const pendingRewardsInfo = await waura.callStatic.pendingRewards(
-          //     position.collId,
-          //     position.collateralSize
-          //   );
+            await evm_increaseTime(86400);
 
-          //   // const bobPendingRewardsInfo = await waura.callStatic.pendingRewards(
-          //   //   bobPosition.collId,
-          //   //   bobPosition.collateralSize
-          //   // );
+            const position = await bank.positions(positionId);
+            const bobPosition = await bank.positions(bobPositionId);
 
-          //   const expectedAmounts = pendingRewardsInfo.rewards.map(
-          //     (reward) => 0
-          //   );
+            const alicePendingRewardsInfoBefore =
+              await waura.callStatic.pendingRewards(
+                position.collId,
+                position.collateralSize
+              );
 
-          //   const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
-          //     data: "0x",
-          //   }));
+            const bobPendingRewardsInfoBefore =
+              await waura.callStatic.pendingRewards(
+                bobPosition.collId,
+                bobPosition.collateralSize
+              );
 
-          //   console.log("Alice Pending Rewards", pendingRewardsInfo);
-          //   // console.log("Bob Pending Rewards", bobPendingRewardsInfo);
+            const expectedAmounts = alicePendingRewardsInfoBefore.rewards.map(
+              (reward) => 0
+            );
 
-          //   // const rewards = await swapEth(
-          //   //   borrowToken.address,
-          //   //   utils.parseEther("5"),
-          //   //   admin
-          //   // );
-          //   // await bank.connect(bob).execute(
-          //   //   positionId,
-          //   //   spell.address,
-          //   //   spell.interface.encodeFunctionData("closePositionFarm", [
-          //   //     {
-          //   //       strategyId: i,
-          //   //       collToken: collateralToken.address,
-          //   //       borrowToken: borrowToken.address,
-          //   //       amountRepay: ethers.constants.MaxUint256,
-          //   //       amountPosRemove: ethers.constants.MaxUint256,
-          //   //       amountShareWithdraw: ethers.constants.MaxUint256,
-          //   //       amountOutMin: 1,
-          //   //       amountToSwap: 0,
-          //   //       swapData: "0x",
-          //   //     },
-          //   //     expectedAmounts,
-          //   //     swapDatas.map((item) => item.data),
-          //   //   ])
-          //   // );
+            const swapDatas = alicePendingRewardsInfoBefore.tokens.map(
+              (token, idx) => ({
+                data: "0x",
+              })
+            );
 
-          //   const alicePendingRewardsInfo =
-          //     await waura.callStatic.pendingRewards(
-          //       position.collId,
-          //       position.collateralSize
-          //     );
+            console.log("Alice Pending Rewards", alicePendingRewardsInfoBefore);
+            console.log("Bob Pending Rewards", bobPendingRewardsInfoBefore);
 
-          //   console.log(
-          //     "Alice Pending Rewards after bob closed position",
-          //     alicePendingRewardsInfo
-          //   );
-          // });
+            await setTokenBalance(borrowToken, bank, utils.parseEther("1000"));
+
+            const aliceAuraBalanceBefore = await aura.balanceOf(alice.address);
+            const bobAuraBalanceBefore = await aura.balanceOf(bob.address);
+            await bank.connect(alice).execute(
+              positionId,
+              spell.address,
+              spell.interface.encodeFunctionData("closePositionFarm", [
+                {
+                  strategyId: i,
+                  collToken: collateralToken.address,
+                  borrowToken: borrowToken.address,
+                  amountRepay: ethers.constants.MaxUint256,
+                  amountPosRemove: ethers.constants.MaxUint256,
+                  amountShareWithdraw: ethers.constants.MaxUint256,
+                  amountOutMin: 1,
+                  amountToSwap: 0,
+                  swapData: "0x",
+                },
+                expectedAmounts,
+                swapDatas.map((item) => item.data),
+              ])
+            );
+
+            const bobPendingRewardsInfoAfter =
+              await waura.callStatic.pendingRewards(
+                bobPosition.collId,
+                bobPosition.collateralSize
+              );
+
+            console.log(
+              "Bob Pending Rewards after alice closed position",
+              bobPendingRewardsInfoAfter
+            );
+
+            const aliceAuraBalanceAfter = await aura.balanceOf(alice.address);
+            expect(aliceAuraBalanceAfter.sub(aliceAuraBalanceBefore)).gte(
+              rewardAmountWithoutFee(alicePendingRewardsInfoBefore.rewards[1])
+            );
+
+            expect(bobPendingRewardsInfoAfter.rewards[1]).gte(
+              bobPendingRewardsInfoBefore.rewards[1]
+            );
+          });
 
           // // https://github.com/sherlock-audit/2023-05-blueberry-judging/issues/29
           // it("Do not fail when new reward added after deposit", async () => {
+          //   // Check extra reward count, and if it's 0, add mock rewarder
+          //   const extraRewarderLen = await auraRewarder.extraRewardsLength();
+          //   const rewardManager = await ethers.getImpersonatedSigner(
+          //     await auraRewarder.rewardManager()
+          //   );
+          //   let extraRewardAddedManually = false;
+
+          //   if (extraRewarderLen.eq(0)) {
+          //     await auraRewarder
+          //       .connect(rewardManager)
+          //       .addExtraReward(extraRewarder1.address);
+          //     extraRewardAddedManually = true;
+          //   }
+
+          //   const operator = await ethers.getImpersonatedSigner(
+          //     auraBooster.address
+          //   );
+
+          //   const rewardTokenAddr = await auraRewarder.rewardToken();
+
+          //   const rewardToken = <ERC20>(
+          //     await ethers.getContractAt("ERC20", rewardTokenAddr)
+          //   );
+          //   await setTokenBalance(
+          //     rewardToken,
+          //     auraRewarder,
+          //     utils.parseEther("10000")
+          //   );
+
+          //   await auraRewarder
+          //     .connect(operator)
+          //     .queueNewRewards(utils.parseEther("10000"));
+
           //   const positionId = await openPosition(
           //     alice,
           //     depositAmount,
@@ -325,17 +406,43 @@ describe("Aura Spell Strategy test", () => {
           //     strategyInfo.poolId ?? "0"
           //   );
 
-          //   await evm_increaseTime(86400 * 30);
+          //   await evm_increaseTime(86400);
+
+          //   if (extraRewardAddedManually) {
+          //     await extraRewarder1.setRewardPerToken(utils.parseEther("2"));
+          //   }
 
           //   const position = await bank.positions(positionId);
 
-          //   const totalEarned = await auraRewarder.earned(waura.address);
-          //   console.log(
-          //     "Wrapper Total Earned:",
-          //     utils.formatUnits(totalEarned)
+          //   const pendingRewardsInfo = await waura.callStatic.pendingRewards(
+          //     position.collId,
+          //     position.collateralSize
           //   );
 
-          //   const pendingRewardsInfo = await waura.callStatic.pendingRewards(
+          //   if (extraRewardAddedManually) {
+          //     await extraRewarder1.setReward(
+          //       alice.address,
+          //       pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
+          //     );
+          //     await setTokenBalance(
+          //       extraRewardToken1,
+          //       extraRewarder1,
+          //       pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
+          //     );
+          //   } else {
+          //     extraRewardToken1 = <MockERC20>(
+          //       await ethers.getContractAt(
+          //         "MockERC20",
+          //         pendingRewardsInfo.tokens[2]
+          //       )
+          //     );
+          //   }
+
+          //   await auraRewarder
+          //     .connect(rewardManager)
+          //     .addExtraReward(extraRewarder2.address);
+
+          //   await waura.callStatic.pendingRewards(
           //     position.collId,
           //     position.collateralSize
           //   );
@@ -350,11 +457,123 @@ describe("Aura Spell Strategy test", () => {
 
           //   console.log("Pending Rewards", pendingRewardsInfo);
 
-          //   const rewards = await swapEth(
-          //     borrowToken.address,
-          //     utils.parseEther("5"),
-          //     admin,
-          //     100
+          //   await setTokenBalance(borrowToken, bank, utils.parseEther("10000"));
+
+          //   await closePosition(
+          //     alice,
+          //     positionId,
+          //     ethers.constants.MaxUint256,
+          //     ethers.constants.MaxUint256,
+          //     ethers.constants.MaxUint256,
+          //     1,
+          //     0,
+          //     "0x",
+          //     expectedAmounts,
+          //     swapDatas.map((item) => item.data)
+          //   );
+          // });
+
+          // // https://github.com/sherlock-audit/2023-04-blueberry-judging/issues/128
+          // it("Withdraw extra rewards even they were removed", async () => {
+          //   // Check extra reward count, and if it's 0, add mock rewarder
+          //   const extraRewarderLen = await auraRewarder.extraRewardsLength();
+          //   const rewardManager = await ethers.getImpersonatedSigner(
+          //     await auraRewarder.rewardManager()
+          //   );
+          //   let extraRewardAddedManually = false;
+
+          //   if (extraRewarderLen.eq(0)) {
+          //     await auraRewarder
+          //       .connect(rewardManager)
+          //       .addExtraReward(extraRewarder1.address);
+          //     extraRewardAddedManually = true;
+          //   }
+
+          //   const operator = await ethers.getImpersonatedSigner(
+          //     auraBooster.address
+          //   );
+
+          //   const rewardTokenAddr = await auraRewarder.rewardToken();
+
+          //   const rewardToken = <ERC20>(
+          //     await ethers.getContractAt("ERC20", rewardTokenAddr)
+          //   );
+          //   await setTokenBalance(
+          //     rewardToken,
+          //     auraRewarder,
+          //     utils.parseEther("10000")
+          //   );
+
+          //   await auraRewarder
+          //     .connect(operator)
+          //     .queueNewRewards(utils.parseEther("10000"));
+
+          //   const positionId = await openPosition(
+          //     alice,
+          //     depositAmount,
+          //     borrowAmount,
+          //     strategyInfo.poolId ?? "0"
+          //   );
+
+          //   await evm_increaseTime(86400);
+
+          //   if (extraRewardAddedManually) {
+          //     await extraRewarder1.setRewardPerToken(utils.parseEther("2"));
+          //   }
+
+          //   const position = await bank.positions(positionId);
+
+          //   const pendingRewardsInfo = await waura.callStatic.pendingRewards(
+          //     position.collId,
+          //     position.collateralSize
+          //   );
+
+          //   extraRewardToken1 = <MockERC20>(
+          //     await ethers.getContractAt(
+          //       "MockERC20",
+          //       pendingRewardsInfo.tokens[2]
+          //     )
+          //   );
+
+          //   if (extraRewardAddedManually) {
+          //     await extraRewarder1.setReward(
+          //       alice.address,
+          //       pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
+          //     );
+          //     await setTokenBalance(
+          //       extraRewardToken1,
+          //       extraRewarder1,
+          //       pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
+          //     );
+          //   }
+
+          //   await auraRewarder.connect(rewardManager).clearExtraRewards();
+
+          //   const pendingRewardsInfoAfterRemoval =
+          //     await waura.callStatic.pendingRewards(
+          //       position.collId,
+          //       position.collateralSize
+          //     );
+
+          //   expect(pendingRewardsInfo.rewards[2]).gt(0);
+          //   expect(pendingRewardsInfo.rewards[2]).lte(
+          //     pendingRewardsInfoAfterRemoval.rewards[2]
+          //   );
+
+          //   const expectedAmounts = pendingRewardsInfo.rewards.map(
+          //     (reward) => 0
+          //   );
+
+          //   const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+          //     data: "0x",
+          //   }));
+
+          //   console.log("Pending Rewards", pendingRewardsInfo);
+
+          //   await setTokenBalance(borrowToken, bank, utils.parseEther("10000"));
+
+          //   const rewardTokenBalanceBefore = await extraRewardToken1.balanceOf(
+          //     alice.address
           //   );
 
           //   await closePosition(
@@ -368,6 +587,14 @@ describe("Aura Spell Strategy test", () => {
           //     "0x",
           //     expectedAmounts,
           //     swapDatas.map((item) => item.data)
+          //   );
+
+          //   const rewardTokenBalanceAfter = await extraRewardToken1.balanceOf(
+          //     alice.address
+          //   );
+
+          //   expect(rewardTokenBalanceAfter.sub(rewardTokenBalanceBefore)).gte(
+          //     rewardAmountWithoutFee(pendingRewardsInfo.rewards[2])
           //   );
           // });
 
@@ -432,6 +659,12 @@ describe("Aura Spell Strategy test", () => {
                 expectedAmounts,
                 swapDatas,
               ])
+            );
+          };
+
+          const rewardAmountWithoutFee = (amount: BigNumberish): BigNumber => {
+            return BigNumber.from(amount).sub(
+              BigNumber.from(amount).mul(rewardFeePct).div(10000)
             );
           };
         });

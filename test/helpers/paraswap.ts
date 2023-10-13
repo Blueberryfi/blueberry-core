@@ -1,10 +1,11 @@
 import axios from "axios";
 import { ethers } from "hardhat";
 import { SwapSide, constructSimpleSDK } from "@paraswap/sdk";
-import { BigNumber, BigNumberish } from "ethers";
+import { BigNumber, BigNumberish, utils } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { IWETH } from "../../typechain-types";
+import { ERC20, IWETH } from "../../typechain-types";
+import { setTokenBalance } from ".";
 
 const paraswapSdk = constructSimpleSDK({
   chainId: 1,
@@ -50,7 +51,7 @@ export const getParaswapCalldata = async (
   return calldata;
 };
 
-export const swapEth = async (
+export const faucetToken = async (
   toToken: string,
   amount: BigNumberish,
   signer: SignerWithAddress,
@@ -67,6 +68,14 @@ export const swapEth = async (
     await weth.connect(signer).deposit({ value: amount });
     return amount;
   }
+
+  try {
+    const token = <ERC20>await ethers.getContractAt("ERC20", toToken);
+
+    await setTokenBalance(token, signer, utils.parseEther("100000"));
+    return utils.parseEther("100000");
+  } catch {}
+
   const priceRoute = await paraswapSdk.swap.getRate({
     srcToken: ADDRESS.ETH,
     destToken: toToken,
