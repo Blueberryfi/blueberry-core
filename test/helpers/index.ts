@@ -15,21 +15,9 @@ export const evm_increaseTime = async (seconds: number) => {
 };
 
 export const evm_mine_blocks = async (n: number) => {
-  await network.provider.send("evm_setAutomine", [false]);
-  await network.provider.send("evm_setIntervalMining", [0]);
-
-  for (let i = 0; i < n / 256; i++) {
-    await network.provider.send("hardhat_mine", ["0x100"]);
+  for (let i = 0; i < n; i++) {
+    await ethers.provider.send("evm_mine", []);
   }
-
-  let remaining = n - Math.floor(n / 256) * 256;
-  if (remaining) {
-    await network.provider.send("hardhat_mine", [
-      BigNumber.from(remaining).toHexString(),
-    ]);
-  }
-
-  await network.provider.send("evm_setAutomine", [true]);
 };
 
 export const currentTime = async () => {
