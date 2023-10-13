@@ -96,7 +96,7 @@ describe("Convex Spell", () => {
   });
 
   describe("Convex Pool Farming Position", () => {
-    const depositAmount = utils.parseUnits("100", 18); // CRV => $100
+    const depositAmount = utils.parseUnits("500", 18); // CRV => $100
     const borrowAmount = utils.parseUnits("250", 6); // USDC
     const iface = new ethers.utils.Interface(SpellABI);
 
@@ -228,8 +228,16 @@ describe("Convex Spell", () => {
       expectedAmounts.push(ethers.utils.parseEther("100"), ethers.utils.parseEther("100"));
       swapDatas.push(...poolTokensSwapData);
 
-      // Manually transfer USDC rewards to spell
-      await usdc.transfer(spell.address, utils.parseUnits("100", 6));
+      const amountToSwap = utils.parseUnits("200", 18);
+      const swapData = (
+        await getParaswapCalldata(
+          CRV,
+          USDC,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -249,8 +257,8 @@ describe("Convex Spell", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: '0x',
+              amountToSwap,
+              swapData,
             },
             amounts: expectedAmounts,
             swapDatas: swapDatas.map((item) => item.data),
@@ -268,7 +276,7 @@ describe("Convex Spell", () => {
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
       expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
-        depositAmount.sub(depositFee).sub(withdrawFee)
+        depositAmount.sub(depositFee).sub(withdrawFee).sub(amountToSwap)
       );
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);

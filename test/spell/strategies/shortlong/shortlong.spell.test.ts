@@ -13,12 +13,14 @@ import {
   evm_mine_blocks,
   fork,
   setupShortLongProtocol,
+  revertToSnapshot,
+  takeSnapshot,
 } from "../../../helpers";
 import SpellABI from "../../../../abi/ShortLongSpell.json";
 import chai, { expect } from "chai";
 import { near } from "../../../assertions/near";
 import { roughlyNear } from "../../../assertions/roughlyNear";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, utils, BigNumberish } from "ethers";
 import { getParaswapCalldata } from "../../../helpers/paraswap";
 
 chai.use(near);
@@ -51,6 +53,8 @@ describe("ShortLong Spell", () => {
 
   const iface = new ethers.utils.Interface(SpellABI);
 
+  let snapshotId: number;
+
   before(async () => {
     await fork();
 
@@ -78,6 +82,7 @@ describe("ShortLong Spell", () => {
   });
 
   it("should be able to long DAI + earn wstETH (collateral: WBTC, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       4,
       WBTC,
@@ -90,7 +95,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #1", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -100,13 +105,14 @@ describe("ShortLong Spell", () => {
       WstETH,
       wstETHSoftVault,
       utils.parseUnits("0.1", 8),
-      dai,
-      utils.parseUnits("10", 18),
+      utils.parseUnits("0.005", 8),
       wbtc
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn wstETH (collateral: WstETH, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       4,
       WstETH,
@@ -119,7 +125,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #2", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -129,13 +135,14 @@ describe("ShortLong Spell", () => {
       WstETH,
       wstETHSoftVault,
       utils.parseUnits("1", 18),
-      dai,
-      utils.parseUnits("10", 18),
+      utils.parseUnits("0.05", 18),
       wstETH
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn wstETH (collateral: WETH, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       4,
       WETH,
@@ -148,7 +155,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #3", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -158,13 +165,14 @@ describe("ShortLong Spell", () => {
       WstETH,
       wstETHSoftVault,
       utils.parseUnits("1", 18),
-      dai,
-      utils.parseUnits("10", 18),
+      utils.parseUnits("0.05", 18),
       weth
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn wstETH (collateral: DAI, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       4,
       DAI,
@@ -177,7 +185,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #4", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -186,14 +194,15 @@ describe("ShortLong Spell", () => {
       DAI,
       WstETH,
       wstETHSoftVault,
-      utils.parseUnits("1", 18),
-      dai,
+      utils.parseUnits("1000", 18),
       utils.parseUnits("10", 18),
       dai
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn LINK (collateral: WBTC, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       1,
       WBTC,
@@ -206,7 +215,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #5", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -216,13 +225,14 @@ describe("ShortLong Spell", () => {
       LINK,
       linkSoftVault,
       utils.parseUnits("0.1", 8),
-      dai,
-      utils.parseUnits("10", 18),
+      utils.parseUnits("0.005", 8),
       wbtc
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn LINK (collateral: WETH, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       1,
       WETH,
@@ -235,7 +245,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #6", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -245,13 +255,14 @@ describe("ShortLong Spell", () => {
       LINK,
       linkSoftVault,
       utils.parseUnits("1", 18),
-      dai,
-      utils.parseUnits("10", 18),
+      utils.parseUnits("0.05", 18),
       weth
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn LINK (collateral: DAI, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       1,
       DAI,
@@ -264,7 +275,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #7", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -273,14 +284,15 @@ describe("ShortLong Spell", () => {
       DAI,
       LINK,
       linkSoftVault,
-      utils.parseUnits("1", 18),
-      dai,
+      utils.parseUnits("1000", 18),
       utils.parseUnits("10", 18),
       dai
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to short DAI + earn LINK (collateral: wstETH, borrowToken: LINK)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       2,
       WstETH,
@@ -293,7 +305,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #8", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -303,13 +315,14 @@ describe("ShortLong Spell", () => {
       DAI,
       daiSoftVault,
       utils.parseUnits("1", 18),
-      link,
-      utils.parseUnits("2", 18),
+      utils.parseUnits("0.05", 18),
       wstETH
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to short DAI + earn LINK (collateral: WBTC, borrowToken: LINK)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       2,
       WBTC,
@@ -322,7 +335,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #9", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -332,13 +345,14 @@ describe("ShortLong Spell", () => {
       DAI,
       daiSoftVault,
       utils.parseUnits("0.1", 8),
-      link,
-      utils.parseUnits("2", 18),
+      utils.parseUnits("0.005", 8),
       wbtc
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to short DAI + earn LINK (collateral: WETH, borrowToken: LINK)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       2,
       WETH,
@@ -351,7 +365,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #10", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -361,13 +375,14 @@ describe("ShortLong Spell", () => {
       DAI,
       daiSoftVault,
       utils.parseUnits("1", 18),
-      link,
-      utils.parseUnits("2", 18),
+      utils.parseUnits("0.05", 18),
       weth
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to short DAI + earn LINK (collateral: DAI, borrowToken: LINK)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       2,
       DAI,
@@ -380,7 +395,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #11", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -390,13 +405,14 @@ describe("ShortLong Spell", () => {
       DAI,
       daiSoftVault,
       utils.parseUnits("1000", 18),
-      link,
-      utils.parseUnits("2", 18),
+      utils.parseUnits("20", 18),
       dai
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn wBTC (collateral: WETH, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       3,
       WETH,
@@ -409,7 +425,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #12", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -419,13 +435,14 @@ describe("ShortLong Spell", () => {
       WBTC,
       wbtcSoftVault,
       utils.parseUnits("1", 18),
-      dai,
-      utils.parseUnits("10", 18),
+      utils.parseUnits("0.05", 18),
       weth
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn wBTC (collateral: WBTC, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       3,
       WBTC,
@@ -438,7 +455,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #13", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -448,13 +465,14 @@ describe("ShortLong Spell", () => {
       WBTC,
       wbtcSoftVault,
       utils.parseUnits("0.1", 8),
-      dai,
-      utils.parseUnits("10", 18),
+      utils.parseUnits("0.01", 8),
       wbtc
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to long DAI + earn wBTC (collateral: DAI, borrowToken: DAI)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       3,
       DAI,
@@ -467,7 +485,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #14", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -477,13 +495,14 @@ describe("ShortLong Spell", () => {
       WBTC,
       wbtcSoftVault,
       utils.parseUnits("1000", 18),
-      dai,
       utils.parseUnits("10", 18),
       dai
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to short DAI + earn WBTC (collateral: WETH, borrowToken: WBTC)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       2,
       WETH,
@@ -496,7 +515,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #15", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -506,13 +525,14 @@ describe("ShortLong Spell", () => {
       DAI,
       daiSoftVault,
       utils.parseUnits("1", 18),
-      wbtc,
-      utils.parseUnits("0.001", 8),
+      utils.parseUnits("0.1", 18),
       weth
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to short DAI + earn WBTC (collateral: WBTC, borrowToken: WBTC)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       2,
       WBTC,
@@ -525,7 +545,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #16", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -535,13 +555,14 @@ describe("ShortLong Spell", () => {
       DAI,
       daiSoftVault,
       utils.parseUnits("0.1", 8),
-      wbtc,
-      utils.parseUnits("0.001", 8),
+      utils.parseUnits("0.005", 8),
       wbtc
     );
+    await revertToSnapshot(snapshotId);
   });
 
   it("should be able to short DAI + earn WBTC (collateral: DAI, borrowToken: WBTC)", async () => {
+    snapshotId = await takeSnapshot();
     await testFarm(
       2,
       DAI,
@@ -554,7 +575,7 @@ describe("ShortLong Spell", () => {
     );
   });
 
-  it("should be able to close position", async () => {
+  it("should be able to close position #17", async () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testClosePosition(
       positionId,
@@ -564,10 +585,10 @@ describe("ShortLong Spell", () => {
       DAI,
       daiSoftVault,
       utils.parseUnits("1000", 18),
-      wbtc,
-      utils.parseUnits("0.001", 8),
+      utils.parseUnits("20", 18),
       dai
     );
+    await revertToSnapshot(snapshotId);
   });
 
   async function testFarm(
@@ -638,8 +659,7 @@ describe("ShortLong Spell", () => {
     swapToken: string,
     softVault: SoftVault,
     depositAmount: BigNumber,
-    rewardToken: any,
-    rewardAmount: BigNumber,
+    colTokenSwapAmount: BigNumberish,
     collTokenContract: any,
   ) {
     await evm_mine_blocks(10000);
@@ -649,8 +669,21 @@ describe("ShortLong Spell", () => {
       position.collateralSize
     );
 
-    // Manually transfer reward to spell
-    await rewardToken.transfer(spell.address, rewardAmount);
+    let amountToSwap = colTokenSwapAmount;
+    let colTokenSwapData = "0x";
+    if (collToken === borrowToken) {
+      amountToSwap = 0;
+    } else if (colTokenSwapAmount !== 0) {
+      colTokenSwapData = (
+        await getParaswapCalldata(
+          collToken,
+          borrowToken,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
+    }
 
     const beforeTreasuryBalance = await collTokenContract.balanceOf(
       treasury.address
@@ -680,8 +713,8 @@ describe("ShortLong Spell", () => {
           amountPosRemove: ethers.constants.MaxUint256,
           amountShareWithdraw: ethers.constants.MaxUint256,
           amountOutMin: 1,
-          amountToSwap: 0,
-          swapData: '0x',
+          amountToSwap,
+          swapData: colTokenSwapData,
         },
         swapData.data,
       ])
@@ -696,7 +729,7 @@ describe("ShortLong Spell", () => {
     const depositFee = depositAmount.mul(50).div(10000);
     const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
     expect(afterColBalance.sub(beforeColBalance)).to.be.gte(
-      depositAmount.sub(depositFee).sub(withdrawFee)
+      depositAmount.sub(depositFee).sub(withdrawFee).sub(colTokenSwapAmount)
     );
 
     const afterTreasuryBalance = await collTokenContract.balanceOf(
