@@ -32,6 +32,8 @@ const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
             ADDRESS.WETH,
             wichiFarm.address,
             ADDRESS.UNI_V3_ROUTER,
+            ADDRESS.AUGUSTUS_SWAPPER,
+            ADDRESS.TOKEN_TRANSFER_PROXY,
           ],
         },
       },
