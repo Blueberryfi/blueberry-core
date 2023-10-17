@@ -289,11 +289,14 @@ contract BlueBerryBank is
 
         if (bTokenInBank[bToken]) revert Errors.BTOKEN_ALREADY_ADDED();
         if (bank.isListed) revert Errors.BANK_ALREADY_LISTED();
-        if (allBanks.length >= 256) revert Errors.BANK_LIMIT();
+
+        uint256 _allBanksLength = allBanks.length;
+
+        if (_allBanksLength >= 256) revert Errors.BANK_LIMIT();
 
         bTokenInBank[bToken] = true;
         bank.isListed = true;
-        bank.index = uint8(allBanks.length);
+        bank.index = uint8(_allBanksLength);
         bank.bToken = bToken;
         bank.softVault = softVault;
         bank.hardVault = hardVault;

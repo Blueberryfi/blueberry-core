@@ -464,10 +464,11 @@ contract WAuraPools is
         }
 
         uint256 rewardTokensLength = rewardTokens.length;
+        address _stashAura = STASH_AURA;
         for (uint256 i; i != rewardTokensLength; ) {
-            address rewardToken = rewardTokens[i];
+            address _rewardToken = rewardTokens[i];
             IERC20Upgradeable(
-                rewardToken == STASH_AURA ? address(AURA) : rewardToken
+                _rewardToken == _stashAura ? address(AURA) : _rewardToken
             ).safeTransfer(msg.sender, rewards[i]);
 
             unchecked {
