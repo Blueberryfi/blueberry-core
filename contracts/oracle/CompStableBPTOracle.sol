@@ -25,7 +25,7 @@ contract CompStableBPTOracle is UsingBaseOracle, IBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructs the `CompStableBPTOracle` with a reference to a base oracle.
     /// @param _base The base oracle used for fetching price data.
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
@@ -45,16 +45,18 @@ contract CompStableBPTOracle is UsingBaseOracle, IBaseOracle {
         checkReentrancy(vault);
 
         /// Get the list of tokens from the associated Balancer pool.
-        (address[] memory tokens, , ) = vault
-            .getPoolTokens(pool.getPoolId());
+        (address[] memory tokens, , ) = vault.getPoolTokens(pool.getPoolId());
 
         uint256 length = tokens.length;
         uint256 minPrice = type(uint256).max;
         /// Iterate over tokens to get their respective prices and determine the minimum.
-        for(uint256 i; i != length; ++i) {
+        for (uint256 i; i != length; ) {
             if (tokens[i] == token) continue;
             uint256 price = base.getPrice(tokens[i]);
             minPrice = (price < minPrice) ? price : minPrice;
+            unchecked {
+                ++i;
+            }
         }
         /// Return the USD value of the LP token by multiplying the minimum price with the rate from the pool.
         return minPrice.mulWadDown(pool.getRate());

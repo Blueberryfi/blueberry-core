@@ -58,7 +58,7 @@ contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
         uint256 length = weights.length;
         uint256 temp = 1e18;
         uint256 invariant = 1e18;
-        for(uint256 i; i < length; i++) {
+        for(uint256 i; i < length) {
             temp = temp.mulDown(
                 (base.getPrice(tokens[i]).divDown(weights[i]))
                 .powDown(weights[i])
@@ -67,6 +67,9 @@ contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
                 (balances[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals()))
                 .powDown(weights[i])
             );
+            unchecked {
+                ++i;
+            }
         }
         try IBalancerPool(token).getActualSupply() returns (uint256 supply) {
             return invariant

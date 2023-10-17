@@ -43,7 +43,8 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
 
     /// @dev ankrETH address
-    address public constant ANKRETH = 0xE95A203B1a91a908F9B9CE46459d101078c2c3cb;
+    address public constant ANKRETH =
+        0xE95A203B1a91a908F9B9CE46459d101078c2c3cb;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      EVENTS
@@ -95,11 +96,14 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     ) external onlyOwner {
         if (remappedTokens_.length != tokens_.length)
             revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens_.length; idx++) {
+        for (uint256 idx = 0; idx < tokens_.length; ) {
             if (tokens_[idx] == address(0)) revert Errors.ZERO_ADDRESS();
 
             remappedTokens[tokens_[idx]] = remappedTokens_[idx];
             emit SetTokenRemapping(tokens_[idx], remappedTokens_[idx]);
+            unchecked {
+                ++idx;
+            }
         }
     }
 
@@ -136,7 +140,8 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         } else if (token_ == ANKRETH) {
             return
                 ((answer.toUint256() * Constants.PRICE_PRECISION) *
-                    IAnkrETH(ANKRETH).sharesToBonds(1e18)) / 10 ** (18 + decimals);
+                    IAnkrETH(ANKRETH).sharesToBonds(1e18)) /
+                10 ** (18 + decimals);
         }
 
         return

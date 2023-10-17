@@ -27,7 +27,7 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -43,13 +43,12 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
         // Reentrancy guard to prevent flashloan attack
         checkReentrancy(vault);
 
-        (address[] memory tokens, , ) = vault
-            .getPoolTokens(pool.getPoolId());
+        (address[] memory tokens, , ) = vault.getPoolTokens(pool.getPoolId());
         address[] memory rateProviders = pool.getRateProviders();
 
         uint256 length = tokens.length;
         uint256 minPrice = type(uint256).max;
-        for(uint256 i; i != length; ++i) {
+        for (uint256 i; i != length; ) {
             if (tokens[i] == token) {
                 continue;
             }
@@ -59,6 +58,9 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
                 price = price.divWadDown(IRateProvider(rateProvider).getRate());
             }
             minPrice = (price < minPrice) ? price : minPrice;
+            unchecked {
+                ++i;
+            }
         }
         return minPrice.mulWadDown(pool.getRate());
     }

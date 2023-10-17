@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
-import  "./BaseAdapter.sol";
+import "./BaseAdapter.sol";
 import "./UsingBaseOracle.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../libraries/UniV3/UniV3WrappedLibContainer.sol";
@@ -33,13 +33,13 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Set stablecoin pools for multiple tokens
     /// @param tokens list of tokens to set stablecoin pool references
     /// @param pools list of reference pool addresses
@@ -48,7 +48,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         address[] calldata pools
     ) external onlyOwner {
         if (tokens.length != pools.length) revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
+        for (uint256 idx = 0; idx < tokens.length; ) {
             if (tokens[idx] == address(0) || pools[idx] == address(0))
                 revert Errors.ZERO_ADDRESS();
             if (
@@ -57,6 +57,9 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
             ) revert Errors.NO_STABLEPOOL(pools[idx]);
             stablePools[tokens[idx]] = pools[idx];
             emit SetPoolStable(tokens[idx], pools[idx]);
+            unchecked {
+                ++idx;
+            }
         }
     }
 

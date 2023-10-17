@@ -117,10 +117,13 @@ contract CurveSpell is BasicSpell {
 
             if (tokens.length == 2) {
                 uint256[2] memory suppliedAmts;
-                for (uint256 i; i < 2; i++) {
+                for (uint256 i; i < 2; ) {
                     if (tokens[i] == borrowToken) {
                         suppliedAmts[i] = tokenBalance;
                         break;
+                    }
+                    unchecked {
+                        ++i;
                     }
                 }
                 ICurvePool(pool).add_liquidity{value: ethValue}(
@@ -129,10 +132,13 @@ contract CurveSpell is BasicSpell {
                 );
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
-                for (uint256 i; i < 3; i++) {
+                for (uint256 i; i < 3; ) {
                     if (tokens[i] == borrowToken) {
                         suppliedAmts[i] = tokenBalance;
                         break;
+                    }
+                    unchecked {
+                        ++i;
                     }
                 }
                 ICurvePool(pool).add_liquidity{value: ethValue}(
@@ -141,10 +147,13 @@ contract CurveSpell is BasicSpell {
                 );
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
-                for (uint256 i; i < 4; i++) {
+                for (uint256 i; i < 4; ) {
                     if (tokens[i] == borrowToken) {
                         suppliedAmts[i] = tokenBalance;
                         break;
+                    }
+                    unchecked {
+                        ++i;
                     }
                 }
                 ICurvePool(pool).add_liquidity{value: ethValue}(
@@ -238,13 +247,16 @@ contract CurveSpell is BasicSpell {
 
             if (isKilled) {
                 uint256 len = tokens.length;
-                for (uint256 i; i != len; ++i) {
+                for (uint256 i; i != len; ) {
                     if (tokens[i] != pos.debtToken) {
                         _swapOnParaswap(
                             tokens[i],
                             amounts[i + 1],
                             swapDatas[i + 1]
                         );
+                    }
+                    unchecked {
+                        ++i;
                     }
                 }
             }
@@ -285,10 +297,13 @@ contract CurveSpell is BasicSpell {
         uint256 tokenIndex;
         uint256 len = tokens.length;
         {
-            for (uint256 i; i != len; ++i) {
+            for (uint256 i; i != len; ) {
                 if (tokens[i] == pos.debtToken) {
                     tokenIndex = i;
                     break;
+                }
+                unchecked {
+                    ++i;
                 }
             }
         }

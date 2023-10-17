@@ -26,9 +26,9 @@ import "./interfaces/IHardVault.sol";
 import "./interfaces/compound/ICErc20.sol";
 import "./libraries/BBMath.sol";
 
- /// @title BlueberryBank
- /// @author BlueberryProtocol
- /// @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
+/// @title BlueberryBank
+/// @author BlueberryProtocol
+/// @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
 contract BlueBerryBank is
     OwnableUpgradeable,
     ERC1155NaiveReceiver,
@@ -49,32 +49,32 @@ contract BlueBerryBank is
     address private constant _NO_ADDRESS = address(1);
 
     /// Temporary variables used across functions.
-    uint256 public _GENERAL_LOCK;      // TEMPORARY: re-entrancy lock guard.
-    uint256 public _IN_EXEC_LOCK;      // TEMPORARY: exec lock guard.
-    uint256 public POSITION_ID;        // TEMPORARY: position ID currently under execution.
-    address public SPELL;              // TEMPORARY: spell currently under execution.
+    uint256 public _GENERAL_LOCK; // TEMPORARY: re-entrancy lock guard.
+    uint256 public _IN_EXEC_LOCK; // TEMPORARY: exec lock guard.
+    uint256 public POSITION_ID; // TEMPORARY: position ID currently under execution.
+    address public SPELL; // TEMPORARY: spell currently under execution.
 
     /// Configurations and oracle addresses.
-    IProtocolConfig public config;     /// @dev The protocol config address.
-    ICoreOracle public oracle;         /// @dev The main oracle address.
+    IProtocolConfig public config; /// @dev The protocol config address.
+    ICoreOracle public oracle; /// @dev The main oracle address.
 
     /// State variables for position and bank.
-    uint256 public nextPositionId;        /// Next available position ID, starting from 1 (see initialize).
-    uint256 public bankStatus;            /// Each bit stores certain bank status, e.g. borrow allowed, repay allowed
+    uint256 public nextPositionId; /// Next available position ID, starting from 1 (see initialize).
+    uint256 public bankStatus; /// Each bit stores certain bank status, e.g. borrow allowed, repay allowed
     uint256 public repayResumedTimestamp; /// Timestamp that repay is allowed or resumed
 
     /// Collections of banks and positions.
-    address[] public allBanks;                     /// The list of all listed banks.
-    mapping(address => Bank) public banks;         /// Mapping from token to bank data.
-    mapping(address => bool) public bTokenInBank;  /// Mapping from bToken to its existence in bank.
+    address[] public allBanks; /// The list of all listed banks.
+    mapping(address => Bank) public banks; /// Mapping from token to bank data.
+    mapping(address => bool) public bTokenInBank; /// Mapping from bToken to its existence in bank.
     mapping(uint256 => Position) public positions; /// Mapping from position ID to position data.
 
     /// Flags and whitelists
     bool public allowContractCalls; // The boolean status whether to allow call from contract (false = onlyEOA)
-    mapping(address => bool) public whitelistedTokens;        /// Mapping from token to whitelist status
+    mapping(address => bool) public whitelistedTokens; /// Mapping from token to whitelist status
     mapping(address => bool) public whitelistedWrappedTokens; /// Mapping from token to whitelist status
-    mapping(address => bool) public whitelistedSpells;        /// Mapping from spell to whitelist status
-    mapping(address => bool) public whitelistedContracts;     /// Mapping from user to whitelist status
+    mapping(address => bool) public whitelistedSpells; /// Mapping from spell to whitelist status
+    mapping(address => bool) public whitelistedContracts; /// Mapping from user to whitelist status
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -194,11 +194,14 @@ contract BlueBerryBank is
         if (contracts.length != statuses.length) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        for (uint256 idx = 0; idx < contracts.length; idx++) {
+        for (uint256 idx = 0; idx < contracts.length; ) {
             if (contracts[idx] == address(0)) {
                 revert Errors.ZERO_ADDRESS();
             }
             whitelistedContracts[contracts[idx]] = statuses[idx];
+            unchecked {
+                ++idx;
+            }
         }
     }
 
@@ -212,11 +215,14 @@ contract BlueBerryBank is
         if (spells.length != statuses.length) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        for (uint256 idx = 0; idx < spells.length; idx++) {
+        for (uint256 idx = 0; idx < spells.length; ) {
             if (spells[idx] == address(0)) {
                 revert Errors.ZERO_ADDRESS();
             }
             whitelistedSpells[spells[idx]] = statuses[idx];
+            unchecked {
+                ++idx;
+            }
         }
     }
 
@@ -230,11 +236,14 @@ contract BlueBerryBank is
         if (tokens.length != statuses.length) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
+        for (uint256 idx = 0; idx < tokens.length; ) {
             if (statuses[idx] && !oracle.isTokenSupported(tokens[idx]))
                 revert Errors.ORACLE_NOT_SUPPORT(tokens[idx]);
             whitelistedTokens[tokens[idx]] = statuses[idx];
             emit SetWhitelistToken(tokens[idx], statuses[idx]);
+            unchecked {
+                ++idx;
+            }
         }
     }
 
@@ -245,11 +254,14 @@ contract BlueBerryBank is
         address[] memory tokens,
         bool ok
     ) external onlyOwner {
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
+        for (uint256 idx = 0; idx < tokens.length; ) {
             address token = tokens[idx];
             if (token == address(0)) revert Errors.ZERO_ADDRESS();
             whitelistedWrappedTokens[token] = ok;
             emit SetWhitelistERC1155(token, ok);
+            unchecked {
+                ++idx;
+            }
         }
     }
 
@@ -351,8 +363,11 @@ contract BlueBerryBank is
     /// @dev Convenient function to trigger interest accrual for multiple banks.
     /// @param tokens An array of token addresses to trigger interest accrual for.
     function accrueAll(address[] memory tokens) external {
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
+        for (uint256 idx = 0; idx < tokens.length; ) {
             accrue(tokens[idx]);
+            unchecked {
+                ++idx;
+            }
         }
     }
 
@@ -456,9 +471,12 @@ contract BlueBerryBank is
             (address[] memory tokens, uint256[] memory rewards) = IERC20Wrapper(
                 pos.collToken
             ).pendingRewards(pos.collId, pos.collateralSize);
-            for (uint256 i; i < tokens.length; i++) {
+            for (uint256 i; i < tokens.length; ) {
                 if (oracle.isTokenSupported(tokens[i])) {
                     rewardsValue += oracle.getTokenValue(tokens[i], rewards[i]);
+                }
+                unchecked {
+                    ++i;
                 }
             }
 
@@ -536,7 +554,7 @@ contract BlueBerryBank is
 
     /// @dev Liquidates a position by repaying its debt and taking the collateral.
     /// @dev Emits a {Liquidate} event.
-    /// @notice Liquidation can only be triggered if the position is deemed liquidatable 
+    /// @notice Liquidation can only be triggered if the position is deemed liquidatable
     ///         and other conditions are met.
     /// @param positionId The unique identifier of the position to liquidate.
     /// @param debtToken The token in which the debt is denominated.
@@ -561,7 +579,7 @@ contract BlueBerryBank is
         if (pos.collToken == address(0))
             revert Errors.BAD_COLLATERAL(positionId);
 
-        /// Revert liquidation if the repayment hasn't been warmed up 
+        /// Revert liquidation if the repayment hasn't been warmed up
         /// following the last state where repayments were paused.
         if (
             block.timestamp <
@@ -937,7 +955,7 @@ contract BlueBerryBank is
         repaidAmount = beforeDebt - newDebt;
     }
 
-    /// @dev Internal function to handle the transfer of ERC20 tokens into the contract. 
+    /// @dev Internal function to handle the transfer of ERC20 tokens into the contract.
     /// @param token The ERC20 token to perform transferFrom action.
     /// @param amountCall The amount use in the transferFrom call.
     /// @return The actual recieved amount.

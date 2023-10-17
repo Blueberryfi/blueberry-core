@@ -18,7 +18,6 @@ import "../interfaces/band/IStdReference.sol";
 /// @author BlueberryProtocol
 /// @notice This contract is an adapter that fetches price feeds from Band Protocol.
 contract BandAdapterOracle is IBaseOracle, BaseAdapter {
-
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
@@ -46,7 +45,7 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructs the BandAdapterOracle contract instance.
     /// @param ref_ Address of the Band Protocol reference contract.
     constructor(IStdReference ref_) {
@@ -75,11 +74,14 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
         string[] calldata syms
     ) external onlyOwner {
         if (syms.length != tokens.length) revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < syms.length; idx++) {
+        for (uint256 idx = 0; idx < syms.length; ) {
             if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
 
             symbols[tokens[idx]] = syms[idx];
             emit SetSymbol(tokens[idx], syms[idx]);
+            unchecked {
+                ++idx;
+            }
         }
     }
 

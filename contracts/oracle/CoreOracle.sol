@@ -36,7 +36,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -72,7 +72,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     ) external onlyOwner {
         if (tokens.length != oracleRoutes.length)
             revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
+        for (uint256 idx = 0; idx < tokens.length; ) {
             address token = tokens[idx];
             address route = oracleRoutes[idx];
             if (token == address(0) || route == address(0))
@@ -80,6 +80,9 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
 
             routes[token] = route;
             emit SetRoute(token, route);
+            unchecked {
+                ++idx;
+            }
         }
     }
 

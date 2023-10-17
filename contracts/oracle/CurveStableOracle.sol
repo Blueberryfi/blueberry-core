@@ -16,19 +16,17 @@ import "./CurveBaseOracle.sol";
 /// @author BlueberryProtocol
 /// @notice Oracle contract that provides price feeds for Curve stable LP tokens.
 contract CurveStableOracle is CurveBaseOracle {
-
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructor initializes the CurveBaseOracle with the provided parameters.
     /// @param base_ The address of the base oracle.
     /// @param addressProvider_ The address of the curve address provider.
     constructor(
         IBaseOracle base_,
         ICurveAddressProvider addressProvider_
-    ) CurveBaseOracle(base_, addressProvider_) {
-    }
+    ) CurveBaseOracle(base_, addressProvider_) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -37,7 +35,10 @@ contract CurveStableOracle is CurveBaseOracle {
     /// @dev Overrides the base oracle's reentrancy check based on the number of tokens.
     /// @param _pool The address of the pool to check.
     /// @param _numTokens The number of tokens in the pool.
-    function _checkReentrant(address _pool, uint256 _numTokens) internal override {
+    function _checkReentrant(
+        address _pool,
+        uint256 _numTokens
+    ) internal override {
         ICurvePool pool = ICurvePool(_pool);
         if (_numTokens == 2) {
             uint256[2] memory amounts;
@@ -56,13 +57,20 @@ contract CurveStableOracle is CurveBaseOracle {
     /// @param crvLp The ERC-20 Curve LP token address.
     /// @return The USD value of the Curve LP token.
     function getPrice(address crvLp) external override returns (uint256) {
-        (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
+        (
+            address pool,
+            address[] memory tokens,
+            uint256 virtualPrice
+        ) = _getPoolInfo(crvLp);
         _checkReentrant(pool, tokens.length);
 
         uint256 minPrice = type(uint256).max;
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
+        for (uint256 idx = 0; idx < tokens.length; ) {
             uint256 tokenPrice = base.getPrice(tokens[idx]);
             if (tokenPrice < minPrice) minPrice = tokenPrice;
+            unchecked {
+                ++idx;
+            }
         }
 
         // Calculate LP token price using the minimum underlying token price
