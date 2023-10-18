@@ -311,7 +311,7 @@ contract ConvexSpell is BasicSpell {
         if (closePosParam.isKilled) {
             for (uint256 i; i != tokens.length; ++i) {
                 address token = tokens[i];
-                if (token == address(0)) {
+                if (token == ETH) {
                     token = WETH;
                     IWETH(WETH).deposit{value: address(this).balance}();
                 }
