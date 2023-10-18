@@ -14,8 +14,8 @@ library PSwapLib {
         uint256 amount
     ) internal {
         // approve zero before reset allocation
-        inToken.approve(spender, 0);
-        inToken.approve(spender, amount);
+        UniversalERC20.universalApprove(inToken, spender, 0);
+        UniversalERC20.universalApprove(inToken, spender, amount);
     }
 
     function swap(
