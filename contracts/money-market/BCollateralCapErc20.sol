@@ -106,10 +106,10 @@ contract BCollateralCapErc20 is BToken, BCollateralCapErc20Interface {
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowBehalf(address borrower, uint256 repayAmount)
-        external
-        returns (uint256)
-    {
+    function repayBorrowBehalf(
+        address borrower,
+        uint256 repayAmount
+    ) external returns (uint256) {
         (uint256 err, ) = repayBorrowBehalfInternal(
             borrower,
             repayAmount,
@@ -198,11 +198,10 @@ contract BCollateralCapErc20 is BToken, BCollateralCapErc20Interface {
      * @param amount amount of token to borrow
      * @return The amount of `token` to be charged for the loan, on top of the returned principal.
      */
-    function flashFee(address token, uint256 amount)
-        external
-        view
-        returns (uint256)
-    {
+    function flashFee(
+        address token,
+        uint256 amount
+    ) external view returns (uint256) {
         require(token == underlying, "unsupported currency");
         require(
             ComptrollerInterfaceExtension(address(comptroller))
@@ -294,11 +293,10 @@ contract BCollateralCapErc20 is BToken, BCollateralCapErc20Interface {
      * @param amount amount of token to borrow
      * @return The amount of `token` to be charged for the loan, on top of the returned principal.
      */
-    function _flashFee(address token, uint256 amount)
-        internal
-        view
-        returns (uint256)
-    {
+    function _flashFee(
+        address token,
+        uint256 amount
+    ) internal view returns (uint256) {
         return div_(mul_(amount, flashFeeBips), 10000);
     }
 
@@ -497,11 +495,10 @@ contract BCollateralCapErc20 is BToken, BCollateralCapErc20Interface {
      * @param account The account address
      * @return The amount of collateral tokens to be consumed
      */
-    function getCollateralTokens(uint256 amountTokens, address account)
-        internal
-        view
-        returns (uint256)
-    {
+    function getCollateralTokens(
+        uint256 amountTokens,
+        address account
+    ) internal view returns (uint256) {
         /**
          * For every user, accountTokens must be greater than or equal to accountCollateralTokens.
          * The buffer between the two values will be transferred first.
@@ -599,11 +596,9 @@ contract BCollateralCapErc20 is BToken, BCollateralCapErc20Interface {
      * @notice Get the account's bToken balances
      * @param account The address of the account
      */
-    function getBTokenBalanceInternal(address account)
-        internal
-        view
-        returns (uint256)
-    {
+    function getBTokenBalanceInternal(
+        address account
+    ) internal view returns (uint256) {
         if (isCollateralTokenInit[account]) {
             return accountCollateralTokens[account];
         } else {
@@ -620,10 +615,10 @@ contract BCollateralCapErc20 is BToken, BCollateralCapErc20Interface {
      * @param amount The amount of collateral user wants to increase
      * @return The actual increased amount of collateral
      */
-    function increaseUserCollateralInternal(address account, uint256 amount)
-        internal
-        returns (uint256)
-    {
+    function increaseUserCollateralInternal(
+        address account,
+        uint256 amount
+    ) internal returns (uint256) {
         uint256 totalCollateralTokensNew = add_(totalCollateralTokens, amount);
         if (
             collateralCap == 0 ||
@@ -667,9 +662,10 @@ contract BCollateralCapErc20 is BToken, BCollateralCapErc20Interface {
      * @param account The address of the account
      * @param amount The amount of collateral user wants to decrease
      */
-    function decreaseUserCollateralInternal(address account, uint256 amount)
-        internal
-    {
+    function decreaseUserCollateralInternal(
+        address account,
+        uint256 amount
+    ) internal {
         /*
          * Return if amount is zero.
          * Put behind `redeemAllowed` for accruing potential COMP rewards.

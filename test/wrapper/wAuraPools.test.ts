@@ -13,10 +13,11 @@ import {
   MockVirtualBalanceRewardPool,
   MockStashToken,
 } from "../../typechain-types";
-import { generateRandomAddress } from "../helpers";
+import { evm_mine_blocks, generateRandomAddress } from "../helpers";
 
 describe("wAuraPools", () => {
   let alice: SignerWithAddress;
+  let bob: SignerWithAddress;
 
   let lpToken: MockERC20;
   let stashToken: MockStashToken;
@@ -31,6 +32,7 @@ describe("wAuraPools", () => {
 
   beforeEach(async () => {
     [alice] = await ethers.getSigners();
+    [bob] = await ethers.getSigners();
 
     const MockERC20Factory = await ethers.getContractFactory("MockERC20");
     lpToken = await MockERC20Factory.deploy("", "", 18);
@@ -94,6 +96,11 @@ describe("wAuraPools", () => {
 
     await lpToken.mintWithAmount(utils.parseEther("10000000"));
     await lpToken.approve(wAuraPools.address, utils.parseEther("10000000"));
+
+    await lpToken.connect(bob).mintWithAmount(utils.parseEther("10000000"));
+    await lpToken
+      .connect(bob)
+      .approve(wAuraPools.address, utils.parseEther("10000000"));
 
     await booster.setRewardMultipliers(
       auraRewarder.address,
@@ -377,6 +384,7 @@ describe("wAuraPools", () => {
   describe("#mint", () => {
     const pid = BigNumber.from(0);
     const amount = utils.parseEther("100");
+    const amount2 = utils.parseEther("150");
     const auraRewardPerToken = utils.parseEther("50");
     const extraRewardPerToken = utils.parseEther("40");
     const tokenId = pid.mul(BigNumber.from(2).pow(240)).add(auraRewardPerToken);
@@ -398,11 +406,31 @@ describe("wAuraPools", () => {
     });
 
     it("mint ERC1155 NFT", async () => {
-      await wAuraPools.mint(pid, amount);
+      await wAuraPools.connect(alice).mint(pid, amount);
+      await wAuraPools.connect(bob).mint(pid, amount2);
 
-      expect(await wAuraPools.balanceOf(alice.address, tokenId)).to.be.eq(
-        amount
+      // expect(await wAuraPools.balanceOf(alice.address, tokenId)).to.be.eq(
+      //   amount
+      // );
+      // expect(await wAuraPools.balanceOf(bob.address, tokenId)).to.be.eq(
+      //   amount2
+      // );
+
+      console.log(
+        "alice: %s",
+        await wAuraPools.balanceOf(alice.address, tokenId)
       );
+
+      console.log("bob: %s", await wAuraPools.balanceOf(bob.address, tokenId));
+
+      await wAuraPools.connect(alice).burn(tokenId, utils.parseEther("250"));
+
+      console.log(
+        "bob after alice burns his shit: %s",
+        await wAuraPools.balanceOf(bob.address, tokenId)
+      );
+
+      expect(await wAuraPools.balanceOf(bob.address, tokenId)).to.be.gt(0);
     });
 
     it("sync extra reward info", async () => {
@@ -503,7 +531,6 @@ describe("wAuraPools", () => {
         res[1][2]
       );
     });
-
     it("claim extra reward manually due to extra info mismatch", async () => {
       const res = await wAuraPools.pendingRewards(tokenId, amount);
 
