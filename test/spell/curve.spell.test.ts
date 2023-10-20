@@ -33,6 +33,7 @@ chai.use(roughlyNear);
 
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
+const USDT = ADDRESS.USDT;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 const ETH_PRICE = 1600;
@@ -48,6 +49,7 @@ describe("Curve Spell", () => {
   let usdc: ERC20;
   let dai: ERC20;
   let crv: ERC20;
+  let usdt: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
@@ -68,6 +70,7 @@ describe("Curve Spell", () => {
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
+    usdt = <ERC20>await ethers.getContractAt("ERC20", USDT);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
     protocol = await setupCrvProtocol();
@@ -186,6 +189,7 @@ describe("Curve Spell", () => {
     before(async () => {
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
       await crv.approve(bank.address, ethers.constants.MaxUint256);
+      await usdt.approve(bank.address, ethers.constants.MaxUint256);
     });
 
     it("should revert when opening position exceeds max LTV", async () => {
@@ -530,6 +534,105 @@ describe("Curve Spell", () => {
       );
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);
+      // Plus rewards fee
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
+        withdrawFee
+      );
+    });
+
+    it("should be able to farm USDC on Curve pool", async () => {
+      const positionId = await bank.nextPositionId();
+      const beforeTreasuryBalance = await usdt.balanceOf(treasury.address);
+      await bank.execute(
+        0,
+        spell.address,
+        iface.encodeFunctionData("openPositionFarm", [
+          {
+            strategyId: 0,
+            collToken: USDT,
+            borrowToken: USDC,
+            collAmount: utils.parseUnits("500", 6),
+            borrowAmount: borrowAmount,
+            farmingPoolId: GAUGE_ID,
+          },
+          0,
+        ])
+      );
+
+      const bankInfo = await bank.getBankInfo(USDC);
+      console.log("USDC Bank Info:", bankInfo);
+
+      const pos = await bank.positions(positionId);
+      console.log("Position Info:", pos);
+      console.log("Position Value:", await bank.callStatic.getPositionValue(2));
+      expect(pos.owner).to.be.equal(admin.address);
+      expect(pos.collToken).to.be.equal(wgauge.address);
+      expect(pos.debtToken).to.be.equal(USDC);
+      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
+      // expect(
+      //   await wgauge.balanceOf(bank.address, collId)
+      // ).to.be.equal(pos.collateralSize);
+
+      const afterTreasuryBalance = await usdt.balanceOf(treasury.address);
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
+        utils.parseUnits("500", 6).mul(50).div(10000)
+      );
+    });
+
+    it("should be able to harvest on Curve Gauge", async () => {
+      const depositAmount = utils.parseUnits("500", 6);
+
+      const beforeTreasuryBalance = await usdt.balanceOf(treasury.address);
+      const beforeUSDCBalance = await usdc.balanceOf(admin.address);
+      const beforeUsdtBalance = await usdt.balanceOf(admin.address);
+
+      const positionId = (await bank.nextPositionId()).sub(1);
+      const iface = new ethers.utils.Interface(SpellABI);
+
+      const amountToSwap = utils.parseUnits("10", 6);
+      const swapData = await getParaswapCalldata(
+        USDT,
+        USDC,
+        amountToSwap,
+        spell.address,
+        100
+      );
+
+      await bank.execute(
+        positionId,
+        spell.address,
+        iface.encodeFunctionData("closePositionFarm", [
+          {
+            strategyId: 0,
+            collToken: USDT,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            amountOutMin: 1,
+            amountToSwap,
+            swapData: swapData.data,
+          },
+          [0],
+          ["0x"],
+          false,
+          7777777777,
+        ])
+      );
+      const afterUSDCBalance = await usdc.balanceOf(admin.address);
+      const afterUsdtBalance = await usdt.balanceOf(admin.address);
+      console.log(
+        "USDC Balance Change:",
+        afterUSDCBalance.sub(beforeUSDCBalance)
+      );
+      console.log("USDT Balance Change:", afterUsdtBalance.sub(beforeUsdtBalance));
+      const depositFee = depositAmount.mul(50).div(10000);
+      const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
+      expect(afterUsdtBalance.sub(beforeUsdtBalance)).to.be.gte(
+        depositAmount.sub(depositFee).sub(withdrawFee).sub(amountToSwap)
+      );
+
+      const afterTreasuryBalance = await usdt.balanceOf(treasury.address);
       // Plus rewards fee
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
         withdrawFee
