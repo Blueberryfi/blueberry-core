@@ -54,10 +54,10 @@ contract WAuraPools is
     address public STASH_AURA;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
-    /// @dev Aura extra rewards addresses
-    address[] public extraRewards;
-    /// @dev The index of extra rewards
-    mapping(address => uint256) public extraRewardsIdx;
+    /// @dev Aura extra rewards addresses (pid => address[])
+    mapping(uint256 => address[]) public extraRewards;
+    /// @dev The index of extra rewards (pid => extraRewardsIdx)
+    mapping(uint256 => mapping(address => uint256)) public extraRewardsIdx;
 
     uint public REWARD_MULTIPLIER_DENOMINATOR;
 
@@ -314,7 +314,7 @@ contract WAuraPools is
             pid
         );
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
-        uint256 extraRewardsCount = extraRewards.length;
+        uint256 extraRewardsCount = extraRewards[pid].length;
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
 
@@ -333,7 +333,7 @@ contract WAuraPools is
 
         /// Additional rewards
         for (uint256 i; i != extraRewardsCount; ) {
-            address rewarder = extraRewards[i];
+            address rewarder = extraRewards[pid][i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IAuraRewarder(rewarder).rewardToken();
             if (stRewardPerShare == 0) {
@@ -392,14 +392,14 @@ contract WAuraPools is
                 ? type(uint).max
                 : rewardPerToken;
 
-            _syncExtraReward(extraRewarder);
+            _syncExtraReward(pid, extraRewarder);
 
             unchecked {
                 ++i;
             }
         }
 
-        auraPerShareDebt[id] += auraPerShareByPid[pid];
+        auraPerShareDebt[id] = auraPerShareByPid[pid];
     }
 
     /// @notice Burn the provided ERC1155 token and redeem its underlying ERC20 token.
@@ -441,13 +441,13 @@ contract WAuraPools is
             .extraRewardsLength();
 
         for (uint256 i; i != extraRewardsCount; ) {
-            _syncExtraReward(IAuraRewarder(auraRewarder).extraRewards(i));
+            _syncExtraReward(pid, IAuraRewarder(auraRewarder).extraRewards(i));
 
             unchecked {
                 ++i;
             }
         }
-        uint256 storedExtraRewardLength = extraRewards.length;
+        uint256 storedExtraRewardLength = extraRewards[pid].length;
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
 
         /// Transfer Reward Tokens
@@ -455,7 +455,7 @@ contract WAuraPools is
         /// Withdraw manually
         if (hasDiffExtraRewards) {
             for (uint256 i; i != storedExtraRewardLength; ) {
-                IAuraExtraRewarder(extraRewards[i]).getReward();
+                IAuraExtraRewarder(extraRewards[pid][i]).getReward();
 
                 unchecked {
                     ++i;
@@ -465,11 +465,12 @@ contract WAuraPools is
 
         uint256 rewardTokensLength = rewardTokens.length;
         for (uint256 i; i != rewardTokensLength; ) {
-            address rewardToken = rewardTokens[i];
-            IERC20Upgradeable(
-                rewardToken == STASH_AURA ? address(AURA) : rewardToken
-            ).safeTransfer(msg.sender, rewards[i]);
-
+            if (rewards[i] != 0) {
+                address rewardToken = rewardTokens[i];
+                IERC20Upgradeable(
+                    rewardToken == STASH_AURA ? address(AURA) : rewardToken
+                ).safeTransfer(msg.sender, rewards[i]);
+            }
             unchecked {
                 ++i;
             }
@@ -478,17 +479,18 @@ contract WAuraPools is
 
     /// @notice Get the full set of extra rewards.
     /// @return An array containing the addresses of extra reward tokens.
-    function extraRewardsLength() external view returns (uint256) {
-        return extraRewards.length;
+    function extraRewardsLength(uint256 pid) external view returns (uint256) {
+        return extraRewards[pid].length;
     }
 
     /// @notice Internal function to sync any extra rewards with the contract.
+    /// @param pid pool id.
     /// @param extraReward The address of the extra reward token.
     /// @dev Adds the extra reward to the internal list if not already present.
-    function _syncExtraReward(address extraReward) private {
-        if (extraRewardsIdx[extraReward] == 0) {
-            extraRewards.push(extraReward);
-            extraRewardsIdx[extraReward] = extraRewards.length;
+    function _syncExtraReward(uint pid, address extraReward) private {
+        if (extraRewardsIdx[pid][extraReward] == 0) {
+            extraRewards[pid].push(extraReward);
+            extraRewardsIdx[pid][extraReward] = extraRewards[pid].length;
         }
     }
 

@@ -110,32 +110,23 @@ contract AuraSpell is BasicSpell {
             uint256 _minimumBPT = minimumBPT;
             IBalancerVault vault = wAuraPools.getVault(lpToken);
 
-            (address[] memory tokens, uint256[] memory balances, ) = wAuraPools
-                .getPoolTokens(lpToken);
+            (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
             (
                 uint256[] memory maxAmountsIn,
-                uint256[] memory amountsIn,
-                uint256 poolAmountOut
-            ) = _getJoinPoolParamsAndApprove(
-                    address(vault),
-                    tokens,
-                    balances,
-                    lpToken
-                );
+                uint256[] memory amountsIn
+            ) = _getJoinPoolParamsAndApprove(address(vault), tokens, lpToken);
 
-            if (poolAmountOut != 0) {
-                vault.joinPool(
-                    wAuraPools.getBPTPoolId(lpToken),
-                    address(this),
-                    address(this),
-                    IBalancerVault.JoinPoolRequest({
-                        assets: tokens,
-                        maxAmountsIn: maxAmountsIn,
-                        userData: abi.encode(1, amountsIn, _minimumBPT),
-                        fromInternalBalance: false
-                    })
-                );
-            }
+            vault.joinPool(
+                wAuraPools.getBPTPoolId(lpToken),
+                address(this),
+                address(this),
+                IBalancerVault.JoinPoolRequest({
+                    assets: tokens,
+                    maxAmountsIn: maxAmountsIn,
+                    userData: abi.encode(1, amountsIn, _minimumBPT),
+                    fromInternalBalance: false
+                })
+            );
         }
         /// 4. Ensure that the resulting LTV does not exceed maximum allowed value.
         _validateMaxLTV(param.strategyId);
@@ -266,17 +257,14 @@ contract AuraSpell is BasicSpell {
     /// @dev Calculate the parameters required for joining a Balancer pool.
     /// @param vault Address of the Balancer vault
     /// @param tokens List of tokens in the Balancer pool
-    /// @param balances Balances of tokens in the Balancer pool
     /// @param lpToken The LP token for the Balancer pool
     /// @return maxAmountsIn Maximum amounts to deposit for each token
     /// @return amountsIn Amounts of each token to deposit
-    /// @return poolAmountOut Amount of LP tokens to be received
     function _getJoinPoolParamsAndApprove(
         address vault,
         address[] memory tokens,
-        uint256[] memory balances,
         address lpToken
-    ) internal returns (uint256[] memory, uint256[] memory, uint256) {
+    ) internal returns (uint256[] memory, uint256[] memory) {
         uint256 i;
         uint256 j;
         uint256 length = tokens.length;
@@ -305,21 +293,7 @@ contract AuraSpell is BasicSpell {
             }
         }
 
-        uint256 totalLPSupply = IBalancerPool(lpToken).getActualSupply();
-        /// compute in reverse order of how Balancer's `joinPool` computes tokenAmountIn
-        uint256 poolAmountOut;
-        for (i = 0; i != length; ) {
-            if ((maxAmountsIn[i] * totalLPSupply) / balances[i] != 0) {
-                poolAmountOut = type(uint256).max;
-                break;
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        return (maxAmountsIn, amountsIn, poolAmountOut);
+        return (maxAmountsIn, amountsIn);
     }
 
     /// @dev Calculate the parameters required for exiting a Balancer pool.

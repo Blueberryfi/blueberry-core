@@ -18,7 +18,7 @@ import {
 } from "../../typechain-types";
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { AuraProtocol, evm_mine_blocks, setupAuraProtocol } from "../helpers";
+import { AuraProtocol, evm_increaseTime, setupAuraProtocol } from "../helpers";
 import SpellABI from "../../abi/AuraSpell.json";
 import chai, { expect } from "chai";
 import { near } from "../assertions/near";
@@ -327,7 +327,7 @@ describe("Aura Spell", () => {
       const beforeSenderBalBalance = await bal.balanceOf(admin.address);
       const beforeTreasuryAuraBalance = await aura.balanceOf(admin.address);
 
-      await evm_mine_blocks(10);
+      await evm_increaseTime(120);
 
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(
         position.collId,
@@ -426,7 +426,7 @@ describe("Aura Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             [],
             [],
@@ -455,7 +455,7 @@ describe("Aura Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             [],
             [],
@@ -467,7 +467,7 @@ describe("Aura Spell", () => {
     });
 
     it("should be able to close portion of position without withdrawing isolated collaterals", async () => {
-      await evm_mine_blocks(1000);
+      await evm_increaseTime(86400);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
@@ -532,8 +532,8 @@ describe("Aura Spell", () => {
               amountPosRemove: position.collateralSize.div(2),
               amountShareWithdraw: position.underlyingVaultShare.div(2),
               amountOutMin: 1,
-              amountToSwap,
-              swapData,
+              amountToSwap: 0,
+              swapData: "0x",
             },
             expectedAmounts,
             swapDatas.map((item) => item.data),
@@ -543,7 +543,7 @@ describe("Aura Spell", () => {
     });
 
     it("should be able to harvest on Aura", async () => {
-      await evm_mine_blocks(1000);
+      await evm_increaseTime(86400);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
@@ -609,8 +609,8 @@ describe("Aura Spell", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
-            amountToSwap,
-            swapData,
+            amountToSwap: 0,
+            swapData: "0x",
           },
           expectedAmounts,
           swapDatas.map((item) => item.data),

@@ -27,4 +27,12 @@ interface IRewarder {
     ) external returns (bool);
 
     function getReward() external returns (bool);
+
+    function queueNewRewards(uint256 _rewards) external returns (bool);
+
+    function addExtraReward(address _reward) external returns (bool);
+
+    function clearExtraRewards() external;
+
+    function rewardManager() external view returns (address);
 }

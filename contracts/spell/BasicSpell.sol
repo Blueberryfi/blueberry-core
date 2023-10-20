@@ -341,7 +341,6 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
         bytes calldata swapData
     ) internal {
         if (amount > 0 && swapData.length != 0) {
-            // Even the swap failed, continue rest operations, beacuse this swap is used to repay debt for negative PnL
             PSwapLib.swap(
                 augustusSwapper,
                 tokenTransferProxy,
