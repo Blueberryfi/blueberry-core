@@ -127,6 +127,17 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      }
+    ],
+    "name": "NOT_BANK",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "spell",
         "type": "address"
       },

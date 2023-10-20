@@ -146,6 +146,7 @@ contract IchiSpell is BasicSpell {
         OpenPosParam calldata param
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
@@ -275,6 +276,7 @@ contract IchiSpell is BasicSpell {
         ClosePosParam calldata param
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {

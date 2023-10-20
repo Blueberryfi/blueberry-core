@@ -110,12 +110,12 @@ describe("Aura Spell Strategy test", () => {
             depositAmount = await getTokenAmountFromUSD(
               collateralToken,
               oracle,
-              "2000"
+              "200"
             );
             borrowAmount = await getTokenAmountFromUSD(
               borrowToken,
               oracle,
-              "3000"
+              "300"
             );
 
             const poolInfo = await auraBooster.poolInfo(
@@ -212,7 +212,7 @@ describe("Aura Spell Strategy test", () => {
             const missingDebt = await getTokenAmountFromUSD(
               borrowToken,
               oracle,
-              "200"
+              "20"
             );
 
             const paraswapRes = await getParaswapCalldataToBuy(
@@ -266,12 +266,12 @@ describe("Aura Spell Strategy test", () => {
             const aliceDepositAmount = await getTokenAmountFromUSD(
               collateralToken,
               oracle,
-              "3000"
+              "200"
             );
             const aliceBorrowAmount = await getTokenAmountFromUSD(
               borrowToken,
               oracle,
-              "4000"
+              "300"
             );
 
             const bobDepositAmount = aliceDepositAmount;

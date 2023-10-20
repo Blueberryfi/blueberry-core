@@ -88,6 +88,7 @@ contract AuraSpell is BasicSpell {
         uint256 minimumBPT
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
@@ -176,6 +177,7 @@ contract AuraSpell is BasicSpell {
         bytes[] calldata swapDatas
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {

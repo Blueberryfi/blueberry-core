@@ -14,7 +14,7 @@ export const strategies: StrategyInfo[] = [
     type: "Pseudo-Neutral",
     address: ADDRESS.BAL_OHM_WETH,
     poolId: ADDRESS.AURA_OHM_ETH_POOL_ID,
-    borrowAssets: [ADDRESS.OHM /*, ADDRESS.WETH*/],
+    borrowAssets: [ADDRESS.WETH],
     collateralAssets: [ADDRESS.DAI],
     maxLtv: 500,
     maxStrategyBorrow: 5_000_000,

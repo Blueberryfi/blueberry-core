@@ -84,6 +84,7 @@ contract CurveSpell is BasicSpell {
         uint256 minLPMint
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
@@ -107,7 +108,9 @@ contract CurveSpell is BasicSpell {
             address borrowToken = param.borrowToken;
             _ensureApprove(borrowToken, pool, borrowBalance);
             uint256 ethValue;
-            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(address(this));
+            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(
+                address(this)
+            );
             require(borrowBalance <= tokenBalance, "impossible");
             if (borrowToken == WETH) {
                 bool hasEth;
@@ -127,7 +130,10 @@ contract CurveSpell is BasicSpell {
             if (tokens.length == 2) {
                 uint256[2] memory suppliedAmts;
                 for (uint256 i; i < 2; i++) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
+                    if (
+                        (tokens[i] == borrowToken) ||
+                        (tokens[i] == ETH && borrowToken == WETH)
+                    ) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -139,7 +145,10 @@ contract CurveSpell is BasicSpell {
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
                 for (uint256 i; i < 3; i++) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
+                    if (
+                        (tokens[i] == borrowToken) ||
+                        (tokens[i] == ETH && borrowToken == WETH)
+                    ) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -151,7 +160,10 @@ contract CurveSpell is BasicSpell {
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
                 for (uint256 i; i < 4; i++) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
+                    if (
+                        (tokens[i] == borrowToken) ||
+                        (tokens[i] == ETH && borrowToken == WETH)
+                    ) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -199,6 +211,7 @@ contract CurveSpell is BasicSpell {
         uint256 deadline
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {

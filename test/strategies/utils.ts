@@ -34,8 +34,8 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   );
 
   await chainlinkAdapterOracle.setTokenRemappings(
-    [ADDRESS.WETH, ADDRESS.WBTC],
-    [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC]
+    [ADDRESS.WETH, ADDRESS.WBTC, ADDRESS.wstETH],
+    [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC, ADDRESS.stETH]
   );
 
   await chainlinkAdapterOracle.setTimeGap(
@@ -51,8 +51,10 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.LINK,
       ADDRESS.SUSHI,
       ADDRESS.CHAINLINK_BTC,
+      ADDRESS.stETH,
     ],
     [
+      TwoDays,
       TwoDays,
       TwoDays,
       TwoDays,
@@ -128,6 +130,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.ALCX,
       ADDRESS.WETH,
       ADDRESS.WBTC,
+      ADDRESS.wstETH,
       ADDRESS.USDT,
       ADDRESS.FRAX,
       ADDRESS.BAL_OHM_WETH,
@@ -143,6 +146,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       bandOracle.address,
+      chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
@@ -178,7 +182,7 @@ export const setupVaults = async (
   const tokens: ERC20[] = [];
 
   for (let key of Object.keys(bTokens)) {
-    if (key === "comptroller") continue;
+    if (key === "comptroller" || key === "extraBTokens") continue;
     const bToken = (bTokens as any)[key] as any as BErc20Delegator;
     const softVault = <SoftVault>(
       await upgrades.deployProxy(

@@ -133,6 +133,13 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
                                       MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
 
+
+    /// @dev Ensure that the function is called from Bank
+    modifier onlyBank() {
+        if (msg.sender != address(bank)) revert Errors.NOT_BANK(msg.sender);
+        _;
+    }
+
     /// @dev Modifier to ensure the provided strategyId exists within the strategies array.
     /// @param strategyId The ID of the strategy to validate.
     modifier existingStrategy(uint256 strategyId) {

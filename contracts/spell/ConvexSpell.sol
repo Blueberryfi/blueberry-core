@@ -114,6 +114,7 @@ contract ConvexSpell is BasicSpell {
         uint256 minLPMint
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
@@ -272,6 +273,7 @@ contract ConvexSpell is BasicSpell {
         ClosePositionFarmParam calldata closePosParam
     )
         external
+        onlyBank
         existingStrategy(closePosParam.param.strategyId)
         existingCollateral(
             closePosParam.param.strategyId,

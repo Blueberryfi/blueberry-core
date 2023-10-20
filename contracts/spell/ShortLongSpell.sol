@@ -143,6 +143,7 @@ contract ShortLongSpell is BasicSpell {
         bytes calldata swapData
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
@@ -240,6 +241,7 @@ contract ShortLongSpell is BasicSpell {
         bytes calldata swapData
     )
         external
+        onlyBank
         existingStrategy(param.strategyId)
         existingCollateral(param.strategyId, param.collToken)
     {
