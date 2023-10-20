@@ -37,13 +37,14 @@ chai.use(roughlyNear);
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 const WETH = ADDRESS.WETH;
+const BAL = ADDRESS.BAL;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 const CVX = ADDRESS.CVX;
-const POOL_ID_1 = ADDRESS.CVX_3Crv_Id;
-const POOL_ID_2 = ADDRESS.CVX_CrvEth_Id;
-const POOL_ID_3 = ADDRESS.CVX_Susd_Id;
+const POOL_ID_3CRV = ADDRESS.CVX_3Crv_Id;
+const POOL_ID_CRVETH = ADDRESS.CVX_CrvEth_Id;
+const POOL_ID_SUSD = ADDRESS.CVX_Susd_Id;
 
 describe("Convex Spell", () => {
   let admin: SignerWithAddress;
@@ -54,7 +55,6 @@ describe("Convex Spell", () => {
   let dai: ERC20;
   let crv: ERC20;
   let cvx: ERC20;
-  let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: ConvexSpell;
@@ -71,7 +71,7 @@ describe("Convex Spell", () => {
   let config: ProtocolConfig;
 
   before(async () => {
-    await fork();
+    await fork(1, 17089048);
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
@@ -79,15 +79,14 @@ describe("Convex Spell", () => {
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
     cvx = <ERC20>await ethers.getContractAt("ERC20", CVX);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
-    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
     cvxBooster = <ICvxPools>(
       await ethers.getContractAt("ICvxPools", ADDRESS.CVX_BOOSTER)
     );
-    const poolInfo1 = await cvxBooster.poolInfo(POOL_ID_1);
+    const poolInfo1 = await cvxBooster.poolInfo(POOL_ID_3CRV);
     crvRewarder1 = <IRewarder>(
       await ethers.getContractAt("IRewarder", poolInfo1.crvRewards)
     );
-    const poolInfo2 = await cvxBooster.poolInfo(POOL_ID_2);
+    const poolInfo2 = await cvxBooster.poolInfo(POOL_ID_CRVETH);
     crvRewarder2 = <IRewarder>(
       await ethers.getContractAt("IRewarder", poolInfo2.crvRewards)
     );
@@ -237,7 +236,7 @@ describe("Convex Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount.mul(4),
-              farmingPoolId: POOL_ID_1,
+              farmingPoolId: POOL_ID_3CRV,
             },
             0,
           ])
@@ -251,19 +250,19 @@ describe("Convex Spell", () => {
           spell.address,
           iface.encodeFunctionData("openPositionFarm", [
             {
-              strategyId: 5,
+              strategyId: 999,
               collToken: CRV,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_1,
+              farmingPoolId: POOL_ID_3CRV,
             },
             0,
           ])
         )
       )
         .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
-        .withArgs(spell.address, 5);
+        .withArgs(spell.address, 999);
     });
     it("should revert when opening a position for non-existing collateral", async () => {
       await expect(
@@ -273,18 +272,18 @@ describe("Convex Spell", () => {
           iface.encodeFunctionData("openPositionFarm", [
             {
               strategyId: 0,
-              collToken: WETH,
+              collToken: BAL,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_1,
+              farmingPoolId: POOL_ID_3CRV,
             },
             0,
           ])
         )
       )
         .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
-        .withArgs(0, WETH);
+        .withArgs(0, BAL);
     });
     it("should revert when opening a position for incorrect farming pool id", async () => {
       await expect(
@@ -298,7 +297,7 @@ describe("Convex Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_1 + 1,
+              farmingPoolId: POOL_ID_3CRV + 1,
             },
             0,
           ])
@@ -319,7 +318,7 @@ describe("Convex Spell", () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID_1,
+            farmingPoolId: POOL_ID_3CRV,
           },
           0,
         ])
@@ -378,7 +377,7 @@ describe("Convex Spell", () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID_1,
+            farmingPoolId: POOL_ID_3CRV,
           },
           0,
         ])
@@ -479,9 +478,6 @@ describe("Convex Spell", () => {
         })
       );
 
-      // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits("10", 18));
-
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
         bank.execute(
@@ -520,7 +516,7 @@ describe("Convex Spell", () => {
           iface.encodeFunctionData("closePositionFarm", [
             {
               param: {
-                strategyId: 5,
+                strategyId: 999,
                 collToken: CRV,
                 borrowToken: USDC,
                 amountRepay: ethers.constants.MaxUint256,
@@ -538,7 +534,7 @@ describe("Convex Spell", () => {
         )
       )
         .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
-        .withArgs(spell.address, 5);
+        .withArgs(spell.address, 999);
     });
 
     it("should fail to close position for non-existing collateral", async () => {
@@ -553,7 +549,7 @@ describe("Convex Spell", () => {
             {
               param: {
                 strategyId: 0,
-                collToken: WETH,
+                collToken: BAL,
                 borrowToken: USDC,
                 amountRepay: ethers.constants.MaxUint256,
                 amountPosRemove: ethers.constants.MaxUint256,
@@ -570,7 +566,7 @@ describe("Convex Spell", () => {
         )
       )
         .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
-        .withArgs(0, WETH);
+        .withArgs(0, BAL);
     });
 
     it("should be able to harvest on Convex 1", async () => {
@@ -591,14 +587,7 @@ describe("Convex Spell", () => {
 
       const rewardFeeRatio = await config.rewardFee();
 
-      // Manually transfer CRV rewards to spell
-      const rewardAmount = utils.parseUnits("10", 18);
-      await crv.transfer(spell.address, rewardAmount);
-
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward, idx) => {
-        if (pendingRewardsInfo.tokens[idx] == ADDRESS.CRV && reward.isZero()) {
-          reward = rewardAmount;
-        }
         return reward
           .mul(BigNumber.from(10000).sub(rewardFeeRatio))
           .div(10000)
@@ -622,9 +611,16 @@ describe("Convex Spell", () => {
           }
         })
       );
-
-      // Manually transfer USDC rewards to spell
-      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+      const amountToSwap = utils.parseUnits("30", 18);
+      const swapData = (
+        await getParaswapCalldata(
+          CRV,
+          USDC,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
 
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
@@ -641,8 +637,8 @@ describe("Convex Spell", () => {
                 amountPosRemove: position.collateralSize.div(2),
                 amountShareWithdraw: position.underlyingVaultShare.div(2),
                 amountOutMin: 1,
-                amountToSwap: 0,
-                swapData: '0x',
+                amountToSwap,
+                swapData,
               },
               amounts: expectedAmounts,
               swapDatas: swapDatas.map((item) => item.data),
@@ -692,8 +688,16 @@ describe("Convex Spell", () => {
         })
       );
 
-      // Manually transfer USDC rewards to spell
-      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+      const amountToSwap = utils.parseUnits("30", 18);
+      const swapData = (
+        await getParaswapCalldata(
+          CRV,
+          USDC,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -713,8 +717,8 @@ describe("Convex Spell", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: '0x',
+              amountToSwap,
+              swapData,
             },
             amounts: expectedAmounts,
             swapDatas: swapDatas.map((item) => item.data),
@@ -732,7 +736,7 @@ describe("Convex Spell", () => {
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
       expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
-        depositAmount.sub(depositFee).sub(withdrawFee)
+        depositAmount.sub(depositFee).sub(withdrawFee).sub(amountToSwap)
       );
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);
@@ -754,7 +758,7 @@ describe("Convex Spell", () => {
               borrowToken: DAI,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_3,
+              farmingPoolId: POOL_ID_SUSD,
             },
             0,
           ])

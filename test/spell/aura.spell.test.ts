@@ -507,8 +507,16 @@ describe("Aura Spell", () => {
 
       console.log("Pending Rewards", pendingRewardsInfo);
 
-      // Manually transfer CRV rewards to spell
-      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+      const amountToSwap = utils.parseUnits("30", 18);
+      const swapData = (
+        await getParaswapCalldata(
+          CRV,
+          USDC,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
 
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
@@ -524,8 +532,8 @@ describe("Aura Spell", () => {
               amountPosRemove: position.collateralSize.div(2),
               amountShareWithdraw: position.underlyingVaultShare.div(2),
               amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: '0x',
+              amountToSwap,
+              swapData,
             },
             expectedAmounts,
             swapDatas.map((item) => item.data),
@@ -573,8 +581,16 @@ describe("Aura Spell", () => {
 
       console.log("Pending Rewards", pendingRewardsInfo);
 
-      // Manually transfer CRV rewards to spell
-      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+      const amountToSwap = utils.parseUnits("30", 18);
+      const swapData = (
+        await getParaswapCalldata(
+          CRV,
+          USDC,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -593,8 +609,8 @@ describe("Aura Spell", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
-            amountToSwap: 0,
-            swapData: '0x',
+            amountToSwap,
+            swapData,
           },
           expectedAmounts,
           swapDatas.map((item) => item.data),
@@ -610,7 +626,7 @@ describe("Aura Spell", () => {
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
       expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
-        depositAmount.sub(depositFee).sub(withdrawFee)
+        depositAmount.sub(depositFee).sub(withdrawFee).sub(amountToSwap)
       );
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);

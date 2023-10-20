@@ -30,7 +30,7 @@ export const getParaswapCalldata = async (
       srcToken: fromToken,
       destToken: toToken,
       srcAmount: amount.toString(),
-      slippage: 10 * 0.01 * 10000, // 10% slippage
+      slippage: 80 * 0.01 * 10000, // 30% slippage
       priceRoute: priceRoute,
       userAddress: userAddr,
     },

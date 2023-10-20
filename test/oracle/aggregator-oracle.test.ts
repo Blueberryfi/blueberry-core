@@ -9,6 +9,7 @@ import {
   ChainlinkAdapterOracle,
   MockOracle,
 } from "../../typechain-types";
+import { fork } from "../helpers";
 
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
@@ -32,6 +33,8 @@ describe("Aggregator Oracle", () => {
   let aggregatorOracle: AggregatorOracle;
 
   before(async () => {
+    await fork(1, 17089048);
+
     [admin, alice] = await ethers.getSigners();
 
     // Chainlink Oracle
