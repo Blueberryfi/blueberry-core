@@ -317,7 +317,7 @@ contract WConvexPools is
             }
         }
 
-        cvxPerShareDebt[id] += cvxPerShareByPid[pid];
+        cvxPerShareDebt[id] = cvxPerShareByPid[pid];
     }
 
     /// Burns ERC1155 token to redeem ERC20 token back and harvest rewards

@@ -399,7 +399,7 @@ contract WAuraPools is
             }
         }
 
-        auraPerShareDebt[id] += auraPerShareByPid[pid];
+        auraPerShareDebt[id] = auraPerShareByPid[pid];
     }
 
     /// @notice Burn the provided ERC1155 token and redeem its underlying ERC20 token.
