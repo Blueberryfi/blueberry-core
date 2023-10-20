@@ -40,4 +40,10 @@ interface ICurvePool {
         uint256 j,
         uint256 dx
     ) external view returns (uint256);
+
+    // 3crv pool specific functions
+
+    function owner() external view returns (address);
+
+    function kill_me() external;
 }

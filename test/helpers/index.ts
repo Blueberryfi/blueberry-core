@@ -185,6 +185,22 @@ export const addEthToContract = async (
   await ethSender.destruct(to);
 };
 
+export const impersonateAccount = async (account: string) => {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [account],
+  });
+};
+
+export const takeSnapshot = async (): Promise<number> => {
+  const snapshotId = await ethers.provider.send("evm_snapshot", []);
+  return snapshotId;
+};
+
+export const revertToSnapshot = async (snapshotId: number) => {
+  await ethers.provider.send("evm_revert", [snapshotId]);
+};
+
 export * from "./setup-ichi-protocol";
 export * from "./setup-curve-protocol";
 export * from "./setup-convex-protocol";

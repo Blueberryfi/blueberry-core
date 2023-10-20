@@ -23,10 +23,13 @@ import {
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { deployBTokens } from "./money-market";
+import { impersonateAccount } from ".";
 
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
+const WBTC = ADDRESS.WBTC;
 const WETH = ADDRESS.WETH;
+const WstETH = ADDRESS.wstETH;
 const USDC = ADDRESS.USDC;
 const USDT = ADDRESS.USDT;
 const DAI = ADDRESS.DAI;
@@ -34,7 +37,10 @@ const FRAX = ADDRESS.FRAX;
 const CRV = ADDRESS.CRV;
 const AURA = ADDRESS.AURA;
 const BAL = ADDRESS.BAL;
+const LINK = ADDRESS.LINK;
 const ETH_PRICE = 1600;
+const BTC_PRICE = 26000;
+const LINK_PRICE = 7;
 
 export interface ShortLongProtocol {
   werc20: WERC20;
@@ -49,6 +55,9 @@ export interface ShortLongProtocol {
   usdcSoftVault: SoftVault;
   crvSoftVault: SoftVault;
   daiSoftVault: SoftVault;
+  linkSoftVault: SoftVault;
+  wbtcSoftVault: SoftVault;
+  wstETHSoftVault: SoftVault;
   hardVault: HardVault;
   feeManager: FeeManager;
   uniV3Lib: UniV3WrappedLib;
@@ -74,6 +83,8 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   let usdc: ERC20;
   let dai: ERC20;
   let crv: ERC20;
+  let link: ERC20;
+  let wbtc: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
@@ -89,6 +100,10 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   let usdcSoftVault: SoftVault;
   let crvSoftVault: SoftVault;
   let daiSoftVault: SoftVault;
+  let linkSoftVault: SoftVault;
+  let wbtcSoftVault: SoftVault;
+  let wethSoftVault: SoftVault;
+  let wstETHSoftVault: SoftVault;
   let hardVault: HardVault;
 
   let comptroller: Comptroller;
@@ -104,11 +119,14 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   let bALCX: Contract;
   let bWETH: Contract;
   let bWBTC: Contract;
+  let bWstETH: Contract;
 
   [admin, alice, treasury] = await ethers.getSigners();
   usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
   dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
   crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
+  link = <ERC20>await ethers.getContractAt("ERC20", LINK);
+  wbtc = <ERC20>await ethers.getContractAt("ERC20", WBTC);
   weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
   // Prepare USDC
@@ -124,16 +142,30 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     )
   );
   await uniV2Router.swapExactTokensForTokens(
-    utils.parseUnits("30"),
+    utils.parseUnits("10"),
     0,
     [WETH, USDC],
     admin.address,
     ethers.constants.MaxUint256
   );
   await uniV2Router.swapExactTokensForTokens(
-    utils.parseUnits("30"),
+    utils.parseUnits("10"),
     0,
     [WETH, DAI],
+    admin.address,
+    ethers.constants.MaxUint256
+  );
+  await uniV2Router.swapExactTokensForTokens(
+    utils.parseUnits("10"),
+    0,
+    [WETH, LINK],
+    admin.address,
+    ethers.constants.MaxUint256
+  );
+  await uniV2Router.swapExactTokensForTokens(
+    utils.parseUnits("30"),
+    0,
+    [WETH, WBTC],
     admin.address,
     ethers.constants.MaxUint256
   );
@@ -146,7 +178,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     )
   );
   await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits("40"),
+    utils.parseUnits("10"),
     0,
     [WETH, CRV],
     admin.address,
@@ -163,6 +195,17 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     ethers.constants.MaxUint256
   );
 
+  // Transfer wstETH from whale
+  const wstETHWhale = "0x5fEC2f34D80ED82370F733043B6A536d7e9D7f8d";
+  await admin.sendTransaction({
+    to: wstETHWhale,
+    value: utils.parseEther("10"),
+  });
+  await impersonateAccount(wstETHWhale);
+  const whale1 = await ethers.getSigner(wstETHWhale);
+  let wstETH = <ERC20>await ethers.getContractAt("ERC20", WstETH);
+  await wstETH.connect(whale1).transfer(admin.address, utils.parseUnits("30"));
+
   const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
   const LibInstance = await LinkedLibFactory.deploy();
 
@@ -170,8 +213,11 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
   await mockOracle.setPrice(
-    [WETH, USDC, CRV, DAI, USDT, FRAX, AURA, BAL, ADDRESS.BAL_UDU],
+    [WETH, WBTC, LINK, WstETH, USDC, CRV, DAI, USDT, FRAX, AURA, BAL, ADDRESS.BAL_UDU],
     [
+      BigNumber.from(10).pow(18).mul(ETH_PRICE),
+      BigNumber.from(10).pow(18).mul(BTC_PRICE),
+      BigNumber.from(10).pow(18).mul(LINK_PRICE),
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18), // $1
@@ -224,8 +270,11 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await oracle.deployed();
 
   await oracle.setRoutes(
-    [WETH, USDC, CRV, DAI, USDT, FRAX, AURA, BAL, ADDRESS.BAL_UDU],
+    [WETH, WBTC, LINK, WstETH, USDC, CRV, DAI, USDT, FRAX, AURA, BAL, ADDRESS.BAL_UDU],
     [
+      mockOracle.address,
+      mockOracle.address,
+      mockOracle.address,
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
@@ -252,6 +301,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
   bWBTC = bTokens.bWBTC;
+  bWstETH = bTokens.bWstETH;
 
   // Deploy Bank
   const Config = await ethers.getContractFactory("ProtocolConfig");
@@ -332,14 +382,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   );
   await daiSoftVault.deployed();
 
-  await mockOracle.setPrice(
-    [daiSoftVault.address],
-    [
-      BigNumber.from(10).pow(18), // $1
-    ]
-  );
-  await oracle.setRoutes([daiSoftVault.address], [mockOracle.address]);
-
   crvSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
@@ -348,6 +390,63 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     )
   );
   await crvSoftVault.deployed();
+
+  linkSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bLINK.address, "Interest Bearing LINK", "ibLINK"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await linkSoftVault.deployed();
+
+  wbtcSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bWBTC.address, "Interest Bearing WBTC", "ibWBTC"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await wbtcSoftVault.deployed();
+
+  wethSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bWETH.address, "Interest Bearing WETH", "ibWETH"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await wethSoftVault.deployed();
+
+  wstETHSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bWstETH.address, "Interest Bearing WstETH", "ibWstETH"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await wstETHSoftVault.deployed();
+
+  await mockOracle.setPrice(
+    [
+      daiSoftVault.address,
+      wbtcSoftVault.address,
+      wethSoftVault.address,
+      wstETHSoftVault.address,
+      linkSoftVault.address,
+    ],
+    [
+      BigNumber.from(10).pow(16), // $1
+      BigNumber.from(10).pow(16).mul(BTC_PRICE),
+      BigNumber.from(10).pow(16).mul(ETH_PRICE),
+      BigNumber.from(10).pow(16).mul(ETH_PRICE),
+      BigNumber.from(10).pow(16).mul(LINK_PRICE),
+    ]
+  );
+  await oracle.setRoutes(
+    [daiSoftVault.address, wbtcSoftVault.address, linkSoftVault.address, wstETHSoftVault.address],
+    [mockOracle.address, mockOracle.address, mockOracle.address, mockOracle.address]
+  );
 
   await shortLongSpell.addStrategy(
     daiSoftVault.address,
@@ -360,24 +459,74 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     [30000, 30000, 30000]
   );
 
+  await shortLongSpell.addStrategy(
+    linkSoftVault.address,
+    utils.parseUnits("10", 18),
+    utils.parseUnits("2000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    1,
+    [WBTC, DAI, WETH],
+    [30000, 30000, 30000]
+  );
+
+  await shortLongSpell.addStrategy(
+    daiSoftVault.address,
+    utils.parseUnits("10", 18),
+    utils.parseUnits("2000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    2,
+    [WBTC, DAI, WETH, WstETH],
+    [30000, 30000, 30000, 30000]
+  );
+
+  await shortLongSpell.addStrategy(
+    wbtcSoftVault.address,
+    utils.parseUnits("10", 18),
+    utils.parseUnits("2000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    3,
+    [WBTC, DAI, WETH],
+    [30000, 30000, 30000]
+  );
+
+  await shortLongSpell.addStrategy(
+    wstETHSoftVault.address,
+    utils.parseUnits("10", 18),
+    utils.parseUnits("2000", 18)
+  );
+  await shortLongSpell.setCollateralsMaxLTVs(
+    4,
+    [WBTC, DAI, WETH, WstETH],
+    [30000, 30000, 30000, 30000]
+  );
+
   // Setup Bank
   await bank.whitelistSpells([shortLongSpell.address], [true]);
   await bank.whitelistTokens(
-    [USDC, USDT, DAI, CRV, WETH],
-    [true, true, true, true, true]
+    [USDC, USDT, DAI, CRV, WETH, WBTC, LINK, WstETH],
+    [true, true, true, true, true, true, true, true]
   );
   await bank.whitelistERC1155([werc20.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>(
-    await upgrades.deployProxy(HardVault, [config.address], {
+  hardVault = <HardVault>await upgrades.deployProxy(
+    HardVault,
+    [config.address],
+    {
       unsafeAllow: ["delegatecall"],
-    })
+    }
   );
 
   await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
   await bank.addBank(DAI, daiSoftVault.address, hardVault.address, 8500);
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
+  await bank.addBank(LINK, linkSoftVault.address, hardVault.address, 9000);
+  await bank.addBank(WBTC, wbtcSoftVault.address, hardVault.address, 9000);
+  await bank.addBank(WETH, wethSoftVault.address, hardVault.address, 9000);
+  await bank.addBank(WstETH, wstETHSoftVault.address, hardVault.address, 8500);
 
   // Whitelist bank contract on compound
   await comptroller._setCreditLimit(
@@ -395,6 +544,21 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     bDAI.address,
     utils.parseUnits("3000000")
   );
+  await comptroller._setCreditLimit(
+    bank.address,
+    bLINK.address,
+    utils.parseUnits("3000000")
+  );
+  await comptroller._setCreditLimit(
+    bank.address,
+    bWBTC.address,
+    utils.parseUnits("3000000")
+  );
+  await comptroller._setCreditLimit(
+    bank.address,
+    bWstETH.address,
+    utils.parseUnits("3000000")
+  );
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits("500", 6));
@@ -407,6 +571,15 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await dai.approve(daiSoftVault.address, ethers.constants.MaxUint256);
   await dai.transfer(alice.address, utils.parseUnits("500", 18));
   await daiSoftVault.deposit(utils.parseUnits("5000", 18));
+
+  await link.approve(linkSoftVault.address, ethers.constants.MaxUint256);
+  await linkSoftVault.deposit(utils.parseUnits("2000", 18));
+
+  await wbtc.approve(wbtcSoftVault.address, ethers.constants.MaxUint256);
+  await wbtcSoftVault.deposit(utils.parseUnits("1", 8));
+
+  await wstETH.approve(wstETHSoftVault.address, ethers.constants.MaxUint256);
+  await wstETHSoftVault.deposit(utils.parseUnits("10", 18));
 
   console.log(
     "CRV Balance:",
@@ -435,6 +608,9 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     usdcSoftVault,
     crvSoftVault,
     daiSoftVault,
+    linkSoftVault,
+    wbtcSoftVault,
+    wstETHSoftVault,
     hardVault,
     uniV3Lib: LibInstance,
     bUSDC,
