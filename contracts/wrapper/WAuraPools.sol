@@ -94,7 +94,6 @@ contract WAuraPools is
     /// @param pid The pool id (The first 16-bits)
     /// @param auraPerShare Amount of AURA per share, multiplied by 1e18 (The last 240-bits)
     /// @return id The resulting ERC1155 token id
-
     function encodeId(
         uint256 pid,
         uint256 auraPerShare

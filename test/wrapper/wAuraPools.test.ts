@@ -13,7 +13,7 @@ import {
   MockVirtualBalanceRewardPool,
   MockStashToken,
 } from "../../typechain-types";
-import { evm_mine_blocks, generateRandomAddress } from "../helpers";
+import { generateRandomAddress } from "../helpers";
 
 describe("wAuraPools", () => {
   let alice: SignerWithAddress;
@@ -31,8 +31,7 @@ describe("wAuraPools", () => {
   let wAuraPools: WAuraPools;
 
   beforeEach(async () => {
-    [alice] = await ethers.getSigners();
-    [bob] = await ethers.getSigners();
+    [alice, bob] = await ethers.getSigners();
 
     const MockERC20Factory = await ethers.getContractFactory("MockERC20");
     lpToken = await MockERC20Factory.deploy("", "", 18);
@@ -409,28 +408,12 @@ describe("wAuraPools", () => {
       await wAuraPools.connect(alice).mint(pid, amount);
       await wAuraPools.connect(bob).mint(pid, amount2);
 
-      // expect(await wAuraPools.balanceOf(alice.address, tokenId)).to.be.eq(
-      //   amount
-      // );
-      // expect(await wAuraPools.balanceOf(bob.address, tokenId)).to.be.eq(
-      //   amount2
-      // );
-
-      console.log(
-        "alice: %s",
-        await wAuraPools.balanceOf(alice.address, tokenId)
+      expect(await wAuraPools.balanceOf(bob.address, tokenId)).to.be.eq(
+        amount2
       );
-
-      console.log("bob: %s", await wAuraPools.balanceOf(bob.address, tokenId));
-
-      await wAuraPools.connect(alice).burn(tokenId, utils.parseEther("250"));
-
-      console.log(
-        "bob after alice burns his shit: %s",
-        await wAuraPools.balanceOf(bob.address, tokenId)
+      expect(await wAuraPools.balanceOf(alice.address, tokenId)).to.be.eq(
+        amount
       );
-
-      expect(await wAuraPools.balanceOf(bob.address, tokenId)).to.be.gt(0);
     });
 
     it("sync extra reward info", async () => {
