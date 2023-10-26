@@ -12,6 +12,7 @@ pragma solidity ^0.8.16;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./PoolEscrow.sol";
+import "./interfaces/IPoolEscrow.sol";
 import {LibClone} from "./utils/LibClone.sol";
 
 contract PoolEscrowFactory is Ownable {
@@ -28,7 +29,7 @@ contract PoolEscrowFactory is Ownable {
 
     /// @dev Ensures caller is the wrapper contract.
     modifier onlyWrapper() {
-        if (msg.sender = !wrapper) {
+        if (msg.sender != wrapper) {
             revert Unauthorized();
         }
         _;
@@ -42,26 +43,11 @@ contract PoolEscrowFactory is Ownable {
     }
 
     /// @notice Creates an escrow contract for a given PID
-    /// @param pid The pool id (The first 16-bits)
+    /// @param _pid The pool id (The first 16-bits)
     function createEscrow(
-        uint256 pid
+        uint256 _pid
     ) external payable onlyWrapper returns (address _escrow) {
         _escrow = LibClone.clone(implementation);
-        _initialize(_escrow, pid);
-    }
-
-    /// @dev Calls `escrow.initialize(address pid)`.
-    /// @param _escrow The address of the escrow contract implementation.
-    /// @param _pid The pool id (The first 16-bits)
-    function _initialize(address _escrow, address _pid) internal virtual {
-        /// @solidity memory-safe-assembly
-        assembly {
-            mstore(0x14, _pid) // Store the `pid` argument.
-            mstore(0x00, 0xc4d66de8000000000000000000000000) // `initialize(address)`.
-            if iszero(call(gas(), _escrow, 0, 0x10, 0x24, codesize(), 0x00)) {
-                returndatacopy(mload(0x40), 0x00, returndatasize())
-                revert(mload(0x40), returndatasize())
-            }
-        }
+        IPoolEscrow(_escrow).initialize(_pid, wrapper);
     }
 }

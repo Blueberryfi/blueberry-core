@@ -23,7 +23,8 @@ import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/aura/IAuraRewarder.sol";
 import "../interfaces/aura/IAuraExtraRewarder.sol";
 import "../interfaces/aura/IAura.sol";
-import "../interfaces/IPoolEscrowFactory.sol";
+import "./escrow/interfaces/IPoolEscrowFactory.sol";
+import "./escrow/interfaces/IPoolEscrow.sol";
 
 /**
  * @title WAuraPools
@@ -70,6 +71,8 @@ contract WAuraPools is
     mapping(uint256 => uint256) public auraPerShareDebt;
     /// @dev pid => last bal reward per token
     mapping(uint256 => uint256) public lastBalPerTokenByPid;
+    /// @dev pid => escrow contract address
+    mapping(uint256 => address) public escrows;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -368,6 +371,18 @@ contract WAuraPools is
     ) external nonReentrant returns (uint256 id) {
         _updateAuraReward(pid);
 
+        /// Escrow deployment/get logic
+
+        address _escrow;
+
+        if (escrows[pid] == address(0)) {
+            _escrow = IPoolEscrowFactory(ESCROW_FACTORY).createEscrow(pid);
+            assert(_escrow != address(0));
+            escrows[pid] == _escrow;
+        } else {
+            _escrow = escrows[pid];
+        }
+
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
@@ -384,10 +399,13 @@ contract WAuraPools is
         uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
             .rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
-        if (deployedPIDs[pid] == address(0)){
-            ESCROW_FACTORY.call(abi.encodeWithSignature(signatureString, arg);)
-        }
+
         _mint(msg.sender, id, amount, "");
+
+        /// @dev TODO:// ENSURE ESCROW
+
+        /// Deposit tokens to escrow contract
+        IPoolEscrow(_escrow).deposit(address(this), msg.sender, amount);
 
         /// Store extra rewards info
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
@@ -437,8 +455,13 @@ contract WAuraPools is
             pid
         );
 
+        address _escrow = escrows[pid];
+
+        /// @dev TODO:// ENSURE ESCROW
+
         /// Claim Rewards
         IAuraRewarder(auraRewarder).withdraw(amount, true);
+
         /// Withdraw LP
         auraPools.withdraw(pid, amount);
 
