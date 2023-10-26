@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
@@ -23,6 +23,7 @@ import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/aura/IAuraRewarder.sol";
 import "../interfaces/aura/IAuraExtraRewarder.sol";
 import "../interfaces/aura/IAura.sol";
+import "../interfaces/IPoolEscrowFactory.sol";
 
 /**
  * @title WAuraPools
@@ -52,6 +53,8 @@ contract WAuraPools is
     IAura public AURA;
     /// @dev Address to STASH_AURA token
     address public STASH_AURA;
+    /// @dev Address of the escrow factory
+    IPoolEscrowFactory public ESCROW_FACTORY;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
     /// @dev Aura extra rewards addresses
@@ -76,15 +79,18 @@ contract WAuraPools is
     /// @param aura_ The AURA token address
     /// @param auraPools_ The auraPools contract address
     /// @param stash_aura_ The stash for AURA
+    /// @param escrowFactory_ The escrow factory contract address
     function initialize(
         address aura_,
         address auraPools_,
-        address stash_aura_
+        address stash_aura_,
+        address escrowFactory_
     ) external initializer {
         __ReentrancyGuard_init();
         __ERC1155_init("WAuraPools");
         AURA = IAura(aura_);
         STASH_AURA = stash_aura_;
+        ESCROW_FACTORY = IPoolEscrowFactory(escrowFactory_);
         auraPools = IAuraPools(auraPools_);
         REWARD_MULTIPLIER_DENOMINATOR = auraPools
             .REWARD_MULTIPLIER_DENOMINATOR();
@@ -378,6 +384,9 @@ contract WAuraPools is
         uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
             .rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
+        if (deployedPIDs[pid] == address(0)){
+            ESCROW_FACTORY.call(abi.encodeWithSignature(signatureString, arg);)
+        }
         _mint(msg.sender, id, amount, "");
 
         /// Store extra rewards info
