@@ -411,6 +411,38 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "escrowFactory",
+    "outputs": [
+      {
+        "internalType": "contract IPoolEscrowFactory",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "escrows",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -606,6 +638,11 @@
       {
         "internalType": "address",
         "name": "stash_aura_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "escrowFactory_",
         "type": "address"
       }
     ],

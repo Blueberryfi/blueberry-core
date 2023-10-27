@@ -23,6 +23,8 @@ import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/convex/IRewarder.sol";
 import "../interfaces/convex/ICvxExtraRewarder.sol";
 import "../interfaces/convex/IConvex.sol";
+import "./escrow/interfaces/IPoolEscrowFactory.sol";
+import "./escrow/interfaces/IPoolEscrow.sol";
 
 /// @title WConvexPools
 /// @author BlueberryProtocol
@@ -48,6 +50,8 @@ contract WConvexPools is
     ICvxPools public cvxPools;
     /// @dev Address to CVX token
     IConvex public CVX;
+    /// @dev Address of the escrow factory
+    IPoolEscrowFactory public escrowFactory;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
     /// @dev Extra rewards addresses
@@ -60,6 +64,8 @@ contract WConvexPools is
     mapping(uint256 => uint256) public cvxPerShareDebt;
     /// @dev pid => last crv reward per token
     mapping(uint256 => uint256) public lastCrvPerTokenByPid;
+    /// @dev pid => escrow contract address
+    mapping(uint256 => address) public escrows;
 
     /// @dev Initialize the smart contract references.
     /// @param cvx_ Address of the CVX token.
@@ -286,6 +292,18 @@ contract WConvexPools is
     ) external nonReentrant returns (uint256 id) {
         _updateCvxReward(pid);
 
+        /// Escrow deployment/get logic
+
+        address _escrow;
+
+        if (escrows[pid] == address(0)) {
+            _escrow = IPoolEscrowFactory(escrowFactory).createEscrow(pid);
+            assert(_escrow != address(0));
+            escrows[pid] == _escrow;
+        } else {
+            _escrow = escrows[pid];
+        }
+
         (address lpToken, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
@@ -300,7 +318,9 @@ contract WConvexPools is
 
         uint256 crvRewardPerToken = IRewarder(cvxRewarder).rewardPerToken();
         id = encodeId(pid, crvRewardPerToken);
+
         _mint(msg.sender, id, amount, "");
+
         /// Store extra rewards info
         uint256 extraRewardsCount = IRewarder(cvxRewarder).extraRewardsLength();
         for (uint256 i; i < extraRewardsCount; ) {
@@ -407,24 +427,23 @@ contract WConvexPools is
     }
 
     function _updateCvxReward(uint256 pid) private {
+        address _escrow = escrows[pid];
+
         (, , , address crvRewarder, , ) = getPoolInfoFromPoolId(pid);
-        uint256 currentDeposits = IRewarder(crvRewarder).balanceOf(
-            address(this)
-        );
+        uint256 currentDeposits = IRewarder(crvRewarder).balanceOf(_escrow);
 
         lastCrvPerTokenByPid[pid] = IRewarder(crvRewarder).rewardPerToken();
 
-        if (currentDeposits == 0) {
-            return;
-        }
+        if (currentDeposits == 0) return;
 
-        uint cvxBalBefore = CVX.balanceOf(address(this));
+        uint256 cvxBalBefore = CVX.balanceOf(address(this));
 
         // Claim extra rewards at withdrawal
-        IRewarder(crvRewarder).getReward(address(this), false);
+        IRewarder(crvRewarder).getReward(_escrow, true);
 
         uint256 cvxReward = CVX.balanceOf(address(this)) - cvxBalBefore;
 
-        cvxPerShareByPid[pid] += (cvxReward * 1e18) / currentDeposits;
+        if (cvxReward > 0)
+            cvxPerShareByPid[pid] += (cvxReward * 1e18) / currentDeposits;
     }
 }

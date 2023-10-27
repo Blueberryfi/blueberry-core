@@ -1,0 +1,12 @@
+[
+  {
+    "inputs": [],
+    "name": "DeploymentFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SaltDoesNotStartWith",
+    "type": "error"
+  }
+]

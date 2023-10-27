@@ -11,6 +11,8 @@ import {
   MockERC20,
   MockBaseRewardPool,
   MockVirtualBalanceRewardPool,
+  PoolEscrow,
+  PoolEscrowFactory,
 } from "../../typechain-types";
 import { generateRandomAddress } from "../helpers";
 
@@ -26,6 +28,8 @@ describe("WConvexPools", () => {
   let booster: MockBooster;
   let crvRewards: MockBaseRewardPool;
   let wConvexPools: WConvexPools;
+  let escrowBase: PoolEscrow;
+  let escrowFactory: PoolEscrowFactory;
 
   beforeEach(async () => {
     [alice] = await ethers.getSigners();
@@ -66,9 +70,18 @@ describe("WConvexPools", () => {
     const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
     booster = await MockBoosterFactory.deploy();
 
+    const escrowBaseFactory = await ethers.getContractFactory("PoolEscrow");
+    escrowBase = await escrowBaseFactory.deploy();
+
+    const escrowFactoryFactory = await ethers.getContractFactory(
+      "PoolEscrowFactory"
+    );
+    escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
+
     const WConvexPoolsFactory = await ethers.getContractFactory(
       CONTRACT_NAMES.WConvexPools
     );
+
     wConvexPools = <WConvexPools>(
       await upgrades.deployProxy(
         WConvexPoolsFactory,
@@ -76,6 +89,8 @@ describe("WConvexPools", () => {
         { unsafeAllow: ["delegatecall"] }
       )
     );
+
+    escrowFactory.initialize(wConvexPools.address);
 
     await booster.addPool(
       lpToken.address,

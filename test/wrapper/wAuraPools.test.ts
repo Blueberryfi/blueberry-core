@@ -12,6 +12,8 @@ import {
   MockBaseRewardPool,
   MockVirtualBalanceRewardPool,
   MockStashToken,
+  PoolEscrow,
+  PoolEscrowFactory,
 } from "../../typechain-types";
 import { generateRandomAddress } from "../helpers";
 
@@ -29,6 +31,8 @@ describe("wAuraPools", () => {
   let booster: MockBooster;
   let auraRewarder: MockBaseRewardPool;
   let wAuraPools: WAuraPools;
+  let escrowBase: PoolEscrow;
+  let escrowFactory: PoolEscrowFactory;
 
   beforeEach(async () => {
     [alice, bob] = await ethers.getSigners();
@@ -74,16 +78,31 @@ describe("wAuraPools", () => {
     const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
     booster = await MockBoosterFactory.deploy();
 
+    const escrowBaseFactory = await ethers.getContractFactory("PoolEscrow");
+    escrowBase = await escrowBaseFactory.deploy();
+
+    const escrowFactoryFactory = await ethers.getContractFactory(
+      "PoolEscrowFactory"
+    );
+    escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
+
     const wAuraPoolsFactory = await ethers.getContractFactory(
       CONTRACT_NAMES.WAuraPools
     );
     wAuraPools = <WAuraPools>(
       await upgrades.deployProxy(
         wAuraPoolsFactory,
-        [aura.address, booster.address, stashToken.address],
+        [
+          aura.address,
+          booster.address,
+          stashToken.address,
+          escrowFactory.address,
+        ],
         { unsafeAllow: ["delegatecall"] }
       )
     );
+
+    escrowFactory.initialize(wAuraPools.address);
 
     await booster.addPool(
       lpToken.address,
@@ -116,7 +135,12 @@ describe("wAuraPools", () => {
 
     it("should revert initializing twice", async () => {
       await expect(
-        wAuraPools.initialize(aura.address, booster.address, stashToken.address)
+        wAuraPools.initialize(
+          aura.address,
+          booster.address,
+          stashToken.address,
+          escrowFactory.address
+        )
       ).to.be.revertedWith("Initializable: contract is already initialized");
     });
   });

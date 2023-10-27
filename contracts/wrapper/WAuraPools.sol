@@ -23,8 +23,9 @@ import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/aura/IAuraRewarder.sol";
 import "../interfaces/aura/IAuraExtraRewarder.sol";
 import "../interfaces/aura/IAura.sol";
-import "./escrow/interfaces/IPoolEscrowFactory.sol";
-import "./escrow/interfaces/IPoolEscrow.sol";
+
+import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
+import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
 
 /**
  * @title WAuraPools
@@ -55,7 +56,7 @@ contract WAuraPools is
     /// @dev Address to STASH_AURA token
     address public STASH_AURA;
     /// @dev Address of the escrow factory
-    IPoolEscrowFactory public ESCROW_FACTORY;
+    IPoolEscrowFactory public escrowFactory;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
     /// @dev Aura extra rewards addresses
@@ -93,7 +94,7 @@ contract WAuraPools is
         __ERC1155_init("WAuraPools");
         AURA = IAura(aura_);
         STASH_AURA = stash_aura_;
-        ESCROW_FACTORY = IPoolEscrowFactory(escrowFactory_);
+        escrowFactory = IPoolEscrowFactory(escrowFactory_);
         auraPools = IAuraPools(auraPools_);
         REWARD_MULTIPLIER_DENOMINATOR = auraPools
             .REWARD_MULTIPLIER_DENOMINATOR();
@@ -376,7 +377,7 @@ contract WAuraPools is
         address _escrow;
 
         if (escrows[pid] == address(0)) {
-            _escrow = IPoolEscrowFactory(ESCROW_FACTORY).createEscrow(pid);
+            _escrow = IPoolEscrowFactory(escrowFactory).createEscrow(pid);
             assert(_escrow != address(0));
             escrows[pid] == _escrow;
         } else {
@@ -401,11 +402,6 @@ contract WAuraPools is
         id = encodeId(pid, balRewardPerToken);
 
         _mint(msg.sender, id, amount, "");
-
-        /// @dev TODO:// ENSURE ESCROW
-
-        /// Deposit tokens to escrow contract
-        IPoolEscrow(_escrow).deposit(address(this), msg.sender, amount);
 
         /// Store extra rewards info
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
@@ -524,26 +520,30 @@ contract WAuraPools is
         }
     }
 
+    /// @notice Private function to update aura rewards
+    /// @param pid The ID of the AURA pool.
+    /// @dev Claims rewards and updates auraPerShareByPid accordingly
     function _updateAuraReward(uint256 pid) private {
+        address _escrow = escrows[pid];
+
         (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
         uint256 currentDeposits = IAuraRewarder(auraRewarder).balanceOf(
-            address(this)
+            _escrow
         );
 
         lastBalPerTokenByPid[pid] = IAuraRewarder(auraRewarder)
             .rewardPerToken();
 
-        if (currentDeposits == 0) {
-            return;
-        }
+        if (currentDeposits == 0) return;
 
-        uint cvxBalBefore = AURA.balanceOf(address(this));
+        uint256 auraBalBefore = AURA.balanceOf(_escrow);
 
-        // Claim extra rewards at withdrawal
-        IAuraRewarder(auraRewarder).getReward(address(this), false);
+        /// @dev Claim extra rewards at withdrawal
+        IAuraRewarder(auraRewarder).getReward(_escrow, true);
 
-        uint256 auraReward = AURA.balanceOf(address(this)) - cvxBalBefore;
+        uint256 auraReward = AURA.balanceOf(_escrow) - auraBalBefore;
 
-        auraPerShareByPid[pid] += (auraReward * 1e18) / currentDeposits;
+        if (auraReward > 0)
+            auraPerShareByPid[pid] += (auraReward * 1e18) / currentDeposits;
     }
 }

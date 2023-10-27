@@ -9,19 +9,9 @@
 */
 pragma solidity ^0.8.16;
 
-import "@openzeppelin/contracts/Ini.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 interface IPoolEscrow {
-    using SafeERC20 for IERC20;
-
-    struct Pool {
-        uint256 PID;
-        /// ...
-    }
-
     /// @dev Initializes the pool escrow with the given PID.
-    function initialize(address pid) public payable {}
+    function initialize(uint256 pid, address wrapper) external;
 
     /**
      * @notice Transfers tokens to a specified address
@@ -35,11 +25,5 @@ interface IPoolEscrow {
         address _from,
         address _to,
         uint256 _amount
-    ) external {}
-
-    /// @dev Withdraws rewards from wrapper
-
-    /// @dev Distributes rewards
-
-    function _initializeEscrow(address pid) internal virtual {}
+    ) external;
 }

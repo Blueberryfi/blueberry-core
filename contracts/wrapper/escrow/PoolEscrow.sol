@@ -94,8 +94,4 @@ contract PoolEscrow is Initializable {
         userBalance[_to][_token] -= _amount;
         IERC20(_token).safeTransferFrom(address(this), _to, _amount);
     }
-
-    /// @dev Withdraws rewards from wrapper
-
-    /// @dev Distributes rewards
 }
