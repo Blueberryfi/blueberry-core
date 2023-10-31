@@ -24,11 +24,20 @@ contract PoolEscrowFactory is Initializable, Ownable {
     /// @dev The caller is not authorized to call the function.
     error Unauthorized();
 
+    /// @dev Address cannot be zero.
+    error AddressZero();
+
     /// @dev Address of the escrow implementation.
     address public implementation;
 
     /// @dev Address of the wrapper contract.
     address public wrapper;
+
+    /// @dev Address of the aura pools contract.
+    address public auraPools;
+
+    /// @dev Address of the LP token.
+    address public lpToken;
 
     /// @dev Ensures caller is the wrapper contract.
     modifier onlyWrapper() {
@@ -38,15 +47,27 @@ contract PoolEscrowFactory is Initializable, Ownable {
         _;
     }
 
-    /// @param _escrow The escrow contract implementation
-    constructor(address _escrow) payable Ownable() {
-        implementation = _escrow;
+    /// @param _escrowBase The escrow contract implementation
+    constructor(address _escrowBase) payable Ownable() {
+        if (_escrowBase == address(0)) {
+            revert AddressZero();
+        }
+        implementation = _escrowBase;
     }
 
     /// @dev used once wrapper contract has been deployed to avoid circular dependency
     /// @param _wrapper The address of the pool wrapper contract.
-    function initialize(address _wrapper) public payable initializer onlyOwner {
+    function initialize(
+        address _wrapper,
+        address _auraPools,
+        address _lpToken
+    ) public payable initializer onlyOwner {
+        if (_wrapper == address(0) || _auraPools == address(0)) {
+            revert AddressZero();
+        }
         wrapper = _wrapper;
+        auraPools = _auraPools;
+        lpToken = _lpToken;
     }
 
     /// @notice Creates an escrow contract for a given PID
@@ -55,7 +76,7 @@ contract PoolEscrowFactory is Initializable, Ownable {
         uint256 _pid
     ) external payable onlyWrapper returns (address _escrow) {
         _escrow = LibClone.clone(implementation);
-        IPoolEscrow(_escrow).initialize(_pid, wrapper);
+        IPoolEscrow(_escrow).initialize(_pid, wrapper, auraPools, lpToken);
         emit EscrowCreated(_escrow);
     }
 }

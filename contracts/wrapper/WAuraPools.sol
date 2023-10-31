@@ -143,6 +143,15 @@ contract WAuraPools is
         return IBalancerVault(IBalancerPool(bpt).getVault());
     }
 
+    /// @notice Gets the escrow contract address for a given PID
+    /// @param pid The pool ID
+    /// @return escrowAddress Escrow associated with the given PID
+    function getEscrow(
+        uint256 pid
+    ) public view returns (address escrowAddress) {
+        return escrows[pid];
+    }
+
     /// @notice Retrieves pool tokens from a given BPT address
     /// @param bpt Address of the BPT token
     /// @return tokens Array of token addresses in the pool
@@ -389,12 +398,17 @@ contract WAuraPools is
         );
         IERC20Upgradeable(lpToken).safeTransferFrom(
             msg.sender,
-            address(this),
+            _escrow,
             amount
         );
 
-        _ensureApprove(lpToken, address(auraPools), amount);
-        auraPools.deposit(pid, amount, true);
+        _ensureApprove(lpToken, address(_escrow), amount);
+
+        /// Deposit LP from escrow contract
+        IPoolEscrow(_escrow).deposit(amount);
+
+        // _ensureApprove(lpToken, address(auraPools), amount);
+        // auraPools.deposit(pid, amount, true);
 
         /// BAL reward handle logic
         uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
@@ -447,22 +461,18 @@ contract WAuraPools is
 
         _burn(msg.sender, id, amount);
 
-        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
-            pid
-        );
-
-        address _escrow = escrows[pid];
-
-        /// @dev TODO:// ENSURE ESCROW
+        (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
 
         /// Claim Rewards
         IAuraRewarder(auraRewarder).withdraw(amount, true);
 
-        /// Withdraw LP
-        auraPools.withdraw(pid, amount);
+        address _escrow = escrows[pid];
 
-        /// Transfer LP Tokens
-        IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
+        /// @dev sanity check
+        assert(_escrow != address(0));
+
+        /// Withdraw LP from escrow contract
+        IPoolEscrow(_escrow).withdraw(amount);
 
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();

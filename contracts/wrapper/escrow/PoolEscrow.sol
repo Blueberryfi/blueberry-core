@@ -11,6 +11,7 @@ pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "../../interfaces/aura/IAuraPools.sol";
 
 contract PoolEscrow is Initializable {
     using SafeERC20 for IERC20;
@@ -18,11 +19,20 @@ contract PoolEscrow is Initializable {
     /// @dev The caller is not authorized to call the function.
     error Unauthorized();
 
+    /// @dev Address cannot be zero.
+    error AddressZero();
+
     /// @dev Address of the wrapper contract.
     address public wrapper;
 
     /// @dev PID of this escrow contract.
     uint256 public pid;
+
+    /// @dev address of the aura pools contract.
+    IAuraPools public auraPools;
+
+    /// @dev address of the lp token.
+    address public lpToken;
 
     /// @dev The balance for a given token for a given user
     /// e.g userBalance[msg.sender][0x23523...]
@@ -41,10 +51,21 @@ contract PoolEscrow is Initializable {
     /// @param _wrapper The wrapper contract address
     function initialize(
         uint256 _pid,
-        address _wrapper
+        address _wrapper,
+        address _auraPools,
+        address _lpToken
     ) public payable initializer {
+        if (
+            _wrapper == address(0) ||
+            _auraPools == address(0) ||
+            _lpToken == address(0)
+        ) {
+            revert AddressZero();
+        }
         pid = _pid;
         wrapper = _wrapper;
+        auraPools = IAuraPools(_auraPools);
+        lpToken = _lpToken;
     }
 
     /**
@@ -66,32 +87,23 @@ contract PoolEscrow is Initializable {
     }
 
     /**
-     * @notice Deposits tokens for a given user
-     * @param _token The address of the token to be deposited
-     * @param _for The address for which the tokens will be deposited
+     * @notice Deposits tokens to aura pool
      * @param _amount The amount of tokens to be deposited
      */
-    function deposit(
-        address _token,
-        address _for,
-        uint256 _amount
-    ) external virtual onlyWrapper {
-        userBalance[_for][_token] += _amount;
-        IERC20(_token).safeTransferFrom(_for, address(this), _amount);
+    function deposit(uint256 _amount) external virtual onlyWrapper {
+        auraPools.deposit(pid, _amount, true);
     }
 
     /**
      * @notice Withdraws tokens for a given user
-     * @param _token The address of the token to be withdrawn
-     * @param _to The address to which the tokens will be withdrawn
      * @param _amount The amount of tokens to be withdrawn
+     * @param _user The user to withdraw tokens to
      */
     function withdraw(
-        address _token,
-        address _to,
-        uint256 _amount
+        uint256 _amount,
+        address _user
     ) external virtual onlyWrapper {
-        userBalance[_to][_token] -= _amount;
-        IERC20(_token).safeTransferFrom(address(this), _to, _amount);
+        auraPools.withdraw(pid, _amount);
+        IERC20(lpToken).safeTransfer(_user, _amount);
     }
 }

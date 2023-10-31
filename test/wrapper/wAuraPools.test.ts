@@ -551,6 +551,17 @@ describe("wAuraPools", () => {
       );
     });
   });
+  describe("#rewards", () => {
+    const pid = BigNumber.from(0);
+    const mintAmount = utils.parseEther("100");
+    const amount = utils.parseEther("60");
+    const auraRewardPerToken = utils.parseEther("50");
+    const extraRewardPerToken = utils.parseEther("40");
+    const newauraRewardPerToken = utils.parseEther("60");
+    const newExtraRewardPerToken = utils.parseEther("70");
+    const tokenId = pid.mul(BigNumber.from(2).pow(240)).add(auraRewardPerToken);
+    it("receive rewards", async () => {});
+  });
 
   const getAuraMintAmount = async (amount: BigNumber) => {
     const INIT_MINT_AMOUNT = utils.parseUnits("5", 25);

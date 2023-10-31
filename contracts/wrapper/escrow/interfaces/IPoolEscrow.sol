@@ -11,7 +11,12 @@ pragma solidity ^0.8.16;
 
 interface IPoolEscrow {
     /// @dev Initializes the pool escrow with the given PID.
-    function initialize(uint256 pid, address wrapper) external;
+    function initialize(
+        uint256 _pid,
+        address _wrapper,
+        address _auraPools,
+        address _lpToken
+    ) external;
 
     /**
      * @notice Transfers tokens to a specified address
@@ -26,4 +31,8 @@ interface IPoolEscrow {
         address _to,
         uint256 _amount
     ) external;
+
+    function deposit(uint256 _amount) external;
+
+    function withdraw(uint256 _amount) external;
 }
