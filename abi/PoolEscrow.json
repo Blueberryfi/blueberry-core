@@ -1,6 +1,11 @@
 [
   {
     "inputs": [],
+    "name": "AddressZero",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "Unauthorized",
     "type": "error"
   },
@@ -18,17 +23,20 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "auraPools",
+    "outputs": [
+      {
+        "internalType": "contract IAuraPools",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_token",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_for",
-        "type": "address"
-      },
       {
         "internalType": "uint256",
         "name": "_amount",
@@ -51,11 +59,34 @@
         "internalType": "address",
         "name": "_wrapper",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_auraPools",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_lpToken",
+        "type": "address"
       }
     ],
     "name": "initialize",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lpToken",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -126,19 +157,14 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_token",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_to",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "_amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
       }
     ],
     "name": "withdraw",

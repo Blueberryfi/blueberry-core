@@ -313,8 +313,13 @@ contract WConvexPools is
             amount
         );
 
-        _ensureApprove(lpToken, address(cvxPools), amount);
-        cvxPools.deposit(pid, amount, true);
+        _ensureApprove(lpToken, address(_escrow), amount);
+
+        /// Deposit LP from escrow contract
+        IPoolEscrow(_escrow).deposit(amount);
+
+        // _ensureApprove(lpToken, address(cvxPools), amount);
+        // cvxPools.deposit(pid, amount, true);
 
         uint256 crvRewardPerToken = IRewarder(cvxRewarder).rewardPerToken();
         id = encodeId(pid, crvRewardPerToken);
