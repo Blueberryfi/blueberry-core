@@ -464,9 +464,7 @@ contract WAuraPools is
 
         _burn(msg.sender, id, amount);
 
-        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
-            pid
-        );
+        (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
 
         address _escrow = escrows[pid];
 
@@ -474,7 +472,7 @@ contract WAuraPools is
         assert(_escrow != address(0));
 
         /// Claim and withdraw LP from escrow contract
-        IPoolEscrow(_escrow).claimAndWithdraw(lpToken, amount, msg.sender);
+        IPoolEscrow(_escrow).claimAndWithdraw(amount, msg.sender);
 
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();

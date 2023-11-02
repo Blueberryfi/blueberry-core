@@ -371,9 +371,7 @@ contract WConvexPools is
 
         _burn(msg.sender, id, amount);
 
-        (address lpToken, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(
-            pid
-        );
+        (, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(pid);
 
         address _escrow = escrows[pid];
 
@@ -381,7 +379,7 @@ contract WConvexPools is
         assert(_escrow != address(0));
 
         /// Claim and withdraw LP from escrow contract
-        IPoolEscrow(_escrow).claimAndWithdraw(lpToken, amount, msg.sender);
+        IPoolEscrow(_escrow).claimAndWithdraw(amount, msg.sender);
 
         uint256 extraRewardsCount = IRewarder(cvxRewarder).extraRewardsLength();
 
