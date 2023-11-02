@@ -36,9 +36,6 @@ contract PoolEscrowFactory is Initializable, Ownable {
     /// @dev Address of the aura pools contract.
     address public auraPools;
 
-    /// @dev Address of the LP token.
-    address public lpToken;
-
     /// @dev Ensures caller is the wrapper contract.
     modifier onlyWrapper() {
         if (msg.sender != wrapper) {
@@ -59,24 +56,30 @@ contract PoolEscrowFactory is Initializable, Ownable {
     /// @param _wrapper The address of the pool wrapper contract.
     function initialize(
         address _wrapper,
-        address _auraPools,
-        address _lpToken
+        address _auraPools
     ) public payable initializer onlyOwner {
         if (_wrapper == address(0) || _auraPools == address(0)) {
             revert AddressZero();
         }
         wrapper = _wrapper;
         auraPools = _auraPools;
-        lpToken = _lpToken;
     }
 
     /// @notice Creates an escrow contract for a given PID
     /// @param _pid The pool id (The first 16-bits)
     function createEscrow(
-        uint256 _pid
+        uint256 _pid,
+        address _rewards,
+        address _lpToken
     ) external payable onlyWrapper returns (address _escrow) {
         _escrow = LibClone.clone(implementation);
-        IPoolEscrow(_escrow).initialize(_pid, wrapper, auraPools, lpToken);
+        IPoolEscrow(_escrow).initialize(
+            _pid,
+            wrapper,
+            auraPools,
+            _rewards,
+            _lpToken
+        );
         emit EscrowCreated(_escrow);
     }
 }

@@ -84,6 +84,16 @@
         "internalType": "uint256",
         "name": "_pid",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_rewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_lpToken",
+        "type": "address"
       }
     ],
     "name": "createEscrow",
@@ -121,29 +131,11 @@
         "internalType": "address",
         "name": "_auraPools",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_lpToken",
-        "type": "address"
       }
     ],
     "name": "initialize",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "lpToken",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

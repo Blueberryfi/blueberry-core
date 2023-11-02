@@ -292,28 +292,31 @@ contract WConvexPools is
     ) external nonReentrant returns (uint256 id) {
         _updateCvxReward(pid);
 
+        (address lpToken, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(
+            pid
+        );
+
         /// Escrow deployment/get logic
 
         address _escrow;
 
         if (escrows[pid] == address(0)) {
-            _escrow = IPoolEscrowFactory(escrowFactory).createEscrow(pid);
+            _escrow = IPoolEscrowFactory(escrowFactory).createEscrow(
+                pid,
+                cvxRewarder,
+                lpToken
+            );
             assert(_escrow != address(0));
             escrows[pid] == _escrow;
         } else {
             _escrow = escrows[pid];
         }
 
-        (address lpToken, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(
-            pid
-        );
         IERC20Upgradeable(lpToken).safeTransferFrom(
             msg.sender,
-            address(this),
+            address(_escrow),
             amount
         );
-
-        _ensureApprove(lpToken, address(_escrow), amount);
 
         /// Deposit LP from escrow contract
         IPoolEscrow(_escrow).deposit(amount);

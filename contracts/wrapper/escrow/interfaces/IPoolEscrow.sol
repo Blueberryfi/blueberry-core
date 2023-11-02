@@ -15,6 +15,7 @@ interface IPoolEscrow {
         uint256 _pid,
         address _wrapper,
         address _auraPools,
+        address _auraRewarder,
         address _lpToken
     ) external;
 
@@ -34,5 +35,13 @@ interface IPoolEscrow {
 
     function deposit(uint256 _amount) external;
 
-    function withdraw(uint256 _amount) external;
+    function withdraw(address _token, uint256 _amount, address _user) external;
+
+    function claimRewards(uint256 _amount) external;
+
+    function claimAndWithdraw(
+        address _token,
+        uint256 _amount,
+        address _user
+    ) external;
 }

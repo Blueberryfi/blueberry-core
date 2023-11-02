@@ -102,7 +102,7 @@ describe("wAuraPools", () => {
       )
     );
 
-    escrowFactory.initialize(wAuraPools.address);
+    escrowFactory.initialize(wAuraPools.address, booster.address);
 
     await booster.addPool(
       lpToken.address,

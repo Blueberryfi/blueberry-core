@@ -381,28 +381,31 @@ contract WAuraPools is
     ) external nonReentrant returns (uint256 id) {
         _updateAuraReward(pid);
 
+        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
+            pid
+        );
+
         /// Escrow deployment/get logic
 
         address _escrow;
 
         if (escrows[pid] == address(0)) {
-            _escrow = IPoolEscrowFactory(escrowFactory).createEscrow(pid);
+            _escrow = IPoolEscrowFactory(escrowFactory).createEscrow(
+                pid,
+                auraRewarder,
+                lpToken
+            );
             assert(_escrow != address(0));
             escrows[pid] == _escrow;
         } else {
             _escrow = escrows[pid];
         }
 
-        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
-            pid
-        );
         IERC20Upgradeable(lpToken).safeTransferFrom(
             msg.sender,
             _escrow,
             amount
         );
-
-        _ensureApprove(lpToken, address(_escrow), amount);
 
         /// Deposit LP from escrow contract
         IPoolEscrow(_escrow).deposit(amount);
@@ -461,18 +464,17 @@ contract WAuraPools is
 
         _burn(msg.sender, id, amount);
 
-        (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
-
-        /// Claim Rewards
-        IAuraRewarder(auraRewarder).withdraw(amount, true);
+        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
+            pid
+        );
 
         address _escrow = escrows[pid];
 
         /// @dev sanity check
         assert(_escrow != address(0));
 
-        /// Withdraw LP from escrow contract
-        IPoolEscrow(_escrow).withdraw(amount);
+        /// Claim and withdraw LP from escrow contract
+        IPoolEscrow(_escrow).claimAndWithdraw(lpToken, amount, msg.sender);
 
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();
