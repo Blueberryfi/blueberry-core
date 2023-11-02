@@ -77,19 +77,17 @@ contract PoolEscrow is Initializable, EnsureApprove {
 
     /**
      * @notice Transfers tokens to a specified address
-     * @param _token The address of the token to be transferred
      * @param _from The address from which the tokens will be transferred
      * @param _to The address to which the tokens will be transferred
      * @param _amount The amount of tokens to be transferred
      */
     function transferTokenFrom(
-        address _token,
         address _from,
         address _to,
         uint256 _amount
     ) external virtual onlyWrapper {
         if (_amount > 0) {
-            IERC20(_token).safeTransferFrom(_from, _to, _amount);
+            IERC20(lpToken).safeTransferFrom(_from, _to, _amount);
         }
     }
 
@@ -108,11 +106,10 @@ contract PoolEscrow is Initializable, EnsureApprove {
      * @param _user The user to withdraw tokens to
      */
     function withdraw(
-        address _token,
         uint256 _amount,
         address _user
     ) external virtual onlyWrapper {
-        _withdraw(_token, _amount, _user);
+        _withdraw(_amount, _user);
     }
 
     /**
@@ -121,12 +118,11 @@ contract PoolEscrow is Initializable, EnsureApprove {
      * @param _user The user to withdraw tokens to
      */
     function claimAndWithdraw(
-        address _token,
         uint256 _amount,
         address _user
     ) external onlyWrapper {
         _claimRewards(_amount);
-        _withdraw(_token, _amount, _user);
+        _withdraw(_amount, _user);
     }
 
     /**
@@ -139,13 +135,9 @@ contract PoolEscrow is Initializable, EnsureApprove {
 
     // INTERNAL FUNCTIONS
 
-    function _withdraw(
-        address _token,
-        uint256 _amount,
-        address _user
-    ) internal {
+    function _withdraw(uint256 _amount, address _user) internal {
         auraPools.withdraw(pid, _amount);
-        IERC20(_token).safeTransfer(_user, _amount);
+        IERC20(lpToken).safeTransfer(_user, _amount);
     }
 
     function _claimRewards(uint256 _amount) internal {

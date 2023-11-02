@@ -21,13 +21,11 @@ interface IPoolEscrow {
 
     /**
      * @notice Transfers tokens to a specified address
-     * @param _token The address of the token to be transferred
      * @param _to The address from which the tokens will be transferred
      * @param _to The address to which the tokens will be transferred
      * @param _amount The amount of tokens to be transferred
      */
     function transferTokenFrom(
-        address _token,
         address _from,
         address _to,
         uint256 _amount
@@ -35,13 +33,9 @@ interface IPoolEscrow {
 
     function deposit(uint256 _amount) external;
 
-    function withdraw(address _token, uint256 _amount, address _user) external;
+    function withdraw(uint256 _amount, address _user) external;
 
     function claimRewards(uint256 _amount) external;
 
-    function claimAndWithdraw(
-        address _token,
-        uint256 _amount,
-        address _user
-    ) external;
+    function claimAndWithdraw(uint256 _amount, address _user) external;
 }

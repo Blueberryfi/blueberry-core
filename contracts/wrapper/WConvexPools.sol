@@ -374,13 +374,14 @@ contract WConvexPools is
         (address lpToken, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
-        /// Claim Rewards
-        IRewarder(cvxRewarder).withdraw(amount, true);
-        /// Withdraw LP
-        cvxPools.withdraw(pid, amount);
 
-        /// Transfer LP Tokens
-        IERC20Upgradeable(lpToken).safeTransfer(msg.sender, amount);
+        address _escrow = escrows[pid];
+
+        /// @dev sanity check
+        assert(_escrow != address(0));
+
+        /// Claim and withdraw LP from escrow contract
+        IPoolEscrow(_escrow).claimAndWithdraw(lpToken, amount, msg.sender);
 
         uint256 extraRewardsCount = IRewarder(cvxRewarder).extraRewardsLength();
 
