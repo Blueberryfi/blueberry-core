@@ -288,7 +288,7 @@ describe("wAuraPools", () => {
       });
     });
 
-    describe("calculate reward[1]", () => {
+    describe("calculate reward[0]", () => {
       const rewardPerToken = utils.parseEther("150");
       let reward0: BigNumber;
 
@@ -420,8 +420,10 @@ describe("wAuraPools", () => {
     it("deposit into auraPools", async () => {
       await wAuraPools.mint(pid, amount);
 
-      expect(await auraRewarder.balanceOf(wAuraPools.address)).to.be.eq(amount);
-      expect(await lpToken.balanceOf(wAuraPools.address)).to.be.eq(0);
+      const escrowContract = await wAuraPools.getEscrow(pid);
+
+      expect(await auraRewarder.balanceOf(escrowContract)).to.be.eq(amount);
+      expect(await lpToken.balanceOf(escrowContract)).to.be.eq(0);
       expect(await lpToken.balanceOf(booster.address)).to.be.eq(amount);
       expect(await stakingToken.balanceOf(auraRewarder.address)).to.be.eq(
         amount
@@ -494,9 +496,11 @@ describe("wAuraPools", () => {
       await auraRewarder.setRewardPerToken(newauraRewardPerToken);
       await extraRewarder.setRewardPerToken(newExtraRewardPerToken);
 
+      const escrowContract = await wAuraPools.getEscrow(pid);
+
       const res = await wAuraPools.pendingRewards(tokenId, mintAmount);
-      await auraRewarder.setReward(wAuraPools.address, res[1][0]);
-      await extraRewarder.setReward(wAuraPools.address, res[1][2]);
+      await auraRewarder.setReward(escrowContract, res[1][0]);
+      await extraRewarder.setReward(escrowContract, res[1][2]);
     });
 
     it("withdraw from auraPools", async () => {
@@ -504,10 +508,12 @@ describe("wAuraPools", () => {
 
       await wAuraPools.burn(tokenId, amount);
 
-      expect(await auraRewarder.balanceOf(wAuraPools.address)).to.be.eq(
+      const escrowContract = await wAuraPools.getEscrow(pid);
+
+      expect(await auraRewarder.balanceOf(escrowContract)).to.be.eq(
         mintAmount.sub(amount)
       );
-      expect(await lpToken.balanceOf(wAuraPools.address)).to.be.eq(0);
+      expect(await lpToken.balanceOf(escrowContract)).to.be.eq(0);
       expect(await lpToken.balanceOf(alice.address)).to.be.eq(
         balBefore.add(amount)
       );
@@ -550,17 +556,6 @@ describe("wAuraPools", () => {
         res[1][2]
       );
     });
-  });
-  describe("#rewards", () => {
-    const pid = BigNumber.from(0);
-    const mintAmount = utils.parseEther("100");
-    const amount = utils.parseEther("60");
-    const auraRewardPerToken = utils.parseEther("50");
-    const extraRewardPerToken = utils.parseEther("40");
-    const newauraRewardPerToken = utils.parseEther("60");
-    const newExtraRewardPerToken = utils.parseEther("70");
-    const tokenId = pid.mul(BigNumber.from(2).pow(240)).add(auraRewardPerToken);
-    it("receive rewards", async () => {});
   });
 
   const getAuraMintAmount = async (amount: BigNumber) => {

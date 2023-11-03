@@ -1,5 +1,10 @@
 [
   {
+    "inputs": [],
+    "name": "AddressZero",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",

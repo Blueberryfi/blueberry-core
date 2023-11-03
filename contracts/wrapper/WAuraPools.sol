@@ -45,6 +45,8 @@ contract WAuraPools is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    error AddressZero();
+
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
@@ -90,6 +92,14 @@ contract WAuraPools is
         address stash_aura_,
         address escrowFactory_
     ) external initializer {
+        if (
+            aura_ == address(0) ||
+            auraPools_ == address(0) ||
+            stash_aura_ == address(0) ||
+            escrowFactory_ == address(0)
+        ) {
+            revert AddressZero();
+        }
         __ReentrancyGuard_init();
         __ERC1155_init("WAuraPools");
         AURA = IAura(aura_);
@@ -279,11 +289,13 @@ contract WAuraPools is
         uint256 stBalPerShare,
         uint256 amount
     ) internal view returns (uint256 mintAmount) {
+        address _escrow = escrows[pid];
+
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
         uint256 currentDeposits = IAuraRewarder(auraRewarder).balanceOf(
-            address(this)
+            _escrow
         );
 
         if (currentDeposits == 0) {
@@ -379,8 +391,6 @@ contract WAuraPools is
         uint256 pid,
         uint256 amount
     ) external nonReentrant returns (uint256 id) {
-        _updateAuraReward(pid);
-
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
@@ -390,13 +400,8 @@ contract WAuraPools is
         address _escrow;
 
         if (escrows[pid] == address(0)) {
-            _escrow = IPoolEscrowFactory(escrowFactory).createEscrow(
-                pid,
-                auraRewarder,
-                lpToken
-            );
-            assert(_escrow != address(0));
-            escrows[pid] == _escrow;
+            _escrow = escrowFactory.createEscrow(pid, auraRewarder, lpToken);
+            escrows[pid] = _escrow;
         } else {
             _escrow = escrows[pid];
         }
@@ -406,6 +411,8 @@ contract WAuraPools is
             _escrow,
             amount
         );
+
+        _updateAuraReward(pid);
 
         /// Deposit LP from escrow contract
         IPoolEscrow(_escrow).deposit(amount);
@@ -468,7 +475,7 @@ contract WAuraPools is
 
         address _escrow = escrows[pid];
 
-        /// @dev sanity check
+        // @dev sanity check
         assert(_escrow != address(0));
 
         /// Claim and withdraw LP from escrow contract
@@ -492,7 +499,7 @@ contract WAuraPools is
         /// Withdraw manually
         if (hasDiffExtraRewards) {
             for (uint256 i; i != storedExtraRewardLength; ) {
-                IAuraExtraRewarder(extraRewards[i]).getReward();
+                IPoolEscrow(_escrow).getRewardExtra(extraRewards[i]);
 
                 unchecked {
                     ++i;
@@ -501,12 +508,13 @@ contract WAuraPools is
         }
 
         uint256 rewardTokensLength = rewardTokens.length;
-        address _stashAura = STASH_AURA;
         for (uint256 i; i != rewardTokensLength; ) {
             address _rewardToken = rewardTokens[i];
-            IERC20Upgradeable(
-                _rewardToken == _stashAura ? address(AURA) : _rewardToken
-            ).safeTransfer(msg.sender, rewards[i]);
+            IPoolEscrow(_escrow).transferToken(
+                _rewardToken == STASH_AURA ? address(AURA) : _rewardToken,
+                msg.sender,
+                rewards[i]
+            );
 
             unchecked {
                 ++i;

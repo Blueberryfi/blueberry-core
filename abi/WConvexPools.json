@@ -1,5 +1,10 @@
 [
   {
+    "inputs": [],
+    "name": "AddressZero",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -475,6 +480,25 @@
         "type": "uint256"
       }
     ],
+    "name": "getEscrow",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "escrowAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "pid",
+        "type": "uint256"
+      }
+    ],
     "name": "getPoolInfoFromPoolId",
     "outputs": [
       {
@@ -540,6 +564,11 @@
       {
         "internalType": "address",
         "name": "cvxPools_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "escrowFactory_",
         "type": "address"
       }
     ],

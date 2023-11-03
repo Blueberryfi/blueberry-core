@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "../../interfaces/aura/IAuraPools.sol";
 import "../../interfaces/aura/IAuraRewarder.sol";
 import "../../utils/EnsureApprove.sol";
+import "../../interfaces/aura/IAuraExtraRewarder.sol";
 
 contract PoolEscrow is Initializable, EnsureApprove {
     using SafeERC20 for IERC20;
@@ -33,8 +34,10 @@ contract PoolEscrow is Initializable, EnsureApprove {
     /// @dev address of the aura pools contract.
     IAuraPools public auraPools;
 
+    /// @dev address of the rewarder contract.
     IAuraRewarder public auraRewarder;
 
+    /// @dev address of the lptoken for this escrow.
     IERC20 public lpToken;
 
     /// @dev The balance for a given token for a given user
@@ -49,7 +52,7 @@ contract PoolEscrow is Initializable, EnsureApprove {
         _;
     }
 
-    /// @dev Initializes the pool escrow with the given PID.
+    /// @dev Initializes the pool escrow with the given parameters
     /// @param _pid The pool id (The first 16-bits)
     /// @param _wrapper The wrapper contract address
     function initialize(
@@ -70,29 +73,42 @@ contract PoolEscrow is Initializable, EnsureApprove {
         pid = _pid;
         wrapper = _wrapper;
         auraPools = IAuraPools(_auraPools);
+        auraRewarder = IAuraRewarder(_auraRewarder);
         lpToken = IERC20(_lpToken);
 
         lpToken.approve(_wrapper, type(uint256).max);
     }
 
     /**
-     * @notice Transfers tokens to a specified address
+     * @notice Transfers tokens to and from a specified address
      * @param _from The address from which the tokens will be transferred
      * @param _to The address to which the tokens will be transferred
      * @param _amount The amount of tokens to be transferred
      */
     function transferTokenFrom(
+        address _token,
         address _from,
         address _to,
         uint256 _amount
     ) external virtual onlyWrapper {
-        if (_amount > 0) {
-            IERC20(lpToken).safeTransferFrom(_from, _to, _amount);
-        }
+        IERC20(_token).safeTransferFrom(_from, _to, _amount);
     }
 
     /**
-     * @notice Deposits tokens to aura pool
+     * @notice Transfers tokens to a specified address
+     * @param _to The address to which the tokens will be transferred
+     * @param _amount The amount of tokens to be transferred
+     */
+    function transferToken(
+        address _token,
+        address _to,
+        uint256 _amount
+    ) external virtual onlyWrapper {
+        IERC20(_token).safeTransfer(_to, _amount);
+    }
+
+    /**
+     * @notice Deposits tokens to pool
      * @param _amount The amount of tokens to be deposited
      */
     function deposit(uint256 _amount) external virtual onlyWrapper {
@@ -131,6 +147,16 @@ contract PoolEscrow is Initializable, EnsureApprove {
      */
     function claimRewards(uint256 _amount) external virtual onlyWrapper {
         _claimRewards(_amount);
+    }
+
+    /**
+     * @notice Gets rewards from the extra aura rewarder
+     * @param _extraRewardsAddress the rewards address to gather from
+     */
+    function getRewardExtra(
+        address _extraRewardsAddress
+    ) external virtual onlyWrapper {
+        IAuraExtraRewarder(_extraRewardsAddress).getReward();
     }
 
     // INTERNAL FUNCTIONS
