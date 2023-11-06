@@ -49,7 +49,13 @@ describe("Balancer Pair Oracle", () => {
     );
 
     await chainlinkAdapterOracle.setTokenRemappings(
-      [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.wstETH, ADDRESS.ankrETH, ADDRESS.WBTC],
+      [
+        ADDRESS.WETH,
+        ADDRESS.FRXETH,
+        ADDRESS.wstETH,
+        ADDRESS.ankrETH,
+        ADDRESS.WBTC,
+      ],
       [
         ADDRESS.CHAINLINK_ETH,
         ADDRESS.CHAINLINK_ETH,

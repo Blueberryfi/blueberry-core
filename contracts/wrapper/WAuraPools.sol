@@ -47,6 +47,10 @@ contract WAuraPools is
 
     error AddressZero();
 
+    event Minted(uint256 pid, uint256 amount, address indexed user);
+
+    event Burned(uint256 id, uint256 amount, address indexed user);
+
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
@@ -445,6 +449,8 @@ contract WAuraPools is
             }
         }
 
+        emit Minted(pid, amount, msg.sender);
+
         auraPerShareDebt[id] += auraPerShareByPid[pid];
     }
 
@@ -520,6 +526,8 @@ contract WAuraPools is
                 ++i;
             }
         }
+
+        emit Burned(id, amount, msg.sender);
     }
 
     /// @notice Get the full set of extra rewards.

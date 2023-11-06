@@ -21,6 +21,8 @@ import {
   WAuraPools,
   AuraSpell,
   Comptroller,
+  PoolEscrow,
+  PoolEscrowFactory,
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { deployBTokens } from "./money-market";
@@ -94,6 +96,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   let crvSoftVault: SoftVault;
   let daiSoftVault: SoftVault;
   let hardVault: HardVault;
+
+  let escrowBase: PoolEscrow;
+  let escrowFactory: PoolEscrowFactory;
 
   let comptroller: Comptroller;
   let bUSDC: Contract;
@@ -298,14 +303,29 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   );
   await werc20.deployed();
 
+  const escrowBaseFactory = await ethers.getContractFactory("PoolEscrow");
+  escrowBase = await escrowBaseFactory.deploy();
+
+  await escrowBase.deployed();
+
+  const escrowFactoryFactory = await ethers.getContractFactory(
+    "PoolEscrowFactory"
+  );
+  escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
+
+  await escrowFactory.deployed();
+
   const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
   waura = <WAuraPools>(
     await upgrades.deployProxy(
       WAuraPools,
-      [AURA, ADDRESS.AURA_BOOSTER, STASH_AURA],
+      [AURA, ADDRESS.AURA_BOOSTER, STASH_AURA, escrowFactory.address],
       { unsafeAllow: ["delegatecall"] }
     )
   );
+
+  escrowFactory.initialize(waura.address, ADDRESS.AURA_BOOSTER);
+
   await waura.deployed();
 
   // Deploy CRV spell

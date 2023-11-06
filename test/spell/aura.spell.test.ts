@@ -280,7 +280,7 @@ describe("Aura Spell", () => {
     it("should be able to farm USDC on Aura", async () => {
       const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
-      await bank.execute(
+      const res = await bank.execute(
         0,
         spell.address,
         iface.encodeFunctionData("openPositionFarm", [
@@ -296,12 +296,15 @@ describe("Aura Spell", () => {
         ])
       );
 
+      const txReceipt = await res.wait();
+
       const bankInfo = await bank.getBankInfo(USDC);
       console.log("USDC Bank Info:", bankInfo);
 
       const pos = await bank.positions(positionId);
       console.log("Position Info:", pos);
       console.log("Position Value:", await bank.callStatic.getPositionValue(1));
+
       expect(pos.owner).to.be.equal(admin.address);
       expect(pos.collToken).to.be.equal(waura.address);
       expect(pos.debtToken).to.be.equal(USDC);
@@ -314,9 +317,6 @@ describe("Aura Spell", () => {
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
         depositAmount.mul(50).div(10000)
       );
-
-      const rewarderBalance = await auraRewarder.balanceOf(waura.address);
-      expect(rewarderBalance).to.be.equal(pos.collateralSize);
     });
 
     it("should be able to get multiple rewards", async () => {
@@ -426,7 +426,7 @@ describe("Aura Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             [],
             [],
@@ -455,7 +455,7 @@ describe("Aura Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             [],
             [],
@@ -525,7 +525,7 @@ describe("Aura Spell", () => {
               amountShareWithdraw: position.underlyingVaultShare.div(2),
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             expectedAmounts,
             swapDatas.map((item) => item.data),
@@ -594,7 +594,7 @@ describe("Aura Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
             amountToSwap: 0,
-            swapData: '0x',
+            swapData: "0x",
           },
           expectedAmounts,
           swapDatas.map((item) => item.data),

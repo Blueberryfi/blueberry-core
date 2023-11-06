@@ -21,6 +21,8 @@ import {
   WConvexPools,
   ConvexSpell,
   Comptroller,
+  PoolEscrow,
+  PoolEscrowFactory,
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { deployBTokens } from "./money-market";
@@ -93,6 +95,9 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   let oracle: CoreOracle;
   let convexSpell: ConvexSpell;
   let convexSpellWithVolatileOracle: ConvexSpell;
+
+  let escrowBase: PoolEscrow;
+  let escrowFactory: PoolEscrowFactory;
 
   let config: ProtocolConfig;
   let feeManager: FeeManager;
@@ -333,16 +338,32 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
   await werc20.deployed();
 
-  const WConvexPools = await ethers.getContractFactory(
+  const escrowBaseFactory = await ethers.getContractFactory("PoolEscrow");
+  escrowBase = await escrowBaseFactory.deploy();
+
+  await escrowBase.deployed();
+
+  const escrowFactoryFactory = await ethers.getContractFactory(
+    "PoolEscrowFactory"
+  );
+  escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
+
+  await escrowFactory.deployed();
+
+  const WConvexPoolsFactory = await ethers.getContractFactory(
     CONTRACT_NAMES.WConvexPools
   );
-  wconvex = <WConvexPools>await upgrades.deployProxy(
-    WConvexPools,
-    [CVX, ADDRESS.CVX_BOOSTER],
-    {
-      unsafeAllow: ["delegatecall"],
-    }
+
+  wconvex = <WConvexPools>(
+    await upgrades.deployProxy(
+      WConvexPoolsFactory,
+      [CVX, ADDRESS.CVX_BOOSTER, escrowFactory.address],
+      { unsafeAllow: ["delegatecall"] }
+    )
   );
+
+  escrowFactory.initialize(wconvex.address, ADDRESS.CVX_BOOSTER);
+
   await wconvex.deployed();
 
   // Deploy CRV spell

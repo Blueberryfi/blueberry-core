@@ -109,9 +109,6 @@ describe("Convex Spell - ETH/stETH", () => {
     expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
       depositAmount.mul(50).div(10000)
     );
-
-    const rewarderBalance = await crvRewarder.balanceOf(wconvex.address);
-    expect(rewarderBalance).to.be.equal(pos.collateralSize);
   });
 
   it("should be able to harvest on Convex", async () => {
@@ -179,7 +176,7 @@ describe("Convex Spell - ETH/stETH", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
             amountToSwap: 0,
-            swapData: '0x',
+            swapData: "0x",
           },
           amounts: expectedAmounts,
           swapDatas: swapDatas.map((item) => item.data),

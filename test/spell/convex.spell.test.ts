@@ -346,9 +346,6 @@ describe("Convex Spell", () => {
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
         depositAmount.mul(50).div(10000)
       );
-
-      const rewarderBalance = await crvRewarder1.balanceOf(wconvex.address);
-      expect(rewarderBalance).to.be.equal(pos.collateralSize);
     });
 
     it("should be able to get multiple rewards", async () => {
@@ -498,7 +495,7 @@ describe("Convex Spell", () => {
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: utils.parseUnits("1000", 18),
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
               amounts: expectedAmounts,
               swapDatas: swapDatas.map((item) => item.data),
@@ -528,7 +525,7 @@ describe("Convex Spell", () => {
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: utils.parseUnits("1000", 18),
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
               amounts: [],
               swapDatas: [],
@@ -560,7 +557,7 @@ describe("Convex Spell", () => {
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: utils.parseUnits("1000", 18),
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
               amounts: [],
               swapDatas: [],
@@ -642,7 +639,7 @@ describe("Convex Spell", () => {
                 amountShareWithdraw: position.underlyingVaultShare.div(2),
                 amountOutMin: 1,
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
               amounts: expectedAmounts,
               swapDatas: swapDatas.map((item) => item.data),
@@ -714,7 +711,7 @@ describe("Convex Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             amounts: expectedAmounts,
             swapDatas: swapDatas.map((item) => item.data),
