@@ -89,7 +89,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://rpc.ankr.com/eth`,
-        blockNumber: 18511315,
+        blockNumber: 17089048,
       },
     },
     /**     mainnet: {
