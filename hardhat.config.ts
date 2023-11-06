@@ -89,10 +89,10 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://rpc.ankr.com/eth`,
-        blockNumber: 17089048,
+        blockNumber: 18511315,
       },
     },
-/**     mainnet: {
+    /**     mainnet: {
       accounts: [deployAccountKey],
       chainId: 1,
       url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyapi}`,
@@ -101,7 +101,7 @@ const config: HardhatUserConfig = {
       accounts: [deployAccountKey],
       url: `https://eth-goerli.alchemyapi.io/v2/${alchemyapi}`,
     },
-*/    
+*/
   },
   abiExporter: {
     path: "./abi",
@@ -109,7 +109,7 @@ const config: HardhatUserConfig = {
     clear: true,
     flat: true,
     spacing: 2,
-    except: ["IBaseOracle"]
+    except: ["IBaseOracle"],
   },
   contractSizer: {
     alphaSort: true,

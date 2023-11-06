@@ -48,7 +48,7 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
 
         uint256 length = tokens.length;
         uint256 minPrice = type(uint256).max;
-        for (uint256 i; i != length; ) {
+        for (uint256 i; i != length; ++i ) {
             if (tokens[i] == token) {
                 continue;
             }
@@ -58,9 +58,6 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
                 price = price.divWadDown(IRateProvider(rateProvider).getRate());
             }
             minPrice = (price < minPrice) ? price : minPrice;
-            unchecked {
-                ++i;
-            }
         }
         return minPrice.mulWadDown(pool.getRate());
     }

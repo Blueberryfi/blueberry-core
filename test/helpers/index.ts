@@ -19,11 +19,11 @@ export const evm_mine_blocks = async (n: number) => {
   }
 };
 
-export const currentTime = async() => {
+export const currentTime = async () => {
   const blockNum = await latestBlockNumber();
   const block = await ethers.provider.getBlock(blockNum);
   return block.timestamp;
-}
+};
 
 export const fork = async (chainId: number = 1, blockNumber?: number) => {
   if (chainId === 1) {
@@ -54,7 +54,7 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
 };
 
 export const generateRandomAddress = () => {
-  return Wallet.createRandom().address
+  return Wallet.createRandom().address;
 };
 
 export * from "./setup-ichi-protocol";
