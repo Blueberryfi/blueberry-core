@@ -81,6 +81,13 @@ contract WAuraPools is
     /// @dev pid => escrow contract address
     mapping(uint256 => address) public escrows;
 
+    /// @dev pid => total amount of AURA recieved
+    mapping(uint256 => uint256) public stashAuraRecieved;
+    /// @dev pid => total amount of AURA paid out
+    mapping(uint256 => uint256) public auraPaid;
+    /// @dev pid => current reward per token
+    mapping(uint256 => uint256) public currentRewardPerToken;
+
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -516,8 +523,21 @@ contract WAuraPools is
         uint256 rewardTokensLength = rewardTokens.length;
         for (uint256 i; i != rewardTokensLength; ) {
             address _rewardToken = rewardTokens[i];
+
+            /// If the reward token is AURA
+            if (_rewardToken == address(AURA)) {
+                /// Increase the amount of AURA paid out for the pool by the reward amount
+                /// This is because AURA is being paid out
+                auraPaid[pid] += rewards[i];
+            } else if (_rewardToken == STASH_AURA) {
+                /// Decrease the amount of AURA paid out for the pool by the reward amount
+                /// This is because STASH_AURA is being converted to AURA
+                auraPaid[pid] -= rewards[i];
+                _rewardToken = address(AURA);
+            }
+
             IPoolEscrow(_escrow).transferToken(
-                _rewardToken == STASH_AURA ? address(AURA) : _rewardToken,
+                _rewardToken,
                 msg.sender,
                 rewards[i]
             );
@@ -557,19 +577,29 @@ contract WAuraPools is
             _escrow
         );
 
-        lastBalPerTokenByPid[pid] = IAuraRewarder(auraRewarder)
-            .rewardPerToken();
+        uint256 lastBalPerToken = IAuraRewarder(auraRewarder).rewardPerToken();
+        lastBalPerTokenByPid[pid] = lastBalPerToken;
 
         if (currentDeposits == 0) return;
+
+        stashAuraRecieved[pid] +=
+            (currentRewardPerToken[pid] - lastBalPerToken) *
+            currentDeposits;
 
         uint256 auraBalBefore = AURA.balanceOf(_escrow);
 
         /// @dev Claim extra rewards at withdrawal
         IAuraRewarder(auraRewarder).getReward(_escrow, true);
 
-        uint256 auraReward = AURA.balanceOf(_escrow) - auraBalBefore;
+        uint256 auraRecieved = AURA.balanceOf(_escrow) - auraBalBefore;
 
-        if (auraReward > 0)
-            auraPerShareByPid[pid] += (auraReward * 1e18) / currentDeposits;
+        uint256 realAurabalance = auraRecieved -
+            auraPaid[pid] -
+            stashAuraRecieved[pid];
+
+        if (realAurabalance > 0)
+            auraPerShareByPid[pid] +=
+                (realAurabalance * 1e18) /
+                currentDeposits;
     }
 }
