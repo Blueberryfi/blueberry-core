@@ -310,9 +310,14 @@ contract ConvexSpell is BasicSpell {
 
         if (closePosParam.isKilled) {
             for (uint256 i; i != tokens.length; ++i) {
-                if (tokens[i] != pos.debtToken) {
+                address token = tokens[i];
+                if (token == ETH) {
+                    token = WETH;
+                    IWETH(WETH).deposit{value: address(this).balance}();
+                }
+                if (token != pos.debtToken) {
                     _swapOnParaswap(
-                        tokens[i],
+                        token,
                         closePosParam.amounts[i + rewardTokens.length],
                         closePosParam.swapDatas[i + rewardTokens.length]
                     );
