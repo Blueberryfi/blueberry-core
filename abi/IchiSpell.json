@@ -1,5 +1,10 @@
 [
   {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -29,6 +34,17 @@
       }
     ],
     "name": "EXCEED_MAX_POS_SIZE",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
+    "name": "EXCEED_MIN_POS_SIZE",
     "type": "error"
   },
   {
@@ -103,36 +119,8 @@
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "sender",
-        "type": "address"
-      }
-    ],
-    "name": "NOT_FROM_UNIV3",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      }
-    ],
-    "name": "NOT_FROM_WETH",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "ratio",
-        "type": "uint256"
-      }
-    ],
-    "name": "RATIO_TOO_HIGH",
+    "inputs": [],
+    "name": "INVALID_POS_SIZE",
     "type": "error"
   },
   {
@@ -236,6 +224,12 @@
       {
         "indexed": false,
         "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
         "name": "maxPosSize",
         "type": "uint256"
       }
@@ -244,8 +238,59 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "StrategyPosSizeUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "ICHI",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WETH",
     "outputs": [
       {
         "internalType": "address",
@@ -265,6 +310,11 @@
       },
       {
         "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "maxPosSize",
         "type": "uint256"
       }
@@ -272,6 +322,19 @@
     "name": "addStrategy",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "augustusSwapper",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -313,7 +376,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "amountLpRemove",
+            "name": "amountPosRemove",
             "type": "uint256"
           },
           {
@@ -323,16 +386,21 @@
           },
           {
             "internalType": "uint256",
-            "name": "sellSlippage",
+            "name": "amountOutMin",
             "type": "uint256"
           },
           {
-            "internalType": "uint160",
-            "name": "sqrtRatioLimit",
-            "type": "uint160"
+            "internalType": "uint256",
+            "name": "amountToSwap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "swapData",
+            "type": "bytes"
           }
         ],
-        "internalType": "struct IchiSpell.ClosePosParam",
+        "internalType": "struct BasicSpell.ClosePosParam",
         "name": "param",
         "type": "tuple"
       }
@@ -368,7 +436,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "amountLpRemove",
+            "name": "amountPosRemove",
             "type": "uint256"
           },
           {
@@ -378,16 +446,21 @@
           },
           {
             "internalType": "uint256",
-            "name": "sellSlippage",
+            "name": "amountOutMin",
             "type": "uint256"
           },
           {
-            "internalType": "uint160",
-            "name": "sqrtRatioLimit",
-            "type": "uint160"
+            "internalType": "uint256",
+            "name": "amountToSwap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "swapData",
+            "type": "bytes"
           }
         ],
-        "internalType": "struct IchiSpell.ClosePosParam",
+        "internalType": "struct BasicSpell.ClosePosParam",
         "name": "param",
         "type": "tuple"
       }
@@ -419,22 +492,37 @@
     "inputs": [
       {
         "internalType": "contract IBank",
-        "name": "_bank",
+        "name": "bank_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_werc20",
+        "name": "werc20_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_weth",
+        "name": "weth_",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_wichiFarm",
+        "name": "wichiFarm_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "uniV3Router_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "augustusSwapper_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenTransferProxy_",
         "type": "address"
       }
     ],
@@ -560,14 +648,14 @@
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "borrowToken",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "collAmount",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
           },
           {
             "internalType": "uint256",
@@ -576,11 +664,11 @@
           },
           {
             "internalType": "uint256",
-            "name": "farmingPid",
+            "name": "farmingPoolId",
             "type": "uint256"
           }
         ],
-        "internalType": "struct IchiSpell.OpenPosParam",
+        "internalType": "struct BasicSpell.OpenPosParam",
         "name": "param",
         "type": "tuple"
       }
@@ -605,14 +693,14 @@
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "borrowToken",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "collAmount",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "borrowToken",
+            "type": "address"
           },
           {
             "internalType": "uint256",
@@ -621,11 +709,11 @@
           },
           {
             "internalType": "uint256",
-            "name": "farmingPid",
+            "name": "farmingPoolId",
             "type": "uint256"
           }
         ],
-        "internalType": "struct IchiSpell.OpenPosParam",
+        "internalType": "struct BasicSpell.OpenPosParam",
         "name": "param",
         "type": "tuple"
       }
@@ -705,6 +793,29 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "setPosSize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "",
         "type": "uint256"
       }
@@ -715,6 +826,11 @@
         "internalType": "address",
         "name": "vault",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minPositionSize",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -745,6 +861,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "tokenTransferProxy",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -753,29 +882,6 @@
       }
     ],
     "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "int256",
-        "name": "amount0Delta",
-        "type": "int256"
-      },
-      {
-        "internalType": "int256",
-        "name": "amount1Delta",
-        "type": "int256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
-    ],
-    "name": "uniswapV3SwapCallback",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -799,19 +905,6 @@
     "outputs": [
       {
         "internalType": "contract IWERC20",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "weth",
-    "outputs": [
-      {
-        "internalType": "address",
         "name": "",
         "type": "address"
       }

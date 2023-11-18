@@ -14,4 +14,6 @@ interface ILiquidityGauge {
     function deposit(uint256 value) external;
 
     function withdraw(uint256 value) external;
+
+    function claimable_tokens(address user) external returns (uint256);
 }

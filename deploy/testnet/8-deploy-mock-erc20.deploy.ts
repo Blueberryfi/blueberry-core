@@ -62,6 +62,11 @@ async function main(): Promise<void> {
 	await mock.deployed();
 	deployment.MockWETH = mock.address;
 	writeDeployments(deployment);
+
+	mock = await MockERC20.deploy("Mock OHM", "OHM", 9);
+	await mock.deployed();
+	deployment.MockOHM = mock.address;
+	writeDeployments(deployment);
 }
 
 main()

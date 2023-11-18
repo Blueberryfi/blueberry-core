@@ -1,7 +1,23 @@
 [
   {
     "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
     "name": "FEE_WINDOW_ALREADY_STARTED",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "windowTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "FEE_WINDOW_TOO_LONG",
     "type": "error"
   },
   {
@@ -150,19 +166,6 @@
   },
   {
     "inputs": [],
-    "name": "maxSlippageOfClose",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "owner",
     "outputs": [
       {
@@ -273,19 +276,6 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "slippage_",
-        "type": "uint256"
-      }
-    ],
-    "name": "setMaxSlippageOfClose",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
         "name": "rewardFee_",
         "type": "uint256"
       }
@@ -317,6 +307,19 @@
       }
     ],
     "name": "setWithdrawFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "withdrawVaultFeeWindow_",
+        "type": "uint256"
+      }
+    ],
+    "name": "setWithdrawVaultFeeWindow",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

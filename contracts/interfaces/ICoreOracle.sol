@@ -4,48 +4,54 @@ pragma solidity 0.8.16;
 
 import "./IBaseOracle.sol";
 
+/// @title ICoreOracle
+/// @notice Interface for the CoreOracle contract which provides price feed data for assets in the Blueberry protocol.
 interface ICoreOracle is IBaseOracle {
-    /// The owner sets token whitelist for an ERC1155 token.
-    event SetWhitelist(address indexed token, bool ok);
-    /// The owner sets oracle routes
+    /*//////////////////////////////////////////////////////////////////////////
+                                       EVENTS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Event emitted when the owner sets a new oracle route for a given token.
+    /// @param token The ERC20 token for which the oracle route is set.
+    /// @param route The address of the oracle route.
     event SetRoute(address indexed token, address route);
-    /// The owner sets liquidation threshold for a token.
-    event SetLiqThreshold(address indexed token, uint256 liqThreshold);
 
-    /// @notice Return whether the oracle given ERC20 token
-    /// @param token The ERC20 token to check the support
-    function isTokenSupported(address token) external view returns (bool);
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Return whether the oracle supports underlying token of given wrapper.
-    /// @dev Only validate wrappers of Blueberry protocol such as WERC20
-    /// @param token ERC1155 token address to check the support
-    /// @param tokenId ERC1155 token id to check the support
+    /// @notice Check if the given ERC20 token is supported by the oracle.
+    /// @param token The ERC20 token to check support for.
+    /// @return A boolean indicating whether the token is supported or not.
+    function isTokenSupported(address token) external returns (bool);
+
+    /// @notice Check if the oracle supports the underlying token of a given ERC1155 wrapper.
+    /// @dev Only meant to validate wrappers of the Blueberry protocol, such as WERC20.
+    /// @param token ERC1155 token address to check support for.
+    /// @param tokenId ERC1155 token id to check support for.
+    /// @return A boolean indicating whether the wrapped token is supported or not.
     function isWrappedTokenSupported(
         address token,
         uint256 tokenId
-    ) external view returns (bool);
+    ) external returns (bool);
 
-    /**
-     * @dev Return the USD value of the given input for collateral purpose.
-     * @param token ERC1155 token address to get collateral value
-     * @param id ERC1155 token id to get collateral value
-     * @param amount Token amount to get collateral value, based 1e18
-     */
-    function getPositionValue(
+    /// @notice Returns the USD value of a specific wrapped ERC1155 token.
+    /// @param token ERC1155 token address.
+    /// @param id ERC1155 token id.
+    /// @param amount Amount of the token for which to get the USD value, normalized to 1e18 decimals.
+    /// @return The USD value of the given wrapped token amount.
+    function getWrappedTokenValue(
         address token,
         uint256 id,
         uint256 amount
-    ) external view returns (uint256);
+    ) external returns (uint256);
 
-    /**
-     * @dev Return the USD value of the token and amount.
-     * @param token ERC20 token address
-     * @param amount ERC20 token amount
-     */
+    /// @notice Returns the USD value of a given amount of a specific ERC20 token.
+    /// @param token ERC20 token address.
+    /// @param amount Amount of the ERC20 token for which to get the USD value.
+    /// @return The USD value of the given token amount.
     function getTokenValue(
         address token,
         uint256 amount
-    ) external view returns (uint256);
-
-    function liqThresholds(address token) external view returns (uint256);
+    ) external returns (uint256);
 }

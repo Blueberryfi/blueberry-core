@@ -1,14 +1,80 @@
 [
   {
+    "inputs": [],
+    "name": "EXCEED_MAX_LTV",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      }
+    ],
+    "name": "INCORRECT_STRATEGY_ID",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "INPUT_ARRAY_MISMATCH",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "INVALID_POS_SIZE",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
-        "name": "from",
+        "name": "spell",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
       }
     ],
-    "name": "NOT_FROM_WETH",
+    "name": "STRATEGY_NOT_EXIST",
     "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZERO_ADDRESS",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZERO_AMOUNT",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address[]",
+        "name": "collaterals",
+        "type": "address[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "maxLTVs",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "CollateralsMaxLTVSet",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -43,6 +109,101 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "StrategyAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "StrategyPosSizeUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "augustusSwapper",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "bank",
     "outputs": [
@@ -50,6 +211,48 @@
         "internalType": "contract IBank",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "increasePosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "maxLTV",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -147,10 +350,108 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "collToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collShareAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "reducePosition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "collaterals",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "maxLTVs",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "setCollateralsMaxLTVs",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "strategyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minPosSize",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPosSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "setPosSize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "strategies",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minPositionSize",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPositionSize",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -167,6 +468,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenTransferProxy",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -191,19 +505,6 @@
     "outputs": [
       {
         "internalType": "contract IWERC20",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "weth",
-    "outputs": [
-      {
-        "internalType": "address",
         "name": "",
         "type": "address"
       }

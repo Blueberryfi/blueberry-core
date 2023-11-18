@@ -15,42 +15,71 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/EnsureApprove.sol";
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/IHardVault.sol";
 
-/**
- * @author gmspacex
- * @title Hard Vault
- * @notice Hard Vault is a spot to lock LP tokens as collateral.
- * @dev HardVault is just holding LP tokens deposited by users.
- *      LP tokens should be listed by Blueberry team.
- *      HardVault is ERC1155 and Underlying LP tokens are identified by casted tokenId from token address
- * @dev HardVault is not on the road yet, need more research.
- */
+/// @title HardVault
+/// @notice The HardVault contract is used to lock LP tokens as collateral.
+///         This vault simply holds onto LP tokens deposited by users, serving as collateral storage.
+/// @dev The HardVault is an ERC1155 contract where each LP token is associated with a unique tokenId.
+///      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
+///      can be used as collateral in this vault.
 contract HardVault is
     OwnableUpgradeable,
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
+    EnsureApprove,
     IHardVault
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    /*//////////////////////////////////////////////////////////////////////////
+                                   PUBLIC STORAGE
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev address of protocol config
     IProtocolConfig public config;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                    EVENTS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Emitted when a user deposits ERC20 tokens into the vault.
+    /// @param account Address of the user.
+    /// @param amount Amount of ERC20 tokens deposited.
+    /// @param shareAmount Amount of ERC1155 tokens minted.
     event Deposited(
         address indexed account,
         uint256 amount,
         uint256 shareAmount
     );
+
+    /// @dev Emitted when a user withdraws ERC20 tokens from the vault.
+    /// @param account Address of the user.
+    /// @param amount Amount of ERC20 tokens withdrawn.
+    /// @param shareAmount Amount of ERC1155 tokens burned.
     event Withdrawn(
         address indexed account,
         uint256 amount,
         uint256 shareAmount
     );
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Initializes the HardVault contract with protocol configuration.
+    /// @param _config Address of the protocol configuration.
     function initialize(IProtocolConfig _config) external initializer {
         __ReentrancyGuard_init();
         __Ownable_init();
@@ -60,19 +89,24 @@ contract HardVault is
         config = _config;
     }
 
-    /// @dev Encode given underlying token address to tokenId
+    /// @dev Encodes a given ERC20 token address into a unique tokenId.
+    /// @param uToken Address of the ERC20 token.
+    /// @return TokenId representing the token.
     function _encodeTokenId(address uToken) internal pure returns (uint) {
         return uint256(uint160(uToken));
     }
 
-    /// @dev Decode given tokenId to underlyingToken address
+    /// @dev Decodes a given tokenId back into the ERC20 token address.
+    /// @param tokenId The tokenId to decode.
+    /// @return Address of the corresponding ERC20 token.
     function _decodeTokenId(uint tokenId) internal pure returns (address) {
         return address(uint160(tokenId));
     }
 
-    /// @notice Return the underlying ERC20 balance for the user.
-    /// @param token token address to get balance of
-    /// @param user user address to get balance of
+    /// @notice Gets the balance of a specific ERC20 token for a user.
+    /// @param token Address of the ERC20 token.
+    /// @param user Address of the user.
+    /// @return Balance of the user for the given token.
     function balanceOfERC20(
         address token,
         address user
@@ -80,9 +114,9 @@ contract HardVault is
         return balanceOf(user, _encodeTokenId(token));
     }
 
-    /// @notice Return the underlying ERC-20 for the given ERC-1155 token id.
-    /// @param tokenId token id (corresponds to token address for wrapped ERC20)
-    /// @return token underlying token address of given tokenId
+    /// @notice Maps a tokenId to its underlying ERC20 token.
+    /// @param tokenId The tokenId to resolve.
+    /// @return token Address of the corresponding ERC20 token.
     function getUnderlyingToken(
         uint256 tokenId
     ) external pure override returns (address token) {
@@ -91,11 +125,11 @@ contract HardVault is
             revert Errors.INVALID_TOKEN_ID(tokenId);
     }
 
-    /**
-     * @notice Deposit underlying assets on the vault and issue share token
-     * @param amount Underlying token amount to deposit
-     * @return shareAmount amount of vault share tokens minted
-     */
+    /// @notice Allows a user to deposit ERC20 tokens into the vault and mint corresponding ERC1155 tokens.
+    /// @dev Emits a {Deposited} event.
+    /// @param token The ERC20 token to deposit.
+    /// @param amount The amount of ERC20 tokens to deposit.
+    /// @return shareAmount The amount of ERC1155 tokens minted in return.
     function deposit(
         address token,
         uint256 amount
@@ -112,11 +146,11 @@ contract HardVault is
         emit Deposited(msg.sender, amount, shareAmount);
     }
 
-    /**
-     * @notice Withdraw underlying assets from the vault
-     * @param shareAmount Amount of vault share tokens to redeem
-     * @return withdrawAmount Amount of underlying assets withdrawn
-     */
+    /// @notice Allows a user to burn their ERC1155 tokens and withdraw the underlying ERC20 tokens.
+    /// @dev Emits a {Withdrawn} event.
+    /// @param token The ERC20 token to withdraw.
+    /// @param shareAmount The amount of ERC1155 tokens to burn.
+    /// @return withdrawAmount The amount of ERC20 tokens withdrawn.
     function withdraw(
         address token,
         uint256 shareAmount
@@ -125,8 +159,12 @@ contract HardVault is
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         _burn(msg.sender, _encodeTokenId(token), shareAmount);
 
-        // Cut withdraw fee if it is in withdrawVaultFee Window (2 months)
-        uToken.approve(address(config.feeManager()), shareAmount);
+        /// Apply withdrawal fee if within the fee window (e.g., 2 months)
+        _ensureApprove(
+            address(uToken),
+            address(config.feeManager()),
+            shareAmount
+        );
         withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
             address(uToken),
             shareAmount

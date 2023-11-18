@@ -100,17 +100,11 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "token",
+        "name": "registry",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "maxDelayTime",
-        "type": "uint256"
       }
     ],
-    "name": "SetMaxDelayTime",
+    "name": "SetRegistry",
     "type": "event"
   },
   {
@@ -119,11 +113,17 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "registry",
+        "name": "token",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "gap",
+        "type": "uint256"
       }
     ],
-    "name": "SetRegistry",
+    "name": "SetTimeGap",
     "type": "event"
   },
   {
@@ -147,7 +147,33 @@
   },
   {
     "inputs": [],
+    "name": "ANKRETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "USD",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WSTETH",
     "outputs": [
       {
         "internalType": "address",
@@ -174,26 +200,7 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "maxDelayTimes",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -270,11 +277,11 @@
       },
       {
         "internalType": "uint256[]",
-        "name": "maxDelays",
+        "name": "gaps",
         "type": "uint256[]"
       }
     ],
-    "name": "setMaxDelayTimes",
+    "name": "setTimeGap",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -295,6 +302,25 @@
     "name": "setTokenRemappings",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "timeGaps",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
