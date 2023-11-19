@@ -140,7 +140,7 @@ contract ConvexSpell is BasicSpell {
         /// 3. Add liquidity on curve, get crvLp
         {
             address borrowToken = param.borrowToken;
-            _ensureApprove(borrowToken, pool, borrowBalance);
+            IERC20(borrowToken).universalApprove(pool, borrowBalance);
             uint256 ethValue;
             uint256 tokenBalance = IERC20(borrowToken).balanceOf(address(this));
             require(borrowBalance <= tokenBalance, "impossible");
@@ -172,12 +172,12 @@ contract ConvexSpell is BasicSpell {
                     } else {
                         suppliedAmts[3] = tokenBalance;
                     }
-                    _ensureApprove(borrowToken, pool, 0);
-                    _ensureApprove(
-                        borrowToken,
+                    IERC20(borrowToken).universalApprove(pool, 0);
+                    IERC20(borrowToken).universalApprove(
                         CURVE_ZAP_DEPOSITOR,
                         borrowBalance
                     );
+
                     ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).add_liquidity(
                         pool,
                         suppliedAmts,
@@ -261,7 +261,7 @@ contract ConvexSpell is BasicSpell {
 
         /// 7. Deposit on Convex Pool, Put wrapped collateral tokens on Blueberry Bank
         uint256 lpAmount = IERC20(lpToken).balanceOf(address(this));
-        _ensureApprove(lpToken, address(wConvexPools), lpAmount);
+        IERC20(lpToken).universalApprove(address(wConvexPools), lpAmount);
         uint256 id = wConvexPools.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wConvexPools), id, lpAmount);
     }
@@ -420,7 +420,7 @@ contract ConvexSpell is BasicSpell {
             } else {
                 index = 3;
             }
-            _ensureApprove(pool, CURVE_ZAP_DEPOSITOR, amountPosRemove);
+            IERC20(pool).universalApprove(CURVE_ZAP_DEPOSITOR, amountPosRemove);
             ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).remove_liquidity_one_coin(
                 pool,
                 amountPosRemove,

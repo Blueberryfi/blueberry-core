@@ -17,7 +17,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/EnsureApprove.sol";
+import "../libraries/UniversalERC20.sol";
 import "../interfaces/IWConvexPools.sol";
 import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/convex/IRewarder.sol";
@@ -34,11 +34,11 @@ contract WConvexPools is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
     OwnableUpgradeable,
-    EnsureApprove,
     IERC20Wrapper,
     IWConvexPools
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -295,7 +295,7 @@ contract WConvexPools is
             amount
         );
 
-        _ensureApprove(lpToken, address(cvxPools), amount);
+        IERC20(lpToken).universalApprove(address(cvxPools), amount);
         cvxPools.deposit(pid, amount, true);
 
         uint256 crvRewardPerToken = IRewarder(cvxRewarder).rewardPerToken();

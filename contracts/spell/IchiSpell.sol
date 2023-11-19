@@ -123,7 +123,7 @@ contract IchiSpell is BasicSpell {
 
         /// 3. Add liquidity - Deposit on ICHI Vault
         bool isTokenA = vault.token0() == param.borrowToken;
-        _ensureApprove(param.borrowToken, address(vault), borrowBalance);
+        IERC20(param.borrowToken).universalApprove(address(vault), borrowBalance);
 
         uint ichiVaultShare;
         if (isTokenA) {
@@ -197,7 +197,7 @@ contract IchiSpell is BasicSpell {
 
         /// 5. Deposit on farming pool, put collateral
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
-        _ensureApprove(lpToken, address(wIchiFarm), lpAmount);
+        IERC20(lpToken).universalApprove(address(wIchiFarm), lpAmount);
         uint256 id = wIchiFarm.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }
@@ -247,8 +247,8 @@ contract IchiSpell is BasicSpell {
                     amountOutMinimum: param.amountOutMin,
                     sqrtPriceLimitX96: 0
                 });
-
-            _ensureApprove(params.tokenIn, address(uniV3Router), amountIn);
+            
+            IERC20(params.tokenIn).universalApprove(address(uniV3Router), amountIn);
             uniV3Router.exactInputSingle(params);
         }
 

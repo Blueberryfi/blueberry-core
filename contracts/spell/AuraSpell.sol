@@ -161,7 +161,7 @@ contract AuraSpell is BasicSpell {
 
         /// 7. Deposit the tokens in the Aura pool and place the wrapped collateral tokens in the Blueberry Bank.
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
-        _ensureApprove(lpToken, address(wAuraPools), lpAmount);
+        IERC20(lpToken).universalApprove(address(wAuraPools), lpAmount);
         uint256 id = wAuraPools.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wAuraPools), id, lpAmount);
     }
@@ -276,7 +276,7 @@ contract AuraSpell is BasicSpell {
             if (tokens[i] != lpToken) {
                 amountsIn[j] = IERC20(tokens[i]).balanceOf(address(this));
                 if (amountsIn[j] > 0) {
-                    _ensureApprove(tokens[i], vault, amountsIn[j]);
+                    IERC20(tokens[i]).universalApprove(vault, amountsIn[j]);
                     maxAmountsIn[i] = amountsIn[j];
                 }
                 ++j;

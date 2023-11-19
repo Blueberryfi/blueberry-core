@@ -113,11 +113,7 @@ contract ShortLongSpell is BasicSpell {
         if (dstTokenAmt == 0) revert Errors.SWAP_FAILED(borrowToken);
 
         /// 4. Deposit to SoftVault directly
-        _ensureApprove(
-            address(swapToken),
-            address(strategy.vault),
-            dstTokenAmt
-        );
+        IERC20(swapToken).universalApprove(address(strategy.vault), dstTokenAmt);
         ISoftVault(strategy.vault).deposit(dstTokenAmt);
 
         /// 5. Validate MAX LTV
