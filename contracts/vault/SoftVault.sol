@@ -101,7 +101,7 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         uint256 cBalanceBefore = bToken.balanceOf(address(this));
-        IERC20(uToken).universalApprove(address(bToken), amount);
+        IERC20(address(uToken)).universalApprove(address(bToken), amount);
         if (bToken.mint(uBalanceAfter - uBalanceBefore) != 0)
             revert Errors.LEND_FAILED(amount);
         uint256 cBalanceAfter = bToken.balanceOf(address(this));
@@ -130,7 +130,7 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
-        IERC20(uToken).universalApprove(address(config.feeManager()), withdrawAmount);
+        IERC20(address(uToken)).universalApprove(address(config.feeManager()), withdrawAmount);
 
         withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
             address(uToken),

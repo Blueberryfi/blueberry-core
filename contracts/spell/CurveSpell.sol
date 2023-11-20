@@ -15,6 +15,7 @@ import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWCurveGauge.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
+import "../libraries/UniversalERC20.sol";
 
 /**
  * @title CurveSpell
@@ -23,6 +24,7 @@ import "../libraries/Paraswap/PSwapLib.sol";
  * defines how Blueberry Protocol interacts with Curve pools
  */
 contract CurveSpell is BasicSpell {
+    using UniversalERC20 for IERC20;
     using UniversalERC20 for IERC20;
 
     /// @dev address of Wrapped Curve Gauge

@@ -32,7 +32,7 @@ import "./libraries/UniversalERC20.sol";
 contract BlueBerryBank is
     OwnableUpgradeable,
     ERC1155NaiveReceiver,
-    IBank,
+    IBank
 {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;

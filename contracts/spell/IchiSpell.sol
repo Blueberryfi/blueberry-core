@@ -19,6 +19,7 @@ import "./BasicSpell.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/ichi/IICHIVault.sol";
 import "../interfaces/uniswap/IUniswapV3Router.sol";
+import "../libraries/UniversalERC20.sol";
 
 /// @title IchiSpell
 /// @author BlueberryProtocol
@@ -27,6 +28,7 @@ contract IchiSpell is BasicSpell {
     using SafeCast for uint256;
     using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE

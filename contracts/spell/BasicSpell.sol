@@ -297,7 +297,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     function _doCutRewardsFee(address token) internal returns (uint256 left) {
         uint256 rewardsBalance = IERC20(token).balanceOf(address(this));
         if (rewardsBalance > 0) {
-            IERC20(token).universalApprove(address(bank.feeManager(())), rewardsBalance);
+            IERC20(token).universalApprove(address(bank.feeManager()), rewardsBalance);
             left = bank.feeManager().doCutRewardsFee(token, rewardsBalance);
         }
     }

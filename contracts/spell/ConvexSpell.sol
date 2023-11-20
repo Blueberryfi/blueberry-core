@@ -17,6 +17,7 @@ import "../interfaces/ICurveZapDepositor.sol";
 import "../interfaces/IWConvexPools.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
+import "../libraries/UniversalERC20.sol";
 
 /// @title ConvexSpell
 /// @author BlueberryProtocol
@@ -25,6 +26,7 @@ import "../libraries/Paraswap/PSwapLib.sol";
 ///         and facilitates operations related to liquidity provision.
 contract ConvexSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     struct ClosePositionFarmParam {
         ClosePosParam param;

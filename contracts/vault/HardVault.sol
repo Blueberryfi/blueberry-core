@@ -160,7 +160,7 @@ contract HardVault is
         _burn(msg.sender, _encodeTokenId(token), shareAmount);
 
         /// Apply withdrawal fee if within the fee window (e.g., 2 months)
-        IERC20(uToken).universalApprove(address(config.feeManager()), shareAmount);
+        IERC20(address(uToken)).universalApprove(address(config.feeManager()), shareAmount);
 
         withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
             address(uToken),

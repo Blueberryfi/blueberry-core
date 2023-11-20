@@ -200,7 +200,7 @@ contract WIchiFarm is
 
         /// Convert Legacy ICHI to ICHI v2
         if (ichiRewards > 0) {
-            IERC20(ICHIv1).universalApprove(address(ICHI), ichiRewards);
+            IERC20(address(ICHIv1)).universalApprove(address(ICHI), ichiRewards);
             ICHI.convertToV2(ichiRewards);
         }
 

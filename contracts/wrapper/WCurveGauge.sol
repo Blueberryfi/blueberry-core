@@ -164,7 +164,7 @@ contract WCurveGauge is
         IERC20Upgradeable lpToken = IERC20Upgradeable(gauge.lp_token());
         lpToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        IERC20(lpToken).universalApprove(address(gauge), amount);
+        IERC20(address(lpToken)).universalApprove(address(gauge), amount);
         gauge.deposit(amount);
 
         uint256 id = encodeId(gid, accCrvPerShares[gid]);

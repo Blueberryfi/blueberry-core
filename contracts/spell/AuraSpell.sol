@@ -16,6 +16,7 @@ import "./BasicSpell.sol";
 import "../interfaces/IWAuraPools.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
+import "../libraries/UniversalERC20.sol";
 
 /// @title AuraSpell
 /// @author BlueberryProtocol
@@ -23,6 +24,7 @@ import "../libraries/Paraswap/PSwapLib.sol";
 ///         defines how Blueberry Protocol interacts with Aura pools
 contract AuraSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
