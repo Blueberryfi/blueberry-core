@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 /// @title EnsureApprove
 /// @notice Helper to ensure approvals are set correctly

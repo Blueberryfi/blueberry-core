@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 interface ICurveFactory {
     function get_n_coins(address lp) external view returns (uint256);
