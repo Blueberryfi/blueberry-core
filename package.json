@@ -12,7 +12,10 @@
     "release:patch": "standard-version --release-as patch",
     "release:minor": "standard-version --release-as minor",
     "release:major": "standard-version --release-as major",
-    "prettier": "npx prettier --write contracts"
+    "lint": "yarn lint:solidity && yarn lint:typescript",
+    "lint:solidity": "solhint --fix 'contracts/**/*.sol'",
+    "lint:typescript": "eslint . --fix --ext .ts --ignore-path ../../.eslintignore  --max-warnings 0",
+    "prettier": "prettier --write 'contracts/**/*.sol'"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.4.1",
