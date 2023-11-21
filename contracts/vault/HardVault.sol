@@ -16,9 +16,9 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/EnsureApprove.sol";
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/IHardVault.sol";
+import "../libraries/UniversalERC20.sol";
 
 /// @title HardVault
 /// @notice The HardVault contract is used to lock LP tokens as collateral.
@@ -30,10 +30,10 @@ contract HardVault is
     OwnableUpgradeable,
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
-    EnsureApprove,
     IHardVault
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
@@ -160,11 +160,8 @@ contract HardVault is
         _burn(msg.sender, _encodeTokenId(token), shareAmount);
 
         /// Apply withdrawal fee if within the fee window (e.g., 2 months)
-        _ensureApprove(
-            address(uToken),
-            address(config.feeManager()),
-            shareAmount
-        );
+        IERC20(address(uToken)).universalApprove(address(config.feeManager()), shareAmount);
+
         withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
             address(uToken),
             shareAmount

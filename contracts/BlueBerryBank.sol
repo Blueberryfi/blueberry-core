@@ -17,7 +17,6 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
-import "./utils/EnsureApprove.sol";
 import "./utils/ERC1155NaiveReceiver.sol";
 import "./interfaces/IBank.sol";
 import "./interfaces/ICoreOracle.sol";
@@ -25,6 +24,7 @@ import "./interfaces/ISoftVault.sol";
 import "./interfaces/IHardVault.sol";
 import "./interfaces/compound/ICErc20.sol";
 import "./libraries/BBMath.sol";
+import "./libraries/UniversalERC20.sol";
 
  /// @title BlueberryBank
  /// @author BlueberryProtocol
@@ -32,11 +32,11 @@ import "./libraries/BBMath.sol";
 contract BlueBerryBank is
     OwnableUpgradeable,
     ERC1155NaiveReceiver,
-    IBank,
-    EnsureApprove
+    IBank
 {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -693,16 +693,16 @@ contract BlueBerryBank is
             address(this),
             amount
         );
-        _ensureApprove(token, address(feeManager()), amount);
+        IERC20(token).universalApprove(address(feeManager()), amount);
         amount = feeManager().doCutDepositFee(token, amount);
 
         if (_isSoftVault(token)) {
-            _ensureApprove(token, bank.softVault, amount);
+            IERC20(token).universalApprove(bank.softVault, amount);
             pos.underlyingVaultShare += ISoftVault(bank.softVault).deposit(
                 amount
             );
         } else {
-            _ensureApprove(token, bank.hardVault, amount);
+            IERC20(token).universalApprove(bank.hardVault, amount);
             pos.underlyingVaultShare += IHardVault(bank.hardVault).deposit(
                 token,
                 amount
@@ -731,7 +731,7 @@ contract BlueBerryBank is
 
         uint256 wAmount;
         if (_isSoftVault(token)) {
-            _ensureApprove(bank.softVault, bank.softVault, shareAmount);
+            IERC20(bank.softVault).universalApprove(bank.softVault, shareAmount);
             wAmount = ISoftVault(bank.softVault).withdraw(shareAmount);
         } else {
             wAmount = IHardVault(bank.hardVault).withdraw(token, shareAmount);
@@ -739,7 +739,7 @@ contract BlueBerryBank is
 
         pos.underlyingVaultShare -= shareAmount;
 
-        _ensureApprove(token, address(feeManager()), wAmount);
+        IERC20(token).universalApprove(address(feeManager()), wAmount);
         wAmount = feeManager().doCutWithdrawFee(token, wAmount);
 
         IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
@@ -929,7 +929,7 @@ contract BlueBerryBank is
         uint256 amountCall
     ) internal returns (uint256 repaidAmount) {
         address bToken = banks[token].bToken;
-        _ensureApprove(token, bToken, amountCall);
+        IERC20(token).universalApprove(bToken, amountCall);
         uint256 beforeDebt = _borrowBalanceStored(token);
         if (ICErc20(bToken).repayBorrow(amountCall) != 0)
             revert Errors.REPAY_FAILED(amountCall);

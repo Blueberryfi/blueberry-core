@@ -16,7 +16,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/EnsureApprove.sol";
+import "../libraries/UniversalERC20.sol";
 import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/IWCurveGauge.sol";
 import "../interfaces/curve/ILiquidityGauge.sol";
@@ -37,11 +37,11 @@ contract WCurveGauge is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
     OwnableUpgradeable,
-    EnsureApprove,
     IERC20Wrapper,
     IWCurveGauge
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -164,7 +164,7 @@ contract WCurveGauge is
         IERC20Upgradeable lpToken = IERC20Upgradeable(gauge.lp_token());
         lpToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        _ensureApprove(address(lpToken), address(gauge), amount);
+        IERC20(address(lpToken)).universalApprove(address(gauge), amount);
         gauge.deposit(amount);
 
         uint256 id = encodeId(gid, accCrvPerShares[gid]);

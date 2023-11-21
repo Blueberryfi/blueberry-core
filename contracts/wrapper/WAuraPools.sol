@@ -17,7 +17,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/EnsureApprove.sol";
+import "../libraries/UniversalERC20.sol";
 import "../interfaces/IWAuraPools.sol";
 import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/aura/IAuraRewarder.sol";
@@ -36,11 +36,11 @@ contract WAuraPools is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
     OwnableUpgradeable,
-    EnsureApprove,
     IERC20Wrapper,
     IWAuraPools
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -368,7 +368,7 @@ contract WAuraPools is
             amount
         );
 
-        _ensureApprove(lpToken, address(auraPools), amount);
+        IERC20(lpToken).universalApprove(address(auraPools), amount);
         auraPools.deposit(pid, amount, true);
 
         /// BAL reward handle logic

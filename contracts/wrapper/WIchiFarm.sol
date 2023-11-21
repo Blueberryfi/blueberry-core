@@ -17,7 +17,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/EnsureApprove.sol";
+import "../libraries/UniversalERC20.sol";
 import "../libraries/BBMath.sol";
 import "../interfaces/IWIchiFarm.sol";
 import "../interfaces/IERC20Wrapper.sol";
@@ -33,7 +33,6 @@ import "../interfaces/ichi/IIchiFarm.sol";
 contract WIchiFarm is
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
-    EnsureApprove,
     OwnableUpgradeable,
     IERC20Wrapper,
     IWIchiFarm
@@ -41,6 +40,7 @@ contract WIchiFarm is
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeERC20Upgradeable for IIchiV2;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -172,7 +172,7 @@ contract WIchiFarm is
             amount
         );
 
-        _ensureApprove(lpToken, address(ichiFarm), amount);
+        IERC20(lpToken).universalApprove(address(ichiFarm), amount);
         ichiFarm.deposit(pid, amount, address(this));
         (uint256 ichiPerShare, , ) = ichiFarm.poolInfo(pid);
         uint256 id = encodeId(pid, ichiPerShare);
@@ -200,7 +200,7 @@ contract WIchiFarm is
 
         /// Convert Legacy ICHI to ICHI v2
         if (ichiRewards > 0) {
-            _ensureApprove(address(ICHIv1), address(ICHI), ichiRewards);
+            IERC20(address(ICHIv1)).universalApprove(address(ICHI), ichiRewards);
             ICHI.convertToV2(ichiRewards);
         }
 

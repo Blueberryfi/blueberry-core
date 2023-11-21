@@ -16,10 +16,10 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/EnsureApprove.sol";
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/ISoftVault.sol";
 import "../interfaces/compound/ICErc20.sol";
+import "../libraries/UniversalERC20.sol";
 
 /// @author BlueberryProtocol
 /// @title Soft Vault
@@ -30,10 +30,10 @@ contract SoftVault is
     OwnableUpgradeable,
     ERC20Upgradeable,
     ReentrancyGuardUpgradeable,
-    EnsureApprove,
     ISoftVault
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -101,7 +101,7 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         uint256 cBalanceBefore = bToken.balanceOf(address(this));
-        _ensureApprove(address(uToken), address(bToken), amount);
+        IERC20(address(uToken)).universalApprove(address(bToken), amount);
         if (bToken.mint(uBalanceAfter - uBalanceBefore) != 0)
             revert Errors.LEND_FAILED(amount);
         uint256 cBalanceAfter = bToken.balanceOf(address(this));
@@ -130,11 +130,8 @@ contract SoftVault is
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
-        _ensureApprove(
-            address(uToken),
-            address(config.feeManager()),
-            withdrawAmount
-        );
+        IERC20(address(uToken)).universalApprove(address(config.feeManager()), withdrawAmount);
+
         withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
             address(uToken),
             withdrawAmount

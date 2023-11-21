@@ -15,6 +15,7 @@ import "../interfaces/ICurveOracle.sol";
 import "../interfaces/IWCurveGauge.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
+import "../libraries/UniversalERC20.sol";
 
 /**
  * @title CurveSpell
@@ -105,7 +106,7 @@ contract CurveSpell is BasicSpell {
         // 3. Add liquidity on curve
         {
             address borrowToken = param.borrowToken;
-            _ensureApprove(borrowToken, pool, borrowBalance);
+            IERC20(borrowToken).universalApprove(pool, borrowBalance);
             uint256 ethValue;
             uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(address(this));
             require(borrowBalance <= tokenBalance, "impossible");
@@ -186,7 +187,7 @@ contract CurveSpell is BasicSpell {
 
         // 7. Deposit on Curve Gauge, Put wrapped collateral tokens on Blueberry Bank
         uint256 lpAmount = IERC20(lp).balanceOf(address(this));
-        _ensureApprove(lp, address(wCurveGauge), lpAmount);
+        IERC20(lp).universalApprove(address(wCurveGauge), lpAmount);
         uint256 id = wCurveGauge.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wCurveGauge), id, lpAmount);
     }

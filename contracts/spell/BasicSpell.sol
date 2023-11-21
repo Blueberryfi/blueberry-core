@@ -15,7 +15,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20Metadat
 
 import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/EnsureApprove.sol";
 import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
@@ -26,8 +25,8 @@ import "../libraries/Paraswap/PSwapLib.sol";
 /// @title BasicSpell
 /// @author BlueberryProtocol
 /// @notice BasicSpell is the abstract contract that other spells utilize
-/// @dev It extends functionalities from ERC1155NaiveReceiver, OwnableUpgradeable and EnsureApprove
-abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, EnsureApprove {
+/// @dev It extends functionalities from ERC1155NaiveReceiver, OwnableUpgradeable
+abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -298,7 +297,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
     function _doCutRewardsFee(address token) internal returns (uint256 left) {
         uint256 rewardsBalance = IERC20(token).balanceOf(address(this));
         if (rewardsBalance > 0) {
-            _ensureApprove(token, address(bank.feeManager()), rewardsBalance);
+            IERC20(token).universalApprove(address(bank.feeManager()), rewardsBalance);
             left = bank.feeManager().doCutRewardsFee(token, rewardsBalance);
         }
     }
@@ -373,12 +372,18 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
     /// @param amount Amount of tokens to repay.
     function _doRepay(address token, uint256 amount) internal {
         if (amount > 0) {
+            address t;
             bool isETH = IERC20(token).isETH();
+
             if (isETH) {
                 IWETH(WETH).deposit{value: amount}();
+                t = WETH;
+            } else {
+                t = token;
             }
-            _ensureApprove(isETH ? WETH : token, address(bank), amount);
-            bank.repay(isETH ? WETH : token, amount);
+            
+            IERC20(t).universalApprove(address(bank), amount);
+            bank.repay(t, amount);
         }
     }
 
@@ -390,7 +395,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
     /// @param amount Amount of collateral tokens to deposit.
     function _doPutCollateral(address token, uint256 amount) internal {
         if (amount > 0) {
-            _ensureApprove(token, address(werc20), amount);
+            IERC20(token).universalApprove(address(werc20), amount);
             werc20.mint(token, amount);
             bank.putCollateral(address(werc20), uint256(uint160(token)), amount);
         }
