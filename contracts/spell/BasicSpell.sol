@@ -358,9 +358,12 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     function _doBorrow(address token, uint256 amount) internal returns (uint256 borrowedAmount) {
         if (amount > 0) {
             bool isETH = IERC20(token).isETH();
-            borrowedAmount = bank.borrow(isETH ? WETH : token, amount);
+            
             if (isETH) {
+                borrowedAmount = bank.borrow(WETH, amount);
                 IWETH(WETH).withdraw(borrowedAmount);
+            } else {
+                borrowedAmount = bank.borrow(token, amount);
             }
         }
     }
