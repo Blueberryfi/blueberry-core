@@ -149,13 +149,10 @@ contract AuraSpell is BasicSpell {
             );
             /// Distribute the multiple rewards to users.
             uint256 rewardTokensLength = rewardTokens.length;
-            for (uint256 i; i != rewardTokensLength; ) {
+            for (uint256 i; i != rewardTokensLength; ++i) {
                 _doRefundRewards(
                     rewardTokens[i] == STASH_AURA ? AURA : rewardTokens[i]
                 );
-                unchecked {
-                    ++i;
-                }
             }
         }
 
@@ -272,7 +269,7 @@ contract AuraSpell is BasicSpell {
         uint256[] memory amountsIn = new uint256[](length);
         bool isLPIncluded;
 
-        for (i; i != length; ) {
+        for (i; i != length; ++i) {
             if (tokens[i] != lpToken) {
                 amountsIn[j] = IERC20(tokens[i]).balanceOf(address(this));
                 if (amountsIn[j] > 0) {
@@ -281,10 +278,6 @@ contract AuraSpell is BasicSpell {
                 }
                 ++j;
             } else isLPIncluded = true;
-
-            unchecked {
-                ++i;
-            }
         }
 
         if (isLPIncluded) {
@@ -314,7 +307,7 @@ contract AuraSpell is BasicSpell {
         uint256[] memory minAmountsOut = new uint256[](length);
         uint256 exitTokenIndex;
 
-        for (uint256 i; i != length; ) {
+        for (uint256 i; i != length; ++i) {
             if (tokens[i] == borrowToken) {
                 minAmountsOut[i] = amountOutMin;
                 break;
@@ -322,9 +315,6 @@ contract AuraSpell is BasicSpell {
 
             if (tokens[i] != lpToken) ++exitTokenIndex;
 
-            unchecked {
-                ++i;
-            }
         }
 
         return (minAmountsOut, tokens, exitTokenIndex);
@@ -336,7 +326,7 @@ contract AuraSpell is BasicSpell {
         bytes[] calldata swapDatas
     ) internal {
         uint256 rewardTokensLength = rewardTokens.length;
-        for (uint256 i; i != rewardTokensLength; ) {
+        for (uint256 i; i != rewardTokensLength; ++i) {
             address sellToken = rewardTokens[i];
             if (sellToken == STASH_AURA) sellToken = AURA;
 
@@ -354,10 +344,6 @@ contract AuraSpell is BasicSpell {
 
             /// Refund rest (dust) amount to owner
             _doRefund(sellToken);
-
-            unchecked {
-                ++i;
-            }
         }
     }
 }
