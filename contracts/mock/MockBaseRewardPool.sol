@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -123,7 +123,7 @@ contract MockBaseRewardPool {
         require(_amount > 0, "RewardPool : Cannot stake 0");
 
         //also stake to linked rewards
-        for (uint i = 0; i < extraRewards.length; i++) {
+        for (uint i = 0; i < extraRewards.length; ++i) {
             MockVirtualBalanceRewardPool(extraRewards[i]).stake(_for, _amount);
         }
 
@@ -151,7 +151,7 @@ contract MockBaseRewardPool {
         require(amount > 0, "RewardPool : Cannot withdraw 0");
 
         //also withdraw from linked rewards
-        for (uint i = 0; i < extraRewards.length; i++) {
+        for (uint i = 0; i < extraRewards.length; ++i) {
             MockVirtualBalanceRewardPool(extraRewards[i]).withdraw(
                 msg.sender,
                 amount
@@ -209,7 +209,7 @@ contract MockBaseRewardPool {
 
         //also get rewards from linked rewards
         if (_claimExtras) {
-            for (uint i = 0; i < extraRewards.length; i++) {
+            for (uint i = 0; i < extraRewards.length; ++i) {
                 MockVirtualBalanceRewardPool(extraRewards[i]).getReward(
                     _account
                 );

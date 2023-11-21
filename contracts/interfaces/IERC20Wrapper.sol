@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 /// @title IERC20Wrapper
 /// @notice Interface for the ERC20Wrapper contract which allows the wrapping

@@ -9,7 +9,7 @@
 */
 
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 

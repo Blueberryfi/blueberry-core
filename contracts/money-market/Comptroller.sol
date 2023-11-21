@@ -147,7 +147,7 @@ contract Comptroller is
         uint256 len = bTokens.length;
 
         uint256[] memory results = new uint256[](len);
-        for (uint256 i = 0; i < len; i++) {
+        for (uint256 i = 0; i < len; ++i) {
             BToken bToken = BToken(bTokens[i]);
 
             results[i] = uint256(addToMarketInternal(bToken, msg.sender));
@@ -239,7 +239,7 @@ contract Comptroller is
         BToken[] memory userAssetList = accountAssets[msg.sender];
         uint256 len = userAssetList.length;
         uint256 assetIndex = len;
-        for (uint256 i = 0; i < len; i++) {
+        for (uint256 i = 0; i < len; ++i) {
             if (userAssetList[i] == bToken) {
                 assetIndex = i;
                 break;
@@ -972,7 +972,7 @@ contract Comptroller is
 
         // For each asset the account is in
         BToken[] memory assets = accountAssets[account];
-        for (uint256 i = 0; i < assets.length; i++) {
+        for (uint256 i = 0; i < assets.length; ++i) {
             BToken asset = assets[i];
 
             // Skip the asset if it is not listed or soft delisted.
@@ -1333,7 +1333,7 @@ contract Comptroller is
         }
         delete markets[address(bToken)];
 
-        for (uint256 i = 0; i < allMarkets.length; i++) {
+        for (uint256 i = 0; i < allMarkets.length; ++i) {
             if (allMarkets[i] == bToken) {
                 allMarkets[i] = allMarkets[allMarkets.length - 1];
                 delete allMarkets[allMarkets.length - 1];
@@ -1346,7 +1346,7 @@ contract Comptroller is
     }
 
     function _addMarketInternal(address bToken) internal {
-        for (uint256 i = 0; i < allMarkets.length; i++) {
+        for (uint256 i = 0; i < allMarkets.length; ++i) {
             require(allMarkets[i] != BToken(bToken), "market already added");
         }
         allMarkets.push(BToken(bToken));
@@ -1376,7 +1376,7 @@ contract Comptroller is
             "invalid input"
         );
 
-        for (uint256 i = 0; i < numMarkets; i++) {
+        for (uint256 i = 0; i < numMarkets; ++i) {
             supplyCaps[address(bTokens[i])] = newSupplyCaps[i];
             emit NewSupplyCap(bTokens[i], newSupplyCaps[i]);
         }
@@ -1406,7 +1406,7 @@ contract Comptroller is
             "invalid input"
         );
 
-        for (uint256 i = 0; i < numMarkets; i++) {
+        for (uint256 i = 0; i < numMarkets; ++i) {
             borrowCaps[address(bTokens[i])] = newBorrowCaps[i];
             emit NewBorrowCap(bTokens[i], newBorrowCaps[i]);
         }
