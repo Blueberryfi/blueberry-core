@@ -332,7 +332,7 @@ contract WAuraPools is
         rewards[1] = _getAllocatedAURA(pid, stAuraPerShare, amount);
 
         /// Additional rewards
-        for (uint256 i; i != extraRewardsCount; ) {
+        for (uint256 i; i != extraRewardsCount; ++i) {
             address rewarder = extraRewards[pid][i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IAuraRewarder(rewarder).rewardToken();
@@ -345,10 +345,6 @@ contract WAuraPools is
                     amount,
                     lpDecimals
                 );
-            }
-
-            unchecked {
-                ++i;
             }
         }
     }
@@ -384,7 +380,7 @@ contract WAuraPools is
         /// Store extra rewards info
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();
-        for (uint256 i; i != extraRewardsCount; ) {
+        for (uint256 i; i != extraRewardsCount; ++i) {
             address extraRewarder = IAuraRewarder(auraRewarder).extraRewards(i);
             uint256 rewardPerToken = IAuraRewarder(extraRewarder)
                 .rewardPerToken();
@@ -393,10 +389,6 @@ contract WAuraPools is
                 : rewardPerToken;
 
             _syncExtraReward(pid, extraRewarder);
-
-            unchecked {
-                ++i;
-            }
         }
 
         auraPerShareDebt[id] = auraPerShareByPid[pid];
@@ -440,12 +432,9 @@ contract WAuraPools is
         uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
             .extraRewardsLength();
 
-        for (uint256 i; i != extraRewardsCount; ) {
+        for (uint256 i; i != extraRewardsCount; ++i) {
             _syncExtraReward(pid, IAuraRewarder(auraRewarder).extraRewards(i));
 
-            unchecked {
-                ++i;
-            }
         }
         uint256 storedExtraRewardLength = extraRewards[pid].length;
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
@@ -454,25 +443,19 @@ contract WAuraPools is
 
         /// Withdraw manually
         if (hasDiffExtraRewards) {
-            for (uint256 i; i != storedExtraRewardLength; ) {
+            for (uint256 i; i != storedExtraRewardLength; ++i) {
                 IAuraExtraRewarder(extraRewards[pid][i]).getReward();
 
-                unchecked {
-                    ++i;
-                }
             }
         }
 
         uint256 rewardTokensLength = rewardTokens.length;
-        for (uint256 i; i != rewardTokensLength; ) {
+        for (uint256 i; i != rewardTokensLength; ++i) {
             if (rewards[i] != 0) {
                 address rewardToken = rewardTokens[i];
                 IERC20Upgradeable(
                     rewardToken == STASH_AURA ? address(AURA) : rewardToken
                 ).safeTransfer(msg.sender, rewards[i]);
-            }
-            unchecked {
-                ++i;
             }
         }
     }

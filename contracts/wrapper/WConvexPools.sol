@@ -253,7 +253,7 @@ contract WConvexPools is
         tokens[1] = address(CVX);
         rewards[1] = _getAllocatedCVX(pid, stCrvPerShare, amount);
 
-        for (uint256 i; i < extraRewardsCount; ) {
+        for (uint256 i; i < extraRewardsCount; ++i) {
             address rewarder = extraRewards[pid][i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IRewarder(rewarder).rewardToken();
@@ -268,10 +268,6 @@ contract WConvexPools is
                     amount,
                     lpDecimals
                 );
-            }
-
-            unchecked {
-                ++i;
             }
         }
     }
@@ -303,7 +299,7 @@ contract WConvexPools is
         _mint(msg.sender, id, amount, "");
         /// Store extra rewards info
         uint256 extraRewardsCount = IRewarder(cvxRewarder).extraRewardsLength();
-        for (uint256 i; i < extraRewardsCount; ) {
+        for (uint256 i; i < extraRewardsCount; ++i) {
             address extraRewarder = IRewarder(cvxRewarder).extraRewards(i);
             uint256 rewardPerToken = IRewarder(extraRewarder).rewardPerToken();
             accExtPerShare[id][extraRewarder] = rewardPerToken == 0
@@ -311,10 +307,6 @@ contract WConvexPools is
                 : rewardPerToken;
 
             _syncExtraReward(pid, extraRewarder);
-
-            unchecked {
-                ++i;
-            }
         }
 
         cvxPerShareDebt[id] = cvxPerShareByPid[pid];
@@ -356,12 +348,9 @@ contract WConvexPools is
 
         uint256 extraRewardsCount = IRewarder(cvxRewarder).extraRewardsLength();
 
-        for (uint256 i; i < extraRewardsCount; ) {
+        for (uint256 i; i < extraRewardsCount; ++i) {
             _syncExtraReward(pid, IRewarder(cvxRewarder).extraRewards(i));
 
-            unchecked {
-                ++i;
-            }
         }
         uint256 storedExtraRewardLength = extraRewards[pid].length;
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
@@ -370,25 +359,17 @@ contract WConvexPools is
 
         /// Withdraw manually
         if (hasDiffExtraRewards) {
-            for (uint256 i; i < storedExtraRewardLength; ) {
+            for (uint256 i; i < storedExtraRewardLength; ++i) {
                 ICvxExtraRewarder(extraRewards[pid][i]).getReward();
-
-                unchecked {
-                    ++i;
-                }
             }
         }
 
         uint256 rewardLen = rewardTokens.length;
-        for (uint256 i; i < rewardLen; ) {
+        for (uint256 i; i < rewardLen; ++i) {
             IERC20Upgradeable(rewardTokens[i]).safeTransfer(
                 msg.sender,
                 rewards[i]
             );
-
-            unchecked {
-                ++i;
-            }
         }
     }
 
