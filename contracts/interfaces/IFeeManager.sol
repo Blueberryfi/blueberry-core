@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 /// @title IFeeManager
 /// @notice Interface for FeeManager, the central fee management contract in the Blueberry Protocol.

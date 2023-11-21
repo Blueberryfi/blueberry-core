@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
@@ -232,7 +232,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
 
-        for (uint256 i = 0; i < collaterals.length; i++) {
+        for (uint256 i = 0; i < collaterals.length; ++i) {
             if (collaterals[i] == address(0)) revert Errors.ZERO_ADDRESS();
             if (maxLTVs[i] == 0) revert Errors.ZERO_AMOUNT();
             maxLTV[strategyId][collaterals[i]] = maxLTVs[i];

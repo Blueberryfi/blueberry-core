@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
@@ -456,7 +456,7 @@ contract BlueBerryBank is
             (address[] memory tokens, uint256[] memory rewards) = IERC20Wrapper(
                 pos.collToken
             ).pendingRewards(pos.collId, pos.collateralSize);
-            for (uint256 i; i < tokens.length; i++) {
+            for (uint256 i; i < tokens.length; ++i) {
                 if (oracle.isTokenSupported(tokens[i])) {
                     rewardsValue += oracle.getTokenValue(tokens[i], rewards[i]);
                 }

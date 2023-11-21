@@ -10,7 +10,7 @@
 
 /// title BlueberryErrors
 /// @notice containing all errors used in Blueberry protocol
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 /*//////////////////////////////////////////////////////////////////////////
                                 COMMON ERRORS
