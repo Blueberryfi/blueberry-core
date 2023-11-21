@@ -25,7 +25,6 @@ import "../libraries/UniversalERC20.sol";
  */
 contract CurveSpell is BasicSpell {
     using UniversalERC20 for IERC20;
-    using UniversalERC20 for IERC20;
 
     /// @dev address of Wrapped Curve Gauge
     IWCurveGauge public wCurveGauge;
