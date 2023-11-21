@@ -233,7 +233,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable, Ensure
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
 
-        for (uint256 i = 0; i < collaterals.length; i++) {
+        for (uint256 i = 0; i < collaterals.length; ++i) {
             if (collaterals[i] == address(0)) revert Errors.ZERO_ADDRESS();
             if (maxLTVs[i] == 0) revert Errors.ZERO_AMOUNT();
             maxLTV[strategyId][collaterals[i]] = maxLTVs[i];

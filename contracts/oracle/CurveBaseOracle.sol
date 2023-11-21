@@ -80,7 +80,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             (uint256 n, ) = ICurveRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveRegistry(registry).get_coins(pool);
             ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; i++) {
+            for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
             virtualPrice = ICurveRegistry(registry)
@@ -96,7 +96,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             address[8] memory coins = ICurveCryptoSwapRegistry(registry)
                 .get_coins(pool);
             ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; i++) {
+            for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
             virtualPrice = ICurveCryptoSwapRegistry(registry)
@@ -112,7 +112,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             address[8] memory coins = ICurveCryptoSwapRegistry(registry)
                 .get_coins(pool);
             ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; i++) {
+            for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
             virtualPrice = ICurveCryptoSwapRegistry(registry)
