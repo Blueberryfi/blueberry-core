@@ -17,7 +17,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../libraries/UniversalERC20.sol";
 import "../interfaces/IWConvexPools.sol";
 import "../interfaces/IERC20Wrapper.sol";
 import "../interfaces/convex/IRewarder.sol";
@@ -40,7 +39,6 @@ contract WConvexPools is
     IWConvexPools
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
-    using UniversalERC20 for IERC20;
 
     error AddressZero();
 
@@ -56,10 +54,10 @@ contract WConvexPools is
     IPoolEscrowFactory public escrowFactory;
     /// @dev Mapping from token id to accExtPerShare
     mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
-    /// @dev Extra rewards addresses (pid => address[])
-    mapping(uint256 => address[]) public extraRewards;
-    /// @dev The index of extra rewards (pid => extraRewardsIdx)
-    mapping(uint256 => mapping(address => uint256)) public extraRewardsIdx;
+    /// @dev Extra rewards addresses
+    address[] public extraRewards;
+    /// @dev The index of extra rewards
+    mapping(address => uint256) public extraRewardsIdx;
     /// @dev CVX reward per share by pid
     mapping(uint256 => uint256) public cvxPerShareByPid;
     /// token id => cvxPerShareDebt;
@@ -267,7 +265,7 @@ contract WConvexPools is
             pid
         );
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
-        uint256 extraRewardsCount = extraRewards[pid].length;
+        uint256 extraRewardsCount = extraRewards.length;
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
 
@@ -285,7 +283,7 @@ contract WConvexPools is
         rewards[1] = _getAllocatedCVX(pid, stCrvPerShare, amount);
 
         for (uint256 i; i < extraRewardsCount; ++i) {
-            address rewarder = extraRewards[pid][i];
+            address rewarder = extraRewards[i];
             uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IRewarder(rewarder).rewardToken();
             if (stRewardPerShare == 0) {
@@ -337,9 +335,6 @@ contract WConvexPools is
         /// Deposit LP from escrow contract
         IPoolEscrow(_escrow).deposit(amount);
 
-        IERC20(lpToken).universalApprove(address(cvxPools), amount);
-        cvxPools.deposit(pid, amount, true);
-
         uint256 crvRewardPerToken = IRewarder(cvxRewarder).rewardPerToken();
         id = encodeId(pid, crvRewardPerToken);
 
@@ -354,10 +349,10 @@ contract WConvexPools is
                 ? type(uint256).max
                 : rewardPerToken;
 
-            _syncExtraReward(pid, extraRewarder);
+            _syncExtraReward(extraRewarder);
         }
 
-        cvxPerShareDebt[id] = cvxPerShareByPid[pid];
+        cvxPerShareDebt[id] += cvxPerShareByPid[pid];
     }
 
     /// Burns ERC1155 token to redeem ERC20 token back and harvest rewards
@@ -396,10 +391,9 @@ contract WConvexPools is
         uint256 extraRewardsCount = IRewarder(cvxRewarder).extraRewardsLength();
 
         for (uint256 i; i < extraRewardsCount; ++i) {
-            _syncExtraReward(pid, IRewarder(cvxRewarder).extraRewards(i));
-
+            _syncExtraReward(IRewarder(cvxRewarder).extraRewards(i));
         }
-        uint256 storedExtraRewardLength = extraRewards[pid].length;
+        uint256 storedExtraRewardLength = extraRewards.length;
         bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
 
         /// Transfer Reward Tokens
