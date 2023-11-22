@@ -179,6 +179,7 @@ export const setupVaults = async (
 
   for (let key of Object.keys(bTokens)) {
     if (key === "comptroller") continue;
+    if (key === "extraBTokens") continue;
     const bToken = (bTokens as any)[key] as any as BErc20Delegator;
     const softVault = <SoftVault>(
       await upgrades.deployProxy(
@@ -279,6 +280,7 @@ export const setupBasicBank = async (): Promise<Protocol> => {
       vaults.hardVault.address,
       8500
     );
+
   }
 
   return {
