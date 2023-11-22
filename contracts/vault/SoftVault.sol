@@ -18,9 +18,9 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/ISoftVault.sol";
-import "../interfaces/compound/ICErc20.sol";
+import "../interfaces/money-market/IBErc20.sol";
 import "../libraries/UniversalERC20.sol";
-
+import "hardhat/console.sol";
 /// @author BlueberryProtocol
 /// @title Soft Vault
 /// @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
@@ -40,7 +40,7 @@ contract SoftVault is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev address of bToken for underlying token
-    ICErc20 public bToken;
+    IBErc20 public bToken;
     /// @dev address of underlying token
     IERC20Upgradeable public uToken;
     /// @dev address of protocol config
@@ -66,7 +66,7 @@ contract SoftVault is
     /// @param _symbol ERC20 symbol for the SoftVault token
     function initialize(
         IProtocolConfig _config,
-        ICErc20 _bToken,
+        IBErc20 _bToken,
         string memory _name,
         string memory _symbol
     ) external initializer {

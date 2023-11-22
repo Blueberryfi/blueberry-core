@@ -33,7 +33,7 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
       params: [
         {
           forking: {
-            jsonRpcUrl: `https://rpc.ankr.com/eth`,
+            jsonRpcUrl: `https://mainnet.infura.io/v3/4132b7a34e7c42c3953062934b7d44f7`,
             blockNumber,
           },
         },
@@ -45,7 +45,7 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
       params: [
         {
           forking: {
-            jsonRpcUrl: `https://arb1.arbitrum.io/rpc`,
+            jsonRpcUrl: `https://arbitrum-mainnet.infura.io/v3/4132b7a34e7c42c3953062934b7d44f7`,
             blockNumber,
           },
         },

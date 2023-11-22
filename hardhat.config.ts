@@ -91,9 +91,9 @@ const config: HardhatUserConfig = {
         accountsBalance: '1000000000000000000000000',
       },
       forking: {
-        url: `https://rpc.ankr.com/eth`,
+        url: `https://mainnet.infura.io/v3/4132b7a34e7c42c3953062934b7d44f7`,
         blockNumber: 17089048,
-      },
+      }
     },
 /**     mainnet: {
       accounts: [deployAccountKey],
