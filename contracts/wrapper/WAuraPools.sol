@@ -88,6 +88,11 @@ contract WAuraPools is
     /// @dev pid => current reward per token
     mapping(uint256 => uint256) public currentRewardPerToken;
 
+    /// @dev pid => last stash aura reward per token
+    mapping(uint256 => uint256) public lastStashAuraPerToken;
+    /// @dev pid => stash aura rewarder
+    mapping(uint256 => address) public stashAuraRewarder;
+
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -572,34 +577,76 @@ contract WAuraPools is
     function _updateAuraReward(uint256 pid) private {
         address _escrow = escrows[pid];
 
-        (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
-        uint256 currentDeposits = IAuraRewarder(auraRewarder).balanceOf(
+        (, , , address _auraRewarder, , ) = getPoolInfoFromPoolId(pid);
+
+        uint256 _currentDeposits = IAuraRewarder(_auraRewarder).balanceOf(
             _escrow
         );
 
-        uint256 lastBalPerToken = IAuraRewarder(auraRewarder).rewardPerToken();
-        lastBalPerTokenByPid[pid] = lastBalPerToken;
+        lastBalPerTokenByPid[pid] = IAuraRewarder(_auraRewarder)
+            .rewardPerToken();
 
-        if (currentDeposits == 0) return;
+        if (_currentDeposits == 0) return;
 
-        stashAuraRecieved[pid] +=
-            (currentRewardPerToken[pid] - lastBalPerToken) *
-            currentDeposits;
+        uint256 _extraRewardsCount = IAuraRewarder(_auraRewarder)
+            .extraRewardsLength();
 
-        uint256 auraBalBefore = AURA.balanceOf(_escrow);
+        address _stashAuraRewarder = stashAuraRewarder[pid];
+
+        uint256 _auraBalBefore = AURA.balanceOf(_escrow);
 
         /// @dev Claim extra rewards at withdrawal
-        IAuraRewarder(auraRewarder).getReward(_escrow, true);
+        IAuraRewarder(_auraRewarder).getReward(_escrow, true);
 
-        uint256 auraRecieved = AURA.balanceOf(_escrow) - auraBalBefore;
+        uint256 _auraRecieved = AURA.balanceOf(_escrow) - _auraBalBefore;
 
-        uint256 realAurabalance = auraRecieved -
+        uint256 _realAuraReward = _auraRecieved -
             auraPaid[pid] -
             stashAuraRecieved[pid];
 
-        if (realAurabalance > 0)
+        if (_realAuraReward > 0)
             auraPerShareByPid[pid] +=
-                (realAurabalance * 1e18) /
-                currentDeposits;
+                (_realAuraReward * 1e18) /
+                _currentDeposits;
+
+        if (stashAuraRewarder[pid] == address(0)) {
+            for (uint256 i; i != _extraRewardsCount; ++i) {
+                address _extraRewarder = IAuraRewarder(_auraRewarder)
+                    .extraRewards(i);
+
+                address _rewardToken = IAuraExtraRewarder(_extraRewarder)
+                    .rewardToken();
+
+                if (_rewardToken == STASH_AURA) {
+                    stashAuraRewarder[pid] = _extraRewarder;
+                    _stashAuraRewarder = _extraRewarder;
+                    break;
+                }
+            }
+
+            if (_stashAuraRewarder != address(0)) {
+                uint256 _currentStashAuraPerToken = IAuraExtraRewarder(
+                    _stashAuraRewarder
+                ).rewardPerToken();
+
+                stashAuraRecieved[pid] +=
+                    (_currentStashAuraPerToken - lastStashAuraPerToken[pid]) *
+                    _currentDeposits;
+
+                //update STASH_AURA reward per token
+                lastStashAuraPerToken[pid] = _currentStashAuraPerToken;
+            }
+        } else {
+            uint256 _currentStashAuraPerToken = IAuraExtraRewarder(
+                _stashAuraRewarder
+            ).rewardPerToken();
+
+            stashAuraRecieved[pid] +=
+                (_currentStashAuraPerToken - lastStashAuraPerToken[pid]) *
+                _currentDeposits;
+
+            //update STASH_AURA reward per token
+            lastStashAuraPerToken[pid] = _currentStashAuraPerToken;
+        }
     }
 }
