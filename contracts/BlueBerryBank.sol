@@ -22,7 +22,7 @@ import "./interfaces/IBank.sol";
 import "./interfaces/ICoreOracle.sol";
 import "./interfaces/ISoftVault.sol";
 import "./interfaces/IHardVault.sol";
-import "./interfaces/compound/ICErc20.sol";
+import "./interfaces/money-market/IBErc20.sol";
 import "./libraries/BBMath.sol";
 import "./libraries/UniversalERC20.sol";
 
@@ -345,7 +345,7 @@ contract BlueBerryBank is
     function accrue(address token) public override {
         Bank storage bank = banks[token];
         if (!bank.isListed) revert Errors.BANK_NOT_LISTED(token);
-        ICErc20(bank.bToken).borrowBalanceCurrent(address(this));
+        IBErc20(bank.bToken).borrowBalanceCurrent(address(this));
     }
 
     /// @dev Convenient function to trigger interest accrual for multiple banks.
@@ -361,7 +361,7 @@ contract BlueBerryBank is
     function _borrowBalanceStored(
         address token
     ) internal view returns (uint256) {
-        return ICErc20(banks[token].bToken).borrowBalanceStored(address(this));
+        return IBErc20(banks[token].bToken).borrowBalanceStored(address(this));
     }
 
     /// @dev Trigger interest accrual and return the current debt balance for a specific position.
@@ -490,7 +490,7 @@ contract BlueBerryBank is
         uint256 underlyingAmount;
         if (_isSoftVault(pos.underlyingToken)) {
             underlyingAmount =
-                (ICErc20(banks[pos.underlyingToken].bToken)
+                (IBErc20(banks[pos.underlyingToken].bToken)
                     .exchangeRateStored() * pos.underlyingVaultShare) /
                 Constants.PRICE_PRECISION;
         } else {
@@ -913,7 +913,7 @@ contract BlueBerryBank is
 
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        if (ICErc20(bToken).borrow(amountCall) != 0)
+        if (IBErc20(bToken).borrow(amountCall) != 0)
             revert Errors.BORROW_FAILED(amountCall);
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
@@ -931,7 +931,7 @@ contract BlueBerryBank is
         address bToken = banks[token].bToken;
         IERC20(token).universalApprove(bToken, amountCall);
         uint256 beforeDebt = _borrowBalanceStored(token);
-        if (ICErc20(bToken).repayBorrow(amountCall) != 0)
+        if (IBErc20(bToken).repayBorrow(amountCall) != 0)
             revert Errors.REPAY_FAILED(amountCall);
         uint256 newDebt = _borrowBalanceStored(token);
         repaidAmount = beforeDebt - newDebt;
