@@ -47,7 +47,7 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
           forking: {
             jsonRpcUrl: `https://arb1.arbitrum.io/rpc`,
             blockNumber,
-          },
+          }
         },
       ],
     });

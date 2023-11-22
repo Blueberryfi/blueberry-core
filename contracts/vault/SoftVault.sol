@@ -20,7 +20,7 @@ import "../interfaces/IProtocolConfig.sol";
 import "../interfaces/ISoftVault.sol";
 import "../interfaces/money-market/IBErc20.sol";
 import "../libraries/UniversalERC20.sol";
-import "hardhat/console.sol";
+
 /// @author BlueberryProtocol
 /// @title Soft Vault
 /// @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
