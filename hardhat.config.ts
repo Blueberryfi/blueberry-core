@@ -93,7 +93,7 @@ const config: HardhatUserConfig = {
       forking: {
         url: `https://rpc.ankr.com/eth`,
         blockNumber: 17089048,
-      }
+      },
     },
 /**     mainnet: {
       accounts: [deployAccountKey],
