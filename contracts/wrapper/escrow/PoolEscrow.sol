@@ -13,12 +13,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "../../interfaces/aura/IAuraPools.sol";
 import "../../interfaces/aura/IAuraRewarder.sol";
-import "../../utils/EnsureApprove.sol";
 import "../../interfaces/aura/IAuraExtraRewarder.sol";
+import "../../libraries/UniversalERC20.sol";
 
-contract PoolEscrow is Initializable, EnsureApprove {
+contract PoolEscrow is Initializable {
     using SafeERC20 for IERC20;
-
+    using UniversalERC20 for IERC20;
+    
     /// @dev The caller is not authorized to call the function.
     error Unauthorized();
 
@@ -112,7 +113,7 @@ contract PoolEscrow is Initializable, EnsureApprove {
      * @param _amount The amount of tokens to be deposited
      */
     function deposit(uint256 _amount) external virtual onlyWrapper {
-        _ensureApprove(address(lpToken), address(auraPools), _amount);
+        IERC20(address(lpToken)).universalApprove(address(auraPools), _amount);
         auraPools.deposit(pid, _amount, true);
     }
 
