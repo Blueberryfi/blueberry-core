@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
@@ -58,7 +58,8 @@ contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
         uint256 length = weights.length;
         uint256 temp = 1e18;
         uint256 invariant = 1e18;
-        for (uint256 i; i < length; ) {
+
+        for(uint256 i; i < length; ++i) {
             temp = temp.mulDown(
                 (base.getPrice(tokens[i]).divDown(weights[i])).powDown(
                     weights[i]
@@ -70,10 +71,8 @@ contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
                         weights[i]
                     )
             );
-            unchecked {
-                ++i;
-            }
         }
+        
         try IBalancerPool(token).getActualSupply() returns (uint256 supply) {
             return invariant.mulDown(temp).divDown(supply);
         } catch {

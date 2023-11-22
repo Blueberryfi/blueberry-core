@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "./CurveBaseOracle.sol";
 
@@ -86,14 +86,11 @@ contract CurveTricryptoOracle is CurveBaseOracle {
 
     function cubicRoot(uint256 x) internal pure returns (uint256) {
         uint256 D = x / 1e18;
-        for (uint256 i; i < 255; ) {
+        for (uint256 i; i < 255; ++i) {
             uint256 D_prev = D;
             D = (D * (2e18 + ((((x / D) * 1e18) / D) * 1e18) / D)) / (3e18);
             uint256 diff = (D > D_prev) ? D - D_prev : D_prev - D;
             if (diff < 2 || diff * 1e18 < D) return D;
-            unchecked {
-                ++i;
-            }
         }
         revert("Did Not Converge");
     }

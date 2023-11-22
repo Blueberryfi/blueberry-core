@@ -10,7 +10,7 @@
 
 /// title BlueberryConst
 /// @notice containing all general constants used in Blueberry protocol
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 /// @dev Common denominator for percentage-based calculations.
 uint256 constant DENOMINATOR = 10000;

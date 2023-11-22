@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -79,11 +79,9 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             (uint256 n, ) = ICurveRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveRegistry(registry).get_coins(pool);
             ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; ) {
+
+            for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
-                unchecked {
-                    ++i;
-                }
             }
             virtualPrice = ICurveRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
@@ -98,11 +96,9 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             address[8] memory coins = ICurveCryptoSwapRegistry(registry)
                 .get_coins(pool);
             ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; ) {
+
+            for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
-                unchecked {
-                    ++i;
-                }
             }
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);
@@ -117,11 +113,9 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             address[8] memory coins = ICurveCryptoSwapRegistry(registry)
                 .get_coins(pool);
             ulTokens = new address[](n);
-            for (uint256 i = 0; i < n; ) {
+
+            for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
-                unchecked {
-                    ++i;
-                }
             }
             virtualPrice = ICurveCryptoSwapRegistry(registry)
                 .get_virtual_price_from_lp_token(crvLp);

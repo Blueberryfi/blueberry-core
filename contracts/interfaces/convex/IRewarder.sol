@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 interface IRewarder {
     function balanceOf(address) external view returns (uint256);
@@ -27,4 +27,12 @@ interface IRewarder {
     ) external returns (bool);
 
     function getReward() external returns (bool);
+
+    function queueNewRewards(uint256 _rewards) external returns (bool);
+
+    function addExtraReward(address _reward) external returns (bool);
+
+    function clearExtraRewards() external;
+
+    function rewardManager() external view returns (address);
 }

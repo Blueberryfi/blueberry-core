@@ -57,7 +57,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.16",
+        version: "0.8.22",
         settings: {
           optimizer: {
             enabled: true,
@@ -87,6 +87,9 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      accounts: {
+        accountsBalance: '1000000000000000000000000',
+      },
       forking: {
         url: `https://rpc.ankr.com/eth`,
         blockNumber: 17089048,

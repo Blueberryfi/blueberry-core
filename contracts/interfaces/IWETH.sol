@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 /// @title IWETH
 /// @notice This is the interface for the Wrapped Ether (WETH) contract.

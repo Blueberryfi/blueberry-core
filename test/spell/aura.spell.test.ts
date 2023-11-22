@@ -18,7 +18,7 @@ import {
 } from "../../typechain-types";
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { AuraProtocol, evm_mine_blocks, setupAuraProtocol } from "../helpers";
+import { AuraProtocol, evm_increaseTime, setupAuraProtocol } from "../helpers";
 import SpellABI from "../../abi/AuraSpell.json";
 import chai, { expect } from "chai";
 import { near } from "../assertions/near";
@@ -327,7 +327,7 @@ describe("Aura Spell", () => {
       const beforeSenderBalBalance = await bal.balanceOf(admin.address);
       const beforeTreasuryAuraBalance = await aura.balanceOf(admin.address);
 
-      await evm_mine_blocks(10);
+      await evm_increaseTime(120);
 
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(
         position.collId,
@@ -467,7 +467,7 @@ describe("Aura Spell", () => {
     });
 
     it("should be able to close portion of position without withdrawing isolated collaterals", async () => {
-      await evm_mine_blocks(1000);
+      await evm_increaseTime(86400);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
@@ -507,8 +507,16 @@ describe("Aura Spell", () => {
 
       console.log("Pending Rewards", pendingRewardsInfo);
 
-      // Manually transfer CRV rewards to spell
-      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+      const amountToSwap = utils.parseUnits("30", 18);
+      const swapData = (
+        await getParaswapCalldata(
+          CRV,
+          USDC,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
 
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
@@ -535,7 +543,7 @@ describe("Aura Spell", () => {
     });
 
     it("should be able to harvest on Aura", async () => {
-      await evm_mine_blocks(1000);
+      await evm_increaseTime(86400);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
@@ -573,8 +581,16 @@ describe("Aura Spell", () => {
 
       console.log("Pending Rewards", pendingRewardsInfo);
 
-      // Manually transfer CRV rewards to spell
-      await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+      const amountToSwap = utils.parseUnits("30", 18);
+      const swapData = (
+        await getParaswapCalldata(
+          CRV,
+          USDC,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -610,7 +626,7 @@ describe("Aura Spell", () => {
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
       expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
-        depositAmount.sub(depositFee).sub(withdrawFee)
+        depositAmount.sub(depositFee).sub(withdrawFee).sub(amountToSwap)
       );
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);

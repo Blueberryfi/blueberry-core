@@ -26,7 +26,7 @@ import SpellABI from "../abi/IchiSpell.json";
 import { near } from "./assertions/near";
 import { roughlyNear } from "./assertions/roughlyNear";
 import { Protocol, setupIchiProtocol } from "./helpers/setup-ichi-protocol";
-import { evm_mine_blocks, evm_increaseTime } from "./helpers";
+import { evm_mine_blocks, evm_increaseTime, fork } from "./helpers";
 import { TickMath } from "@uniswap/v3-sdk";
 
 chai.use(near);
@@ -67,6 +67,8 @@ describe("Bank", () => {
   let bCRV: Contract;
 
   before(async () => {
+    await fork();
+
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     ichi = <MockIchiV2>await ethers.getContractAt("MockIchiV2", ICHI);
@@ -687,7 +689,7 @@ describe("Bank", () => {
       await mockOracle.setPrice(
         [ICHI],
         [
-          BigNumber.from(10).pow(18).mul(1), // $0.5
+          BigNumber.from(10).pow(17).mul(5), // $0.5
         ]
       );
       positionInfo = await bank.getPositionInfo(positionId);
@@ -703,11 +705,11 @@ describe("Bank", () => {
         utils.formatUnits(positionInfo.collateralSize)
       );
 
-      expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
       console.log(
         "Is Liquidatable:",
         await bank.callStatic.isLiquidatable(positionId)
       );
+      expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
 
       console.log("===Portion Liquidated===");
       const liqAmount = utils.parseUnits("100", 6);
@@ -744,7 +746,7 @@ describe("Bank", () => {
       await mockOracle.setPrice(
         [ICHI],
         [
-          BigNumber.from(10).pow(18).mul(1), // $0.5
+          BigNumber.from(10).pow(17).mul(5), // $0.5
         ]
       );
       positionInfo = await bank.getPositionInfo(positionId);
@@ -858,7 +860,7 @@ describe("Bank", () => {
       await mockOracle.setPrice(
         [ICHI],
         [
-          BigNumber.from(10).pow(17).mul(10), // $1
+          BigNumber.from(10).pow(17).mul(6), // $0.6
         ]
       );
       risk = await bank.callStatic.getPositionRisk(positionId);
@@ -1183,9 +1185,9 @@ describe("Bank", () => {
     });
     describe("Accrue", () => {
       it("anyone can call accrue functions by tokens", async () => {
-        await expect(bank.accrue(ADDRESS.WETH))
+        await expect(bank.accrue(ADDRESS.SUSHI))
           .to.be.revertedWithCustomError(bank, "BANK_NOT_LISTED")
-          .withArgs(ADDRESS.WETH);
+          .withArgs(ADDRESS.SUSHI);
 
         await bank.accrueAll([USDC, ICHI]);
       });

@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -18,6 +18,7 @@ import "./BasicSpell.sol";
 import "../interfaces/ISoftVault.sol";
 import "../interfaces/IWERC20.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
+import "../libraries/UniversalERC20.sol";
 
 /// @title Short/Long Spell
 /// @author BlueberryProtocol
@@ -28,6 +29,7 @@ contract ShortLongSpell is BasicSpell {
     using SafeCast for uint256;
     using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -113,11 +115,7 @@ contract ShortLongSpell is BasicSpell {
         if (dstTokenAmt == 0) revert Errors.SWAP_FAILED(borrowToken);
 
         /// 4. Deposit to SoftVault directly
-        _ensureApprove(
-            address(swapToken),
-            address(strategy.vault),
-            dstTokenAmt
-        );
+        IERC20(address(swapToken)).universalApprove(address(strategy.vault), dstTokenAmt);
         ISoftVault(strategy.vault).deposit(dstTokenAmt);
 
         /// 5. Validate MAX LTV

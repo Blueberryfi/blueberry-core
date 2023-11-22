@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
@@ -16,6 +16,7 @@ import "./BasicSpell.sol";
 import "../interfaces/IWAuraPools.sol";
 import "../interfaces/balancer/IBalancerPool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
+import "../libraries/UniversalERC20.sol";
 
 /// @title AuraSpell
 /// @author BlueberryProtocol
@@ -23,6 +24,7 @@ import "../libraries/Paraswap/PSwapLib.sol";
 ///         defines how Blueberry Protocol interacts with Aura pools
 contract AuraSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
@@ -110,32 +112,23 @@ contract AuraSpell is BasicSpell {
             uint256 _minimumBPT = minimumBPT;
             IBalancerVault vault = wAuraPools.getVault(lpToken);
 
-            (address[] memory tokens, uint256[] memory balances, ) = wAuraPools
-                .getPoolTokens(lpToken);
+            (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
             (
                 uint256[] memory maxAmountsIn,
-                uint256[] memory amountsIn,
-                uint256 poolAmountOut
-            ) = _getJoinPoolParamsAndApprove(
-                    address(vault),
-                    tokens,
-                    balances,
-                    lpToken
-                );
+                uint256[] memory amountsIn
+            ) = _getJoinPoolParamsAndApprove(address(vault), tokens, lpToken);
 
-            if (poolAmountOut != 0) {
-                vault.joinPool(
-                    wAuraPools.getBPTPoolId(lpToken),
-                    address(this),
-                    address(this),
-                    IBalancerVault.JoinPoolRequest({
-                        assets: tokens,
-                        maxAmountsIn: maxAmountsIn,
-                        userData: abi.encode(1, amountsIn, _minimumBPT),
-                        fromInternalBalance: false
-                    })
-                );
-            }
+            vault.joinPool(
+                wAuraPools.getBPTPoolId(lpToken),
+                address(this),
+                address(this),
+                IBalancerVault.JoinPoolRequest({
+                    assets: tokens,
+                    maxAmountsIn: maxAmountsIn,
+                    userData: abi.encode(1, amountsIn, _minimumBPT),
+                    fromInternalBalance: false
+                })
+            );
         }
         /// 4. Ensure that the resulting LTV does not exceed maximum allowed value.
         _validateMaxLTV(param.strategyId);
@@ -158,19 +151,16 @@ contract AuraSpell is BasicSpell {
             );
             /// Distribute the multiple rewards to users.
             uint256 rewardTokensLength = rewardTokens.length;
-            for (uint256 i; i != rewardTokensLength; ) {
+            for (uint256 i; i != rewardTokensLength; ++i) {
                 _doRefundRewards(
                     rewardTokens[i] == STASH_AURA ? AURA : rewardTokens[i]
                 );
-                unchecked {
-                    ++i;
-                }
             }
         }
 
         /// 7. Deposit the tokens in the Aura pool and place the wrapped collateral tokens in the Blueberry Bank.
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
-        _ensureApprove(lpToken, address(wAuraPools), lpAmount);
+        IERC20(lpToken).universalApprove(address(wAuraPools), lpAmount);
         uint256 id = wAuraPools.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wAuraPools), id, lpAmount);
     }
@@ -266,17 +256,14 @@ contract AuraSpell is BasicSpell {
     /// @dev Calculate the parameters required for joining a Balancer pool.
     /// @param vault Address of the Balancer vault
     /// @param tokens List of tokens in the Balancer pool
-    /// @param balances Balances of tokens in the Balancer pool
     /// @param lpToken The LP token for the Balancer pool
     /// @return maxAmountsIn Maximum amounts to deposit for each token
     /// @return amountsIn Amounts of each token to deposit
-    /// @return poolAmountOut Amount of LP tokens to be received
     function _getJoinPoolParamsAndApprove(
         address vault,
         address[] memory tokens,
-        uint256[] memory balances,
         address lpToken
-    ) internal returns (uint256[] memory, uint256[] memory, uint256) {
+    ) internal returns (uint256[] memory, uint256[] memory) {
         uint256 i;
         uint256 j;
         uint256 length = tokens.length;
@@ -284,19 +271,15 @@ contract AuraSpell is BasicSpell {
         uint256[] memory amountsIn = new uint256[](length);
         bool isLPIncluded;
 
-        for (i; i != length; ) {
+        for (i; i != length; ++i) {
             if (tokens[i] != lpToken) {
                 amountsIn[j] = IERC20(tokens[i]).balanceOf(address(this));
                 if (amountsIn[j] > 0) {
-                    _ensureApprove(tokens[i], vault, amountsIn[j]);
+                    IERC20(tokens[i]).universalApprove(vault, amountsIn[j]);
                     maxAmountsIn[i] = amountsIn[j];
                 }
                 ++j;
             } else isLPIncluded = true;
-
-            unchecked {
-                ++i;
-            }
         }
 
         if (isLPIncluded) {
@@ -305,21 +288,7 @@ contract AuraSpell is BasicSpell {
             }
         }
 
-        uint256 totalLPSupply = IBalancerPool(lpToken).getActualSupply();
-        /// compute in reverse order of how Balancer's `joinPool` computes tokenAmountIn
-        uint256 poolAmountOut;
-        for (i = 0; i != length; ) {
-            if ((maxAmountsIn[i] * totalLPSupply) / balances[i] != 0) {
-                poolAmountOut = type(uint256).max;
-                break;
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        return (maxAmountsIn, amountsIn, poolAmountOut);
+        return (maxAmountsIn, amountsIn);
     }
 
     /// @dev Calculate the parameters required for exiting a Balancer pool.
@@ -340,7 +309,7 @@ contract AuraSpell is BasicSpell {
         uint256[] memory minAmountsOut = new uint256[](length);
         uint256 exitTokenIndex;
 
-        for (uint256 i; i != length; ) {
+        for (uint256 i; i != length; ++i) {
             if (tokens[i] == borrowToken) {
                 minAmountsOut[i] = amountOutMin;
                 break;
@@ -348,9 +317,6 @@ contract AuraSpell is BasicSpell {
 
             if (tokens[i] != lpToken) ++exitTokenIndex;
 
-            unchecked {
-                ++i;
-            }
         }
 
         return (minAmountsOut, tokens, exitTokenIndex);
@@ -362,7 +328,7 @@ contract AuraSpell is BasicSpell {
         bytes[] calldata swapDatas
     ) internal {
         uint256 rewardTokensLength = rewardTokens.length;
-        for (uint256 i; i != rewardTokensLength; ) {
+        for (uint256 i; i != rewardTokensLength; ++i) {
             address sellToken = rewardTokens[i];
             if (sellToken == STASH_AURA) sellToken = AURA;
 
@@ -380,10 +346,6 @@ contract AuraSpell is BasicSpell {
 
             /// Refund rest (dust) amount to owner
             _doRefund(sellToken);
-
-            unchecked {
-                ++i;
-            }
         }
     }
 }

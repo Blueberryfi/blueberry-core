@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./BasicSpell.sol";
@@ -17,6 +17,7 @@ import "../interfaces/ICurveZapDepositor.sol";
 import "../interfaces/IWConvexPools.sol";
 import "../interfaces/curve/ICurvePool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
+import "../libraries/UniversalERC20.sol";
 
 /// @title ConvexSpell
 /// @author BlueberryProtocol
@@ -25,6 +26,7 @@ import "../libraries/Paraswap/PSwapLib.sol";
 ///         and facilitates operations related to liquidity provision.
 contract ConvexSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using UniversalERC20 for IERC20;
 
     struct ClosePositionFarmParam {
         ClosePosParam param;
@@ -140,7 +142,7 @@ contract ConvexSpell is BasicSpell {
         /// 3. Add liquidity on curve, get crvLp
         {
             address borrowToken = param.borrowToken;
-            _ensureApprove(borrowToken, pool, borrowBalance);
+            IERC20(borrowToken).universalApprove(pool, borrowBalance);
             uint256 ethValue;
             uint256 tokenBalance = IERC20(borrowToken).balanceOf(address(this));
             require(borrowBalance <= tokenBalance, "impossible");
@@ -175,12 +177,12 @@ contract ConvexSpell is BasicSpell {
                     } else {
                         suppliedAmts[3] = tokenBalance;
                     }
-                    _ensureApprove(borrowToken, pool, 0);
-                    _ensureApprove(
-                        borrowToken,
+                    IERC20(borrowToken).universalApprove(pool, 0);
+                    IERC20(borrowToken).universalApprove(
                         CURVE_ZAP_DEPOSITOR,
                         borrowBalance
                     );
+
                     ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).add_liquidity(
                         pool,
                         suppliedAmts,
@@ -188,16 +190,14 @@ contract ConvexSpell is BasicSpell {
                     );
                 } else {
                     uint256[2] memory suppliedAmts;
-                    for (uint256 i; i < 2; ) {
+
+                    for (uint256 i; i < 2; ++i) {
                         if (
                             (tokens[i] == borrowToken) ||
                             (tokens[i] == ETH && isBorrowTokenWeth)
                         ) {
                             suppliedAmts[i] = tokenBalance;
                             break;
-                        }
-                        unchecked {
-                            ++i;
                         }
                     }
                     ICurvePool(pool).add_liquidity{value: ethValue}(
@@ -207,16 +207,14 @@ contract ConvexSpell is BasicSpell {
                 }
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
-                for (uint256 i; i < 3; ) {
+                
+                for (uint256 i; i < 3; ++i) {
                     if (
                         (tokens[i] == borrowToken) ||
                         (tokens[i] == ETH && isBorrowTokenWeth)
                     ) {
                         suppliedAmts[i] = tokenBalance;
                         break;
-                    }
-                    unchecked {
-                        ++i;
                     }
                 }
                 ICurvePool(pool).add_liquidity{value: ethValue}(
@@ -225,7 +223,8 @@ contract ConvexSpell is BasicSpell {
                 );
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
-                for (uint256 i; i < 4; ) {
+
+                for (uint256 i; i < 4; ++i) {
                     if (
                         (tokens[i] == borrowToken) ||
                         (tokens[i] == ETH && isBorrowTokenWeth)
@@ -233,10 +232,8 @@ contract ConvexSpell is BasicSpell {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
-                    unchecked {
-                        ++i;
-                    }
                 }
+                
                 ICurvePool(pool).add_liquidity{value: ethValue}(
                     suppliedAmts,
                     _minLPMint
@@ -276,7 +273,7 @@ contract ConvexSpell is BasicSpell {
 
         /// 7. Deposit on Convex Pool, Put wrapped collateral tokens on Blueberry Bank
         uint256 lpAmount = IERC20(lpToken).balanceOf(address(this));
-        _ensureApprove(lpToken, address(wConvexPools), lpAmount);
+        IERC20(lpToken).universalApprove(address(wConvexPools), lpAmount);
         uint256 id = wConvexPools.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wConvexPools), id, lpAmount);
     }
@@ -324,16 +321,19 @@ contract ConvexSpell is BasicSpell {
         );
 
         if (closePosParam.isKilled) {
-            for (uint256 i; i != tokens.length; ) {
-                if (tokens[i] != pos.debtToken) {
+
+            for (uint256 i; i != tokens.length; ++i) {
+                address token = tokens[i];
+                if (token == ETH) {
+                    token = WETH;
+                    IWETH(WETH).deposit{value: address(this).balance}();
+                }
+                if (token != pos.debtToken) {
                     _swapOnParaswap(
-                        tokens[i],
+                        token,
                         closePosParam.amounts[i + rewardTokens.length],
                         closePosParam.swapDatas[i + rewardTokens.length]
                     );
-                }
-                unchecked {
-                    ++i;
                 }
             }
         }
@@ -436,7 +436,7 @@ contract ConvexSpell is BasicSpell {
             } else {
                 index = 3;
             }
-            _ensureApprove(pool, CURVE_ZAP_DEPOSITOR, amountPosRemove);
+            IERC20(pool).universalApprove(CURVE_ZAP_DEPOSITOR, amountPosRemove);
             ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).remove_liquidity_one_coin(
                 pool,
                 amountPosRemove,

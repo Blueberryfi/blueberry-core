@@ -8,14 +8,13 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 
 import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/EnsureApprove.sol";
 import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";
@@ -26,12 +25,8 @@ import "../libraries/Paraswap/PSwapLib.sol";
 /// @title BasicSpell
 /// @author BlueberryProtocol
 /// @notice BasicSpell is the abstract contract that other spells utilize
-/// @dev It extends functionalities from ERC1155NaiveReceiver, OwnableUpgradeable and EnsureApprove
-abstract contract BasicSpell is
-    ERC1155NaiveReceiver,
-    OwnableUpgradeable,
-    EnsureApprove
-{
+/// @dev It extends functionalities from ERC1155NaiveReceiver, OwnableUpgradeable
+abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -264,14 +259,11 @@ abstract contract BasicSpell is
         if (collaterals.length != maxLTVs.length || collaterals.length == 0) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-
-        for (uint256 i = 0; i < collaterals.length; ) {
+        
+        for (uint256 i = 0; i < collaterals.length; ++i) {
             if (collaterals[i] == address(0)) revert Errors.ZERO_ADDRESS();
             if (maxLTVs[i] == 0) revert Errors.ZERO_AMOUNT();
             maxLTV[strategyId][collaterals[i]] = maxLTVs[i];
-            unchecked {
-                ++i;
-            }
         }
 
         emit CollateralsMaxLTVSet(strategyId, collaterals, maxLTVs);
@@ -343,7 +335,7 @@ abstract contract BasicSpell is
     function _doCutRewardsFee(address token) internal returns (uint256 left) {
         uint256 rewardsBalance = IERC20(token).balanceOf(address(this));
         if (rewardsBalance > 0) {
-            _ensureApprove(token, address(bank.feeManager()), rewardsBalance);
+            IERC20(token).universalApprove(address(bank.feeManager()), rewardsBalance);
             left = bank.feeManager().doCutRewardsFee(token, rewardsBalance);
         }
     }
@@ -386,7 +378,6 @@ abstract contract BasicSpell is
         bytes calldata swapData
     ) internal {
         if (amount > 0 && swapData.length != 0) {
-            // Even the swap failed, continue rest operations, beacuse this swap is used to repay debt for negative PnL
             PSwapLib.swap(
                 augustusSwapper,
                 tokenTransferProxy,
@@ -408,9 +399,12 @@ abstract contract BasicSpell is
     ) internal returns (uint256 borrowedAmount) {
         if (amount > 0) {
             bool isETH = IERC20(token).isETH();
-            borrowedAmount = bank.borrow(isETH ? WETH : token, amount);
+            
             if (isETH) {
+                borrowedAmount = bank.borrow(WETH, amount);
                 IWETH(WETH).withdraw(borrowedAmount);
+            } else {
+                borrowedAmount = bank.borrow(token, amount);
             }
         }
     }
@@ -422,12 +416,18 @@ abstract contract BasicSpell is
     /// @param amount Amount of tokens to repay.
     function _doRepay(address token, uint256 amount) internal {
         if (amount > 0) {
+            address t;
             bool isETH = IERC20(token).isETH();
+
             if (isETH) {
                 IWETH(WETH).deposit{value: amount}();
+                t = WETH;
+            } else {
+                t = token;
             }
-            _ensureApprove(isETH ? WETH : token, address(bank), amount);
-            bank.repay(isETH ? WETH : token, amount);
+            
+            IERC20(t).universalApprove(address(bank), amount);
+            bank.repay(t, amount);
         }
     }
 
@@ -439,7 +439,7 @@ abstract contract BasicSpell is
     /// @param amount Amount of collateral tokens to deposit.
     function _doPutCollateral(address token, uint256 amount) internal {
         if (amount > 0) {
-            _ensureApprove(token, address(werc20), amount);
+            IERC20(token).universalApprove(address(werc20), amount);
             werc20.mint(token, amount);
             bank.putCollateral(
                 address(werc20),

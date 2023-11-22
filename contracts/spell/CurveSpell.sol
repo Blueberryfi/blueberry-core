@@ -8,7 +8,7 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "./BasicSpell.sol";
 import "../interfaces/ICurveOracle.sol";
@@ -106,24 +106,32 @@ contract CurveSpell is BasicSpell {
         // 3. Add liquidity on curve
         {
             address borrowToken = param.borrowToken;
-            _ensureApprove(borrowToken, pool, borrowBalance);
+            IERC20(borrowToken).universalApprove(pool, borrowBalance);
             uint256 ethValue;
-            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(
-                address(this)
-            );
-            if (IERC20(borrowToken).isETH()) {
-                ethValue = tokenBalance;
+            uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(address(this));
+            require(borrowBalance <= tokenBalance, "impossible");
+            if (borrowToken == WETH) {
+                bool hasEth;
+                uint256 tokenLength = tokens.length;
+                for (uint256 i; i != tokenLength; ++i) {
+                    if (tokens[i] == ETH) {
+                        hasEth = true;
+                        break;
+                    }
+                }
+                if (hasEth) {
+                    IWETH(borrowToken).withdraw(tokenBalance);
+                    ethValue = tokenBalance;
+                }
             }
 
             if (tokens.length == 2) {
                 uint256[2] memory suppliedAmts;
-                for (uint256 i; i < 2; ) {
-                    if (tokens[i] == borrowToken) {
+
+                for (uint256 i; i < 2; ++i) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
-                    }
-                    unchecked {
-                        ++i;
                     }
                 }
                 ICurvePool(pool).add_liquidity{value: ethValue}(
@@ -132,13 +140,11 @@ contract CurveSpell is BasicSpell {
                 );
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
-                for (uint256 i; i < 3; ) {
-                    if (tokens[i] == borrowToken) {
+
+                for (uint256 i; i < 3; ++i) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
-                    }
-                    unchecked {
-                        ++i;
                     }
                 }
                 ICurvePool(pool).add_liquidity{value: ethValue}(
@@ -147,13 +153,11 @@ contract CurveSpell is BasicSpell {
                 );
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
-                for (uint256 i; i < 4; ) {
-                    if (tokens[i] == borrowToken) {
+
+                for (uint256 i; i < 4; ++i) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
-                    }
-                    unchecked {
-                        ++i;
                     }
                 }
                 ICurvePool(pool).add_liquidity{value: ethValue}(
@@ -186,7 +190,7 @@ contract CurveSpell is BasicSpell {
 
         // 7. Deposit on Curve Gauge, Put wrapped collateral tokens on Blueberry Bank
         uint256 lpAmount = IERC20(lp).balanceOf(address(this));
-        _ensureApprove(lp, address(wCurveGauge), lpAmount);
+        IERC20(lp).universalApprove(address(wCurveGauge), lpAmount);
         uint256 id = wCurveGauge.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wCurveGauge), id, lpAmount);
     }
@@ -327,6 +331,10 @@ contract CurveSpell is BasicSpell {
                 int128(uint128(tokenIndex)),
                 param.amountOutMin
             );
+        }
+
+        if (tokens[uint128(tokenIndex)] == ETH) {
+            IWETH(WETH).deposit{value: address(this).balance}();
         }
     }
 
