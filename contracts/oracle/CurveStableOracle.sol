@@ -65,12 +65,9 @@ contract CurveStableOracle is CurveBaseOracle {
         _checkReentrant(pool, tokens.length);
 
         uint256 minPrice = type(uint256).max;
-        for (uint256 idx = 0; idx < tokens.length; ) {
-            uint256 tokenPrice = base.getPrice(tokens[idx]);
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            uint256 tokenPrice = base.getPrice(tokens[i]);
             if (tokenPrice < minPrice) minPrice = tokenPrice;
-            unchecked {
-                ++idx;
-            }
         }
 
         // Calculate LP token price using the minimum underlying token price

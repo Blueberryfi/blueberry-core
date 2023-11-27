@@ -251,16 +251,13 @@ contract CurveSpell is BasicSpell {
 
             if (isKilled) {
                 uint256 len = tokens.length;
-                for (uint256 i; i != len; ) {
+                for (uint256 i; i < len; ++i) {
                     if (tokens[i] != pos.debtToken) {
                         _swapOnParaswap(
                             tokens[i],
                             amounts[i + 1],
                             swapDatas[i + 1]
                         );
-                    }
-                    unchecked {
-                        ++i;
                     }
                 }
             }
@@ -301,13 +298,10 @@ contract CurveSpell is BasicSpell {
         uint256 tokenIndex;
         uint256 len = tokens.length;
         {
-            for (uint256 i; i != len; ) {
+            for (uint256 i; i < len; ++i) {
                 if (tokens[i] == pos.debtToken) {
                     tokenIndex = i;
                     break;
-                }
-                unchecked {
-                    ++i;
                 }
             }
         }

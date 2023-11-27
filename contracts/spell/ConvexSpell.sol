@@ -150,13 +150,10 @@ contract ConvexSpell is BasicSpell {
             if (isBorrowTokenWeth) {
                 bool hasEth;
                 uint256 tokenLength = tokens.length;
-                for (uint256 i; i != tokenLength; ) {
+                for (uint256 i; i < tokenLength; ++i) {
                     if (tokens[i] == ETH) {
                         hasEth = true;
                         break;
-                    }
-                    unchecked {
-                        ++i;
                     }
                 }
                 if (hasEth) {
@@ -263,11 +260,8 @@ contract ConvexSpell is BasicSpell {
             );
             // distribute multiple rewards to users
             uint256 tokensLength = rewardTokens.length;
-            for (uint256 i; i != tokensLength; ) {
+            for (uint256 i; i < tokensLength; ++i) {
                 _doRefundRewards(rewardTokens[i]);
-                unchecked {
-                    ++i;
-                }
             }
         }
 
@@ -392,13 +386,10 @@ contract ConvexSpell is BasicSpell {
 
         int128 tokenIndex;
         uint256 len = tokens.length;
-        for (uint256 i; i != len; ) {
+        for (uint256 i; i < len; ++i) {
             if (tokens[i] == pos.debtToken) {
                 tokenIndex = int128(uint128(i));
                 break;
-            }
-            unchecked {
-                ++i;
             }
         }
 
@@ -476,7 +467,7 @@ contract ConvexSpell is BasicSpell {
         ClosePositionFarmParam calldata closePosParam
     ) internal {
         uint256 tokensLength = rewardTokens.length;
-        for (uint256 i; i != tokensLength; ) {
+        for (uint256 i; i < tokensLength; ++i) {
             address sellToken = rewardTokens[i];
 
             /// Apply any potential fees on the reward.
@@ -490,9 +481,6 @@ contract ConvexSpell is BasicSpell {
                     expectedReward,
                     closePosParam.swapDatas[i]
                 );
-            }
-            unchecked {
-                ++i;
             }
         }
     }

@@ -194,14 +194,11 @@ contract BlueBerryBank is
         if (contracts.length != statuses.length) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        for (uint256 idx = 0; idx < contracts.length; ) {
+        for (uint256 i = 0; i < contracts.length;  ++i) {
             if (contracts[idx] == address(0)) {
                 revert Errors.ZERO_ADDRESS();
             }
             whitelistedContracts[contracts[idx]] = statuses[idx];
-            unchecked {
-                ++idx;
-            }
         }
     }
 
@@ -215,14 +212,11 @@ contract BlueBerryBank is
         if (spells.length != statuses.length) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        for (uint256 idx = 0; idx < spells.length; ) {
+        for (uint256 i = 0; i < spells.length; ++i) {
             if (spells[idx] == address(0)) {
                 revert Errors.ZERO_ADDRESS();
             }
             whitelistedSpells[spells[idx]] = statuses[idx];
-            unchecked {
-                ++idx;
-            }
         }
     }
 
@@ -236,14 +230,11 @@ contract BlueBerryBank is
         if (tokens.length != statuses.length) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        for (uint256 idx = 0; idx < tokens.length; ) {
+        for (uint256 id= 0; i < tokens.length; ++i) {
             if (statuses[idx] && !oracle.isTokenSupported(tokens[idx]))
                 revert Errors.ORACLE_NOT_SUPPORT(tokens[idx]);
             whitelistedTokens[tokens[idx]] = statuses[idx];
             emit SetWhitelistToken(tokens[idx], statuses[idx]);
-            unchecked {
-                ++idx;
-            }
         }
     }
 
@@ -254,14 +245,11 @@ contract BlueBerryBank is
         address[] memory tokens,
         bool ok
     ) external onlyOwner {
-        for (uint256 idx = 0; idx < tokens.length; ) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
             address token = tokens[idx];
             if (token == address(0)) revert Errors.ZERO_ADDRESS();
             whitelistedWrappedTokens[token] = ok;
             emit SetWhitelistERC1155(token, ok);
-            unchecked {
-                ++idx;
-            }
         }
     }
 
@@ -366,11 +354,8 @@ contract BlueBerryBank is
     /// @dev Convenient function to trigger interest accrual for multiple banks.
     /// @param tokens An array of token addresses to trigger interest accrual for.
     function accrueAll(address[] memory tokens) external {
-        for (uint256 idx = 0; idx < tokens.length; ) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
             accrue(tokens[idx]);
-            unchecked {
-                ++idx;
-            }
         }
     }
 
@@ -478,9 +463,6 @@ contract BlueBerryBank is
             for (uint256 i; i < tokens.length; ++i) {
                 if (oracle.isTokenSupported(tokens[i])) {
                     rewardsValue += oracle.getTokenValue(tokens[i], rewards[i]);
-                }
-                unchecked {
-                    ++i;
                 }
             }
 

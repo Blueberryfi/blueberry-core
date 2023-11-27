@@ -96,14 +96,11 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     ) external onlyOwner {
         if (remappedTokens_.length != tokens_.length)
             revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens_.length; ) {
-            if (tokens_[idx] == address(0)) revert Errors.ZERO_ADDRESS();
+        for (uint256 i = 0; i < tokens_.length; ++i) {
+            if (tokens_[i] == address(0)) revert Errors.ZERO_ADDRESS();
 
-            remappedTokens[tokens_[idx]] = remappedTokens_[idx];
-            emit SetTokenRemapping(tokens_[idx], remappedTokens_[idx]);
-            unchecked {
-                ++idx;
-            }
+            remappedTokens[tokens_[i]] = remappedTokens_[i];
+            emit SetTokenRemapping(tokens_[i], remappedTokens_[i]);
         }
     }
 

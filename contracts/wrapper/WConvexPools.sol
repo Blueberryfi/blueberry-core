@@ -400,7 +400,7 @@ contract WConvexPools is
 
         /// Withdraw manually
         if (hasDiffExtraRewards) {
-            for (uint256 i; i < storedExtraRewardLength; ) {
+            for (uint256 i; i < storedExtraRewardLength; ++i) {
                 IPoolEscrow(_escrow).getRewardExtra(extraRewards[i]);
             }
         }

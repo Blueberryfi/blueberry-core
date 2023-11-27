@@ -49,17 +49,14 @@ abstract contract BaseAdapter is Ownable {
         uint256[] calldata gaps
     ) external onlyOwner {
         if (tokens.length != gaps.length) revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; ) {
-            if (gaps[idx] > Constants.MAX_TIME_GAP)
-                revert Errors.TOO_LONG_DELAY(gaps[idx]);
-            if (gaps[idx] < Constants.MIN_TIME_GAP)
-                revert Errors.TOO_LOW_MEAN(gaps[idx]);
-            if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
-            timeGaps[tokens[idx]] = gaps[idx];
-            emit SetTimeGap(tokens[idx], gaps[idx]);
-            unchecked {
-                ++idx;
-            }
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            if (gaps[i] > Constants.MAX_TIME_GAP)
+                revert Errors.TOO_LONG_DELAY(gaps[i]);
+            if (gaps[i] < Constants.MIN_TIME_GAP)
+                revert Errors.TOO_LOW_MEAN(gaps[i]);
+            if (tokens[i] == address(0)) revert Errors.ZERO_ADDRESS();
+            timeGaps[tokens[i]] = gaps[i];
+            emit SetTimeGap(tokens[i], gaps[i]);
         }
     }
 }
