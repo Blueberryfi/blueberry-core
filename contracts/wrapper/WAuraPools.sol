@@ -66,7 +66,7 @@ contract WAuraPools is
     /// @dev Aura extra rewards addresses
     address[] public extraRewards;
     /// @dev The index of extra rewards
-    mapping(address => uint256) public extraRewardsIdx;
+    mapping(address => uint256) public extraRewardsI;
 
     uint public REWARD_MULTIPLIER_DENOMINATOR;
 
@@ -540,9 +540,9 @@ contract WAuraPools is
     /// @param extraReward The address of the extra reward token.
     /// @dev Adds the extra reward to the internal list if not already present.
     function _syncExtraReward(address extraReward) private {
-        if (extraRewardsIdx[extraReward] == 0) {
+        if (extraRewardsI[extraReward] == 0) {
             extraRewards.push(extraReward);
-            extraRewardsIdx[extraReward] = extraRewards.length;
+            extraRewardsI[extraReward] = extraRewards.length;
         }
     }
 

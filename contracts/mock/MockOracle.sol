@@ -27,9 +27,9 @@ contract MockOracle is IBaseOracle, Ownable {
         uint256[] memory pxs
     ) external onlyOwner {
         if (tokens.length != pxs.length) revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            prices[tokens[idx]] = pxs[idx];
-            emit SetPrice(tokens[idx], pxs[idx]);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            prices[tokens[i]] = pxs[i];
+            emit SetPrice(tokens[i], pxs[i]);
         }
     }
 }

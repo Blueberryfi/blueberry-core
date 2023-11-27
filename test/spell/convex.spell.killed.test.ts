@@ -188,12 +188,12 @@ describe("Convex Spell", () => {
       );
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );
@@ -209,7 +209,7 @@ describe("Convex Spell", () => {
       console.log("Pool info", poolInfo);
 
       const poolTokensSwapData = await Promise.all(
-        poolInfo.coins.map((token, idx) => {
+        poolInfo.coins.map((token, i) => {
           if (token.toLowerCase() !== USDC.toLowerCase()) {
             return getParaswapCalldata(
               token,

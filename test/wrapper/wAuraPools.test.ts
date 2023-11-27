@@ -451,7 +451,7 @@ describe("wAuraPools", () => {
 
       expect(await wAuraPools.extraRewardsLength(pid)).to.be.eq(1);
       expect(
-        await wAuraPools.extraRewardsIdx(pid, extraRewarder.address)
+        await wAuraPools.extraRewardsI(pid, extraRewarder.address)
       ).to.be.eq(1);
       expect(await wAuraPools.extraRewards(pid, 0)).to.be.eq(
         extraRewarder.address
@@ -464,7 +464,7 @@ describe("wAuraPools", () => {
 
       expect(await wAuraPools.extraRewardsLength(pid)).to.be.eq(1);
       expect(
-        await wAuraPools.extraRewardsIdx(pid, extraRewarder.address)
+        await wAuraPools.extraRewardsI(pid, extraRewarder.address)
       ).to.be.eq(1);
       expect(await wAuraPools.extraRewards(pid, 0)).to.be.eq(
         extraRewarder.address

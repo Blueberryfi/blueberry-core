@@ -57,7 +57,7 @@ contract WConvexPools is
     /// @dev Extra rewards addresses
     address[] public extraRewards;
     /// @dev The index of extra rewards
-    mapping(address => uint256) public extraRewardsIdx;
+    mapping(address => uint256) public extraRewardsI;
     /// @dev CVX reward per share by pid
     mapping(uint256 => uint256) public cvxPerShareByPid;
     /// token id => cvxPerShareDebt;
@@ -426,9 +426,9 @@ contract WConvexPools is
     /// @param extraReward The address of the extra reward token.
     /// @dev Adds the extra reward to the internal list if not already present.
     function _syncExtraReward(address extraReward) private {
-        if (extraRewardsIdx[extraReward] == 0) {
+        if (extraRewardsI[extraReward] == 0) {
             extraRewards.push(extraReward);
-            extraRewardsIdx[extraReward] = extraRewards.length;
+            extraRewardsI[extraReward] = extraRewards.length;
         }
     }
 

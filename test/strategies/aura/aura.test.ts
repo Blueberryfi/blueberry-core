@@ -223,7 +223,7 @@ describe("Aura Spell Strategy test", () => {
               100
             );
 
-            const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+            const swapDatas = pendingRewardsInfo.tokens.map((token, i) => ({
               data: "0x",
             }));
 
@@ -312,7 +312,7 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const swapDatas = alicePendingRewardsInfoBefore.tokens.map(
-              (token, idx) => ({
+              (token, i) => ({
                 data: "0x",
               })
             );
@@ -452,7 +452,7 @@ describe("Aura Spell Strategy test", () => {
               (reward) => 0
             );
 
-            const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+            const swapDatas = pendingRewardsInfo.tokens.map((token, i) => ({
               data: "0x",
             }));
 
@@ -552,7 +552,7 @@ describe("Aura Spell Strategy test", () => {
               (reward) => 0
             );
 
-            const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+            const swapDatas = pendingRewardsInfo.tokens.map((token, i) => ({
               data: "0x",
             }));
 

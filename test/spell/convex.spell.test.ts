@@ -458,12 +458,12 @@ describe("Convex Spell", () => {
       );
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );
@@ -584,7 +584,7 @@ describe("Convex Spell", () => {
 
       const rewardFeeRatio = await config.rewardFee();
 
-      const expectedAmounts = pendingRewardsInfo.rewards.map((reward, idx) => {
+      const expectedAmounts = pendingRewardsInfo.rewards.map((reward, i) => {
         return reward
           .mul(BigNumber.from(10000).sub(rewardFeeRatio))
           .div(10000)
@@ -592,12 +592,12 @@ describe("Convex Spell", () => {
       });
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );
@@ -668,12 +668,12 @@ describe("Convex Spell", () => {
       );
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );
