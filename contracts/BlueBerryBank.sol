@@ -29,11 +29,7 @@ import "./libraries/UniversalERC20.sol";
 /// @title BlueberryBank
 /// @author BlueberryProtocol
 /// @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
-contract BlueBerryBank is
-    OwnableUpgradeable,
-    ERC1155NaiveReceiver,
-    IBank
-{
+contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
@@ -194,11 +190,11 @@ contract BlueBerryBank is
         if (contracts.length != statuses.length) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        for (uint256 i = 0; i < contracts.length;  ++i) {
-            if (contracts[idx] == address(0)) {
+        for (uint256 i = 0; i < contracts.length; ++i) {
+            if (contracts[i] == address(0)) {
                 revert Errors.ZERO_ADDRESS();
             }
-            whitelistedContracts[contracts[idx]] = statuses[idx];
+            whitelistedContracts[contracts[i]] = statuses[i];
         }
     }
 
@@ -213,10 +209,10 @@ contract BlueBerryBank is
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
         for (uint256 i = 0; i < spells.length; ++i) {
-            if (spells[idx] == address(0)) {
+            if (spells[i] == address(0)) {
                 revert Errors.ZERO_ADDRESS();
             }
-            whitelistedSpells[spells[idx]] = statuses[idx];
+            whitelistedSpells[spells[i]] = statuses[i];
         }
     }
 
@@ -230,11 +226,11 @@ contract BlueBerryBank is
         if (tokens.length != statuses.length) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        for (uint256 id= 0; i < tokens.length; ++i) {
-            if (statuses[idx] && !oracle.isTokenSupported(tokens[idx]))
-                revert Errors.ORACLE_NOT_SUPPORT(tokens[idx]);
-            whitelistedTokens[tokens[idx]] = statuses[idx];
-            emit SetWhitelistToken(tokens[idx], statuses[idx]);
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            if (statuses[i] && !oracle.isTokenSupported(tokens[i]))
+                revert Errors.ORACLE_NOT_SUPPORT(tokens[i]);
+            whitelistedTokens[tokens[i]] = statuses[i];
+            emit SetWhitelistToken(tokens[i], statuses[i]);
         }
     }
 
@@ -246,7 +242,7 @@ contract BlueBerryBank is
         bool ok
     ) external onlyOwner {
         for (uint256 i = 0; i < tokens.length; ++i) {
-            address token = tokens[idx];
+            address token = tokens[i];
             if (token == address(0)) revert Errors.ZERO_ADDRESS();
             whitelistedWrappedTokens[token] = ok;
             emit SetWhitelistERC1155(token, ok);
@@ -355,7 +351,7 @@ contract BlueBerryBank is
     /// @param tokens An array of token addresses to trigger interest accrual for.
     function accrueAll(address[] memory tokens) external {
         for (uint256 i = 0; i < tokens.length; ++i) {
-            accrue(tokens[idx]);
+            accrue(tokens[i]);
         }
     }
 
@@ -735,7 +731,10 @@ contract BlueBerryBank is
 
         uint256 wAmount;
         if (_isSoftVault(token)) {
-            IERC20(bank.softVault).universalApprove(bank.softVault, shareAmount);
+            IERC20(bank.softVault).universalApprove(
+                bank.softVault,
+                shareAmount
+            );
             wAmount = ISoftVault(bank.softVault).withdraw(shareAmount);
         } else {
             wAmount = IHardVault(bank.hardVault).withdraw(token, shareAmount);
