@@ -69,12 +69,8 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
         primarySourceCount[token] = sources.length;
         maxPriceDeviations[token] = maxPriceDeviation;
         for (uint256 i = 0; i < sources.length; ++i) {
-            if (address(sources[idx]) == address(0))
-                revert Errors.ZERO_ADDRESS();
-            primarySources[token][idx] = sources[idx];
-            unchecked {
-                ++idx;
-            }
+            if (address(sources[i]) == address(0)) revert Errors.ZERO_ADDRESS();
+            primarySources[token][i] = sources[i];
         }
         emit SetPrimarySources(token, maxPriceDeviation, sources);
     }
@@ -110,9 +106,9 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
 
         for (uint256 i = 0; i < tokens.length; ++i) {
             _setPrimarySources(
-                tokens[idx],
-                maxPriceDeviationList[idx],
-                allSources[idx]
+                tokens[i],
+                maxPriceDeviationList[i],
+                allSources[i]
             );
         }
     }
@@ -130,9 +126,7 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
         /// Get valid oracle sources
         uint256 validSourceCount = 0;
         for (uint256 i = 0; i < candidateSourceCount; ++i) {
-            try primarySources[token][idx].getPrice(token) returns (
-                uint256 px
-            ) {
+            try primarySources[token][i].getPrice(token) returns (uint256 px) {
                 if (px != 0) prices[validSourceCount++] = px;
             } catch {}
         }

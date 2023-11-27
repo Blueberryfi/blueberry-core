@@ -75,10 +75,10 @@ contract BandAdapterOracle is IBaseOracle, BaseAdapter {
     ) external onlyOwner {
         if (syms.length != tokens.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 i = 0; i < syms.length; ++i) {
-            if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
+            if (tokens[i] == address(0)) revert Errors.ZERO_ADDRESS();
 
-            symbols[tokens[idx]] = syms[idx];
-            emit SetSymbol(tokens[idx], syms[idx]);
+            symbols[tokens[i]] = syms[i];
+            emit SetSymbol(tokens[i], syms[i]);
         }
     }
 

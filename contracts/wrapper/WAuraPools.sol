@@ -585,7 +585,7 @@ contract WAuraPools is
                 _currentDeposits;
 
         if (stashAuraRewarder[pid] == address(0)) {
-            for (uint256 i; i != _extraRewardsCount; ++i) {
+            for (uint256 i; i < _extraRewardsCount; ++i) {
                 address _extraRewarder = IAuraRewarder(_auraRewarder)
                     .extraRewards(i);
 

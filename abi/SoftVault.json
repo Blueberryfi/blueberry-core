@@ -221,7 +221,7 @@
     "name": "bToken",
     "outputs": [
       {
-        "internalType": "contract ICErc20",
+        "internalType": "contract IBErc20",
         "name": "",
         "type": "address"
       }
@@ -349,7 +349,7 @@
         "type": "address"
       },
       {
-        "internalType": "contract ICErc20",
+        "internalType": "contract IBErc20",
         "name": "_bToken",
         "type": "address"
       },
