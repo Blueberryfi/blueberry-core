@@ -449,26 +449,22 @@ describe("wAuraPools", () => {
         await wAuraPools.accExtPerShare(tokenId, extraRewarder.address)
       ).to.be.eq(extraRewardPerToken);
 
-      expect(await wAuraPools.extraRewardsLength(pid)).to.be.eq(1);
-      expect(
-        await wAuraPools.extraRewardsIdx(pid, extraRewarder.address)
-      ).to.be.eq(1);
-      expect(await wAuraPools.extraRewards(pid, 0)).to.be.eq(
-        extraRewarder.address
+      expect(await wAuraPools.extraRewardsLength()).to.be.eq(1);
+      expect(await wAuraPools.extraRewardsIdx(extraRewarder.address)).to.be.eq(
+        1
       );
+      expect(await wAuraPools.extraRewards(0)).to.be.eq(extraRewarder.address);
     });
 
     it("keep existing extra reward info when syncing", async () => {
       await wAuraPools.mint(pid, amount);
       await wAuraPools.mint(pid, amount);
 
-      expect(await wAuraPools.extraRewardsLength(pid)).to.be.eq(1);
-      expect(
-        await wAuraPools.extraRewardsIdx(pid, extraRewarder.address)
-      ).to.be.eq(1);
-      expect(await wAuraPools.extraRewards(pid, 0)).to.be.eq(
-        extraRewarder.address
+      expect(await wAuraPools.extraRewardsLength()).to.be.eq(1);
+      expect(await wAuraPools.extraRewardsIdx(extraRewarder.address)).to.be.eq(
+        1
       );
+      expect(await wAuraPools.extraRewards(0)).to.be.eq(extraRewarder.address);
     });
   });
 
