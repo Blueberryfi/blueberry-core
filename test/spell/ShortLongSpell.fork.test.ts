@@ -248,7 +248,7 @@ describe("ShortLong Spell mainnet fork", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             "0x00",
           ])
@@ -273,7 +273,7 @@ describe("ShortLong Spell mainnet fork", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             "0x00",
           ])
@@ -296,13 +296,7 @@ describe("ShortLong Spell mainnet fork", () => {
 
       const amountToSwap = utils.parseUnits("10", 6);
       const colTokenSwapData = (
-        await getParaswapCalldata(
-          USDC,
-          CRV,
-          amountToSwap,
-          spell.address,
-          100
-        )
+        await getParaswapCalldata(USDC, CRV, amountToSwap, spell.address, 100)
       ).data;
 
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
@@ -404,7 +398,7 @@ describe("ShortLong Spell mainnet fork", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
             swapData.data,
           ])
@@ -425,13 +419,7 @@ describe("ShortLong Spell mainnet fork", () => {
 
       const amountToSwap = utils.parseUnits("10", 6);
       const colTokenSwapData = (
-        await getParaswapCalldata(
-          USDC,
-          CRV,
-          amountToSwap,
-          spell.address,
-          100
-        )
+        await getParaswapCalldata(USDC, CRV, amountToSwap, spell.address, 100)
       ).data;
 
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);

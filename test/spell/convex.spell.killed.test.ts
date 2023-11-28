@@ -161,7 +161,7 @@ describe("Convex Spell", () => {
       const ownerAddr = await pool.owner();
       await admin.sendTransaction({
         to: ownerAddr,
-        value: ethers.utils.parseEther("1")
+        value: ethers.utils.parseEther("1"),
       });
       await impersonateAccount(ownerAddr);
       const owner = await ethers.getSigner(ownerAddr);
@@ -205,7 +205,9 @@ describe("Convex Spell", () => {
         })
       );
 
-      const poolInfo = await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRAXUSDC);
+      const poolInfo = await stableOracle.callStatic.getPoolInfo(
+        ADDRESS.CRV_FRAXUSDC
+      );
       console.log("Pool info", poolInfo);
 
       const poolTokensSwapData = await Promise.all(
@@ -225,18 +227,15 @@ describe("Convex Spell", () => {
           }
         })
       );
-      expectedAmounts.push(ethers.utils.parseEther("100"), ethers.utils.parseEther("100"));
+      expectedAmounts.push(
+        ethers.utils.parseEther("100"),
+        ethers.utils.parseEther("100")
+      );
       swapDatas.push(...poolTokensSwapData);
 
       const amountToSwap = utils.parseUnits("200", 18);
       const swapData = (
-        await getParaswapCalldata(
-          CRV,
-          USDC,
-          amountToSwap,
-          spell.address,
-          100
-        )
+        await getParaswapCalldata(CRV, USDC, amountToSwap, spell.address, 100)
       ).data;
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
