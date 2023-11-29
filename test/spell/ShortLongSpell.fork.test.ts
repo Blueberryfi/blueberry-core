@@ -168,7 +168,7 @@ describe("ShortLong Spell mainnet fork", () => {
       const swapData = await getParaswapCalldata(
         CRV,
         DAI,
-        utils.parseUnits("100", 18),
+        borrowAmount,
         spell.address,
         100
       );
@@ -182,7 +182,7 @@ describe("ShortLong Spell mainnet fork", () => {
             collToken: USDC,
             borrowToken: CRV,
             collAmount: depositAmount,
-            borrowAmount: utils.parseUnits("100", 18),
+            borrowAmount: borrowAmount,
             farmingPoolId: 0,
           },
           swapData.data,
@@ -294,10 +294,8 @@ describe("ShortLong Spell mainnet fork", () => {
         await daiSoftVault.callStatic.withdraw(position.collateralSize)
       ).div(2);
 
-      const amountToSwap = utils.parseUnits("10", 6);
-      const colTokenSwapData = (
-        await getParaswapCalldata(USDC, CRV, amountToSwap, spell.address, 100)
-      ).data;
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits("3", 18));
 
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -332,8 +330,8 @@ describe("ShortLong Spell mainnet fork", () => {
             amountPosRemove: position.collateralSize.div(2),
             amountShareWithdraw: position.underlyingVaultShare.div(2),
             amountOutMin: 1,
-            amountToSwap,
-            swapData: colTokenSwapData,
+            amountToSwap: 0,
+            swapData: "0x",
           },
           swapData.data,
         ])
@@ -366,6 +364,9 @@ describe("ShortLong Spell mainnet fork", () => {
       const swapAmount = (
         await daiSoftVault.callStatic.withdraw(position.collateralSize)
       ).div(2);
+
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits("3", 18));
 
       await mockOracle.setPrice(
         [daiSoftVault.address, USDC],
@@ -417,10 +418,8 @@ describe("ShortLong Spell mainnet fork", () => {
         position.collateralSize
       );
 
-      const amountToSwap = utils.parseUnits("10", 6);
-      const colTokenSwapData = (
-        await getParaswapCalldata(USDC, CRV, amountToSwap, spell.address, 100)
-      ).data;
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits("3", 18));
 
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -455,8 +454,8 @@ describe("ShortLong Spell mainnet fork", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
-            amountToSwap,
-            swapData: colTokenSwapData,
+            amountToSwap: 0,
+            swapData: "0x",
           },
           swapData.data,
         ])
@@ -471,7 +470,7 @@ describe("ShortLong Spell mainnet fork", () => {
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
       expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
-        depositAmount.sub(depositFee).sub(withdrawFee).sub(amountToSwap)
+        depositAmount.sub(depositFee).sub(withdrawFee)
       );
 
       const afterTreasuryBalance = await usdc.balanceOf(treasury.address);

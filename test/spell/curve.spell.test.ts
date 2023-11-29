@@ -179,7 +179,7 @@ describe("Curve Spell", () => {
   });
 
   describe("Curve Gauge Farming Position", () => {
-    const depositAmount = utils.parseUnits("200", 18); // CRV => $100
+    const depositAmount = utils.parseUnits("100", 18); // CRV => $100
     const borrowAmount = utils.parseUnits("250", 6); // USDC
     const iface = new ethers.utils.Interface(SpellABI);
 
@@ -405,6 +405,9 @@ describe("Curve Spell", () => {
     //   ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
     // })
     it("should revert if block timestamp is greater than deadline", async () => {
+      // Manually transfer CRV rewards to spell
+      await crv.transfer(spell.address, utils.parseUnits("10", 18));
+
       const deadline = await currentTime();
       const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
@@ -439,14 +442,20 @@ describe("Curve Spell", () => {
     it("should revert if received amount is lower than slippage", async () => {
       evm_mine_blocks(1000);
 
+      // Manually transfer CRV rewards to spell
+      const amount = utils.parseUnits("10", 18);
+      await crv.transfer(spell.address, amount);
+
       const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
 
-      const amountToSwap = utils.parseUnits("10", 18);
+      const rewardFeeRatio = await config.rewardFee();
+
+      const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
       const swapData = await getParaswapCalldata(
         CRV,
         USDC,
-        amountToSwap,
+        expectedAmount,
         spell.address,
         100
       );
@@ -464,19 +473,22 @@ describe("Curve Spell", () => {
               amountPosRemove: ethers.constants.MaxUint256,
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: utils.parseUnits("1000", 18),
-              amountToSwap,
-              swapData: swapData.data,
+              amountToSwap: 0,
+              swapData: "0x",
             },
-            [0],
-            ["0x"],
+            [expectedAmount],
+            [swapData.data],
             false,
             7777777777,
           ])
         )
       ).to.be.revertedWith("Not enough coins removed");
     });
-
     it("should be able to harvest on Curve Gauge", async () => {
+      // Manually transfer CRV rewards to spell
+      const amount = utils.parseUnits("10", 18);
+      await crv.transfer(spell.address, amount);
+
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeCrvBalance = await crv.balanceOf(admin.address);
@@ -486,11 +498,11 @@ describe("Curve Spell", () => {
 
       const rewardFeeRatio = await config.rewardFee();
 
-      const amountToSwap = utils.parseUnits("10", 18);
+      const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
       const swapData = await getParaswapCalldata(
         CRV,
         USDC,
-        amountToSwap,
+        expectedAmount,
         spell.address,
         100
       );
@@ -507,11 +519,11 @@ describe("Curve Spell", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
-            amountToSwap,
-            swapData: swapData.data,
+            amountToSwap: 0,
+            swapData: "0x",
           },
-          [0],
-          ["0x"],
+          [expectedAmount],
+          [swapData.data],
           false,
           7777777777,
         ])
@@ -526,7 +538,7 @@ describe("Curve Spell", () => {
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
       expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
-        depositAmount.sub(depositFee).sub(withdrawFee).sub(amountToSwap)
+        depositAmount.sub(depositFee).sub(withdrawFee)
       );
 
       const afterTreasuryBalance = await crv.balanceOf(treasury.address);

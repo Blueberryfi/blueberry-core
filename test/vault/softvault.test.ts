@@ -68,7 +68,7 @@ describe("SoftVault", () => {
     vault = <SoftVault>(
       await upgrades.deployProxy(
         SoftVault,
-        [config.address, bUSDC.address, "Interest Bearing USDC", "ibUSDC"],
+        [config.address, BUSDC, "Interest Bearing USDC", "ibUSDC"],
         { unsafeAllow: ["delegatecall"] }
       )
     );
@@ -110,7 +110,7 @@ describe("SoftVault", () => {
       await expect(
         upgrades.deployProxy(SoftVault, [
           ethers.constants.AddressZero,
-          bUSDC,
+          BUSDC,
           "Interest Bearing USDC",
           "ibUSDC",
         ])
