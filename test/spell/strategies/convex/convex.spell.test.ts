@@ -126,12 +126,12 @@ describe("Convex Spell - ETH/stETH", () => {
     );
 
     const swapDatas = await Promise.all(
-      pendingRewardsInfo.tokens.map((token, idx) => {
-        if (expectedAmounts[idx].gt(0)) {
+      pendingRewardsInfo.tokens.map((token, i) => {
+        if (expectedAmounts[i].gt(0)) {
           return getParaswapCalldata(
             token,
             WETH,
-            expectedAmounts[idx],
+            expectedAmounts[i],
             spell.address,
             100
           );

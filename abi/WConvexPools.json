@@ -448,7 +448,7 @@
         "type": "address"
       }
     ],
-    "name": "extraRewardsIdx",
+    "name": "extraRewardsI",
     "outputs": [
       {
         "internalType": "uint256",

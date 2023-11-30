@@ -488,12 +488,12 @@ describe("Aura Spell", () => {
       );
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );
@@ -554,12 +554,12 @@ describe("Aura Spell", () => {
       );
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );

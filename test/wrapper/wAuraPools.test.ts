@@ -459,7 +459,6 @@ describe("wAuraPools", () => {
     it("keep existing extra reward info when syncing", async () => {
       await wAuraPools.mint(pid, amount);
       await wAuraPools.mint(pid, amount);
-
       expect(await wAuraPools.extraRewardsLength()).to.be.eq(1);
       expect(await wAuraPools.extraRewardsIdx(extraRewarder.address)).to.be.eq(
         1
