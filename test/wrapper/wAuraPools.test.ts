@@ -450,7 +450,7 @@ describe("wAuraPools", () => {
       ).to.be.eq(extraRewardPerToken);
 
       expect(await wAuraPools.extraRewardsLength()).to.be.eq(1);
-      expect(await wAuraPools.extraRewardsIdx(extraRewarder.address)).to.be.eq(
+      expect(await wAuraPools.extraRewardsI(extraRewarder.address)).to.be.eq(
         1
       );
       expect(await wAuraPools.extraRewards(0)).to.be.eq(extraRewarder.address);
@@ -460,7 +460,7 @@ describe("wAuraPools", () => {
       await wAuraPools.mint(pid, amount);
       await wAuraPools.mint(pid, amount);
       expect(await wAuraPools.extraRewardsLength()).to.be.eq(1);
-      expect(await wAuraPools.extraRewardsIdx(extraRewarder.address)).to.be.eq(
+      expect(await wAuraPools.extraRewardsI(extraRewarder.address)).to.be.eq(
         1
       );
       expect(await wAuraPools.extraRewards(0)).to.be.eq(extraRewarder.address);

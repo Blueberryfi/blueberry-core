@@ -595,9 +595,9 @@ describe("Convex Spell", () => {
       const expectedAmounts = pendingRewardsInfo.rewards.map(
         async (reward, i) => {
           const expectedAmounts = pendingRewardsInfo.rewards.map(
-            (reward, idx) => {
+            (reward, i) => {
               if (
-                pendingRewardsInfo.tokens[idx] == ADDRESS.CRV &&
+                pendingRewardsInfo.tokens[i] == ADDRESS.CRV &&
                 reward.isZero()
               ) {
                 reward = rewardAmount;

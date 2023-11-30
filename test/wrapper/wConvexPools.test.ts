@@ -434,7 +434,7 @@ describe("WConvexPools", () => {
 
       expect(await wConvexPools.extraRewardsLength()).to.be.eq(1);
       expect(
-        await wConvexPools.extraRewardsIdx(extraRewarder.address)
+        await wConvexPools.extraRewardsI(extraRewarder.address)
       ).to.be.eq(1);
       expect(await wConvexPools.extraRewards(0)).to.be.eq(
         extraRewarder.address
@@ -447,7 +447,7 @@ describe("WConvexPools", () => {
 
       expect(await wConvexPools.extraRewardsLength()).to.be.eq(1);
       expect(
-        await wConvexPools.extraRewardsIdx(extraRewarder.address)
+        await wConvexPools.extraRewardsI(extraRewarder.address)
       ).to.be.eq(1);
       expect(await wConvexPools.extraRewards(0)).to.be.eq(
         extraRewarder.address
