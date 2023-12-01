@@ -48,7 +48,7 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
 
         uint256 length = tokens.length;
         uint256 minPrice = type(uint256).max;
-        for (uint256 i; i < length; ++i ) {
+        for (uint256 i; i < length; ++i) {
             if (tokens[i] == token) {
                 continue;
             }

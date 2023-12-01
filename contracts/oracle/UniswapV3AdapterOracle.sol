@@ -48,7 +48,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         address[] calldata pools
     ) external onlyOwner {
         if (tokens.length != pools.length) revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 i = 0; i < tokens.length; ) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
             if (tokens[i] == address(0) || pools[i] == address(0))
                 revert Errors.ZERO_ADDRESS();
             if (
@@ -57,9 +57,6 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
             ) revert Errors.NO_STABLEPOOL(pools[i]);
             stablePools[tokens[i]] = pools[i];
             emit SetPoolStable(tokens[i], pools[i]);
-            unchecked {
-                ++i;
-            }
         }
     }
 
