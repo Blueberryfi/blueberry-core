@@ -12,12 +12,12 @@
   },
   {
     "inputs": [],
-    "name": "AddressZero",
+    "name": "UNAUTHORIZED",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "Unauthorized",
+    "name": "ZERO_ADDRESS",
     "type": "error"
   },
   {

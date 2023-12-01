@@ -11,6 +11,7 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "../../utils/BlueBerryErrors.sol" as Errors;
 import "../../interfaces/aura/IAuraPools.sol";
 import "../../interfaces/aura/IAuraRewarder.sol";
 import "../../interfaces/aura/IAuraExtraRewarder.sol";

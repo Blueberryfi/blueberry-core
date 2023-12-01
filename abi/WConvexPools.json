@@ -1,10 +1,5 @@
 [
   {
-    "inputs": [],
-    "name": "AddressZero",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -24,6 +19,11 @@
       }
     ],
     "name": "BAD_REWARD_PER_SHARE",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZERO_ADDRESS",
     "type": "error"
   },
   {
