@@ -7,7 +7,7 @@
 ██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
-pragma solidity ^0.8.16;
+pragma solidity 0.8.22;
 
 interface IPoolEscrowFactory {
     /// @dev Initializes the pool escrow with the given PID.
