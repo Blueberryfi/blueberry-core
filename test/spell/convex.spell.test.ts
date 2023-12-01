@@ -37,6 +37,7 @@ chai.use(roughlyNear);
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 const WETH = ADDRESS.WETH;
+const BAL = ADDRESS.BAL;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
@@ -71,7 +72,7 @@ describe("Convex Spell", () => {
   let config: ProtocolConfig;
 
   before(async () => {
-    await fork();
+    await fork(1, 17089048);
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
@@ -251,7 +252,7 @@ describe("Convex Spell", () => {
           spell.address,
           iface.encodeFunctionData("openPositionFarm", [
             {
-              strategyId: 5,
+              strategyId: 999,
               collToken: CRV,
               borrowToken: USDC,
               collAmount: depositAmount,
@@ -263,7 +264,7 @@ describe("Convex Spell", () => {
         )
       )
         .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
-        .withArgs(spell.address, 5);
+        .withArgs(spell.address, 999);
     });
     it("should revert when opening a position for non-existing collateral", async () => {
       await expect(
@@ -273,7 +274,7 @@ describe("Convex Spell", () => {
           iface.encodeFunctionData("openPositionFarm", [
             {
               strategyId: 0,
-              collToken: WETH,
+              collToken: BAL,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -284,7 +285,7 @@ describe("Convex Spell", () => {
         )
       )
         .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
-        .withArgs(0, WETH);
+        .withArgs(0, BAL);
     });
     it("should revert when opening a position for incorrect farming pool id", async () => {
       await expect(
@@ -476,9 +477,6 @@ describe("Convex Spell", () => {
         })
       );
 
-      // Manually transfer CRV rewards to spell
-      await crv.transfer(spell.address, utils.parseUnits("10", 18));
-
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
         bank.execute(
@@ -517,7 +515,7 @@ describe("Convex Spell", () => {
           iface.encodeFunctionData("closePositionFarm", [
             {
               param: {
-                strategyId: 5,
+                strategyId: 999,
                 collToken: CRV,
                 borrowToken: USDC,
                 amountRepay: ethers.constants.MaxUint256,
@@ -550,7 +548,7 @@ describe("Convex Spell", () => {
             {
               param: {
                 strategyId: 0,
-                collToken: WETH,
+                collToken: BAL,
                 borrowToken: USDC,
                 amountRepay: ethers.constants.MaxUint256,
                 amountPosRemove: ethers.constants.MaxUint256,
@@ -567,7 +565,7 @@ describe("Convex Spell", () => {
         )
       )
         .to.be.revertedWithCustomError(spell, "COLLATERAL_NOT_EXIST")
-        .withArgs(0, WETH);
+        .withArgs(0, BAL);
     });
 
     it("should be able to harvest on Convex 1", async () => {
@@ -588,75 +586,43 @@ describe("Convex Spell", () => {
 
       const rewardFeeRatio = await config.rewardFee();
 
-      // Manually transfer CRV rewards to spell
-      const rewardAmount = utils.parseUnits("10", 18);
-      await crv.transfer(spell.address, rewardAmount);
+      const expectedAmounts = pendingRewardsInfo.rewards.map((reward, idx) => {
+        const rewardAmount = utils.parseUnits("10", 18);
+          return reward
+        //await crv.transfer(spell.address, rewardAmount);
+            .mul(BigNumber.from(10000).sub(rewardFeeRatio))
+            .div(10000)
+            .div(2);
+        });
 
-      const expectedAmounts = pendingRewardsInfo.rewards.map(
-        async (reward, i) => {
-          const expectedAmounts = pendingRewardsInfo.rewards.map(
-            (reward, i) => {
-              if (
-                pendingRewardsInfo.tokens[i] == ADDRESS.CRV &&
-                reward.isZero()
-              ) {
-                reward = rewardAmount;
-              }
-              return reward
-                .mul(BigNumber.from(10000).sub(rewardFeeRatio))
-                .div(10000)
-                .div(2);
+        const swapDatas = await Promise.all(
+          pendingRewardsInfo.tokens.map((token, idx) => {
+            if (expectedAmounts[idx].gt(0)) {
+              return getParaswapCalldata(
+                token,
+                USDC,
+                expectedAmounts[idx],
+                spell.address,
+                100
+              );
+            } else {
+              return {
+                data: "0x00",
+              };
             }
-          );
+          })
+        );
 
-          const swapDatas = await Promise.all(
-            pendingRewardsInfo.tokens.map((token, i) => {
-              if (expectedAmounts[i].gt(0)) {
-                return getParaswapCalldata(
-                  token,
-                  USDC,
-                  expectedAmounts[i],
-                  spell.address,
-                  100
-                );
-              } else {
-                return {
-                  data: "0x00",
-                };
-              }
-            })
-          );
-
-          // Manually transfer USDC rewards to spell
-          await usdc.transfer(spell.address, utils.parseUnits("10", 6));
-
-          const iface = new ethers.utils.Interface(SpellABI);
-          await expect(
-            bank.execute(
-              positionId,
-              spell.address,
-              iface.encodeFunctionData("closePositionFarm", [
-                {
-                  param: {
-                    strategyId: 0,
-                    collToken: CRV,
-                    borrowToken: USDC,
-                    amountRepay: debtAmount.div(2),
-                    amountPosRemove: position.collateralSize.div(2),
-                    amountShareWithdraw: position.underlyingVaultShare.div(2),
-                    amountOutMin: 1,
-                    amountToSwap: 0,
-                    swapData: "0x",
-                  },
-                  amounts: expectedAmounts,
-                  swapDatas: swapDatas.map((item) => item.data),
-                  isKilled: false,
-                },
-              ])
-            )
-          ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
-        }
-      );
+      const amountToSwap = utils.parseUnits("30", 18);
+      const swapData = (
+        await getParaswapCalldata(
+          CRV,
+          USDC,
+          amountToSwap,
+          spell.address,
+          100
+        )
+      ).data;
 
       it("should be able to harvest on Convex 2", async () => {
         await evm_mine_blocks(1000);

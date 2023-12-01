@@ -278,16 +278,16 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   );
   console.log("bBAL deployed at: ", bBAL.address);
 
-  const bALCX = await deployBToken(
-    ADDRESS.ALCX,
-    comptroller.address,
-    IRM.address,
-    "Blueberry ALCX",
-    "bALCX",
-    18,
-    bTokenAdmin.address
-  );
-  console.log("bALCX deployed at: ", bALCX.address);
+  //const bALCX = await deployBToken(
+  //  ADDRESS.ALCX,
+  //  comptroller.address,
+  //  IRM.address,
+  //  "Blueberry ALCX",
+  //  "bALCX",
+  //  18,
+  //  bTokenAdmin.address
+  //);
+  //console.log("bALCX deployed at: ", bALCX.address);
 
   // Deploy WETH
   baseRate = 0;
@@ -323,7 +323,61 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     8,
     bTokenAdmin.address
   );
-  console.log("bBTC deployed at: ", bWBTC.address);
+  console.log("bWBTC deployed at: ", bWBTC.address);
+
+  const bWstETH = await deployBToken(
+    ADDRESS.wstETH,
+    comptroller.address,
+    IRM.address,
+    "Blueberry WstETH",
+    "bWstETH",
+    18,
+    bTokenAdmin.address
+  );
+  console.log("bWstETH deployed at: ", bWstETH.address);
+
+  const bCrvStEth = await deployBToken(
+    ADDRESS.CRV_STETH,
+    comptroller.address,
+    IRM.address,
+    "Blueberry CrvSTETH",
+    "bCrvSTETH",
+    18,
+    bTokenAdmin.address
+  );
+  console.log("bCrvStEth deployed at: ", bCrvStEth.address);
+
+  const bCrvFrxEth = await deployBToken(
+    ADDRESS.CRV_FRXETH,
+    comptroller.address,
+    IRM.address,
+    "Blueberry CrvFRXETH",
+    "bCrvFRXETH",
+    18,
+    bTokenAdmin.address
+  );
+  console.log("bCrvFrxEth deployed at: ", bCrvFrxEth.address);
+
+  const bCrvMim3Crv = await deployBToken(
+    ADDRESS.CRV_MIM3CRV,
+    comptroller.address,
+    IRM.address,
+    "Blueberry CrvMIM3CRV",
+    "bCrvMIM3CRV",
+    18,
+    bTokenAdmin.address
+  );
+  console.log("bCrvMim3Crv deployed at: ", bCrvMim3Crv.address);
+
+  const bCrvCvxCrv = await deployBToken(
+    ADDRESS.CRV_CVXCRV_CRV,
+    comptroller.address,
+    IRM.address,
+    "Blueberry CrvCVXCRV",
+    "bCrvCVXCRV",
+    18,
+    bTokenAdmin.address
+  );
 
   await comptroller._supportMarket(bUSDC.address, 0);
   await comptroller._supportMarket(bICHI.address, 0);
@@ -334,9 +388,14 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   await comptroller._supportMarket(bOHM.address, 0);
   await comptroller._supportMarket(bSUSHI.address, 0);
   await comptroller._supportMarket(bBAL.address, 0);
-  await comptroller._supportMarket(bALCX.address, 0);
+  //await comptroller._supportMarket(bALCX.address, 0);
   await comptroller._supportMarket(bWETH.address, 0);
   await comptroller._supportMarket(bWBTC.address, 0);
+  await comptroller._supportMarket(bWstETH.address, 0);
+  await comptroller._supportMarket(bCrvStEth.address, 0);
+  await comptroller._supportMarket(bCrvFrxEth.address, 0);
+  await comptroller._supportMarket(bCrvMim3Crv.address, 0);
+  await comptroller._supportMarket(bCrvCvxCrv.address, 0);
 
   return {
     comptroller,
@@ -349,8 +408,13 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     bOHM,
     bSUSHI,
     bBAL,
-    bALCX,
+    //bALCX,
     bWETH,
     bWBTC,
+    bWstETH,
+    bCrvStEth,
+    bCrvFrxEth,
+    bCrvMim3Crv,
+    bCrvCvxCrv,
   };
 }

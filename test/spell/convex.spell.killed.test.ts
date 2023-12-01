@@ -116,7 +116,7 @@ describe("Convex Spell", () => {
         spell.address,
         iface.encodeFunctionData("openPositionFarm", [
           {
-            strategyId: 4,
+            strategyId: 7,
             collToken: CRV,
             borrowToken: USDC,
             collAmount: depositAmount,
@@ -250,7 +250,7 @@ describe("Convex Spell", () => {
         iface.encodeFunctionData("closePositionFarm", [
           {
             param: {
-              strategyId: 4,
+              strategyId: 7,
               collToken: CRV,
               borrowToken: USDC,
               amountRepay: ethers.constants.MaxUint256,

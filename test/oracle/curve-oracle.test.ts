@@ -168,10 +168,6 @@ describe("Curve LP Oracle", () => {
         "cvxCRV/CRV Factory Pool",
         await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXCRV_CRV)
       );
-      console.log(
-        "ALCX/FRAXBP Crypto Factory Pool",
-        await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_ALCX_FRAXBP)
-      );
     });
 
     it("Should fail to get price when base oracle is not set", async () => {

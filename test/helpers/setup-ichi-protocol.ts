@@ -63,7 +63,7 @@ export interface Protocol {
   bOHM: Contract,
   bSUSHI: Contract,
   bBAL: Contract,
-  bALCX: Contract,
+  //bALCX: Contract,
   bWETH: Contract,
   bWBTC: Contract,
 }
@@ -106,7 +106,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   let bOHM: Contract;
   let bSUSHI: Contract;
   let bBAL: Contract;
-  let bALCX: Contract;
+  //let bALCX: Contract;
   let bWETH: Contract;
   let bWBTC: Contract;
 
@@ -337,7 +337,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   bOHM = bTokens.bOHM;
   bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
-  bALCX = bTokens.bALCX;
+  //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
   bWBTC = bTokens.bWBTC;
 
@@ -429,7 +429,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     bOHM,
     bSUSHI,
     bBAL,
-    bALCX,
+    //bALCX,
     bWETH,
     bWBTC,
   }
