@@ -264,6 +264,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       ADDRESS.CRV_SUSD,
       ADDRESS.CRV_CRVETH,
       ADDRESS.CRV_STETH,
+      ADDRESS.CRV_FRAXUSDC,
     ],
     [
       mockOracle.address,
@@ -278,6 +279,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
       stableOracle.address,
       stableOracle.address,
       volatileOracle.address,
+      stableOracle.address,
       stableOracle.address,
     ]
   );
@@ -407,6 +409,11 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
     utils.parseUnits("100", 18),
     utils.parseUnits("2000", 18)
   );
+  await convexSpell.addStrategy(
+    ADDRESS.CRV_FRAXUSDC,
+    utils.parseUnits("100", 18),
+    utils.parseUnits("2000", 18)
+  );
   await convexSpell.setCollateralsMaxLTVs(
     0,
     [USDC, CRV, DAI],
@@ -419,6 +426,7 @@ export const setupCvxProtocol = async (): Promise<CvxProtocol> => {
   );
   await convexSpell.setCollateralsMaxLTVs(2, [USDC, CRV, DAI], [300, 300, 300]);
   await convexSpell.setCollateralsMaxLTVs(3, [USDC, DAI], [30000, 30000]);
+  await convexSpell.setCollateralsMaxLTVs(4, [USDC, CRV, DAI], [30000, 30000, 30000]);
   convexSpellWithVolatileOracle = <ConvexSpell>(
     await upgrades.deployProxy(
       ConvexSpell,

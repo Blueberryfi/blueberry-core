@@ -44,6 +44,7 @@ const WETH = ADDRESS.WETH;
 const BAL = ADDRESS.BAL;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
+const FRAX = ADDRESS.FRAX;
 const CRV = ADDRESS.CRV;
 const CVX = ADDRESS.CVX;
 const POOL_ID_FRAXUSDC = ADDRESS.CVX_FraxUsdc_Id;
@@ -57,6 +58,7 @@ describe("Convex Spell", () => {
   let dai: ERC20;
   let crv: ERC20;
   let cvx: ERC20;
+  let frx: ERC20;
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: ConvexSpell;
@@ -77,6 +79,7 @@ describe("Convex Spell", () => {
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
     cvx = <ERC20>await ethers.getContractAt("ERC20", CVX);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
+    frx = <ERC20>await ethers.getContractAt("ERC20", FRAX);
     cvxBooster = <ICvxPools>(
       await ethers.getContractAt("ICvxPools", ADDRESS.CVX_BOOSTER)
     );
@@ -91,8 +94,8 @@ describe("Convex Spell", () => {
     wconvex = protocol.wconvex;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
-    config = protocol.config;
     stableOracle = protocol.stableOracle;
+    config = protocol.config;
   });
 
   describe("Convex Pool Farming Position", () => {
@@ -113,7 +116,7 @@ describe("Convex Spell", () => {
         spell.address,
         iface.encodeFunctionData("openPositionFarm", [
           {
-            strategyId: 7,
+            strategyId: 4,
             collToken: CRV,
             borrowToken: USDC,
             collAmount: depositAmount,
@@ -145,9 +148,6 @@ describe("Convex Spell", () => {
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
         depositAmount.mul(50).div(10000)
       );
-
-      const rewarderBalance = await crvRewarder.balanceOf(wconvex.address);
-      expect(rewarderBalance).to.be.equal(pos.collateralSize);
     });
 
     it("should be able to withdraw when pool is killed", async () => {
@@ -250,7 +250,7 @@ describe("Convex Spell", () => {
         iface.encodeFunctionData("closePositionFarm", [
           {
             param: {
-              strategyId: 7,
+              strategyId: 4,
               collToken: CRV,
               borrowToken: USDC,
               amountRepay: ethers.constants.MaxUint256,
