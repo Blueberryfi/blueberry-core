@@ -40,8 +40,6 @@ contract WConvexPools is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    error AddressZero();
-
     /*//////////////////////////////////////////////////////////////////////////
                                    PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
@@ -80,7 +78,7 @@ contract WConvexPools is
             cvxPools_ == address(0) ||
             escrowFactory_ == address(0)
         ) {
-            revert AddressZero();
+            revert Errors.ZERO_ADDRESS();
         }
         __ReentrancyGuard_init();
         __ERC1155_init("WConvexPools");

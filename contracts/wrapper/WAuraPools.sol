@@ -43,8 +43,6 @@ contract WAuraPools is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    error AddressZero();
-
     event Minted(uint256 pid, uint256 amount, address indexed user);
 
     event Burned(uint256 id, uint256 amount, address indexed user);
@@ -112,7 +110,7 @@ contract WAuraPools is
             stash_aura_ == address(0) ||
             escrowFactory_ == address(0)
         ) {
-            revert AddressZero();
+            revert Errors.ZERO_ADDRESS();
         }
         __ReentrancyGuard_init();
         __ERC1155_init("WAuraPools");

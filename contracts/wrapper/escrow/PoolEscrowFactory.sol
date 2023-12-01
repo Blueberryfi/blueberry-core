@@ -21,12 +21,6 @@ contract PoolEscrowFactory is Initializable, Ownable {
 
     event EscrowCreated(address);
 
-    /// @dev The caller is not authorized to call the function.
-    error Unauthorized();
-
-    /// @dev Address cannot be zero.
-    error AddressZero();
-
     /// @dev Address of the escrow implementation.
     address public implementation;
 
@@ -39,7 +33,7 @@ contract PoolEscrowFactory is Initializable, Ownable {
     /// @dev Ensures caller is the wrapper contract.
     modifier onlyWrapper() {
         if (msg.sender != wrapper) {
-            revert Unauthorized();
+            revert Errors.UNAUTHORIZED();
         }
         _;
     }
@@ -47,7 +41,7 @@ contract PoolEscrowFactory is Initializable, Ownable {
     /// @param _escrowBase The escrow contract implementation
     constructor(address _escrowBase) payable Ownable() {
         if (_escrowBase == address(0)) {
-            revert AddressZero();
+            revert Errors.ZERO_ADDRESS();
         }
         implementation = _escrowBase;
     }
@@ -59,7 +53,7 @@ contract PoolEscrowFactory is Initializable, Ownable {
         address _auraPools
     ) public payable initializer onlyOwner {
         if (_wrapper == address(0) || _auraPools == address(0)) {
-            revert AddressZero();
+            revert Errors.ZERO_ADDRESS();
         }
         wrapper = _wrapper;
         auraPools = _auraPools;

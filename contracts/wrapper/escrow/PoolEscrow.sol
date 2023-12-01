@@ -19,12 +19,6 @@ import "../../libraries/UniversalERC20.sol";
 contract PoolEscrow is Initializable {
     using SafeERC20 for IERC20;
     using UniversalERC20 for IERC20;
-    
-    /// @dev The caller is not authorized to call the function.
-    error Unauthorized();
-
-    /// @dev Address cannot be zero.
-    error AddressZero();
 
     /// @dev Address of the wrapper contract.
     address public wrapper;
@@ -48,7 +42,7 @@ contract PoolEscrow is Initializable {
     /// @dev Ensures caller is the wrapper contract.
     modifier onlyWrapper() {
         if (msg.sender != wrapper) {
-            revert Unauthorized();
+            revert Errors.UNAUTHORIZED();
         }
         _;
     }
@@ -69,7 +63,7 @@ contract PoolEscrow is Initializable {
             _auraRewarder == address(0) ||
             _lpToken == address(0)
         ) {
-            revert AddressZero();
+            revert Errors.ZERO_ADDRESS();
         }
         pid = _pid;
         wrapper = _wrapper;
