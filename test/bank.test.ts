@@ -855,7 +855,7 @@ describe("Bank", () => {
     it("should be able to maintain the position to get rid of liquidation", async () => {
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log("Position Risk:", utils.formatUnits(risk, 2), "%");
+      console.log("Position Risk:", risk);
 
       await mockOracle.setPrice(
         [ICHI],
@@ -864,19 +864,22 @@ describe("Bank", () => {
         ]
       );
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log("Position Risk:", utils.formatUnits(risk, 2), "%");
+      console.log("Position Risk:", risk);
+      console.log("Liquidity Threshold:", (await bank.banks((await bank.positions(positionId)).underlyingToken)).liqThreshold);
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
+      console.log("Is Liquidatable:", await bank.callStatic.isLiquidatable(positionId));
 
       await bank.execute(
         positionId,
         spell.address,
         iface.encodeFunctionData("increasePosition", [
           ICHI,
-          depositAmount.div(3),
+          depositAmount.div(2),
         ])
-      );
+      );        
+
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log("Position Risk:", utils.formatUnits(risk, 2), "%");
+      console.log("Position Risk:", risk);
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.false;
     });
     it("should revert execution when it is liquidateable after execution", async () => {
