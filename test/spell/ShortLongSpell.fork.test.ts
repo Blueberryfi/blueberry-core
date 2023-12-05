@@ -89,7 +89,7 @@ describe("ShortLong Spell mainnet fork", () => {
               collToken: USDC,
               borrowToken: CRV,
               collAmount: depositAmount,
-              borrowAmount: borrowAmount.mul(30),
+              borrowAmount: borrowAmount.mul(300),
               farmingPoolId: 0,
             },
             swapData.data,
