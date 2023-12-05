@@ -728,7 +728,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         if (shareAmount == type(uint256).max) {
             shareAmount = pos.underlyingVaultShare;
         }
-
         uint256 wAmount;
         if (_isSoftVault(token)) {
             IERC20(bank.softVault).universalApprove(
@@ -741,12 +740,9 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         }
 
         pos.underlyingVaultShare -= shareAmount;
-
         IERC20(token).universalApprove(address(feeManager()), wAmount);
         wAmount = feeManager().doCutWithdrawFee(token, wAmount);
-
         IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
-
         emit WithdrawLend(POSITION_ID, msg.sender, token, wAmount);
     }
 

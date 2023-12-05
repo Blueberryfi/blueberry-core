@@ -5,7 +5,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import {
   AggregatorOracle,
-  BandAdapterOracle,
   ChainlinkAdapterOracle,
   MockOracle,
 } from "../../typechain-types";
@@ -29,11 +28,10 @@ describe("Aggregator Oracle", () => {
   let mockOracle3: MockOracle;
 
   let chainlinkOracle: ChainlinkAdapterOracle;
-  let bandOracle: BandAdapterOracle;
   let aggregatorOracle: AggregatorOracle;
 
   before(async () => {
-    await fork(1, 17089048);
+    await fork(1, 18695050);
 
     [admin, alice] = await ethers.getSigners();
 
@@ -50,18 +48,6 @@ describe("Aggregator Oracle", () => {
       [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV],
       [OneDay, OneDay, OneDay]
     );
-
-    // Band Oracle
-    const BandAdapterOracle = await ethers.getContractFactory(
-      CONTRACT_NAMES.BandAdapterOracle
-    );
-    bandOracle = <BandAdapterOracle>(
-      await BandAdapterOracle.deploy(ADDRESS.BandStdRef)
-    );
-    await bandOracle.deployed();
-
-    await bandOracle.setTimeGap([ADDRESS.USDC, ADDRESS.UNI], [OneDay, OneDay]);
-    await bandOracle.setSymbols([ADDRESS.USDC, ADDRESS.UNI], ["USDC", "UNI"]);
 
     // Mock Oracle
     const MockOracle = await ethers.getContractFactory(
@@ -90,8 +76,7 @@ describe("Aggregator Oracle", () => {
         aggregatorOracle
           .connect(alice)
           .setPrimarySources(ADDRESS.USDC, DEVIATION, [
-            chainlinkOracle.address,
-            bandOracle.address,
+            chainlinkOracle.address
           ])
       ).to.be.revertedWith("Ownable: caller is not the owner");
 
@@ -99,20 +84,21 @@ describe("Aggregator Oracle", () => {
         aggregatorOracle.setPrimarySources(
           ethers.constants.AddressZero,
           DEVIATION,
-          [chainlinkOracle.address, bandOracle.address]
+          [chainlinkOracle.address]
         )
       ).to.be.revertedWithCustomError(aggregatorOracle, "ZERO_ADDRESS");
 
       await expect(
         aggregatorOracle.setPrimarySources(ADDRESS.UNI, DEVIATION, [
           chainlinkOracle.address,
-          bandOracle.address,
-          bandOracle.address,
-          bandOracle.address,
+          chainlinkOracle.address,
+          chainlinkOracle.address,
+          chainlinkOracle.address,
+          chainlinkOracle.address
         ])
       )
         .to.be.revertedWithCustomError(aggregatorOracle, "EXCEED_SOURCE_LEN")
-        .withArgs(4);
+        .withArgs(5);
 
       await expect(
         aggregatorOracle.setPrimarySources(ADDRESS.UNI, DEVIATION, [
@@ -123,8 +109,7 @@ describe("Aggregator Oracle", () => {
 
       await expect(
         aggregatorOracle.setPrimarySources(ADDRESS.UNI, 1500, [
-          chainlinkOracle.address,
-          bandOracle.address,
+          chainlinkOracle.address
         ])
       )
         .to.be.revertedWithCustomError(aggregatorOracle, "OUT_OF_DEVIATION_CAP")
@@ -132,8 +117,7 @@ describe("Aggregator Oracle", () => {
 
       await expect(
         aggregatorOracle.setPrimarySources(ADDRESS.UNI, DEVIATION, [
-          chainlinkOracle.address,
-          bandOracle.address,
+          chainlinkOracle.address
         ])
       ).to.be.emit(aggregatorOracle, "SetPrimarySources");
 
@@ -142,12 +126,9 @@ describe("Aggregator Oracle", () => {
       ).to.be.equal(DEVIATION);
       expect(
         await aggregatorOracle.primarySourceCount(ADDRESS.UNI)
-      ).to.be.equal(2);
+      ).to.be.equal(1);
       expect(await aggregatorOracle.primarySources(ADDRESS.UNI, 0)).to.be.equal(
         chainlinkOracle.address
-      );
-      expect(await aggregatorOracle.primarySources(ADDRESS.UNI, 1)).to.be.equal(
-        bandOracle.address
       );
     });
     it("should be able to set multiple primary sources", async () => {
@@ -156,8 +137,8 @@ describe("Aggregator Oracle", () => {
           [ADDRESS.USDC, ADDRESS.UNI],
           [DEVIATION, DEVIATION],
           [
-            [chainlinkOracle.address, bandOracle.address],
-            [chainlinkOracle.address, bandOracle.address],
+            [chainlinkOracle.address],
+            [chainlinkOracle.address],
           ]
         )
       ).to.be.revertedWith("Ownable: caller is not the owner");
@@ -167,8 +148,8 @@ describe("Aggregator Oracle", () => {
           [ADDRESS.USDC, ADDRESS.UNI],
           [DEVIATION],
           [
-            [chainlinkOracle.address, bandOracle.address],
-            [chainlinkOracle.address, bandOracle.address],
+            [chainlinkOracle.address],
+            [chainlinkOracle.address],
           ]
         )
       ).to.be.revertedWithCustomError(aggregatorOracle, "INPUT_ARRAY_MISMATCH");
@@ -177,7 +158,7 @@ describe("Aggregator Oracle", () => {
         aggregatorOracle.setMultiPrimarySources(
           [ADDRESS.USDC, ADDRESS.UNI],
           [DEVIATION, DEVIATION],
-          [[chainlinkOracle.address, bandOracle.address]]
+          [[chainlinkOracle.address]]
         )
       ).to.be.revertedWithCustomError(aggregatorOracle, "INPUT_ARRAY_MISMATCH");
 
@@ -186,8 +167,8 @@ describe("Aggregator Oracle", () => {
           [ADDRESS.USDC, ADDRESS.UNI],
           [DEVIATION, DEVIATION],
           [
-            [chainlinkOracle.address, bandOracle.address],
-            [chainlinkOracle.address, bandOracle.address],
+            [chainlinkOracle.address],
+            [chainlinkOracle.address],
           ]
         )
       ).to.be.emit(aggregatorOracle, "SetPrimarySources");
@@ -197,12 +178,9 @@ describe("Aggregator Oracle", () => {
       ).to.be.equal(DEVIATION);
       expect(
         await aggregatorOracle.primarySourceCount(ADDRESS.UNI)
-      ).to.be.equal(2);
+      ).to.be.equal(1);
       expect(await aggregatorOracle.primarySources(ADDRESS.UNI, 0)).to.be.equal(
         chainlinkOracle.address
-      );
-      expect(await aggregatorOracle.primarySources(ADDRESS.UNI, 1)).to.be.equal(
-        bandOracle.address
       );
     });
   });
@@ -213,8 +191,8 @@ describe("Aggregator Oracle", () => {
         [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV, ADDRESS.ICHI],
         [DEVIATION, DEVIATION, DEVIATION, DEVIATION],
         [
-          [bandOracle.address, chainlinkOracle.address],
-          [chainlinkOracle.address, bandOracle.address, bandOracle.address],
+          [chainlinkOracle.address],
+          [chainlinkOracle.address],
           [chainlinkOracle.address],
           [mockOracle1.address, mockOracle2.address, mockOracle3.address],
         ]
@@ -283,12 +261,9 @@ describe("Aggregator Oracle", () => {
     it("UNI price feeds", async () => {
       const token = ADDRESS.UNI;
       const chainlinkPrice = await chainlinkOracle.callStatic.getPrice(token);
-      const bandPrice = await bandOracle.callStatic.getPrice(token);
       console.log(
-        "UNI Price (Chainlink / Band):",
+        "UNI Price (Chainlink):",
         utils.formatUnits(chainlinkPrice, 18),
-        "/",
-        utils.formatUnits(bandPrice, 18)
       );
 
       const aggregatorPrice = await aggregatorOracle.callStatic.getPrice(token);
@@ -296,17 +271,14 @@ describe("Aggregator Oracle", () => {
         "USDC Price (Oracle):",
         utils.formatUnits(aggregatorPrice, 18)
       );
-      expect(bandPrice).to.be.equal(aggregatorPrice);
+      expect(chainlinkPrice).to.be.equal(aggregatorPrice);
     });
     it("USDC price feeds", async () => {
       const token = ADDRESS.USDC;
       const chainlinkPrice = await chainlinkOracle.callStatic.getPrice(token);
-      const bandPrice = await bandOracle.callStatic.getPrice(token);
       console.log(
-        "USDC Price (Chainlink / Band):",
-        utils.formatUnits(chainlinkPrice, 18),
-        "/",
-        utils.formatUnits(bandPrice, 18)
+        "USDC Price (Chainlink):",
+        utils.formatUnits(chainlinkPrice, 18)
       );
 
       const aggregatorPrice = await aggregatorOracle.callStatic.getPrice(token);
@@ -314,7 +286,7 @@ describe("Aggregator Oracle", () => {
         "USDC Price (Oracle):",
         utils.formatUnits(aggregatorPrice, 18)
       );
-      expect(chainlinkPrice.add(bandPrice).div(2)).to.be.equal(aggregatorPrice);
+      expect(chainlinkPrice.add(chainlinkPrice).div(2)).to.be.equal(aggregatorPrice);
     });
   });
 });

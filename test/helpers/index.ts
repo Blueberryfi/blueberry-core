@@ -33,19 +33,7 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
       params: [
         {
           forking: {
-            jsonRpcUrl: `https://rpc.ankr.com/eth`,
-            blockNumber: 18695050,
-          },
-        },
-      ],
-    });
-  } else if (chainId === 42161) {
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: `https://arb1.arbitrum.io/rpc`,
+            jsonRpcUrl: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
             blockNumber: 18695050,
           },
         },

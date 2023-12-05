@@ -24,7 +24,6 @@ export enum CONTRACT_NAMES {
   WStakingRewards = "WStakingRewards",
 
   // Oracles
-  BandAdapterOracle = "BandAdapterOracle",
   ChainlinkAdapterOracle = "ChainlinkAdapterOracle",
   ChainlinkAdapterOracleL2 = "ChainlinkAdapterOracleL2",
   CoreOracle = "CoreOracle",
@@ -206,7 +205,6 @@ export const ADDRESS = {
 
   // Oracle
   Keep3rV1Oracle: "0x73353801921417F465377c8d898c6f4C0270282C",
-  BandStdRef: "0xDA7a001b254CD22e46d3eAB04d937489c93174C3",
   ChainlinkRegistry: "0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf",
   ChainlinkSequencerArb: "0xFdB631F5EE196F0ed6FAa767959853A9F217697D",
 
