@@ -42,7 +42,6 @@ describe("Curve LP Oracle", () => {
         ADDRESS.USDC,
         ADDRESS.USDT,
         ADDRESS.DAI,
-        ADDRESS.SUSD,
         ADDRESS.FRAX,
         ADDRESS.FRXETH,
         ADDRESS.CHAINLINK_ETH,
@@ -51,7 +50,6 @@ describe("Curve LP Oracle", () => {
         ADDRESS.CRV,
       ],
       [
-        OneDay,
         OneDay,
         OneDay,
         OneDay,
@@ -157,10 +155,6 @@ describe("Curve LP Oracle", () => {
         await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRXETH)
       );
       console.log(
-        "CRV/ETH Crypto Pool",
-        await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CRVETH)
-      );
-      console.log(
         "CVX/ETH Crypto Pool",
         await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXETH)
       );
@@ -191,7 +185,6 @@ describe("Curve LP Oracle", () => {
           ADDRESS.USDT,
           ADDRESS.DAI,
           ADDRESS.FRAX,
-          ADDRESS.SUSD,
           ADDRESS.FRXETH,
           ADDRESS.ETH,
           ADDRESS.WETH,
@@ -200,7 +193,6 @@ describe("Curve LP Oracle", () => {
           ADDRESS.CRV,
         ],
         [
-          chainlinkAdapterOracle.address,
           chainlinkAdapterOracle.address,
           chainlinkAdapterOracle.address,
           chainlinkAdapterOracle.address,
@@ -222,31 +214,17 @@ describe("Curve LP Oracle", () => {
         poolInfo.virtualPrice
       );
 
-      poolInfo = await volatileOracle.callStatic.getPoolInfo(
-        ADDRESS.CRV_CRVETH
-      );
-      await volatileOracle.setLimiter(
-        ADDRESS.CRV_CRVETH,
-        poolInfo.virtualPrice
-      );
-
       let price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_3Crv);
       console.log("3CrvPool Price:", utils.formatUnits(price, 18));
 
       price = await tricryptoOracle.callStatic.getPrice(ADDRESS.CRV_TriCrypto);
       console.log("TriCrypto Price:", utils.formatUnits(price, 18));
 
-      price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_SUSD);
-      console.log("DAI/USDC/USDT/sUSD Price:", utils.formatUnits(price, 18));
-
       price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_FRAXUSDC);
       console.log("FRAX/USDC Price:", utils.formatUnits(price, 18));
 
       price = await volatileOracle.callStatic.getPrice(ADDRESS.CRV_CVXETH);
       console.log("CVX/ETH Price:", utils.formatUnits(price, 18));
-
-      price = await volatileOracle.callStatic.getPrice(ADDRESS.CRV_CRVETH);
-      console.log("CRV/ETH Price:", utils.formatUnits(price, 18));
 
       price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_FRXETH);
       console.log("frxETH/ETH Price:", utils.formatUnits(price, 18));

@@ -13,6 +13,7 @@ pragma solidity 0.8.22;
 import "./CurveBaseOracle.sol";
 import "../libraries/balancer/FixedPoint.sol";
 import "../utils/BlueBerryConst.sol" as Constants;
+import "hardhat/console.sol";
 
 /// @author BlueberryProtocol
 /// @title Curve Volatile Oracle
@@ -98,9 +99,10 @@ contract CurveVolatileOracle is CurveBaseOracle {
     /// @notice Return the USD value of given Curve Lp, with 18 decimals of precision.
     /// @param crvLp The ERC-20 Curve LP token to check the value.
     function getPrice(address crvLp) external override returns (uint256) {
+        console.log("getPrice");
         (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
         _checkReentrant(pool, tokens.length);
-
+        console.log("pool", pool);
         uint256 nTokens = tokens.length;
 
         uint256 px0 = base.getPrice(tokens[0]);
