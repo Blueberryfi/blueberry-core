@@ -336,16 +336,16 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   );
   console.log("bWstETH deployed at: ", bWstETH.address);
 
-  const bCrvStEth = await deployBToken(
-    ADDRESS.CRV_STETH,
-    comptroller.address,
-    IRM.address,
-    "Blueberry CrvSTETH",
-    "bCrvSTETH",
-    18,
-    bTokenAdmin.address
-  );
-  console.log("bCrvStEth deployed at: ", bCrvStEth.address);
+  // const bCrvStEth = await deployBToken(
+  //   ADDRESS.CRV_STETH,
+  //   comptroller.address,
+  //   IRM.address,
+  //   "Blueberry CrvSTETH",
+  //   "bCrvSTETH",
+  //   18,
+  //   bTokenAdmin.address
+  // );
+  // console.log("bCrvStEth deployed at: ", bCrvStEth.address);
 
   const bCrvFrxEth = await deployBToken(
     ADDRESS.CRV_FRXETH,
@@ -378,6 +378,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     18,
     bTokenAdmin.address
   );
+  console.log("bCrvCvxCrv deployed at: ", bCrvCvxCrv.address);
 
   await comptroller._supportMarket(bUSDC.address, 0);
   await comptroller._supportMarket(bICHI.address, 0);
@@ -392,10 +393,10 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   await comptroller._supportMarket(bWETH.address, 0);
   await comptroller._supportMarket(bWBTC.address, 0);
   await comptroller._supportMarket(bWstETH.address, 0);
-  await comptroller._supportMarket(bCrvStEth.address, 0);
-  await comptroller._supportMarket(bCrvFrxEth.address, 0);
-  await comptroller._supportMarket(bCrvMim3Crv.address, 0);
-  await comptroller._supportMarket(bCrvCvxCrv.address, 0);
+  //await comptroller._supportMarket(bCrvStEth.address, 0);
+  // await comptroller._supportMarket(bCrvFrxEth.address, 0);
+  // await comptroller._supportMarket(bCrvMim3Crv.address, 0);
+  // await comptroller._supportMarket(bCrvCvxCrv.address, 0);
 
   return {
     comptroller,
@@ -412,9 +413,9 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     bWETH,
     bWBTC,
     bWstETH,
-    bCrvStEth,
-    bCrvFrxEth,
-    bCrvMim3Crv,
-    bCrvCvxCrv,
+    // //bCrvStEth,
+    // bCrvFrxEth,
+    // bCrvMim3Crv,
+    // bCrvCvxCrv,
   };
 }

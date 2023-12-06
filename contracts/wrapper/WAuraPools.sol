@@ -25,7 +25,7 @@ import "../interfaces/aura/IAura.sol";
 
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
-
+import "hardhat/console.sol";
 /**
  * @title WAuraPools
  * @author BlueberryProtocol
@@ -402,16 +402,18 @@ contract WAuraPools is
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
-
+        console.log("lpToken", lpToken);
         /// Escrow deployment/get logic
 
         address _escrow;
-
+        
         if (escrows[pid] == address(0)) {
             _escrow = escrowFactory.createEscrow(pid, auraRewarder, lpToken);
+            console.log("escrow", _escrow);
             escrows[pid] = _escrow;
         } else {
             _escrow = escrows[pid];
+            console.log("escrow", _escrow);
         }
 
         IERC20Upgradeable(lpToken).safeTransferFrom(
@@ -429,7 +431,7 @@ contract WAuraPools is
         uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
             .rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
-
+        console.log("id", id);
         _mint(msg.sender, id, amount, "");
 
         /// Store extra rewards info

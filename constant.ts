@@ -22,6 +22,8 @@ export enum CONTRACT_NAMES {
   WConvexPools = "WConvexPools",
   WAuraPools = "WAuraPools",
   WStakingRewards = "WStakingRewards",
+  PoolEscrow = "PoolEscrow",
+  PoolEscrowFactory = "PoolEscrowFactory",
 
   // Oracles
   ChainlinkAdapterOracle = "ChainlinkAdapterOracle",
@@ -244,7 +246,6 @@ export const ADDRESS = {
   CVX_BOOSTER: "0xF403C135812408BFbE8713b5A23a04b3D48AAE31",
   CVX_3Crv_Id: 9,
   CVX_Frax3Crv_Id: 32,
-  CVX_Susd_Id: 4,
   CVX_FraxEth_Id: 128,
   CVX_FraxUsdc_Id: 100,
   CVX_EthStEth_Id: 25,

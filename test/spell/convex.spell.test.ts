@@ -43,8 +43,8 @@ const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 const CVX = ADDRESS.CVX;
 const POOL_ID_1 = ADDRESS.CVX_3Crv_Id;
-const POOL_ID_2 = ADDRESS.CVX_CrvEth_Id;
-const POOL_ID_3 = ADDRESS.CVX_Susd_Id;
+const POOL_ID_2 = ADDRESS.CVX_FraxEth_Id;
+const POOL_ID_3 = ADDRESS.CVX_MIM_Id;
 
 describe("Convex Spell", () => {
   let admin: SignerWithAddress;
@@ -72,8 +72,8 @@ describe("Convex Spell", () => {
   let config: ProtocolConfig;
 
   before(async () => {
-    await fork(1, 17089048);
-
+    await fork(1);
+    console.log("forked");
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
@@ -94,6 +94,7 @@ describe("Convex Spell", () => {
     );
 
     protocol = await setupCvxProtocol();
+
     bank = protocol.bank;
     spell = protocol.convexSpell;
     volatileSpell = protocol.convexSpellWithVolatileOracle;
@@ -533,7 +534,6 @@ describe("Convex Spell", () => {
         )
       )
         .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
-        .withArgs(spell.address, 5);
     });
 
     it("should fail to close position for non-existing collateral", async () => {

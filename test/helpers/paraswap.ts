@@ -69,9 +69,8 @@ export const faucetToken = async (
     return amount;
   }
 
+  const token = <ERC20>await ethers.getContractAt("ERC20", toToken);
   try {
-    const token = <ERC20>await ethers.getContractAt("ERC20", toToken);
-
     await setTokenBalance(token, signer, utils.parseEther("100000"));
     return utils.parseEther("100000");
   } catch {}
@@ -79,9 +78,11 @@ export const faucetToken = async (
   const priceRoute = await paraswapSdk.swap.getRate({
     srcToken: ADDRESS.ETH,
     destToken: toToken,
+    srcDecimals: 18,
+    destDecimals: await token.decimals(),
     amount: amount.toString(),
     options: {
-      includeDEXS: ["UniswapV2", "SushiSwap", "BalancerV1"],
+      includeDEXS: ["UniswapV2", "SushiSwap", "BalancerV1", "BalancerV2", "Curve", "UniswapV3"],
       maxImpact: maxImpact,
       otherExchangePrices: true,
     },

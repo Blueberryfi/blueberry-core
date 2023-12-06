@@ -23,6 +23,7 @@ import {
   Comptroller,
   PoolEscrow,
   PoolEscrowFactory,
+  ICvxPools,
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { deployBTokens } from "./money-market";
@@ -51,6 +52,7 @@ export interface AuraProtocol {
   config: ProtocolConfig;
   bank: BlueBerryBank;
   auraSpell: AuraSpell;
+  auraBooster: ICvxPools;
   usdcSoftVault: SoftVault;
   crvSoftVault: SoftVault;
   daiSoftVault: SoftVault;
@@ -345,6 +347,11 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     )
   );
   await auraSpell.deployed();
+
+  let auraBooster = <ICvxPools>(
+    await ethers.getContractAt("ICvxPools", ADDRESS.AURA_BOOSTER)
+  );
+
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
   await auraSpell.addStrategy(
     ADDRESS.BAL_UDU,
@@ -466,6 +473,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     feeManager,
     bank,
     auraSpell,
+    auraBooster,
     usdcSoftVault,
     crvSoftVault,
     daiSoftVault,

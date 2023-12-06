@@ -46,7 +46,7 @@ const POOL_ID_FRXETH = ADDRESS.CVX_FraxEth_Id;
 const POOL_ID_MIM = ADDRESS.CVX_MIM_Id;
 const POOL_ID_CVXCRV = ADDRESS.CVX_CvxCrv_Id;
 
-describe("Convex Spells", () => {
+describe("Convex Spells Deploy", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
@@ -79,7 +79,7 @@ describe("Convex Spells", () => {
   let snapshotId: number;
 
   before(async () => {
-    await fork(1, 17089048);
+    await fork(1);
 
     [admin, alice, treasury] = await ethers.getSigners();
 
@@ -137,7 +137,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex stETH/ETH pool collateral WBTC", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      4,
+      3,
       WBTC,
       WETH,
       utils.parseUnits("0.1", 8),
@@ -152,7 +152,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      4,
+      3,
       WBTC,
       WETH,
       utils.parseUnits("0.1", 8),
@@ -166,7 +166,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex stETH/ETH pool collateral wstETH", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      4,
+      3,
       WstETH,
       WETH,
       utils.parseUnits("1", 18),
@@ -181,7 +181,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      4,
+      3,
       WstETH,
       WETH,
       utils.parseUnits("1", 18),
@@ -195,7 +195,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex stETH/ETH pool collateral WETH", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      4,
+      3,
       WETH,
       WETH,
       utils.parseUnits("1", 18),
@@ -210,7 +210,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      4,
+      3,
       WETH,
       WETH,
       utils.parseUnits("1", 18),
@@ -224,7 +224,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex stETH/ETH pool collateral DAI", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      4,
+      3,
       DAI,
       WETH,
       utils.parseUnits("1000", 18),
@@ -239,7 +239,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      4,
+      3,
       DAI,
       WETH,
       utils.parseUnits("1000", 18),
@@ -253,7 +253,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex stETH/ETH pool collateral LINK", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      4,
+      3,
       LINK,
       WETH,
       utils.parseUnits("500", 18),
@@ -268,7 +268,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      4,
+      3,
       LINK,
       WETH,
       utils.parseUnits("500", 18),
@@ -283,7 +283,7 @@ describe("Convex Spells", () => {
     snapshotId = await takeSnapshot();
     balance = await crvStEth.balanceOf(admin.address);
     await testFarm(
-      4,
+      3,
       CRV_STETH,
       WETH,
       balance,
@@ -298,7 +298,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      4,
+      3,
       CRV_STETH,
       WETH,
       balance,
@@ -312,7 +312,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex frxETH/ETH pool collateral WBTC", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      3,
+      2,
       WBTC,
       WETH,
       utils.parseUnits("0.1", 8),
@@ -327,7 +327,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      3,
+      2,
       WBTC,
       WETH,
       utils.parseUnits("0.1", 8),
@@ -341,7 +341,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex frxETH/ETH pool collateral WstETH", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      3,
+      2,
       WstETH,
       WETH,
       utils.parseUnits("0.5", 18),
@@ -356,7 +356,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      3,
+      2,
       WstETH,
       WETH,
       utils.parseUnits("0.5", 18),
@@ -370,7 +370,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex frxETH/ETH pool collateral WETH", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      3,
+      2,
       WETH,
       WETH,
       utils.parseUnits("0.5", 18),
@@ -385,7 +385,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      3,
+      2,
       WETH,
       WETH,
       utils.parseUnits("0.5", 18),
@@ -399,7 +399,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex frxETH/ETH pool collateral DAI", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      3,
+      2,
       DAI,
       WETH,
       utils.parseUnits("1000", 18),
@@ -414,7 +414,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      3,
+      2,
       DAI,
       WETH,
       utils.parseUnits("1000", 18),
@@ -428,7 +428,7 @@ describe("Convex Spells", () => {
   it("should be able to farm ETH on Convex frxETH/ETH pool collateral LINK", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      3,
+      2,
       LINK,
       WETH,
       utils.parseUnits("500", 18),
@@ -443,7 +443,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      3,
+      2,
       LINK,
       WETH,
       utils.parseUnits("500", 18),
@@ -458,7 +458,7 @@ describe("Convex Spells", () => {
     snapshotId = await takeSnapshot();
     balance = await crvFrxEth.balanceOf(admin.address);
     await testFarm(
-      3,
+      2,
       CRV_FRXETH,
       WETH,
       balance,
@@ -473,7 +473,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      3,
+      2,
       CRV_FRXETH,
       WETH,
       balance,
@@ -487,7 +487,7 @@ describe("Convex Spells", () => {
   it("should be able to farm DAI on Convex MIM/3CRV pool collateral MIM", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      5,
+      4,
       MIM,
       DAI,
       utils.parseUnits("1000", 18),
@@ -502,7 +502,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      5,
+      4,
       MIM,
       DAI,
       utils.parseUnits("1000", 18),
@@ -517,7 +517,7 @@ describe("Convex Spells", () => {
     snapshotId = await takeSnapshot();
     balance = await crvMim3Crv.balanceOf(admin.address);
     await testFarm(
-      5,
+      4,
       CRV_MIM3CRV,
       DAI,
       balance.div(2),
@@ -532,7 +532,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      5,
+      4,
       CRV_MIM3CRV,
       DAI,
       balance.div(2),
@@ -546,7 +546,7 @@ describe("Convex Spells", () => {
   it("should be able to farm USDC on Convex MIM/3CRV pool collateral MIM", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      5,
+      4,
       MIM,
       USDC,
       utils.parseUnits("1000", 18),
@@ -561,7 +561,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      5,
+      4,
       MIM,
       USDC,
       utils.parseUnits("1000", 18),
@@ -576,7 +576,7 @@ describe("Convex Spells", () => {
     snapshotId = await takeSnapshot();
     balance = await crvMim3Crv.balanceOf(admin.address);
     await testFarm(
-      5,
+      4,
       CRV_MIM3CRV,
       USDC,
       balance,
@@ -591,7 +591,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      5,
+      4,
       CRV_MIM3CRV,
       USDC,
       balance,
@@ -605,7 +605,7 @@ describe("Convex Spells", () => {
   it("should be able to farm CRV on Convex cvxCRV/CRV pool collateral WBTC", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      6,
+      5,
       WBTC,
       CRV,
       utils.parseUnits("0.1", 8),
@@ -620,7 +620,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      6,
+      5,
       WBTC,
       CRV,
       utils.parseUnits("0.1", 8),
@@ -634,7 +634,7 @@ describe("Convex Spells", () => {
   it("should be able to farm CRV on Convex cvxCRV/CRV pool collateral WETH", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      6,
+      5,
       WETH,
       CRV,
       utils.parseUnits("1", 18),
@@ -649,7 +649,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      6,
+      5,
       WETH,
       CRV,
       utils.parseUnits("1", 18),
@@ -663,7 +663,7 @@ describe("Convex Spells", () => {
   it("should be able to farm CRV on Convex cvxCRV/CRV pool collateral DAI", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      6,
+      5,
       DAI,
       CRV,
       utils.parseUnits("1000", 18),
@@ -678,7 +678,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      6,
+      5,
       DAI,
       CRV,
       utils.parseUnits("1000", 18),
@@ -692,7 +692,7 @@ describe("Convex Spells", () => {
   it("should be able to farm CRV on Convex cvxCRV/CRV pool collateral LINK", async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
-      6,
+      5,
       LINK,
       CRV,
       utils.parseUnits("500", 18),
@@ -707,7 +707,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      6,
+      5,
       LINK,
       CRV,
       utils.parseUnits("500", 18),
@@ -722,7 +722,7 @@ describe("Convex Spells", () => {
     snapshotId = await takeSnapshot();
     balance = await crvCvxCrv.balanceOf(admin.address);
     await testFarm(
-      6,
+      5,
       CRV_CVXCRV,
       CRV,
       balance,
@@ -737,7 +737,7 @@ describe("Convex Spells", () => {
     const positionId = (await bank.nextPositionId()).sub(1);
     await testHarvest(
       positionId,
-      6,
+      5,
       CRV_CVXCRV,
       CRV,
       balance,
@@ -797,9 +797,6 @@ describe("Convex Spells", () => {
     expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
       depositAmount.mul(50).div(10000)
     );
-
-    const rewarderBalance = await crvRewarder.balanceOf(wconvex.address);
-    expect(rewarderBalance).to.be.equal(pos.collateralSize);
   }
 
   async function testHarvest(

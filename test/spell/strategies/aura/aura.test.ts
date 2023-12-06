@@ -24,6 +24,7 @@ import {
   evm_mine_blocks,
   fork,
   setTokenBalance,
+  setupAuraProtocol,
 } from "../../../helpers";
 import { getTokenAmountFromUSD } from "../utils";
 
@@ -72,12 +73,13 @@ describe("Aura Spell Strategy test", () => {
 
     [admin, alice, treasury, bob] = await ethers.getSigners();
 
-    const strategy = await setupStrategy();
-    bank = strategy.protocol.bank;
-    oracle = strategy.protocol.oracle;
-    spell = strategy.auraSpell;
-    waura = strategy.waura;
-    config = strategy.protocol.config;
+    const protocol = await setupAuraProtocol();
+    bank = protocol.bank;
+    oracle = protocol.oracle;
+    spell = protocol.auraSpell;
+    waura = protocol.waura;
+    config = protocol.config;
+    auraBooster = protocol.auraBooster;
     rewardFeePct = await config.rewardFee();
 
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
@@ -86,7 +88,6 @@ describe("Aura Spell Strategy test", () => {
     weth = <IWETH>(
       await ethers.getContractAt(CONTRACT_NAMES.IWETH, ADDRESS.WETH)
     );
-    auraBooster = strategy.auraBooster;
 
     await addEthToContract(admin, utils.parseEther("1"), auraBooster.address);
   });
@@ -97,6 +98,7 @@ describe("Aura Spell Strategy test", () => {
       for (let l = 0; l < strategyInfo.borrowAssets.length; l += 1) {
         describe(`Aura Spell Test(collateral: ${strategyInfo.collateralAssets[j]}, borrow: ${strategyInfo.borrowAssets[l]})`, () => {
           before(async () => {
+            console.log("Strategy Info: ", strategyInfo);
             collateralToken = <ERC20>(
               await ethers.getContractAt(
                 "ERC20",
@@ -179,7 +181,7 @@ describe("Aura Spell Strategy test", () => {
               borrowAmount,
               strategyInfo.poolId ?? "0"
             );
-
+            console.log("Position opened");
             const bankInfo = await bank.getBankInfo(borrowToken.address);
             console.log("Bank Info:", bankInfo);
           });
@@ -201,7 +203,7 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const expectedAmounts = pendingRewardsInfo.rewards.map(
-              (reward) => 0
+              (reward: any) => 0
             );
 
             const debt = await bank.callStatic.currentPositionDebt(positionId);
@@ -223,7 +225,7 @@ describe("Aura Spell Strategy test", () => {
               100
             );
 
-            const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+            const swapDatas = pendingRewardsInfo.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
 
@@ -237,7 +239,7 @@ describe("Aura Spell Strategy test", () => {
               BigNumber.from(2).mul(paraswapRes.srcAmount),
               paraswapRes.calldata.data,
               expectedAmounts,
-              swapDatas.map((item) => item.data)
+              swapDatas.map((item: { data: any; }) => item.data)
             );
           });
 
@@ -308,11 +310,11 @@ describe("Aura Spell Strategy test", () => {
               );
 
             const expectedAmounts = alicePendingRewardsInfoBefore.rewards.map(
-              (reward) => 0
+              (reward: any) => 0
             );
 
             const swapDatas = alicePendingRewardsInfoBefore.tokens.map(
-              (token, idx) => ({
+              (token: any, i: any) => ({
                 data: "0x",
               })
             );
@@ -335,7 +337,7 @@ describe("Aura Spell Strategy test", () => {
               0,
               "0x",
               expectedAmounts,
-              swapDatas.map((item) => item.data)
+              swapDatas.map((item: { data: any; }) => item.data)
             );
 
             const bobPendingRewardsInfoAfter =
@@ -369,7 +371,7 @@ describe("Aura Spell Strategy test", () => {
               0,
               "0x",
               expectedAmounts,
-              swapDatas.map((item) => item.data)
+              swapDatas.map((item: { data: any; }) => item.data)
             );
 
             const bobAuraBalanceAfter = await aura.balanceOf(bob.address);
@@ -449,10 +451,10 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const expectedAmounts = pendingRewardsInfo.rewards.map(
-              (reward) => 0
+              (reward: any) => 0
             );
 
-            const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+            const swapDatas = pendingRewardsInfo.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
 
@@ -474,7 +476,7 @@ describe("Aura Spell Strategy test", () => {
               0,
               "0x",
               expectedAmounts,
-              swapDatas.map((item) => item.data)
+              swapDatas.map((item: { data: any; }) => item.data)
             );
           });
 
@@ -549,10 +551,10 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const expectedAmounts = pendingRewardsInfo.rewards.map(
-              (reward) => 0
+              (reward: any) => 0
             );
 
-            const swapDatas = pendingRewardsInfo.tokens.map((token, idx) => ({
+            const swapDatas = pendingRewardsInfo.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
 
@@ -577,7 +579,7 @@ describe("Aura Spell Strategy test", () => {
               0,
               "0x",
               expectedAmounts,
-              swapDatas.map((item) => item.data)
+              swapDatas.map((item: { data: any; }) => item.data)
             );
 
             const rewardTokenBalanceAfter = await extraRewardToken1.balanceOf(

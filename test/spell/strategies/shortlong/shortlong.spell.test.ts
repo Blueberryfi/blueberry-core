@@ -315,7 +315,7 @@ describe("ShortLong Spell", () => {
       DAI, // Swap Token
       daiSoftVault, // Soft Vault
       utils.parseUnits("1", 18), // wstETH Deposit Amount
-      utils.parseUnits("0.9", 18), // Collateral Swap Amount
+      utils.parseUnits("0.95", 18), // Collateral Swap Amount
       wstETH
     );
     await revertToSnapshot(snapshotId);

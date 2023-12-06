@@ -71,7 +71,7 @@ describe("Convex Spell", () => {
   let stableOracle: CurveStableOracle;
 
   before(async () => {
-    await fork(1, 15050720);
+    await fork(1);
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
@@ -116,7 +116,7 @@ describe("Convex Spell", () => {
         spell.address,
         iface.encodeFunctionData("openPositionFarm", [
           {
-            strategyId: 7,
+            strategyId: 6,
             collToken: CRV,
             borrowToken: USDC,
             collAmount: depositAmount,
@@ -250,7 +250,7 @@ describe("Convex Spell", () => {
         iface.encodeFunctionData("closePositionFarm", [
           {
             param: {
-              strategyId: 7,
+              strategyId: 6,
               collToken: CRV,
               borrowToken: USDC,
               amountRepay: ethers.constants.MaxUint256,

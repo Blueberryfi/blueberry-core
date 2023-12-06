@@ -21,6 +21,7 @@ import "../interfaces/IWERC20.sol";
 import "../interfaces/IWETH.sol";
 import "../libraries/UniversalERC20.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
+import "hardhat/console.sol";
 
 /// @title BasicSpell
 /// @author BlueberryProtocol
@@ -354,6 +355,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     function _doLend(address token, uint256 amount) internal {
         if (amount > 0) {
             bank.lend(token, amount);
+            console.log("Lend %s %s", amount, token);
         }
     }
 
@@ -406,6 +408,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
             } else {
                 borrowedAmount = bank.borrow(token, amount);
             }
+            console.log("Borrow %s %s", borrowedAmount, token);
         }
     }
 

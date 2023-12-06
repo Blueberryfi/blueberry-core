@@ -5,7 +5,6 @@ import {
   ChainlinkAdapterOracle,
   UniswapV3AdapterOracle,
   WeightedBPTOracle,
-  BandAdapterOracle,
   ProtocolConfig,
   SoftVault,
   HardVault,
@@ -34,8 +33,8 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   );
 
   await chainlinkAdapterOracle.setTokenRemappings(
-    [ADDRESS.WETH, ADDRESS.WBTC],
-    [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC]
+    [ADDRESS.WETH, ADDRESS.WBTC, ADDRESS.wstETH],
+    [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC, ADDRESS.stETH]
   );
 
   await chainlinkAdapterOracle.setTimeGap(
@@ -51,8 +50,10 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.LINK,
       ADDRESS.SUSHI,
       ADDRESS.CHAINLINK_BTC,
+      ADDRESS.stETH,
     ],
     [
+      TwoDays,
       TwoDays,
       TwoDays,
       TwoDays,
@@ -104,16 +105,6 @@ export const setupOracles = async (): Promise<CoreOracle> => {
     await WeightedBPTOracleFactory.deploy(oracle.address)
   );
 
-  const BandAdapterOracle = await ethers.getContractFactory(
-    "BandAdapterOracle"
-  );
-  const bandOracle = <BandAdapterOracle>(
-    await BandAdapterOracle.deploy(ADDRESS.BandStdRef)
-  );
-
-  //await bandOracle.setSymbols([ADDRESS.ALCX], ["ALCX"]);
-  //await bandOracle.setTimeGap([ADDRESS.ALCX], [OneDay]);
-
   await oracle.setRoutes(
     [
       ADDRESS.USDC,
@@ -125,9 +116,9 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.OHM,
       ADDRESS.SUSHI,
       ADDRESS.BAL,
-      // ADDRESS.ALCX,
       ADDRESS.WETH,
       ADDRESS.WBTC,
+      ADDRESS.wstETH,
       ADDRESS.USDT,
       ADDRESS.FRAX,
       ADDRESS.BAL_OHM_WETH,
@@ -142,7 +133,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       uniswapV3AdapterOracle.address,
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
-      // bandOracle.address,
+      chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,

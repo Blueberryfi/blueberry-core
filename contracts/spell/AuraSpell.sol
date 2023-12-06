@@ -130,12 +130,13 @@ contract AuraSpell is BasicSpell {
                 })
             );
         }
+        console.log("BPT: %s", IERC20Upgradeable(lpToken).balanceOf(address(this)));
         /// 4. Ensure that the resulting LTV does not exceed maximum allowed value.
         _validateMaxLTV(param.strategyId);
-
+        console.log("validateMaxLTV");
         /// 5. Ensure position size is within permissible limits.
         _validatePosSize(param.strategyId);
-
+        console.log("validatePosSize");
         /// 6. Withdraw existing collaterals and burn the associated tokens.
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
@@ -161,8 +162,11 @@ contract AuraSpell is BasicSpell {
         /// 7. Deposit the tokens in the Aura pool and place the wrapped collateral tokens in the Blueberry Bank.
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
         IERC20(lpToken).universalApprove(address(wAuraPools), lpAmount);
+        console.log("approved");
         uint256 id = wAuraPools.mint(param.farmingPoolId, lpAmount);
+        console.log("minted");
         bank.putCollateral(address(wAuraPools), id, lpAmount);
+        console.log("putCollateral");
     }
 
     /// @notice Closes a position from Balancer pool and exits the Aura farming.
