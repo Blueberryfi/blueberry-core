@@ -20,7 +20,7 @@ import "../interfaces/curve/ICurveRegistry.sol";
 import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
 import "../interfaces/curve/ICurveAddressProvider.sol";
 import "../interfaces/curve/ICurvePool.sol";
-import "hardhat/console.sol";
+
 /// @title Curve Base Oracle
 /// @author BlueberryProtocol
 /// @notice Abstract base oracle for Curve LP token price feeds.
@@ -72,12 +72,11 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         internal
         returns (address pool, address[] memory ulTokens, uint256 virtualPrice)
     {
-        console.log("CurveBaseOracle: _getPoolInfo");
+
         /// 1. Attempt retrieval from main Curve registry.
         address registry = addressProvider.get_registry();
         pool = ICurveRegistry(registry).get_pool_from_lp_token(crvLp);
         if (pool != address(0)) {
-            console.log("Lp token found");
             (uint256 n, ) = ICurveRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveRegistry(registry).get_coins(pool);
             ulTokens = new address[](n);
@@ -94,7 +93,6 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         registry = addressProvider.get_address(5);
         pool = ICurveCryptoSwapRegistry(registry).get_pool_from_lp_token(crvLp);
         if (pool != address(0)) {
-            console.log("Lp token found");
             uint256 n = ICurveCryptoSwapRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveCryptoSwapRegistry(registry)
                 .get_coins(pool);
@@ -112,12 +110,10 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         registry = addressProvider.get_address(7);
         pool = ICurveCryptoSwapRegistry(registry).get_pool_from_lp_token(crvLp);
         if (pool != address(0)) {
-            console.log("Lp token found");
             uint256 n = ICurveCryptoSwapRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveCryptoSwapRegistry(registry)
                 .get_coins(pool);
             ulTokens = new address[](n);
-            console.log("ulToken length", ulTokens.length);
             for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
