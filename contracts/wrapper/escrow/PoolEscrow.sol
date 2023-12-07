@@ -12,7 +12,7 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "../../utils/BlueBerryErrors.sol" as Errors;
-import "../../interfaces/aura/IAuraPools.sol";
+import "../../interfaces/aura/IAuraBooster.sol";
 import "../../interfaces/aura/IAuraRewarder.sol";
 import "../../interfaces/aura/IAuraExtraRewarder.sol";
 import "../../libraries/UniversalERC20.sol";
@@ -28,7 +28,7 @@ contract PoolEscrow is Initializable {
     uint256 public pid;
 
     /// @dev address of the aura pools contract.
-    IAuraPools public auraPools;
+    IAuraBooster public auraBooster;
 
     /// @dev address of the rewarder contract.
     IAuraRewarder public auraRewarder;
@@ -54,13 +54,13 @@ contract PoolEscrow is Initializable {
     function initialize(
         uint256 _pid,
         address _wrapper,
-        address _auraPools,
+        address _auraBooster,
         address _auraRewarder,
         address _lpToken
     ) public payable initializer {
         if (
             _wrapper == address(0) ||
-            _auraPools == address(0) ||
+            _auraBooster == address(0) ||
             _auraRewarder == address(0) ||
             _lpToken == address(0)
         ) {
@@ -68,7 +68,7 @@ contract PoolEscrow is Initializable {
         }
         pid = _pid;
         wrapper = _wrapper;
-        auraPools = IAuraPools(_auraPools);
+        auraBooster = IAuraBooster(_auraBooster);
         auraRewarder = IAuraRewarder(_auraRewarder);
         lpToken = IERC20(_lpToken);
 
@@ -108,8 +108,8 @@ contract PoolEscrow is Initializable {
      * @param _amount The amount of tokens to be deposited
      */
     function deposit(uint256 _amount) external virtual onlyWrapper {
-        IERC20(address(lpToken)).universalApprove(address(auraPools), _amount);
-        auraPools.deposit(pid, _amount, true);
+        IERC20(address(lpToken)).universalApprove(address(auraBooster), _amount);
+        auraBooster.deposit(pid, _amount, true);
     }
 
     /**
@@ -158,7 +158,7 @@ contract PoolEscrow is Initializable {
     // INTERNAL FUNCTIONS
 
     function _withdraw(uint256 _amount, address _user) internal {
-        auraPools.withdraw(pid, _amount);
+        auraBooster.withdraw(pid, _amount);
         IERC20(lpToken).safeTransfer(_user, _amount);
     }
 

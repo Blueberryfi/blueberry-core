@@ -16,7 +16,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./IERC20Wrapper.sol";
 import "./balancer/IBalancerPool.sol";
 import "./balancer/IBalancerVault.sol";
-import "./aura/IAuraPools.sol";
+import "./aura/IAuraBooster.sol";
 import "./aura/IAura.sol";
 
 /// @title IWAuraPools
@@ -27,10 +27,6 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @notice Get the AURA token's contract address.
     /// @return An IAura interface of the AURA token.
     function AURA() external view returns (IAura);
-
-    /// @notice Get the stash AURA token's contract address.
-    /// @return Address of the STASH AURA token.
-    function STASH_AURA() external view returns (address);
 
     /// @notice Encode two uint values into a single uint.
     function encodeId(uint, uint) external pure returns (uint);
@@ -66,9 +62,9 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @return An IBalancerVault interface of the associated vault.
     function getVault(address bpt) external view returns (IBalancerVault);
 
-    /// @notice Fetch the Aura Pools contract interface.
-    /// @return The IAuraPools interface of the Aura Pools.
-    function auraPools() external view returns (IAuraPools);
+    /// @notice Fetch the Aura Booster contract interface.
+    /// @return The IAuraBooster interface of the Aura Booster.
+    function auraBooster() external view returns (IAuraBooster);
 
     /// @notice Fetch detailed information for a specific Aura pool using its pool ID.
     /// @param pid The pool ID.
@@ -103,10 +99,11 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @param amount The amount of ERC1155 tokens to burn.
     /// @return rewardTokens An array of reward token addresses.
     /// @return rewards An array of reward amounts corresponding to the reward token addresses.
+    /// @return stashAura The address of the stash contract for the specific pool.
     function burn(
         uint id,
         uint amount
     )
         external
-        returns (address[] memory rewardTokens, uint256[] memory rewards);
+        returns (address[] memory rewardTokens, uint256[] memory rewards, address stashAura);
 }

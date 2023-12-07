@@ -34,7 +34,7 @@ export const setupStrategy = async () => {
   const waura = <WAuraPools>(
     await upgrades.deployProxy(
       WAuraPools,
-      [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, ADDRESS.STASH_AURA, escrowFactory.address],
+      [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address],
       { unsafeAllow: ["delegatecall"] }
     )
   );

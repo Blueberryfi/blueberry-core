@@ -132,23 +132,10 @@
   },
   {
     "inputs": [],
-    "name": "STASH_AURA",
+    "name": "auraBooster",
     "outputs": [
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "auraPools",
-    "outputs": [
-      {
-        "internalType": "contract IAuraPools",
+        "internalType": "contract IAuraBooster",
         "name": "",
         "type": "address"
       }
@@ -228,6 +215,11 @@
         "internalType": "uint256[]",
         "name": "rewards",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "stashAura",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",

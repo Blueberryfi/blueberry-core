@@ -2,7 +2,9 @@
 
 pragma solidity 0.8.22;
 
-interface IAuraPools {
+/// @dev Slimmed down interface for the IBooster interface used by Aura
+/// the full interface can be found here: https://github.com/aurafinance/aura-contracts/blob/01b87464f902b1c1f3d4a022538a9b4ffb471c65/contracts/interfaces/IBooster.sol
+interface IAuraBooster {
     function deposit(
         uint256 _pid,
         uint256 _amount,

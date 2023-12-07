@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.22;
 
+/// @dev Slimmed down interface for the BaseRewardPool contract used by Aura
+/// the full interface can be found here: 
 interface IAuraRewarder {
     function balanceOf(address) external view returns (uint256);
 

@@ -95,7 +95,6 @@ describe("wAuraPools", () => {
         [
           aura.address,
           booster.address,
-          stashToken.address,
           escrowFactory.address,
         ],
         { unsafeAllow: ["delegatecall"] }
@@ -129,8 +128,8 @@ describe("wAuraPools", () => {
   describe("#initialize", () => {
     it("check initial values", async () => {
       expect(await wAuraPools.AURA()).to.be.eq(aura.address);
-      expect(await wAuraPools.auraPools()).to.be.eq(booster.address);
-      expect(await wAuraPools.STASH_AURA()).to.be.eq(stashToken.address);
+      expect(await wAuraPools.auraBooster()).to.be.eq(booster.address);
+      expect(await wAuraPools.escrowFactory()).to.be.eq(escrowFactory.address);
     });
 
     it("should revert initializing twice", async () => {
@@ -138,7 +137,6 @@ describe("wAuraPools", () => {
         wAuraPools.initialize(
           aura.address,
           booster.address,
-          stashToken.address,
           escrowFactory.address
         )
       ).to.be.revertedWith("Initializable: contract is already initialized");

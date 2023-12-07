@@ -318,7 +318,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   waura = <WAuraPools>(
     await upgrades.deployProxy(
       WAuraPools,
-      [AURA, ADDRESS.AURA_BOOSTER, STASH_AURA, escrowFactory.address],
+      [AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address],
       { unsafeAllow: ["delegatecall"] }
     )
   );

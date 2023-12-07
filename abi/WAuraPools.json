@@ -253,19 +253,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "STASH_AURA",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -284,6 +271,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "auraBooster",
+    "outputs": [
+      {
+        "internalType": "contract IAuraBooster",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -347,11 +347,17 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "auraPools",
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "auraStashToken",
     "outputs": [
       {
-        "internalType": "contract IAuraPools",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -431,6 +437,11 @@
         "internalType": "uint256[]",
         "name": "rewards",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "stashToken",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -744,12 +755,7 @@
       },
       {
         "internalType": "address",
-        "name": "auraPools_",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "stash_aura_",
+        "name": "auraBooster_",
         "type": "address"
       },
       {
@@ -814,7 +820,7 @@
         "type": "uint256"
       }
     ],
-    "name": "lastStashAuraPerToken",
+    "name": "lastStashRewardPerToken",
     "outputs": [
       {
         "internalType": "uint256",
@@ -996,25 +1002,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "stashAuraRewarder",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",

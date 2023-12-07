@@ -25,7 +25,7 @@ import "./interfaces/IHardVault.sol";
 import "./interfaces/money-market/IBErc20.sol";
 import "./libraries/BBMath.sol";
 import "./libraries/UniversalERC20.sol";
-
+import "hardhat/console.sol";
 /// @title BlueberryBank
 /// @author BlueberryProtocol
 /// @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
@@ -663,7 +663,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         SPELL = _NO_ADDRESS;
 
         emit Execute(positionId, msg.sender);
-
+        console.log("Execute Successful");
         return positionId;
     }
 
