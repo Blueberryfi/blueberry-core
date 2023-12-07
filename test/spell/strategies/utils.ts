@@ -25,6 +25,7 @@ const TwoDays = OneDay * 2;
 const OneHour = 3600;
 
 export const setupOracles = async (): Promise<CoreOracle> => {
+  console.log("setup oracles");
   const ChainlinkAdapterOracle = await ethers.getContractFactory(
     CONTRACT_NAMES.ChainlinkAdapterOracle
   );
@@ -36,7 +37,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
     [ADDRESS.WETH, ADDRESS.WBTC, ADDRESS.wstETH],
     [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC, ADDRESS.stETH]
   );
-
+  console.log("remappings set");
   await chainlinkAdapterOracle.setTimeGap(
     [
       ADDRESS.ETH,
@@ -105,6 +106,14 @@ export const setupOracles = async (): Promise<CoreOracle> => {
     await WeightedBPTOracleFactory.deploy(oracle.address)
   );
 
+  const StableBPTOracleFactory = await ethers.getContractFactory(
+    CONTRACT_NAMES.StableBPTOracle
+  );
+
+  const stableOracle = <WeightedBPTOracle>(
+    await StableBPTOracleFactory.deploy(oracle.address)
+  );
+
   await oracle.setRoutes(
     [
       ADDRESS.USDC,
@@ -122,6 +131,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.USDT,
       ADDRESS.FRAX,
       ADDRESS.BAL_OHM_WETH,
+      ADDRESS.BAL_WSTETH_WETH,
     ],
     [
       chainlinkAdapterOracle.address,
@@ -139,6 +149,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       chainlinkAdapterOracle.address,
       chainlinkAdapterOracle.address,
       weightedOracle.address,
+      stableOracle.address,
     ]
   );
 
@@ -291,7 +302,9 @@ export const getTokenAmountFromUSD = async (
   oracle: CoreOracle,
   usdAmount: BigNumberish
 ): Promise<BigNumber> => {
+  console.log("Enter");
   const price = await oracle.callStatic.getPrice(token.address);
+  console.log("Price", price.toString());
   const decimals = await token.decimals();
 
   return utils

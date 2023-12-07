@@ -73,13 +73,13 @@ describe("Aura Spell Strategy test", () => {
 
     [admin, alice, treasury, bob] = await ethers.getSigners();
 
-    const protocol = await setupAuraProtocol();
-    bank = protocol.bank;
-    oracle = protocol.oracle;
-    spell = protocol.auraSpell;
-    waura = protocol.waura;
-    config = protocol.config;
-    auraBooster = protocol.auraBooster;
+    const strat = await setupStrategy();
+    bank = strat.protocol.bank;
+    oracle = strat.protocol.oracle;
+    spell = strat.auraSpell;
+    waura = strat.waura;
+    config = strat.protocol.config;
+    auraBooster = strat.auraBooster;
     rewardFeePct = await config.rewardFee();
 
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
@@ -108,18 +108,16 @@ describe("Aura Spell Strategy test", () => {
             borrowToken = <ERC20>(
               await ethers.getContractAt("ERC20", strategyInfo.borrowAssets[l])
             );
-
             depositAmount = await getTokenAmountFromUSD(
               collateralToken,
               oracle,
-              "2000"
+              "10000"
             );
             borrowAmount = await getTokenAmountFromUSD(
               borrowToken,
               oracle,
-              "3000"
+              "10000"
             );
-
             const poolInfo = await auraBooster.poolInfo(
               strategyInfo.poolId ?? 0
             );
@@ -154,12 +152,12 @@ describe("Aura Spell Strategy test", () => {
             await setTokenBalance(
               collateralToken,
               alice,
-              utils.parseEther("1000000")
+              utils.parseEther("1000000000000")
             );
             await setTokenBalance(
               collateralToken,
               bob,
-              utils.parseEther("1000000")
+              utils.parseEther("1000000000000")
             );
             await collateralToken
               .connect(alice)
@@ -181,7 +179,7 @@ describe("Aura Spell Strategy test", () => {
               borrowAmount,
               strategyInfo.poolId ?? "0"
             );
-            console.log("Position opened");
+
             const bankInfo = await bank.getBankInfo(borrowToken.address);
             console.log("Bank Info:", bankInfo);
           });
@@ -228,7 +226,7 @@ describe("Aura Spell Strategy test", () => {
             const swapDatas = pendingRewardsInfo.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
-
+            console.log("Closing Position");
             await closePosition(
               alice,
               positionId,

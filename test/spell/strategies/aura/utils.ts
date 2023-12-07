@@ -12,9 +12,9 @@ import { StrategyInfo, setupBasicBank } from "../utils";
 export const strategies: StrategyInfo[] = [
   {
     type: "Pseudo-Neutral",
-    address: ADDRESS.BAL_OHM_WETH,
-    poolId: ADDRESS.AURA_OHM_ETH_POOL_ID,
-    borrowAssets: [ADDRESS.OHM /*, ADDRESS.WETH*/],
+    address: ADDRESS.BAL_WSTETH_WETH,
+    poolId: ADDRESS.AURA_WSTETH_WETH_POOL_ID,
+    borrowAssets: [ADDRESS.wstETH /*, ADDRESS.WETH*/],
     collateralAssets: [ADDRESS.DAI],
     maxLtv: 500,
     maxStrategyBorrow: 5_000_000,
@@ -23,7 +23,6 @@ export const strategies: StrategyInfo[] = [
 
 export const setupStrategy = async () => {
   const protocol = await setupBasicBank();
-  console.log("Bank setup complete");
 
   const escrow_Factory = await ethers.getContractFactory(CONTRACT_NAMES.PoolEscrow);
   const escrow = await escrow_Factory.deploy();
@@ -39,10 +38,7 @@ export const setupStrategy = async () => {
       { unsafeAllow: ["delegatecall"] }
     )
   );
-  console.log("WAuraPools deployed to:", waura.address);
-
-  escrowFactory.initialize(waura.address, await waura.AURA());
-
+  
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
   const werc20 = <WERC20>(
     await upgrades.deployProxy(WERC20, { unsafeAllow: ["delegatecall"] })
@@ -63,10 +59,12 @@ export const setupStrategy = async () => {
       { unsafeAllow: ["delegatecall"] }
     )
   );
-  console.log("Aura Spell deployed to:", auraSpell.address);
+
   const auraBooster = <ICvxPools>(
     await ethers.getContractAt("ICvxPools", ADDRESS.AURA_BOOSTER)
   );
+
+  escrowFactory.initialize(waura.address, ADDRESS.AURA_BOOSTER);
 
   // Setup Bank
   await protocol.bank.whitelistSpells([auraSpell.address], [true]);

@@ -65,7 +65,6 @@ export interface AuraProtocol {
   bDAI: Contract;
   bMIM: Contract;
   bLINK: Contract;
-  bOHM: Contract;
   bSUSHI: Contract;
   bBAL: Contract;
   //bALCX: Contract;
@@ -109,7 +108,6 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   let bDAI: Contract;
   let bMIM: Contract;
   let bLINK: Contract;
-  let bOHM: Contract;
   let bSUSHI: Contract;
   let bBAL: Contract;
   //let bALCX: Contract;
@@ -257,7 +255,6 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   bDAI = bTokens.bDAI;
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
-  bOHM = bTokens.bOHM;
   bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
   //bALCX = bTokens.bALCX;
@@ -485,7 +482,6 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     bDAI,
     bMIM,
     bLINK,
-    bOHM,
     bSUSHI,
     bBAL,
     //bALCX,

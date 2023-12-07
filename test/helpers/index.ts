@@ -26,8 +26,7 @@ export const currentTime = async () => {
   return block.timestamp;
 };
 
-export const fork = async (chainId: number = 1, blockNumber?: number) => {
-  let block = blockNumber ? blockNumber : 18695050;
+export const fork = async (chainId: number = 1, blockNumber: number = 18695050) => {
   if (chainId === 1) {
     await network.provider.request({
       method: "hardhat_reset",
@@ -35,7 +34,7 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
         {
           forking: {
             jsonRpcUrl: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-            blockNumber: block,
+            blockNumber: blockNumber,
           },
         },
       ],
@@ -47,7 +46,7 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
         {
           forking: {
             jsonRpcUrl: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-            blockNumber: block,
+            blockNumber: blockNumber,
           },
         },
       ],
