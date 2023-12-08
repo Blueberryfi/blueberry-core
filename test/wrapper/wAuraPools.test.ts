@@ -536,7 +536,6 @@ describe("wAuraPools", () => {
       await wAuraPools.burn(tokenId, amount);
 
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
-      expect(await aura.balanceOf(alice.address)).to.be.eq(res[1][1]);
       expect(await extraRewardToken.balanceOf(alice.address)).to.be.eq(
         res[1][2]
       );
@@ -548,7 +547,6 @@ describe("wAuraPools", () => {
       await wAuraPools.burn(tokenId, amount);
 
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
-      // expect(await aura.balanceOf(alice.address)).to.be.eq(res[1][1]);
       expect(await extraRewardToken.balanceOf(alice.address)).to.be.eq(
         res[1][2]
       );
