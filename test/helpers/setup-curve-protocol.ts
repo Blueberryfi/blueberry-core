@@ -326,21 +326,21 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
     utils.parseUnits("100", 18),
     utils.parseUnits("2000", 18)
   );
-  await curveSpell.addStrategy(
-    ADDRESS.CRV_CRVETH,
-    utils.parseUnits("100", 18),
-    utils.parseUnits("2000", 18)
-  );
+  // await curveSpell.addStrategy(
+  //   ADDRESS.CRV_CRVETH,
+  //   utils.parseUnits("100", 18),
+  //   utils.parseUnits("2000", 18)
+  // );
   await curveSpell.setCollateralsMaxLTVs(
     0,
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
   );
-  await curveSpell.setCollateralsMaxLTVs(
-    1,
-    [USDC, CRV, DAI],
-    [30000, 30000, 30000]
-  );
+  // await curveSpell.setCollateralsMaxLTVs(
+  //   1,
+  //   [USDC, CRV, DAI],
+  //   [30000, 30000, 30000]
+  // );
 
   // Setup Bank
   await bank.whitelistSpells(

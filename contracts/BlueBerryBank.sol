@@ -939,7 +939,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Internal function to handle the transfer of ERC20 tokens into the contract.
     /// @param token The ERC20 token to perform transferFrom action.
     /// @param amountCall The amount use in the transferFrom call.
-    /// @return The actual recieved amount.
+    /// @return The actual received amount.
     function _doERC20TransferIn(
         address token,
         uint256 amountCall

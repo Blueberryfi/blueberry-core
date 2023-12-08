@@ -35,7 +35,6 @@ const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
-const ETH_PRICE = 1600;
 const GAUGE_ID = ADDRESS.CRV_GAUGE_3CrvId;
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
@@ -61,13 +60,12 @@ describe("Curve Spell", () => {
   let config: ProtocolConfig;
 
   before(async () => {
-    await fork();
-
+    await fork(1);
+    console.log("forked");
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
-    usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
     protocol = await setupCrvProtocol();
