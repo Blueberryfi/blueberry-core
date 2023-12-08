@@ -14,6 +14,8 @@ import {
   ProtocolConfig,
   MockVirtualBalanceRewardPool,
   MockERC20,
+  IAuraStashToken,
+  MockStashToken,
 } from "../../../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../../../constant";
 import { setupStrategy, strategies } from "./utils";
@@ -65,7 +67,7 @@ describe("Aura Spell Strategy test", () => {
   let rewardFeePct: BigNumber;
   let extraRewarder1: MockVirtualBalanceRewardPool;
   let extraRewarder2: MockVirtualBalanceRewardPool;
-  let extraRewardToken1: MockERC20;
+  let extraRewardToken1: MockStashToken;
   let extraRewardToken2: MockERC20;
 
   before(async () => {
@@ -133,7 +135,9 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const MockERC20 = await ethers.getContractFactory("MockERC20");
-            extraRewardToken1 = await MockERC20.deploy("Mock", "MOCK", 18);
+            const MockStashToken = await ethers.getContractFactory("MockStashToken");
+            extraRewardToken1 = await MockStashToken.deploy(auraRewarder.address, ADDRESS.AURA);
+            console.log("Extra Reward Token 1: ", extraRewardToken1.address);
             extraRewardToken2 = await MockERC20.deploy("Mock", "MOCK", 18);
 
             const MockVirtualBalanceRewardPool =
@@ -253,6 +257,7 @@ describe("Aura Spell Strategy test", () => {
             const rewardToken = <ERC20>(
               await ethers.getContractAt("ERC20", rewardTokenAddr)
             );
+
             await setTokenBalance(
               rewardToken,
               auraRewarder,
@@ -378,10 +383,10 @@ describe("Aura Spell Strategy test", () => {
             );
           });
 
-          // https://github.com/sherlock-audit/2023-05-blueberry-judging/issues/29
           it("Do not fail when new reward added after deposit", async () => {
             // Check extra reward count, and if it's 0, add mock rewarder
             const extraRewarderLen = await auraRewarder.extraRewardsLength();
+            console.log("Extra Rewarder Length: ", extraRewarderLen.toString());
             const rewardManager = await ethers.getImpersonatedSigner(
               await auraRewarder.rewardManager()
             );
@@ -419,15 +424,10 @@ describe("Aura Spell Strategy test", () => {
                 waura.address,
                 pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
               );
-              await setTokenBalance(
-                extraRewardToken1,
-                extraRewarder1,
-                pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
-              );
             } else {
-              extraRewardToken1 = <MockERC20>(
+              extraRewardToken1 = <MockStashToken>(
                 await ethers.getContractAt(
-                  "MockERC20",
+                  "MockStashToken",
                   pendingRewardsInfo.tokens[2]
                 )
               );
@@ -478,60 +478,31 @@ describe("Aura Spell Strategy test", () => {
             );
           });
 
-          // https://github.com/sherlock-audit/2023-04-blueberry-judging/issues/128
           it("Withdraw extra rewards even they were removed", async () => {
-            // Check extra reward count, and if it's 0, add mock rewarder
-            const extraRewarderLen = await auraRewarder.extraRewardsLength();
             const rewardManager = await ethers.getImpersonatedSigner(
               await auraRewarder.rewardManager()
             );
-            let extraRewardAddedManually = false;
-
-            if (extraRewarderLen.eq(0)) {
-              await auraRewarder
-                .connect(rewardManager)
-                .addExtraReward(extraRewarder1.address);
-              extraRewardAddedManually = true;
-            }
-
+            
             const positionId = await openPosition(
               alice,
               depositAmount,
               borrowAmount,
               strategyInfo.poolId ?? "0"
             );
-
-            await evm_increaseTime(8640);
-
-            await extraRewarder1.setRewardPerToken(utils.parseEther("2"));
-
             const position = await bank.positions(positionId);
+            await evm_increaseTime(10);
 
             const pendingRewardsInfo = await waura.callStatic.pendingRewards(
               position.collId,
               position.collateralSize
             );
 
-            extraRewardToken1 = <MockERC20>(
-              await ethers.getContractAt(
-                "MockERC20",
-                pendingRewardsInfo.tokens[2]
-              )
-            );
-
-            if (extraRewardAddedManually) {
-              await extraRewarder1.setReward(
-                waura.address,
-                pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
-              );
-              await setTokenBalance(
-                extraRewardToken1,
-                extraRewarder1,
-                pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
-              );
-            }
-
+            console.log("Pending Rewards: ", pendingRewardsInfo);
             await auraRewarder.connect(rewardManager).clearExtraRewards();
+            console.log("Extra rewards deleted");
+
+            await evm_increaseTime(1000);
+
             expect(await auraRewarder.extraRewardsLength()).eq(
               BigNumber.from(0)
             );
@@ -542,7 +513,6 @@ describe("Aura Spell Strategy test", () => {
                 position.collateralSize
               );
 
-            console.log("Pending Rewards: ", pendingRewardsInfo);
             expect(pendingRewardsInfo.rewards[2].gt(0)).to.be.true;
             expect(pendingRewardsInfo.rewards[2]).lte(
               pendingRewardsInfoAfterRemoval.rewards[2]
@@ -556,17 +526,25 @@ describe("Aura Spell Strategy test", () => {
               data: "0x",
             }));
 
-            console.log(
-              "Pending Rewards After removal: ",
-              pendingRewardsInfoAfterRemoval
+            // console.log(
+            //   "Pending Rewards After removal: ",
+            //   pendingRewardsInfoAfterRemoval
+            // );
+            
+            let auraInstance = <ERC20>(
+              await ethers.getContractAt(
+                "ERC20",
+                ADDRESS.AURA
+              )
             );
 
-            const rewardTokenBalanceBefore = await extraRewardToken1.balanceOf(
+            const rewardTokenBalanceBefore = await auraInstance.balanceOf(
               alice.address
             );
 
+            console.log("rewardTokenBalanceBefore: ", rewardTokenBalanceBefore);
             await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
-
+            console.log("Closing position");
             await closePosition(
               alice,
               positionId,
@@ -580,13 +558,14 @@ describe("Aura Spell Strategy test", () => {
               swapDatas.map((item: { data: any; }) => item.data)
             );
 
-            const rewardTokenBalanceAfter = await extraRewardToken1.balanceOf(
+            const rewardTokenBalanceAfter = await auraInstance.balanceOf(
               alice.address
             );
-
+            console.log("rewardTokenBalanceBefore: ", rewardTokenBalanceBefore);
             expect(rewardTokenBalanceAfter.sub(rewardTokenBalanceBefore)).gte(
               rewardAmountWithoutFee(pendingRewardsInfo.rewards[2])
             );
+            console.log("test 2");
           });
 
           afterEach(async () => {

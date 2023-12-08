@@ -100,10 +100,10 @@ contract AuraSpell is BasicSpell {
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
-        console.log("lended");
+
         /// 2. Borrow funds based on specified amount
         _doBorrow(param.borrowToken, param.borrowAmount);
-        console.log("borrowed");
+
         /// 3. Add liquidity to the Balancer pool and receive BPT in return.
         {
             uint256 _minimumBPT = minimumBPT;
@@ -127,13 +127,13 @@ contract AuraSpell is BasicSpell {
                 })
             );
         }
-        console.log("BPT: %s", IERC20Upgradeable(lpToken).balanceOf(address(this)));
+
         /// 4. Ensure that the resulting LTV does not exceed maximum allowed value.
         _validateMaxLTV(param.strategyId);
-        console.log("validateMaxLTV");
+
         /// 5. Ensure position size is within permissible limits.
         _validatePosSize(param.strategyId);
-        console.log("validatePosSize");
+
         /// 6. Withdraw existing collaterals and burn the associated tokens.
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
@@ -146,7 +146,7 @@ contract AuraSpell is BasicSpell {
             
             bank.takeCollateral(pos.collateralSize);
             
-            (address[] memory rewardTokens, , address stashAura) = wAuraPools.burn(
+            (address[] memory rewardTokens, , address stashToken) = wAuraPools.burn(
                 pos.collId,
                 pos.collateralSize
             );
@@ -155,7 +155,7 @@ contract AuraSpell is BasicSpell {
             uint256 rewardTokensLength = rewardTokens.length;
             for (uint256 i; i != rewardTokensLength; ++i) {
                 _doRefundRewards(
-                    rewardTokens[i] == stashAura ? AURA : rewardTokens[i]
+                    rewardTokens[i] == stashToken ? AURA : rewardTokens[i]
                 );
             }
         }
@@ -163,11 +163,10 @@ contract AuraSpell is BasicSpell {
         /// 7. Deposit the tokens in the Aura pool and place the wrapped collateral tokens in the Blueberry Bank.
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
         IERC20(lpToken).universalApprove(address(wAuraPools), lpAmount);
-        console.log("approved");
+
         uint256 id = wAuraPools.mint(param.farmingPoolId, lpAmount);
-        console.log("minted");
+
         bank.putCollateral(address(wAuraPools), id, lpAmount);
-        console.log("putCollateral");
     }
 
     /// @notice Closes a position from Balancer pool and exits the Aura farming.
@@ -186,7 +185,7 @@ contract AuraSpell is BasicSpell {
         /// Information about the position from Blueberry Bank
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address[] memory rewardTokens;
-        //address stashAura;
+
         /// Ensure the position's collateral token matches the expected one
         {
             address lpToken = strategies[param.strategyId].vault;
@@ -207,7 +206,6 @@ contract AuraSpell is BasicSpell {
 
                 /// 2. Swap each reward token for the debt token
                 _sellRewards(rewardTokens, expectedRewards, swapDatas, stashToken);
-                console.log("sold rewards");
             }
 
             {
@@ -336,13 +334,13 @@ contract AuraSpell is BasicSpell {
         address[] memory rewardTokens,
         uint256[] calldata expectedRewards,
         bytes[] calldata swapDatas,
-        address stashAura
+        address stashToken
     ) internal {
         uint256 rewardTokensLength = rewardTokens.length;
 
         for (uint256 i; i != rewardTokensLength; ++i) {
             address sellToken = rewardTokens[i];
-            if (sellToken == stashAura) sellToken = AURA;
+            if (sellToken == stashToken) sellToken = AURA;
 
             _doCutRewardsFee(sellToken);
             if (

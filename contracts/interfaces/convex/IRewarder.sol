@@ -35,4 +35,6 @@ interface IRewarder {
     function clearExtraRewards() external;
 
     function rewardManager() external view returns (address);
+
+    function notifyRewardAmount(uint256 reward) external;
 }

@@ -27,7 +27,7 @@ import "../interfaces/aura/IAuraRewardPool.sol";
 
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
-import "hardhat/console.sol";
+
 /**
  * @title WauraPools
  * @author BlueberryProtocol
@@ -64,9 +64,7 @@ contract WAuraPools is
     /// @dev Aura extra rewards addresses
     address[] public extraRewards;
     /// @dev The index of extra rewards
-    mapping(address => uint256) public extraRewardsI;
-
-    uint public REWARD_MULTIPLIER_DENOMINATOR;
+    mapping(address => uint256) public extraRewardsIndex;
 
     /// @dev AURA reward per share by pid
     mapping(uint256 => uint256) public auraPerShareByPid;
@@ -76,9 +74,8 @@ contract WAuraPools is
     mapping(uint256 => uint256) public lastBalPerTokenByPid;
     /// @dev pid => escrow contract address
     mapping(uint256 => address) public escrows;
-
-    /// @dev pid => total amount of AURA recieved
-    mapping(uint256 => uint256) public stashAuraRecieved;
+    /// @dev pid => total amount of AURA received
+    mapping(uint256 => uint256) public stashAuraReceived;
     /// @dev pid => total amount of AURA paid out
     mapping(uint256 => uint256) public auraPaid;
     /// @dev pid => current reward per token
@@ -88,6 +85,8 @@ contract WAuraPools is
     mapping(uint256 => uint256) public lastStashRewardPerToken;
     /// @dev pid => stash token
     mapping(uint256 => address) public auraStashToken;
+
+    uint256 public REWARD_MULTIPLIER_DENOMINATOR;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -372,13 +371,13 @@ contract WAuraPools is
         /// Additional rewards
         for (uint256 i; i < extraRewardsCount; ++i) {
             address rewarder = extraRewards[i];
-            uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
+            uint256 tokenRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IAuraRewarder(rewarder).rewardToken();
-            if (stRewardPerShare == 0) {
+            if (tokenRewardPerShare == 0) {
                 rewards[i + 2] = 0;
             } else {
                 rewards[i + 2] = _getPendingReward(
-                    stRewardPerShare == type(uint).max ? 0 : stRewardPerShare,
+                    tokenRewardPerShare == type(uint).max ? 0 : tokenRewardPerShare,
                     rewarder,
                     amount,
                     lpDecimals
@@ -398,19 +397,15 @@ contract WAuraPools is
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
-        console.log("Aura Pools", address(auraBooster));
-        console.log("lpToken", lpToken);
-        /// Escrow deployment/get logic
 
+        /// Escrow deployment/get logic
         address _escrow;
-        
+
         if (escrows[pid] == address(0)) {
             _escrow = escrowFactory.createEscrow(pid, auraRewarder, lpToken);
-            console.log("escrow", _escrow);
             escrows[pid] = _escrow;
         } else {
             _escrow = escrows[pid];
-            console.log("escrow", _escrow);
         }
 
         IERC20Upgradeable(lpToken).safeTransferFrom(
@@ -418,17 +413,17 @@ contract WAuraPools is
             _escrow,
             amount
         );
-        console.log("Token Transfered to escrow", _escrow);
+
         _updateAuraReward(pid);
-        console.log("Aura reward updated");
+
         /// Deposit LP from escrow contract
         IPoolEscrow(_escrow).deposit(amount);
-        console.log("LP deposited to escrow", _escrow);
+        
         /// BAL reward handle logic
         uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
             .rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
-        console.log("id", id);
+
         _mint(msg.sender, id, amount, "");
 
         /// Store extra rewards info
@@ -463,57 +458,37 @@ contract WAuraPools is
         nonReentrant
         returns (address[] memory rewardTokens, uint256[] memory rewards, address stashToken)
     {
-        if (amount == type(uint256).max) {
-            amount = balanceOf(msg.sender, id);
-        }
-        (rewardTokens, rewards) = pendingRewards(id, amount);
         (uint256 pid, ) = decodeId(id);
-
-        _updateAuraReward(pid);
-
-        _burn(msg.sender, id, amount);
-
-        (, , , address auraRewarder, address stashAura, ) = getPoolInfoFromPoolId(pid);
-
         address _escrow = escrows[pid];
 
         // @dev sanity check
         assert(_escrow != address(0));
 
+        if (amount == type(uint256).max) {
+            amount = balanceOf(msg.sender, id);
+        }
+
+        (rewardTokens, rewards) = pendingRewards(id, amount);
+
+        _updateAuraReward(pid);
+
+        stashToken = auraStashToken[pid];
+
+        _burn(msg.sender, id, amount);
+
         /// Claim and withdraw LP from escrow contract
         IPoolEscrow(_escrow).claimAndWithdraw(amount, msg.sender);
-
-        uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
-            .extraRewardsLength();
-
-        for (uint256 i; i != extraRewardsCount; ++i) {
-            _syncExtraReward(IAuraRewarder(auraRewarder).extraRewards(i));
-        }
-
-        uint256 storedExtraRewardLength = extraRewards.length;
-        bool hasDiffExtraRewards = extraRewardsCount != storedExtraRewardLength;
-
-        /// Transfer Reward Tokens
-
-        /// Withdraw manually
-        if (hasDiffExtraRewards) {
-            for (uint256 i; i != storedExtraRewardLength; ++i) {
-                IPoolEscrow(_escrow).getRewardExtra(extraRewards[i]);
-            }
-        }
 
         uint256 rewardTokensLength = rewardTokens.length;
         for (uint256 i; i != rewardTokensLength; ++i) {
             address _rewardToken = rewardTokens[i];
 
             /// If the reward token is AURA
-            if (_rewardToken == address(AURA)) {
-                /// Increase the amount of AURA paid out for the pool by the reward amount
-                /// This is because AURA is being paid out
-                auraPaid[pid] += rewards[i];
-            } else if (_isAuraStashToken(_rewardToken, stashAura)) {
-                continue;
+            if (_rewardToken == stashToken) {
+                _rewardToken = address(AURA);
+                rewards[i] = stashAuraReceived[pid];
             }
+
             IPoolEscrow(_escrow).transferToken(
                 _rewardToken,
                 msg.sender,
@@ -534,9 +509,9 @@ contract WAuraPools is
     /// @param extraReward The address of the extra reward token.
     /// @dev Adds the extra reward to the internal list if not already present.
     function _syncExtraReward(address extraReward) private {
-        if (extraRewardsI[extraReward] == 0) {
+        if (extraRewardsIndex[extraReward] == 0) {
             extraRewards.push(extraReward);
-            extraRewardsI[extraReward] = extraRewards.length;
+            extraRewardsIndex[extraReward] = extraRewards.length;
         }
     }
 
@@ -547,8 +522,12 @@ contract WAuraPools is
         address _escrow = escrows[pid];
         address stashToken = auraStashToken[pid];
 
-        // _auraRewarder rewards users in BAL
+        // _auraRewarder rewards users in AURA
         (, , , address _auraRewarder, address stashAura, ) = getPoolInfoFromPoolId(pid);
+
+        if (stashToken == address(0)) {
+            _setAuraStashToken(pid, _auraRewarder, stashAura);
+        }
 
         uint256 _currentDeposits = IAuraRewarder(_auraRewarder).balanceOf(
             _escrow
@@ -559,50 +538,67 @@ contract WAuraPools is
 
         if (_currentDeposits == 0) return;
 
-        uint256 _extraRewardsCount = IAuraRewarder(_auraRewarder)
-            .extraRewardsLength();
-        // address _stashAuraRewarder = stashAuraRewarder[pid];
+        uint256 _auraBalanceBefore = AURA.balanceOf(_escrow);
 
-        uint256 _auraBalBefore = AURA.balanceOf(_escrow);
-        
-        /// @dev Claim extra rewards at withdrawal
-        IAuraRewarder(_auraRewarder).getReward(_escrow, true);
+        // If the extra rewards length has changed, we need to manually withdraw
+        (bool extraRewardMismatch, uint256 extraRewardLength) = _rewardMismatch(_auraRewarder);
 
-        uint256 _auraRecieved = AURA.balanceOf(_escrow) - _auraBalBefore;
+        if (extraRewardMismatch) {
+            IAuraRewarder(_auraRewarder).getReward(_escrow, false);
+            /// Withdraw manually
+            for (uint256 i; i != extraRewardLength; ++i) {
+                uint256 auraBalance = AURA.balanceOf(_escrow);
+                IPoolEscrow(_escrow).getRewardExtra(extraRewards[i]);
+                if (extraRewards[i] == stashToken) {
+                    uint256 stashAuraEarned = AURA.balanceOf(_escrow) - auraBalance;
+                    stashAuraReceived[pid] = stashAuraEarned;
+                }
+            }
+        } else {
+            // Updating the amount of AURA received via the stash
+            if (stashToken != address(0)) {
+                _updateStashAuraPerToken(pid, stashToken);
+            }
 
-        uint256 _realAuraReward = _auraRecieved -
-            auraPaid[pid] -
-            stashAuraRecieved[pid];
+            // Claim all rewards and send them to the escrow contract. 
+            // These tokens will include AURA, BAL. If a stash token is present, 
+            //   there will be AURA converted from stash aura and sent to escrow.
+            IAuraRewarder(_auraRewarder).getReward(_escrow, true);
+        }
 
-        if (_realAuraReward > 0)
+        uint256 _auraReceived = AURA.balanceOf(_escrow) - _auraBalanceBefore;
+
+        uint256 _realAuraReward = _auraReceived - stashAuraReceived[pid];
+
+        if (_realAuraReward > 0) {
             auraPerShareByPid[pid] +=
                 (_realAuraReward * 1e18) /
                 _currentDeposits;
+        }
+    }
 
-        if (stashToken != address(0)) {
-            _updateStashAuraPerToken(pid, stashToken, _currentDeposits);
-        } else {
-            // If stashToken == address(0), then check if there is a stashToken and update accordingly
-            for (uint256 i; i < _extraRewardsCount; ++i) {
-                address _extraRewarder = IAuraRewarder(_auraRewarder)
-                    .extraRewards(i);
+    function _setAuraStashToken(uint256 pid, address auraRewarder, address stashAura) internal {
+        uint256 length = IAuraRewarder(auraRewarder).extraRewardsLength();
+        for (uint256 i; i < length; ++i) {
+            address _extraRewarder = IAuraRewarder(auraRewarder)
+                .extraRewards(i);
 
-                address _rewardToken = IAuraRewarder(_extraRewarder)
-                    .rewardToken();
+            address _rewardToken = IAuraRewarder(_extraRewarder)
+                .rewardToken();
 
-                if (_isAuraStashToken(_rewardToken, stashAura)) {
-                    auraStashToken[pid] = _rewardToken;
-                    stashToken = _rewardToken;
-                    break;
-                }
-            }
-
-            if (stashToken != address(0)) {
-                _updateStashAuraPerToken(pid, stashToken, _currentDeposits);
+            // Initialize the stashToken if it is not initialized
+            if (_isAuraStashToken(_rewardToken, stashAura)) {
+                auraStashToken[pid] = _rewardToken;
+                break;
             }
         }
     }
 
+    /**
+     * @notice Checks if a token is an Aura Stash token
+     * @param token Address of the token to check
+     * @param auraStash Address of the Aura Stash
+     */
     function _isAuraStashToken(address token, address auraStash) internal view returns (bool) {
         try IAuraStashToken(token).stash() returns (address stashToken) {
             return stashToken == auraStash;
@@ -611,23 +607,30 @@ contract WAuraPools is
         }
     }
 
-    function _updateStashAuraPerToken(uint256 pid, address stashToken, uint256 currentDeposits) internal {
+    /**
+     * @notice Updates the total amount of stash aura received
+     * @param pid The Aura pool id
+     * @param stashToken Address of the stash token
+     */
+    function _updateStashAuraPerToken(uint256 pid, address stashToken) internal {
         address rewardPool = IAuraStashToken(stashToken).rewardPool();
-        console.log("pid", pid);
-        uint256 currentStashRewardPerToken = IAuraRewardPool(
+
+        uint256 stashAuraEarned = IAuraRewardPool(
             rewardPool
-        ).rewardPerToken();
+        ).earned(escrows[pid]);
 
-        stashAuraRecieved[pid] +=
-            (currentStashRewardPerToken - lastStashRewardPerToken[pid]) *
-            currentDeposits;
+        stashAuraReceived[pid] = stashAuraEarned;
+    }
 
-        //update STASH_AURA reward per token
-        lastStashRewardPerToken[pid] = currentStashRewardPerToken;
+    function _rewardMismatch(address auraRewarder) internal returns (bool rewardMismatch, uint256 extraRewardsCount) {
+        extraRewardsCount = IAuraRewarder(auraRewarder)
+            .extraRewardsLength();
 
-        console.log("Aura Balance", AURA.balanceOf(escrows[pid]));
-        IAuraRewardPool(rewardPool).getReward(escrows[pid]);
-        console.log("Aura Balance after", AURA.balanceOf(escrows[pid]));
+        for (uint256 i; i != extraRewardsCount; ++i) {
+            _syncExtraReward(IAuraRewarder(auraRewarder).extraRewards(i));
+        }
 
+        uint256 prevRewardLength = extraRewards.length;
+        rewardMismatch = prevRewardLength != extraRewardsCount;
     }
 }
