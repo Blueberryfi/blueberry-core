@@ -136,8 +136,10 @@ describe("Aura Spell Strategy test", () => {
 
             const MockERC20 = await ethers.getContractFactory("MockERC20");
             const MockStashToken = await ethers.getContractFactory("MockStashToken");
-            extraRewardToken1 = await MockStashToken.deploy(auraRewarder.address, ADDRESS.AURA);
-            console.log("Extra Reward Token 1: ", extraRewardToken1.address);
+            
+            extraRewardToken1 = await MockStashToken.deploy();
+            extraRewardToken1.init(auraRewarder.address, ADDRESS.AURA);
+
             extraRewardToken2 = await MockERC20.deploy("Mock", "MOCK", 18);
 
             const MockVirtualBalanceRewardPool =
