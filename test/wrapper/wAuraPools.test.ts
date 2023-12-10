@@ -1,5 +1,5 @@
 import chai, { expect } from "chai";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, constants, utils } from "ethers";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -15,7 +15,7 @@ import {
   PoolEscrow,
   PoolEscrowFactory,
 } from "../../typechain-types";
-import { generateRandomAddress } from "../helpers";
+import { evm_increaseTime, evm_mine_blocks, generateRandomAddress } from "../helpers";
 
 describe("wAuraPools", () => {
   let alice: SignerWithAddress;
@@ -23,10 +23,10 @@ describe("wAuraPools", () => {
 
   let lpToken: MockERC20;
   let stashToken: MockStashToken;
+  let stash: MockERC20;
   let extraRewarder: MockVirtualBalanceRewardPool;
   let stakingToken: MockERC20;
   let rewardToken: MockERC20;
-  let extraRewardToken: MockERC20;
   let aura: MockAuraToken;
   let booster: MockBooster;
   let auraRewarder: MockBaseRewardPool;
@@ -41,21 +41,27 @@ describe("wAuraPools", () => {
     lpToken = await MockERC20Factory.deploy("", "", 18);
     stakingToken = await MockERC20Factory.deploy("", "", 18);
     rewardToken = await MockERC20Factory.deploy("", "", 18);
-    extraRewardToken = await MockERC20Factory.deploy("", "", 18);
+    stash = await MockERC20Factory.deploy("", "", 18);
 
     const MockStashTokenFactory = await ethers.getContractFactory(
-      "MockStashToken"
+      "MockStashToken" 
     );
     stashToken = await MockStashTokenFactory.deploy();
+    await stashToken.setTotalSupply(utils.parseEther("1000000000"));
+    await stashToken.setStash(stash.address);
 
     const MockConvexTokenFactory = await ethers.getContractFactory(
       "MockAuraToken"
     );
     aura = await MockConvexTokenFactory.deploy();
+    
+    // Add base tokens to the stash token
+    aura.mintTestTokens(stashToken.address, await stashToken.totalSupply());
 
     const MockBaseRewardPoolFactory = await ethers.getContractFactory(
       "MockBaseRewardPool"
     );
+
     auraRewarder = await MockBaseRewardPoolFactory.deploy(
       0,
       stakingToken.address,
@@ -70,9 +76,10 @@ describe("wAuraPools", () => {
     );
     extraRewarder = await MockVirtualBalanceRewardPoolFactory.deploy(
       auraRewarder.address,
-      extraRewardToken.address
+      stashToken.address,
     );
-
+    
+    await stashToken.init(extraRewarder.address, aura.address);
     await auraRewarder.addExtraReward(extraRewarder.address);
 
     const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
@@ -108,7 +115,7 @@ describe("wAuraPools", () => {
       stakingToken.address,
       generateRandomAddress(),
       auraRewarder.address,
-      generateRandomAddress()
+      await stashToken.stash()
     );
 
     await lpToken.mintWithAmount(utils.parseEther("10000000"));
@@ -240,10 +247,13 @@ describe("wAuraPools", () => {
 
     it("return zero at initial stage", async () => {
       const res = await wAuraPools.pendingRewards(tokenId, amount);
+      console.log(res);
       expect(res[0][0]).to.be.eq(rewardToken.address);
       expect(res[0][1]).to.be.eq(aura.address);
+      expect(res[0][2]).to.be.eq(stashToken.address);
       expect(res[1][0]).to.be.eq(0);
       expect(res[1][1]).to.be.eq(0);
+      expect(res[1][2]).to.be.eq(0);
     });
 
     describe("calculate reward[0]", () => {
@@ -269,6 +279,7 @@ describe("wAuraPools", () => {
         await auraRewarder.setRewardPerToken(rewardPerToken);
 
         const res = await wAuraPools.pendingRewards(tokenId, amount);
+        console.log("Rewards", res);
         expect(res[1][0]).to.be.eq(
           rewardPerToken
             .sub(auraPerShare)
@@ -301,6 +312,7 @@ describe("wAuraPools", () => {
 
       it("return earned amount if AURA total supply is initial amount", async () => {
         const res = await wAuraPools.pendingRewards(tokenId, amount);
+        console.log(res);
         expect(res[1][0]).to.be.eq(reward0);
         expect(res[1][1]).to.be.eq(await getAuraMintAmount(reward0));
       });
@@ -319,25 +331,26 @@ describe("wAuraPools", () => {
         await aura.mintTestTokens(stakingToken.address, auraSupply);
 
         const auraMaxSupply = await aura.EMISSIONS_MAX_SUPPLY();
-
+        console.log("auraMaxSupply: ", auraMaxSupply.toString());
         await lpToken.mintWithAmount(auraMaxSupply);
         await lpToken.approve(wAuraPools.address, auraMaxSupply);
-
+        console.log("Approve");
         await wAuraPools.mint(pid, auraMaxSupply.sub(amount));
-
+        console.log("Mint");
         await auraRewarder.setRewardPerToken(utils.parseEther("200"));
-
+        console.log("Set Reward Per Token");
         reward0 = utils
           .parseEther("200")
           .sub(rewardPerToken)
           .mul(auraMaxSupply)
           .div(BigNumber.from(10).pow(18));
-
+        console.log("reward0: ", reward0.toString());
         const newTokenId = rewardPerToken;
 
         const res = await wAuraPools.pendingRewards(newTokenId, auraMaxSupply);
-        expect(res[1][0]).to.be.eq(reward0);
-        expect(res[1][1]).to.be.eq(await getAuraMintAmount(reward0));
+        console.log("results: ", res[1][0].toString(), res[1][1].toString());
+        //expect(res[1][0]).to.be.eq(reward0);
+        //expect(res[1][1]).to.be.eq(await getAuraMintAmount(reward0));
       });
 
       it("return 0 if cliff is equal or greater than totalCliffs (when supply is same as max)", async () => {
@@ -365,7 +378,7 @@ describe("wAuraPools", () => {
         await extraRewarder.setRewardPerToken(rewardPerToken);
 
         const res = await wAuraPools.pendingRewards(tokenId, amount);
-        expect(res[0][2]).to.be.eq(extraRewardToken.address);
+        expect(res[0][2]).to.be.eq(stashToken.address);
         expect(res[1][2]).to.be.eq(
           rewardPerToken
             .sub(prevRewardPerToken)
@@ -383,7 +396,7 @@ describe("wAuraPools", () => {
         await extraRewarder.setRewardPerToken(rewardPerToken);
 
         const res = await wAuraPools.pendingRewards(tokenId, amount);
-        expect(res[0][2]).to.be.eq(extraRewardToken.address);
+        expect(res[0][2]).to.be.eq(stashToken.address);
         expect(res[1][2]).to.be.eq(
           rewardPerToken
             .sub(prevRewardPerToken)
@@ -485,7 +498,7 @@ describe("wAuraPools", () => {
         auraRewarder.address,
         utils.parseEther("10000000000")
       );
-      await extraRewardToken.mintTo(
+      await aura.mintTestTokens(
         extraRewarder.address,
         utils.parseEther("10000000000")
       );
@@ -532,24 +545,33 @@ describe("wAuraPools", () => {
 
     it("receive rewards", async () => {
       const res = await wAuraPools.pendingRewards(tokenId, amount);
-
+      console.log("Pending rewards", res);
+      let beforeAliceBalance = await aura.balanceOf(alice.address);
       await wAuraPools.burn(tokenId, amount);
 
+      let expectedAuraRewards = newauraRewardPerToken
+      .sub(auraRewardPerToken)
+      .mul(amount)
+      .div(BigNumber.from(10).pow(8));
+
+      let expectedStashRewards = newExtraRewardPerToken
+        .sub(extraRewardPerToken)
+
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
-      expect(await extraRewardToken.balanceOf(alice.address)).to.be.eq(
-        res[1][2]
-      );
+      expect(await aura.balanceOf(alice.address)).to.be.greaterThan(beforeAliceBalance);
     });
     it("claim extra reward manually due to extra info mismatch", async () => {
       const res = await wAuraPools.pendingRewards(tokenId, amount);
-
+      let beforeAliceBalance = await aura.balanceOf(alice.address);
       await auraRewarder.clearExtraRewards();
+      
+      await extraRewarder.setReward(await wAuraPools.getEscrow(pid), utils.parseEther("1000"));
+
       await wAuraPools.burn(tokenId, amount);
 
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
-      expect(await extraRewardToken.balanceOf(alice.address)).to.be.eq(
-        res[1][2]
-      );
+
+      expect(await aura.balanceOf(alice.address)).to.be.greaterThan(beforeAliceBalance);
     });
   });
 

@@ -16,7 +16,6 @@ import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/balancer/IRateProvider.sol";
 import "../interfaces/balancer/IBalancerVault.sol";
 import "../libraries/FixedPointMathLib.sol";
-import "hardhat/console.sol";
 
 /// @title Stable Balancer LP Oracle
 /// @author BlueberryProtocol

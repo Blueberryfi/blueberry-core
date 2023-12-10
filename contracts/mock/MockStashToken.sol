@@ -16,6 +16,7 @@ contract MockStashToken is IAuraStashToken {
 
     address public rewardPool;
     address public baseToken;
+    address public stash;
 
     uint256 internal _totalSupply;
 
@@ -65,5 +66,11 @@ contract MockStashToken is IAuraStashToken {
         return true;
     }
 
-    function stash() external view override returns (address) {}
+    function setStash(address _stash) external {
+        stash = _stash;
+    }
+
+    function setTotalSupply(uint256 _totalSupply_) external {
+        _totalSupply = _totalSupply_;
+    }
 }

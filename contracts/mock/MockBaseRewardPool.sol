@@ -202,8 +202,7 @@ contract MockBaseRewardPool {
         if (reward > 0) {
             rewards[_account] = 0;
             rewardToken.safeTransfer(_account, reward);
-
-            convexOrAura.mint(_account, reward);
+            convexOrAura.mintTestTokens(_account, reward);
             emit RewardPaid(_account, reward);
         }
 
