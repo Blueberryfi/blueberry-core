@@ -12,10 +12,9 @@ import {
   CoreOracle,
   IRewarder,
   ProtocolConfig,
-  MockVirtualBalanceRewardPool,
-  MockERC20,
   IAuraStashToken,
-  MockStashToken,
+  IAuraRewarder,
+  MockVirtualBalanceRewardPool,
 } from "../../../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../../../constant";
 import { setupStrategy, strategies } from "./utils";
@@ -65,10 +64,9 @@ describe("Aura Spell Strategy test", () => {
   let depositAmount: BigNumber;
   let borrowAmount: BigNumber;
   let rewardFeePct: BigNumber;
-  let extraRewarder1: MockVirtualBalanceRewardPool;
+  let extraRewarder1: IAuraRewarder;
   let extraRewarder2: MockVirtualBalanceRewardPool;
-  let extraRewardToken1: MockStashToken;
-  let extraRewardToken2: MockERC20;
+  let stashToken: IAuraStashToken;
 
   before(async () => {
     await fork();
@@ -133,28 +131,15 @@ describe("Aura Spell Strategy test", () => {
               utils.parseEther("1"),
               await auraRewarder.rewardManager()
             );
-
-            const MockERC20 = await ethers.getContractFactory("MockERC20");
-            const MockStashToken = await ethers.getContractFactory("MockStashToken");
             
-            extraRewardToken1 = await MockStashToken.deploy();
-            extraRewardToken1.init(auraRewarder.address, ADDRESS.AURA);
-
-            extraRewardToken2 = await MockERC20.deploy("Mock", "MOCK", 18);
-
-            const MockVirtualBalanceRewardPool =
-              await ethers.getContractFactory("MockVirtualBalanceRewardPool");
-            extraRewarder1 = await MockVirtualBalanceRewardPool.deploy(
-              auraRewarder.address,
-              extraRewardToken1.address
+            extraRewarder1 = <IAuraRewarder>(
+              await ethers.getContractAt("IRewarder", await auraRewarder.extraRewards(0))
             );
-            extraRewarder1.setRewardPerToken(utils.parseEther("1"));
-            extraRewarder2 = await MockVirtualBalanceRewardPool.deploy(
-              auraRewarder.address,
-              extraRewardToken1.address
+            
+            stashToken = <IAuraStashToken>(
+              await ethers.getContractAt("IAuraStashToken", await extraRewarder1.rewardToken())
             );
-            extraRewarder2.setRewardPerToken(utils.parseEther("1"));
-
+            
             await setTokenBalance(
               collateralToken,
               alice,
@@ -410,30 +395,21 @@ describe("Aura Spell Strategy test", () => {
 
             await evm_increaseTime(8640);
 
-            if (extraRewardAddedManually) {
-              await extraRewarder1.setRewardPerToken(utils.parseEther("1.5"));
-            }
-
             const position = await bank.positions(positionId);
 
             const pendingRewardsInfo = await waura.callStatic.pendingRewards(
               position.collId,
               position.collateralSize
             );
-
-            if (extraRewardAddedManually) {
-              await extraRewarder1.setReward(
-                waura.address,
-                pendingRewardsInfo.rewards[2].add(utils.parseEther("1000"))
-              );
-            } else {
-              extraRewardToken1 = <MockStashToken>(
-                await ethers.getContractAt(
-                  "MockStashToken",
-                  pendingRewardsInfo.tokens[2]
-                )
-              );
-            }
+            
+            let rewarderFactory = await ethers.getContractFactory("MockVirtualBalanceRewardPool");
+            
+            extraRewarder2 = <MockVirtualBalanceRewardPool>(
+              await rewarderFactory.deploy(
+                auraRewarder.address,
+                dai.address,
+              )
+            );
 
             await auraRewarder
               .connect(rewardManager)
@@ -567,7 +543,6 @@ describe("Aura Spell Strategy test", () => {
             expect(rewardTokenBalanceAfter.sub(rewardTokenBalanceBefore)).gte(
               rewardAmountWithoutFee(pendingRewardsInfo.rewards[2])
             );
-            console.log("test 2");
           });
 
           afterEach(async () => {
