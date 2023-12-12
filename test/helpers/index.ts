@@ -33,7 +33,7 @@ export const fork = async (chainId: number = 1, blockNumber: number = 18695050) 
       params: [
         {
           forking: {
-            jsonRpcUrl: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+            jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
             blockNumber: blockNumber,
           },
         },
@@ -45,7 +45,7 @@ export const fork = async (chainId: number = 1, blockNumber: number = 18695050) 
       params: [
         {
           forking: {
-            jsonRpcUrl: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+            jsonRpcUrl: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_ARB_API_KEY}`,
             blockNumber: blockNumber,
           },
         },

@@ -11,7 +11,7 @@
 pragma solidity 0.8.22;
 
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import {SafeERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {SafeERC20Upgradeable, IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -26,6 +26,8 @@ import {IAura} from "../interfaces/aura/IAura.sol";
 import {IAuraStashToken} from "../interfaces/aura/IAuraStashToken.sol";
 import {IAuraRewardPool} from "../interfaces/aura/IAuraRewardPool.sol";
 import {IAuraExtraRewarder} from "../interfaces/aura/IAuraExtraRewarder.sol";
+import {IBalancerVault} from "../interfaces/balancer/IBalancerVault.sol";
+import {IBalancerPool} from "../interfaces/balancer/IBalancerPool.sol";
 
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
