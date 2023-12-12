@@ -630,7 +630,7 @@ describe("ShortLong Spell", () => {
     );
 
     const bankInfo = await bank.getBankInfo(DAI);
-    console.log("USDC Bank Info:", bankInfo);
+    console.log("DAI Bank Info:", bankInfo);
 
     const pos = await bank.positions(positionId);
     console.log("Position Info:", pos);
