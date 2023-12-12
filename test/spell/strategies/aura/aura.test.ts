@@ -91,7 +91,7 @@ describe("Aura Spell Strategy test", () => {
 
     await addEthToContract(admin, utils.parseEther("1"), auraBooster.address);
   });
-
+  
   for (let i = 0; i < strategies.length; i += 1) {
     const strategyInfo = strategies[i];
     for (let j = 0; j < strategyInfo.collateralAssets.length; j += 1) {
@@ -316,7 +316,7 @@ describe("Aura Spell Strategy test", () => {
 
             const aliceAuraBalanceBefore = await aura.balanceOf(alice.address);
             const bobAuraBalanceBefore = await aura.balanceOf(bob.address);
-
+            console.log("Closing Alice Position");
             await closePosition(
               alice,
               positionId,
@@ -351,6 +351,7 @@ describe("Aura Spell Strategy test", () => {
             );
 
             await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
+            console.log("Closing Bob Position");
             await closePosition(
               bob,
               bobPositionId,

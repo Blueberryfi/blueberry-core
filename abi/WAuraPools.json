@@ -349,25 +349,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "auraStashToken",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "account",
         "type": "address"
@@ -483,7 +464,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "auraPerShare",
+        "name": "balPerShare",
         "type": "uint256"
       }
     ],
@@ -499,7 +480,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "auraPerShare",
+        "name": "balPerShare",
         "type": "uint256"
       }
     ],
@@ -816,25 +797,6 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "lastStashRewardPerToken",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
         "name": "pid",
         "type": "uint256"
       },
@@ -996,11 +958,26 @@
         "type": "uint256"
       }
     ],
-    "name": "stashAuraReceived",
+    "name": "stashTokenInfo",
     "outputs": [
       {
+        "internalType": "address",
+        "name": "stashToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "rewarder",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
-        "name": "",
+        "name": "lastStashRewardPerToken",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "stashAuraReceived",
         "type": "uint256"
       }
     ],
