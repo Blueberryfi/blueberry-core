@@ -421,11 +421,6 @@
         "type": "bytes[]"
       },
       {
-        "internalType": "bool",
-        "name": "isKilled",
-        "type": "bool"
-      },
-      {
         "internalType": "uint256",
         "name": "deadline",
         "type": "uint256"

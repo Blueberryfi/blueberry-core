@@ -890,7 +890,6 @@ describe("Convex Spells Deploy", () => {
           },
           amounts: expectedAmounts,
           swapDatas: swapDatas.map((item) => item.data),
-          isKilled: false,
         },
       ])
     );

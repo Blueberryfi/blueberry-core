@@ -475,11 +475,6 @@
             "internalType": "bytes[]",
             "name": "swapDatas",
             "type": "bytes[]"
-          },
-          {
-            "internalType": "bool",
-            "name": "isKilled",
-            "type": "bool"
           }
         ],
         "internalType": "struct ConvexSpell.ClosePositionFarmParam",

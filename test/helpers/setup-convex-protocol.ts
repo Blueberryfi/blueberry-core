@@ -533,7 +533,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   );
   await usdcSoftVault.deployed();
   await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
-  console.log("Soft and Hard Vault deployued");
+
   daiSoftVault = <SoftVault>(
     await upgrades.deployProxy(
       SoftVault,
@@ -604,7 +604,6 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   await wbtcSoftVault.deployed();
   await bank.addBank(WBTC, wbtcSoftVault.address, hardVault.address, 9000);
 
-  console.log("Bank address:", bank.address);
   // Whitelist bank contract on compound
   await comptroller._setCreditLimit(
     bank.address,

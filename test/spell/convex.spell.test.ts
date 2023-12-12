@@ -498,7 +498,6 @@ describe("Convex Spell", () => {
               },
               amounts: expectedAmounts,
               swapDatas: swapDatas.map((item) => item.data),
-              isKilled: false,
             },
           ])
         )
@@ -528,7 +527,6 @@ describe("Convex Spell", () => {
               },
               amounts: [],
               swapDatas: [],
-              isKilled: false,
             },
           ])
         )
@@ -559,7 +557,6 @@ describe("Convex Spell", () => {
               },
               amounts: [],
               swapDatas: [],
-              isKilled: false,
             },
           ])
         )
@@ -689,7 +686,6 @@ describe("Convex Spell", () => {
               },
               amounts: expectedAmounts,
               swapDatas: swapDatas.map((item) => item.data),
-              isKilled: false,
             },
           ])
         );

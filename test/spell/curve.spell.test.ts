@@ -428,7 +428,6 @@ describe("Curve Spell", () => {
             },
             [],
             [],
-            false,
             deadline,
           ])
         )
@@ -476,7 +475,6 @@ describe("Curve Spell", () => {
             },
             [expectedAmount],
             [swapData.data],
-            false,
             7777777777,
           ])
         )
@@ -522,7 +520,6 @@ describe("Curve Spell", () => {
           },
           [expectedAmount],
           [swapData.data],
-          false,
           7777777777,
         ])
       );
