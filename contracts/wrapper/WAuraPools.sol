@@ -29,7 +29,7 @@ import "../interfaces/aura/IAuraExtraRewarder.sol";
 
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
-import "hardhat/console.sol";
+
 /**
  * @title WauraPools
  * @author BlueberryProtocol
@@ -76,11 +76,6 @@ contract WAuraPools is
     mapping(uint256 => uint256) public lastBalPerTokenByPid;
     /// @dev pid => escrow contract address
     mapping(uint256 => address) public escrows;
-    /// @dev pid => total amount of AURA paid out
-    mapping(uint256 => uint256) public auraPaid;
-    /// @dev pid => current reward per token
-    mapping(uint256 => uint256) public currentRewardPerToken;
-
     /// @dev pid => stash token data
     mapping(uint256 => StashTokenInfo) public stashTokenInfo;
 
@@ -306,12 +301,12 @@ contract WAuraPools is
             escrow,
             amount
         );
-        
-        /// Deposit LP from escrow contract
-        IPoolEscrow(escrow).deposit(amount);
 
         _updateAuraReward(pid);
 
+        /// Deposit LP from escrow contract
+        IPoolEscrow(escrow).deposit(amount);
+    
         /// BAL reward handle logic
         uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
             .rewardPerToken();
@@ -351,8 +346,9 @@ contract WAuraPools is
         returns (address[] memory rewardTokens, uint256[] memory rewards, address stashToken)
     {
         (uint256 pid, ) = decodeId(id);
+        StashTokenInfo storage _stashTokenInfo = stashTokenInfo[pid];
         address escrow = escrows[pid];
-        console.log("Aura balance: %s", AURA.balanceOf(escrow));
+        stashToken = _stashTokenInfo.stashToken;
 
         // @dev sanity check
         assert(escrow != address(0));
@@ -364,9 +360,6 @@ contract WAuraPools is
         (rewardTokens, rewards) = pendingRewards(id, amount);
 
         _updateAuraReward(pid);
-
-        StashTokenInfo storage _stashTokenInfo = stashTokenInfo[pid];
-        stashToken = _stashTokenInfo.stashToken;
 
         _burn(msg.sender, id, amount);
 
@@ -380,10 +373,7 @@ contract WAuraPools is
             if (_rewardToken == stashToken) {
                 _rewardToken = address(AURA);
             }
-            console.log("rewardToken: %s", _rewardToken);
-            console.log("rewards: %s", rewards[i]);
-            console.log("balance: %s", IERC20Upgradeable(_rewardToken).balanceOf(escrow));
-
+            
             IPoolEscrow(escrow).transferToken(
                 _rewardToken,
                 msg.sender,
@@ -413,12 +403,12 @@ contract WAuraPools is
     ) internal view returns (uint256 rewards) {
         /// Retrieve current reward per token from rewarder
         uint256 currentRewardPerShare = IAuraRewarder(rewarder).rewardPerToken();
-        /// Calculatethe difference in reward per share
+        /// Calculate the difference in reward per share
         uint256 share = currentRewardPerShare > originalRewardPerShare
             ? currentRewardPerShare - originalRewardPerShare
             : 0;
         /// Calculate the total rewards base on share and amount.
-        rewards = share * amount / 10 ** lpDecimals;
+        rewards = share.mulWadDown(amount).divWadDown(10**lpDecimals);
     }
 
     /// @notice  Calculate the pending AURA reward amount.

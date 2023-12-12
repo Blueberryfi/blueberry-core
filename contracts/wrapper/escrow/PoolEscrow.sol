@@ -36,10 +36,6 @@ contract PoolEscrow is Initializable {
     /// @dev address of the lptoken for this escrow.
     IERC20 public lpToken;
 
-    /// @dev The balance for a given token for a given user
-    /// e.g userBalance[msg.sender][0x23523...]
-    mapping(address => mapping(address => uint256)) public userBalance;
-
     /// @dev Ensures caller is the wrapper contract.
     modifier onlyWrapper() {
         if (msg.sender != wrapper) {

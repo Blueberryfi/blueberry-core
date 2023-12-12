@@ -218,7 +218,7 @@
       },
       {
         "internalType": "address",
-        "name": "stashAura",
+        "name": "stashToken",
         "type": "address"
       }
     ],

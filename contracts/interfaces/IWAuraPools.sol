@@ -99,11 +99,11 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @param amount The amount of ERC1155 tokens to burn.
     /// @return rewardTokens An array of reward token addresses.
     /// @return rewards An array of reward amounts corresponding to the reward token addresses.
-    /// @return stashAura The address of the stash contract for the specific pool.
+    /// @return stashToken The address of the stash token for the specific pool.
     function burn(
         uint id,
         uint amount
     )
         external
-        returns (address[] memory rewardTokens, uint256[] memory rewards, address stashAura);
+        returns (address[] memory rewardTokens, uint256[] memory rewards, address stashToken);
 }

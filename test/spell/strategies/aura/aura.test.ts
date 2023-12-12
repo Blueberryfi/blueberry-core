@@ -21,7 +21,6 @@ import { setupStrategy, strategies } from "./utils";
 import { getParaswapCalldataToBuy } from "../../../helpers/paraswap";
 import {
   addEthToContract,
-  evm_increaseTime,
   evm_mine_blocks,
   fork,
   setTokenBalance,
@@ -234,27 +233,6 @@ describe("Aura Spell Strategy test", () => {
 
           // https://github.com/sherlock-audit/2023-07-blueberry-judging/issues/109
           it("Validate keeping AURA reward after others claimed reward", async () => {
-            // Notify big reward amount to get bigger AURA reward
-            const operator = await ethers.getImpersonatedSigner(
-              auraBooster.address
-            );
-
-            const rewardTokenAddr = await auraRewarder.rewardToken();
-
-            const rewardToken = <ERC20>(
-              await ethers.getContractAt("ERC20", rewardTokenAddr)
-            );
-
-            await setTokenBalance(
-              rewardToken,
-              auraRewarder,
-              utils.parseEther("10000")
-            );
-
-            await auraRewarder
-              .connect(operator)
-              .queueNewRewards(utils.parseEther("10000"));
-
             const aliceDepositAmount = await getTokenAmountFromUSD(
               collateralToken,
               oracle,
@@ -282,7 +260,7 @@ describe("Aura Spell Strategy test", () => {
               strategyInfo.poolId ?? "0"
             );
 
-            await evm_increaseTime(8640);
+            await evm_mine_blocks(10);
 
             const position = await bank.positions(positionId);
             const bobPosition = await bank.positions(bobPositionId);
@@ -302,6 +280,10 @@ describe("Aura Spell Strategy test", () => {
             const expectedAmounts = alicePendingRewardsInfoBefore.rewards.map(
               (reward: any) => 0
             );
+
+            const bobExpectedAmounts = bobPendingRewardsInfoBefore.rewards.map(
+              (reward: any) => 0
+            )
 
             const swapDatas = alicePendingRewardsInfoBefore.tokens.map(
               (token: any, i: any) => ({
@@ -329,8 +311,10 @@ describe("Aura Spell Strategy test", () => {
               expectedAmounts,
               swapDatas.map((item: { data: any; }) => item.data)
             );
+            
+            evm_mine_blocks(1);
 
-            const bobPendingRewardsInfoAfter =
+            const bobPendingRewardsInfoAfter =  
               await waura.callStatic.pendingRewards(
                 bobPosition.collId,
                 bobPosition.collateralSize
@@ -394,7 +378,7 @@ describe("Aura Spell Strategy test", () => {
               strategyInfo.poolId ?? "0"
             );
 
-            await evm_increaseTime(8640);
+            await evm_mine_blocks(10);
 
             const position = await bank.positions(positionId);
 
@@ -469,7 +453,7 @@ describe("Aura Spell Strategy test", () => {
               strategyInfo.poolId ?? "0"
             );
             const position = await bank.positions(positionId);
-            await evm_increaseTime(10);
+            await evm_mine_blocks(10);
 
             const pendingRewardsInfo = await waura.callStatic.pendingRewards(
               position.collId,
@@ -480,7 +464,7 @@ describe("Aura Spell Strategy test", () => {
             await auraRewarder.connect(rewardManager).clearExtraRewards();
             console.log("Extra rewards deleted");
 
-            await evm_increaseTime(1000);
+            await evm_mine_blocks(10);
 
             expect(await auraRewarder.extraRewardsLength()).eq(
               BigNumber.from(0)
