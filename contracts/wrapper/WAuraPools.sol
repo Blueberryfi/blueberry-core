@@ -10,22 +10,22 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import {SafeERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {FixedPointMathLib} from "../libraries/FixedPointMathLib.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
-import "../interfaces/IWAuraPools.sol";
-import "../interfaces/IERC20Wrapper.sol";
-import "../interfaces/aura/IAuraBooster.sol";
-import "../interfaces/aura/IAuraRewarder.sol";
-import "../interfaces/aura/IAura.sol";
-import "../interfaces/aura/IAuraStashToken.sol";
-import "../interfaces/aura/IAuraRewardPool.sol";
-import "../interfaces/aura/IAuraExtraRewarder.sol";
+import {IWAuraPools} from "../interfaces/IWAuraPools.sol";
+import {IERC20Wrapper} from "../interfaces/IERC20Wrapper.sol";
+import {IAuraBooster} from "../interfaces/aura/IAuraBooster.sol";
+import {IAuraRewarder} from "../interfaces/aura/IAuraRewarder.sol";
+import {IAura} from "../interfaces/aura/IAura.sol";
+import {IAuraStashToken} from "../interfaces/aura/IAuraStashToken.sol";
+import {IAuraRewardPool} from "../interfaces/aura/IAuraRewardPool.sol";
+import {IAuraExtraRewarder} from "../interfaces/aura/IAuraExtraRewarder.sol";
 
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
@@ -364,7 +364,7 @@ contract WAuraPools is
         _burn(msg.sender, id, amount);
 
         /// Claim and withdraw LP from escrow contract
-        IPoolEscrow(escrow).claimAndWithdraw(amount, msg.sender);
+        IPoolEscrow(escrow).withdraw(amount, msg.sender);
 
         uint256 rewardTokensLength = rewardTokens.length;
         for (uint256 i; i < rewardTokensLength; ++i) {
