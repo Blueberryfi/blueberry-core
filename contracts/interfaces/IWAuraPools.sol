@@ -24,6 +24,14 @@ import "./aura/IAura.sol";
 /// @dev This allows users to interact with Balancer-based Aura pools, 
 ///      staking liquidity pool tokens for rewards.
 interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
+
+    struct StashTokenInfo {
+        address stashToken;
+        address rewarder;
+        uint256 lastStashRewardPerToken;
+        uint256 stashAuraReceived;
+    }
+
     /// @notice Get the AURA token's contract address.
     /// @return An IAura interface of the AURA token.
     function AURA() external view returns (IAura);

@@ -460,21 +460,15 @@ describe("wAuraPools", () => {
         await wAuraPools.accExtPerShare(tokenId, extraRewarder.address)
       ).to.be.eq(extraRewardPerToken);
 
-      expect(await wAuraPools.extraRewardsLength()).to.be.eq(1);
-      expect(await wAuraPools.extraRewardsIndex(extraRewarder.address)).to.be.eq(
-        1
-      );
-      expect(await wAuraPools.extraRewards(0)).to.be.eq(extraRewarder.address);
+      expect(await wAuraPools.extraRewardsLength(pid)).to.be.eq(1);
+      expect(await wAuraPools.getExtraRewarder(pid, 0)).to.be.eq(extraRewarder.address);
     });
 
     it("keep existing extra reward info when syncing", async () => {
       await wAuraPools.mint(pid, amount);
       await wAuraPools.mint(pid, amount);
-      expect(await wAuraPools.extraRewardsLength()).to.be.eq(1);
-      expect(await wAuraPools.extraRewardsIndex(extraRewarder.address)).to.be.eq(
-        1
-      );
-      expect(await wAuraPools.extraRewards(0)).to.be.eq(extraRewarder.address);
+      expect(await wAuraPools.extraRewardsLength(pid)).to.be.eq(1);
+      expect(await wAuraPools.getExtraRewarder(pid, 0)).to.be.eq(extraRewarder.address);
     });
   });
 
@@ -565,7 +559,7 @@ describe("wAuraPools", () => {
       let beforeAliceBalance = await aura.balanceOf(alice.address);
       await auraRewarder.clearExtraRewards();
       
-      await extraRewarder.setReward(await wAuraPools.getEscrow(pid), utils.parseEther("1000"));
+      await extraRewarder.setReward(await wAuraPools.getEscrow(pid), utils.parseEther("2000"));
 
       await wAuraPools.burn(tokenId, amount);
 
