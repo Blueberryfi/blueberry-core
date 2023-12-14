@@ -153,7 +153,7 @@ contract WAuraPools is
         /// Escrow deployment/get logic
         address escrow;
 
-        if (escrows[pid] == address(0)) {
+        if (getEscrow(pid) == address(0)) {
             escrow = escrowFactory.createEscrow(pid, auraRewarder, lpToken);
             escrows[pid] = escrow;
         } else {
@@ -210,7 +210,7 @@ contract WAuraPools is
     {
         (uint256 pid, ) = decodeId(id);
         StashTokenInfo storage _stashTokenInfo = stashTokenInfo[pid];
-        address escrow = escrows[pid];
+        address escrow = getEscrow(pid);
         stashToken = _stashTokenInfo.stashToken;
 
         // @dev sanity check
@@ -301,11 +301,33 @@ contract WAuraPools is
         }
     }
 
+    /// @notice Get the full set of extra rewards.
+    /// @return An array containing the addresses of extra reward tokens.
+    function extraRewardsLength(uint256 pid) public view returns (uint256) {
+        return extraRewards[pid].length();
+    }
+
     /// @notice Retrieves pool id from a BPT token
     /// @param bpt Address of the BPT token
     /// @return Pool id associated with the BPT token
     function getBPTPoolId(address bpt) public view returns (bytes32) {
         return IBalancerPool(bpt).getPoolId();
+    }
+    
+    /// @notice Gets the escrow contract address for a given PID
+    /// @param pid The pool ID
+    /// @return escrowAddress Escrow associated with the given PID
+    function getEscrow(
+        uint256 pid
+    ) public view returns (address escrowAddress) {
+        return escrows[pid];
+    }
+
+    function getExtraRewarder(
+        uint256 pid,
+        uint256 index
+    ) external view returns (address) {
+        return extraRewards[pid].at(index);
     }
 
     /// @notice Fetches pool information using a provided aura finance pool id
@@ -316,9 +338,7 @@ contract WAuraPools is
     /// @return auraRewards Address for AURA rewards
     /// @return stash Address of the stash
     /// @return shutdown Boolean indicating if the pool is shut down
-    function getPoolInfoFromPoolId(
-        uint256 pid
-    )
+    function getPoolInfoFromPoolId(uint256 pid)
         public
         view
         returns (
@@ -333,12 +353,32 @@ contract WAuraPools is
         return auraBooster.poolInfo(pid);
     }
 
+    /// @notice Retrieves pool tokens from a given BPT address
+    /// @param bpt Address of the BPT token
+    /// @return tokens Array of token addresses in the pool
+    /// @return balances Corresponding balances of the tokens in the pool
+    /// @return lastChangedBlock The last block when the pool composition changed
+    function getPoolTokens(address bpt)
+        external
+        view
+        returns (
+            address[] memory tokens,
+            uint256[] memory balances,
+            uint256 lastChangedBlock
+        )
+    {
+        return getVault(bpt).getPoolTokens(getBPTPoolId(bpt));
+    }
+
     /// @notice Retrieves the underlying ERC20 token of the specified ERC1155 token id
     /// @param id The ERC1155 token id
     /// @return uToken Address of the underlying ERC20 token
-    function getUnderlyingToken(
-        uint256 id
-    ) external view override returns (address uToken) {
+    function getUnderlyingToken(uint256 id)
+        external
+        view
+        override
+        returns (address uToken)
+    {
         (uint256 pid, ) = decodeId(id);
         (uToken, , , , , ) = getPoolInfoFromPoolId(pid);
     }
@@ -348,47 +388,6 @@ contract WAuraPools is
     /// @return Vault associated with the provided BPT token
     function getVault(address bpt) public view returns (IBalancerVault) {
         return IBalancerVault(IBalancerPool(bpt).getVault());
-    }
-
-    /// @notice Gets the escrow contract address for a given PID
-    /// @param pid The pool ID
-    /// @return escrowAddress Escrow associated with the given PID
-    function getEscrow(
-        uint256 pid
-    ) public view returns (address escrowAddress) {
-        return escrows[pid];
-    }
-
-    /// @notice Retrieves pool tokens from a given BPT address
-    /// @param bpt Address of the BPT token
-    /// @return tokens Array of token addresses in the pool
-    /// @return balances Corresponding balances of the tokens in the pool
-    /// @return lastChangedBlock The last block when the pool composition changed
-    function getPoolTokens(
-        address bpt
-    )
-        external
-        view
-        returns (
-            address[] memory tokens,
-            uint256[] memory balances,
-            uint256 lastChangedBlock
-        )
-    {
-        return getVault(bpt).getPoolTokens(IBalancerPool(bpt).getPoolId());
-    }
-
-    function getExtraRewarder(
-        uint256 pid,
-        uint256 index
-    ) external view returns (address) {
-        return extraRewards[pid].at(index);
-    }
-
-    /// @notice Get the full set of extra rewards.
-    /// @return An array containing the addresses of extra reward tokens.
-    function extraRewardsLength(uint256 pid) public view returns (uint256) {
-        return extraRewards[pid].length();
     }
 
     /// @notice Calculate the amount of pending reward for a given LP amount.
@@ -465,7 +464,7 @@ contract WAuraPools is
         uint256 originalBalPerShare,
         uint256 amount
     ) internal view returns (uint256 mintAmount) {
-        address escrow = escrows[pid];
+        address escrow = getEscrow(pid);
 
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
@@ -506,7 +505,7 @@ contract WAuraPools is
     function _updateAuraReward(uint256 tokenId) private {
         (uint256 pid, ) = decodeId(tokenId);
         StashTokenInfo storage _stashTokenInfo = stashTokenInfo[pid];
-        address escrow = escrows[pid];
+        address escrow = getEscrow(pid);
         address stashToken = _stashTokenInfo.stashToken;
 
         // _auraRewarder rewards users in AURA
