@@ -57,6 +57,9 @@ describe("wAuraPools", () => {
     
     // Add base tokens to the stash token
     aura.mintTestTokens(stashToken.address, await stashToken.totalSupply());
+    
+    const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
+    booster = await MockBoosterFactory.deploy();
 
     const MockBaseRewardPoolFactory = await ethers.getContractFactory(
       "MockBaseRewardPool"
@@ -66,7 +69,8 @@ describe("wAuraPools", () => {
       0,
       stakingToken.address,
       rewardToken.address,
-      aura.address
+      aura.address,
+      booster.address,
     );
 
     await aura.setOperator(auraRewarder.address);
@@ -81,9 +85,6 @@ describe("wAuraPools", () => {
     
     await stashToken.init(extraRewarder.address, aura.address);
     await auraRewarder.addExtraReward(extraRewarder.address);
-
-    const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
-    booster = await MockBoosterFactory.deploy();
 
     const escrowBaseFactory = await ethers.getContractFactory("PoolEscrow");
     escrowBase = await escrowBaseFactory.deploy();

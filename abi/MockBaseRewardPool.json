@@ -20,6 +20,11 @@
         "internalType": "address",
         "name": "convex_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "auraBooster_",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -112,6 +117,19 @@
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "auraBooster",
+    "outputs": [
+      {
+        "internalType": "contract IAuraBooster",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

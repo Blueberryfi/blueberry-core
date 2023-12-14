@@ -27,4 +27,6 @@ interface IAuraRewarder {
     ) external returns (bool);
 
     function getReward() external returns (bool);
+
+    function withdrawAndUnwrap(uint256 amount, bool claim) external;
 }

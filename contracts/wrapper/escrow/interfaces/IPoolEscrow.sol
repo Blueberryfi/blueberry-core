@@ -74,4 +74,6 @@ interface IPoolEscrow {
      * @param _user The user to withdraw tokens to
      */
     function claimAndWithdraw(uint256 _amount, address _user) external;
+
+    function withdrawLpToken(uint256 amount, address user) external;
 }

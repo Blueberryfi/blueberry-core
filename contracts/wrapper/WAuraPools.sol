@@ -32,7 +32,7 @@ import {IBalancerPool} from "../interfaces/balancer/IBalancerPool.sol";
 
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
-import "hardhat/console.sol";
+
 /**
  * @title WauraPools
  * @author BlueberryProtocol
@@ -225,10 +225,10 @@ contract WAuraPools is
         (rewardTokens, rewards) = pendingRewards(id, amount);
 
         _burn(msg.sender, id, amount);
-
+        
         /// Claim and withdraw LP from escrow contract
-        IPoolEscrow(escrow).claimAndWithdraw(amount, msg.sender);
-
+        IPoolEscrow(escrow).withdrawLpToken(amount, msg.sender);
+        
         uint256 rewardTokensLength = rewardTokens.length;
         for (uint256 i; i < rewardTokensLength; ++i) {
             address _rewardToken = rewardTokens[i];
@@ -410,7 +410,7 @@ contract WAuraPools is
             ? currentRewardPerShare - originalRewardPerShare
             : 0;
         /// Calculate the total rewards base on share and amount.
-        rewards = share.mulWadDown(amount).divWadDown(10**lpDecimals);
+        rewards = share * amount / 10**lpDecimals;
     }
 
     /// @notice  Calculate the pending AURA reward amount.
@@ -494,10 +494,10 @@ contract WAuraPools is
         if (earned > 0) {
             uint256 auraReward = _getAuraPendingReward(auraRewarder, earned);
 
-            auraPerShare += auraReward.divWadDown(currentDeposits);
+            auraPerShare += auraReward / currentDeposits;
         }
 
-        return auraPerShare.mulWadDown(amount);
+        return auraPerShare * amount;
     }
 
     /// @notice Private function to update aura rewards
@@ -537,7 +537,7 @@ contract WAuraPools is
         _getExtraRewards(pid, escrow);
 
         if (auraReceived > 0) {
-            auraPerShareByPid[pid] += auraReceived.divWadDown(currentDeposits);
+            auraPerShareByPid[pid] += auraReceived / currentDeposits;
         }
     }
 

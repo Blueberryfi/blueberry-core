@@ -151,8 +151,12 @@ contract PoolEscrow is Initializable {
         IAuraExtraRewarder(_extraRewardsAddress).getReward();
     }
 
-    // INTERNAL FUNCTIONS
+    function withdrawLpToken(uint256 amount, address user) external virtual onlyWrapper {
+        auraRewarder.withdrawAndUnwrap(amount, false);
+        IERC20(lpToken).safeTransfer(user, amount);
+    }
 
+    // INTERNAL FUNCTIONS
     function _withdraw(uint256 _amount, address _user) internal {
         auraBooster.withdraw(pid, _amount);
         IERC20(lpToken).safeTransfer(_user, _amount);
