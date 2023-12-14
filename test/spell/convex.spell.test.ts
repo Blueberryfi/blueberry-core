@@ -12,7 +12,7 @@ import {
   CurveTricryptoOracle,
   ConvexSpell,
   WConvexPools,
-  ICvxPools,
+  ICvxBooster,
   IRewarder,
   ProtocolConfig,
 } from "../../typechain-types";
@@ -66,7 +66,7 @@ describe("Convex Spell", () => {
   let wconvex: WConvexPools;
   let bank: BlueBerryBank;
   let protocol: CvxProtocol;
-  let cvxBooster: ICvxPools;
+  let cvxBooster: ICvxBooster;
   let crvRewarder1: IRewarder;
   let crvRewarder2: IRewarder;
   let config: ProtocolConfig;
@@ -81,8 +81,8 @@ describe("Convex Spell", () => {
     cvx = <ERC20>await ethers.getContractAt("ERC20", CVX);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-    cvxBooster = <ICvxPools>(
-      await ethers.getContractAt("ICvxPools", ADDRESS.CVX_BOOSTER)
+    cvxBooster = <ICvxBooster>(
+      await ethers.getContractAt("ICvxBooster", ADDRESS.CVX_BOOSTER)
     );
     const poolInfo1 = await cvxBooster.poolInfo(POOL_ID_1);
     crvRewarder1 = <IRewarder>(

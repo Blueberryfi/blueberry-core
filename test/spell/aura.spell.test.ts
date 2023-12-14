@@ -11,7 +11,7 @@ import {
   CurveVolatileOracle,
   CurveTricryptoOracle,
   WAuraPools,
-  ICvxPools,
+  IAuraBooster,
   IRewarder,
   AuraSpell,
   ProtocolConfig,
@@ -61,7 +61,7 @@ describe("Aura Spell", () => {
   let waura: WAuraPools;
   let bank: BlueBerryBank;
   let protocol: AuraProtocol;
-  let auraBooster: ICvxPools;
+  let auraBooster: IAuraBooster;
   let auraRewarder: IRewarder;
   let config: ProtocolConfig;
 
@@ -76,8 +76,8 @@ describe("Aura Spell", () => {
     bal = <ERC20>await ethers.getContractAt("ERC20", BAL);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-    auraBooster = <ICvxPools>(
-      await ethers.getContractAt("ICvxPools", ADDRESS.AURA_BOOSTER)
+    auraBooster = <IAuraBooster>(
+      await ethers.getContractAt("IAuraBooster", ADDRESS.AURA_BOOSTER)
     );
     const poolInfo = await auraBooster.poolInfo(ADDRESS.AURA_UDU_POOL_ID);
     auraRewarder = <IRewarder>(

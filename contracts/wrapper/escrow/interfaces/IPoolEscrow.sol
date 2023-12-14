@@ -50,30 +50,10 @@ interface IPoolEscrow {
     function deposit(uint256 _amount) external;
 
     /**
-     * @notice Withdraws tokens for a given user
-     * @param _amount The amount of tokens to be withdrawn
-     * @param _user The user to withdraw tokens to
+     * @notice Closes the Aura/Convex position and withdraws the underlying
+     *     LP token from the booster.
+     * @param amount Amount of LP tokens to withdraw
+     * @param user Address of the recipient of LP tokens
      */
-    function withdraw(uint256 _amount, address _user) external;
-
-    /**
-     * @notice Gets rewards from the extra rewarder
-     * @param _extraRewardsAddress the rewards address to gather from
-     */
-    function getRewardExtra(address _extraRewardsAddress) external;
-
-    /**
-     * @notice Claims rewards from the aura rewarder
-     * @param _amount The amount of tokens
-     */
-    function claimRewards(uint256 _amount) external;
-
-    /**
-     * @notice claims rewards and withdraws for a given user
-     * @param _amount The amount of tokens to be withdrawn
-     * @param _user The user to withdraw tokens to
-     */
-    function claimAndWithdraw(uint256 _amount, address _user) external;
-
     function withdrawLpToken(uint256 amount, address user) external;
 }

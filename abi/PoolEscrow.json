@@ -24,59 +24,15 @@
   },
   {
     "inputs": [],
-    "name": "auraBooster",
+    "name": "booster",
     "outputs": [
       {
-        "internalType": "contract IAuraBooster",
+        "internalType": "contract ICvxBooster",
         "name": "",
         "type": "address"
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "auraRewarder",
-    "outputs": [
-      {
-        "internalType": "contract IAuraRewarder",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
-      }
-    ],
-    "name": "claimAndWithdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimRewards",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -95,19 +51,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_extraRewardsAddress",
-        "type": "address"
-      }
-    ],
-    "name": "getRewardExtra",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
         "name": "_pid",
         "type": "uint256"
@@ -119,12 +62,12 @@
       },
       {
         "internalType": "address",
-        "name": "_auraBooster",
+        "name": "_booster",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_auraRewarder",
+        "name": "_rewarder",
         "type": "address"
       },
       {
@@ -159,6 +102,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "rewarder",
+    "outputs": [
+      {
+        "internalType": "contract IRewarder",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -211,24 +167,6 @@
       }
     ],
     "name": "transferTokenFrom",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
-      }
-    ],
-    "name": "withdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

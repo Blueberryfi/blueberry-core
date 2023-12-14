@@ -5,7 +5,7 @@ import {
   ERC20,
   ConvexSpell,
   WConvexPools,
-  ICvxPools,
+  ICvxBooster,
   IRewarder,
   ProtocolConfig,
 } from "../../../../typechain-types";
@@ -67,7 +67,7 @@ describe("Convex Spells Deploy", () => {
   let wconvex: WConvexPools;
   let bank: BlueBerryBank;
   let protocol: CvxProtocol;
-  let cvxBooster: ICvxPools;
+  let cvxBooster: ICvxBooster;
   let crvRewarder1: IRewarder;
   let crvRewarder2: IRewarder;
   let crvRewarder3: IRewarder;
@@ -96,8 +96,8 @@ describe("Convex Spells Deploy", () => {
     crvCvxCrv = <ERC20>await ethers.getContractAt("ERC20", CRV_CVXCRV);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
-    cvxBooster = <ICvxPools>(
-      await ethers.getContractAt("ICvxPools", ADDRESS.CVX_BOOSTER)
+    cvxBooster = <ICvxBooster>(
+      await ethers.getContractAt("ICvxBooster", ADDRESS.CVX_BOOSTER)
     );
     const poolInfo1 = await cvxBooster.poolInfo(POOL_ID_STETH);
     crvRewarder1 = <IRewarder>(

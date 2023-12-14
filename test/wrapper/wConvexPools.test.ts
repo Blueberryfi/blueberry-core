@@ -45,6 +45,9 @@ describe("WConvexPools", () => {
     );
     cvx = await MockConvexTokenFactory.deploy();
 
+    const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
+    booster = await MockBoosterFactory.deploy();
+
     const MockBaseRewardPoolFactory = await ethers.getContractFactory(
       "MockBaseRewardPool"
     );
@@ -52,7 +55,8 @@ describe("WConvexPools", () => {
       0,
       stakingToken.address,
       rewardToken.address,
-      cvx.address
+      cvx.address,
+      booster.address
     );
 
     await cvx.setOperator(crvRewards.address);
@@ -66,9 +70,6 @@ describe("WConvexPools", () => {
     );
 
     await crvRewards.addExtraReward(extraRewarder.address);
-
-    const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
-    booster = await MockBoosterFactory.deploy();
 
     const escrowBaseFactory = await ethers.getContractFactory("PoolEscrow");
     escrowBase = await escrowBaseFactory.deploy();
@@ -432,11 +433,8 @@ describe("WConvexPools", () => {
         await wConvexPools.accExtPerShare(tokenId, extraRewarder.address)
       ).to.be.eq(extraRewardPerToken);
 
-      expect(await wConvexPools.extraRewardsLength()).to.be.eq(1);
-      expect(
-        await wConvexPools.extraRewardsI(extraRewarder.address)
-      ).to.be.eq(1);
-      expect(await wConvexPools.extraRewards(0)).to.be.eq(
+      expect(await wConvexPools.extraRewardsLength(pid)).to.be.eq(1);
+      expect(await wConvexPools.getExtraRewarder(pid, 0)).to.be.eq(
         extraRewarder.address
       );
     });
@@ -445,11 +443,8 @@ describe("WConvexPools", () => {
       await wConvexPools.mint(pid, amount);
       await wConvexPools.mint(pid, amount);
 
-      expect(await wConvexPools.extraRewardsLength()).to.be.eq(1);
-      expect(
-        await wConvexPools.extraRewardsI(extraRewarder.address)
-      ).to.be.eq(1);
-      expect(await wConvexPools.extraRewards(0)).to.be.eq(
+      expect(await wConvexPools.extraRewardsLength(pid)).to.be.eq(1);
+      expect(await wConvexPools.getExtraRewarder(pid, 0)).to.be.eq(
         extraRewarder.address
       );
     });

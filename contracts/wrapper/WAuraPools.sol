@@ -19,19 +19,18 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {FixedPointMathLib} from "../libraries/FixedPointMathLib.sol";
 
 import "../utils/BlueBerryErrors.sol" as Errors;
+
 import {IWAuraPools} from "../interfaces/IWAuraPools.sol";
 import {IERC20Wrapper} from "../interfaces/IERC20Wrapper.sol";
-import {IAuraBooster} from "../interfaces/aura/IAuraBooster.sol";
-import {IAuraRewarder} from "../interfaces/aura/IAuraRewarder.sol";
 import {IAura} from "../interfaces/aura/IAura.sol";
+import {IAuraBooster} from "../interfaces/aura/IAuraBooster.sol";
 import {IAuraStashToken} from "../interfaces/aura/IAuraStashToken.sol";
-import {IAuraRewardPool} from "../interfaces/aura/IAuraRewardPool.sol";
-import {IAuraExtraRewarder} from "../interfaces/aura/IAuraExtraRewarder.sol";
+import {ICvxExtraRewarder} from "../interfaces/convex/ICvxExtraRewarder.sol";
 import {IBalancerVault} from "../interfaces/balancer/IBalancerVault.sol";
 import {IBalancerPool} from "../interfaces/balancer/IBalancerPool.sol";
-
-import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
+import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
+import {IRewarder} from "../interfaces/convex/IRewarder.sol";
 
 /**
  * @title WauraPools
@@ -170,7 +169,7 @@ contract WAuraPools is
         IPoolEscrow(escrow).deposit(amount);
         
         /// BAL reward handle logic
-        uint256 balRewardPerToken = IAuraRewarder(auraRewarder)
+        uint256 balRewardPerToken = IRewarder(auraRewarder)
             .rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
 
@@ -179,10 +178,10 @@ contract WAuraPools is
         _mint(msg.sender, id, amount, "");
 
         // Store extra rewards info
-        uint256 extraRewardsCount = IAuraRewarder(auraRewarder)
+        uint256 extraRewardsCount = IRewarder(auraRewarder)
             .extraRewardsLength();
         for (uint256 i; i < extraRewardsCount; ++i) {
-            address extraRewarder = IAuraRewarder(auraRewarder).extraRewards(i);
+            address extraRewarder = IRewarder(auraRewarder).extraRewards(i);
             bool mismatchFound = _syncExtraRewards(pid, id, extraRewarder);
             
             if (!mismatchFound) {
@@ -272,7 +271,7 @@ contract WAuraPools is
         rewards = new uint256[](extraRewardsCount + 2);
 
         /// BAL reward
-        tokens[0] = IAuraRewarder(auraRewarder).rewardToken();
+        tokens[0] = IRewarder(auraRewarder).rewardToken();
         rewards[0] = _getPendingReward(
             originalBalPerShare,
             auraRewarder,
@@ -287,7 +286,7 @@ contract WAuraPools is
         for (uint256 i; i < extraRewardsCount; ++i) {
             address rewarder = extraRewards[pid].at(i);
             uint256 tokenRewardPerShare = accExtPerShare[tokenId][rewarder];
-            tokens[i + 2] = IAuraRewarder(rewarder).rewardToken();
+            tokens[i + 2] = IRewarder(rewarder).rewardToken();
             if (tokenRewardPerShare == 0) {
                 rewards[i + 2] = 0;
             } else {
@@ -403,7 +402,7 @@ contract WAuraPools is
         uint256 lpDecimals
     ) internal view returns (uint256 rewards) {
         /// Retrieve current reward per token from rewarder
-        uint256 currentRewardPerShare = IAuraRewarder(rewarder).rewardPerToken();
+        uint256 currentRewardPerShare = IRewarder(rewarder).rewardPerToken();
         /// Calculate the difference in reward per share
         uint256 share = currentRewardPerShare > originalRewardPerShare
             ? currentRewardPerShare - originalRewardPerShare
@@ -469,7 +468,7 @@ contract WAuraPools is
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
-        uint256 currentDeposits = IAuraRewarder(auraRewarder).balanceOf(
+        uint256 currentDeposits = IRewarder(auraRewarder).balanceOf(
             escrow
         );
 
@@ -511,7 +510,7 @@ contract WAuraPools is
         // _auraRewarder rewards users in AURA
         (, , , address _auraRewarder, address stashAura, ) = getPoolInfoFromPoolId(pid);
 
-        uint256 lastBalPerToken = IAuraRewarder(_auraRewarder).rewardPerToken();
+        uint256 lastBalPerToken = IRewarder(_auraRewarder).rewardPerToken();
 
         lastBalPerTokenByPid[pid] = lastBalPerToken;
 
@@ -519,7 +518,7 @@ contract WAuraPools is
             _setAuraStashToken(_stashTokenInfo, _auraRewarder, stashAura);
         }
 
-        uint256 currentDeposits = IAuraRewarder(_auraRewarder).balanceOf(
+        uint256 currentDeposits = IRewarder(_auraRewarder).balanceOf(
             escrow
         );
 
@@ -529,7 +528,7 @@ contract WAuraPools is
 
         uint256 auraPreBalance = AURA.balanceOf(escrow);
 
-        IAuraRewarder(_auraRewarder).getReward(escrow, false);
+        IRewarder(_auraRewarder).getReward(escrow, false);
 
         uint256 auraReceived = AURA.balanceOf(escrow) - auraPreBalance;
 
@@ -544,7 +543,7 @@ contract WAuraPools is
         uint256 currentExtraRewardsCount = extraRewards[pid].length();
         for (uint256 i; i < currentExtraRewardsCount; ++i) {
             address extraRewarder = extraRewards[pid].at(i);
-            IAuraExtraRewarder(extraRewarder).getReward(escrow);
+            ICvxExtraRewarder(extraRewarder).getReward(escrow);
         }
     }
 
@@ -554,12 +553,12 @@ contract WAuraPools is
      * @param stashAura Address of the stash Aura
      */
     function _setAuraStashToken(StashTokenInfo storage stashTokenData, address auraRewarder, address stashAura) internal {
-        uint256 length = IAuraRewarder(auraRewarder).extraRewardsLength();
+        uint256 length = IRewarder(auraRewarder).extraRewardsLength();
         for (uint256 i; i < length; ++i) {
-            address _extraRewarder = IAuraRewarder(auraRewarder)
+            address _extraRewarder = IRewarder(auraRewarder)
                 .extraRewards(i);
 
-            address _rewardToken = IAuraRewarder(_extraRewarder)
+            address _rewardToken = IRewarder(_extraRewarder)
                 .rewardToken();
 
             // Initialize the stashToken if it is not initialized
@@ -571,10 +570,10 @@ contract WAuraPools is
         }
     }
     
-    function _setAccExtPerShare(uint256 tokenId, address rewarder) internal {
-        uint256 rewardPerToken = IAuraRewarder(rewarder)
+    function _setAccExtPerShare(uint256 tokenId, address extraRewarder) internal {
+        uint256 rewardPerToken = IRewarder(extraRewarder)
             .rewardPerToken();
-        accExtPerShare[tokenId][rewarder] = rewardPerToken == 0
+        accExtPerShare[tokenId][extraRewarder] = rewardPerToken == 0
             ? type(uint).max
             : rewardPerToken;
     }

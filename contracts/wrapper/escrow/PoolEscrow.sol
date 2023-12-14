@@ -9,13 +9,14 @@
 */
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {UniversalERC20, IERC20} from "../../libraries/UniversalERC20.sol";
+
 import "../../utils/BlueBerryErrors.sol" as Errors;
-import "../../interfaces/aura/IAuraBooster.sol";
-import "../../interfaces/aura/IAuraRewarder.sol";
-import "../../interfaces/aura/IAuraExtraRewarder.sol";
-import "../../libraries/UniversalERC20.sol";
+
+import {ICvxBooster} from "../../interfaces/convex/ICvxBooster.sol";
+import {IRewarder} from "../../interfaces/convex/IRewarder.sol";
 
 contract PoolEscrow is Initializable {
     using SafeERC20 for IERC20;
@@ -28,10 +29,10 @@ contract PoolEscrow is Initializable {
     uint256 public pid;
 
     /// @dev address of the aura pools contract.
-    IAuraBooster public auraBooster;
+    ICvxBooster public booster;
 
     /// @dev address of the rewarder contract.
-    IAuraRewarder public auraRewarder;
+    IRewarder public rewarder;
 
     /// @dev address of the lptoken for this escrow.
     IERC20 public lpToken;
@@ -50,22 +51,22 @@ contract PoolEscrow is Initializable {
     function initialize(
         uint256 _pid,
         address _wrapper,
-        address _auraBooster,
-        address _auraRewarder,
+        address _booster,
+        address _rewarder,
         address _lpToken
     ) public payable initializer {
         if (
             _wrapper == address(0) ||
-            _auraBooster == address(0) ||
-            _auraRewarder == address(0) ||
+            _booster == address(0) ||
+            _rewarder == address(0) ||
             _lpToken == address(0)
         ) {
             revert Errors.ZERO_ADDRESS();
         }
         pid = _pid;
         wrapper = _wrapper;
-        auraBooster = IAuraBooster(_auraBooster);
-        auraRewarder = IAuraRewarder(_auraRewarder);
+        booster = ICvxBooster(_booster);
+        rewarder = IRewarder(_rewarder);
         lpToken = IERC20(_lpToken);
 
         lpToken.approve(_wrapper, type(uint256).max);
@@ -104,65 +105,18 @@ contract PoolEscrow is Initializable {
      * @param _amount The amount of tokens to be deposited
      */
     function deposit(uint256 _amount) external virtual onlyWrapper {
-        IERC20(address(lpToken)).universalApprove(address(auraBooster), _amount);
-        auraBooster.deposit(pid, _amount, true);
+        IERC20(address(lpToken)).universalApprove(address(booster), _amount);
+        booster.deposit(pid, _amount, true);
     }
 
     /**
-     * @notice Withdraws tokens for a given user
-     * @param _amount The amount of tokens to be withdrawn
-     * @param _user The user to withdraw tokens to
+     * @notice Closes the position from the booster contract
+     *         adn transfers the LP token to the user
+     * @param amount Amount of LP tokens to withdraw
+     * @param user Address of the user that will receive the LP tokens
      */
-    function withdraw(
-        uint256 _amount,
-        address _user
-    ) external virtual onlyWrapper {
-        _withdraw(_amount, _user);
-    }
-
-    /**
-     * @notice claims rewards and withdraws for a given user
-     * @param _amount The amount of tokens to be withdrawn
-     * @param _user The user to withdraw tokens to
-     */
-    function claimAndWithdraw(
-        uint256 _amount,
-        address _user
-    ) external onlyWrapper {
-        _claimRewards(_amount);
-        _withdraw(_amount, _user);
-    }
-
-    /**
-     * @notice Claims rewards from the aura rewarder
-     * @param _amount The amount of tokens
-     */
-    function claimRewards(uint256 _amount) external virtual onlyWrapper {
-        _claimRewards(_amount);
-    }
-
-    /**
-     * @notice Gets rewards from the extra aura rewarder
-     * @param _extraRewardsAddress the rewards address to gather from
-     */
-    function getRewardExtra(
-        address _extraRewardsAddress
-    ) external virtual onlyWrapper {
-        IAuraExtraRewarder(_extraRewardsAddress).getReward();
-    }
-
     function withdrawLpToken(uint256 amount, address user) external virtual onlyWrapper {
-        auraRewarder.withdrawAndUnwrap(amount, false);
+        rewarder.withdrawAndUnwrap(amount, false);
         IERC20(lpToken).safeTransfer(user, amount);
-    }
-
-    // INTERNAL FUNCTIONS
-    function _withdraw(uint256 _amount, address _user) internal {
-        auraBooster.withdraw(pid, _amount);
-        IERC20(lpToken).safeTransfer(_user, _amount);
-    }
-
-    function _claimRewards(uint256 _amount) internal {
-        auraRewarder.withdraw(_amount, true);
     }
 }

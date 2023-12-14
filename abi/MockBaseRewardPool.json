@@ -23,7 +23,7 @@
       },
       {
         "internalType": "address",
-        "name": "auraBooster_",
+        "name": "booster_",
         "type": "address"
       }
     ],
@@ -120,19 +120,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "auraBooster",
-    "outputs": [
-      {
-        "internalType": "contract IAuraBooster",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -146,6 +133,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "booster",
+    "outputs": [
+      {
+        "internalType": "contract ICvxBooster",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

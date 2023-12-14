@@ -4,7 +4,7 @@ import {
   WERC20,
   WAuraPools,
   AuraSpell,
-  ICvxPools,
+  IAuraBooster,
 } from "../../../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../../../constant";
 import { StrategyInfo, setupBasicBank } from "../utils";
@@ -60,8 +60,8 @@ export const setupStrategy = async () => {
     )
   );
 
-  const auraBooster = <ICvxPools>(
-    await ethers.getContractAt("ICvxPools", ADDRESS.AURA_BOOSTER)
+  const auraBooster = <IAuraBooster>(
+    await ethers.getContractAt("IAuraBooster", ADDRESS.AURA_BOOSTER)
   );
 
   escrowFactory.initialize(waura.address, ADDRESS.AURA_BOOSTER);

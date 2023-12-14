@@ -212,7 +212,7 @@
     "name": "cvxPools",
     "outputs": [
       {
-        "internalType": "contract ICvxPools",
+        "internalType": "contract ICvxBooster",
         "name": "",
         "type": "address"
       }

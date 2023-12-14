@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.22;
 
-interface ICvxPools {
+interface ICvxBooster {
     function deposit(
         uint256 _pid,
         uint256 _amount,
@@ -10,6 +10,12 @@ interface ICvxPools {
     ) external returns (bool);
 
     function withdraw(uint256 _pid, uint256 _amount) external returns (bool);
+
+    function withdrawTo(
+        uint256 _pid,
+        uint256 _amount,
+        address _to
+    ) external returns (bool);
 
     function addPool(
         address _lptoken,

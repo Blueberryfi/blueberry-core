@@ -7,13 +7,13 @@ import {
   IWETH,
   ERC20,
   WAuraPools,
-  ICvxPools,
+  IAuraBooster,
   AuraSpell,
   CoreOracle,
   IRewarder,
+  ICvxExtraRewarder,
   ProtocolConfig,
   IAuraStashToken,
-  IAuraRewarder,
   MockVirtualBalanceRewardPool,
 } from "../../../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../../../constant";
@@ -53,7 +53,7 @@ describe("Aura Spell Strategy test", () => {
   let bal: ERC20;
   let aura: ERC20;
   let weth: IWETH;
-  let auraBooster: ICvxPools;
+  let auraBooster: IAuraBooster;
   let auraRewarder: IRewarder;
   let config: ProtocolConfig;
   let snapshotId: any;
@@ -63,7 +63,7 @@ describe("Aura Spell Strategy test", () => {
   let depositAmount: BigNumber;
   let borrowAmount: BigNumber;
   let rewardFeePct: BigNumber;
-  let extraRewarder1: IAuraRewarder;
+  let extraRewarder1: ICvxExtraRewarder;
   let extraRewarder2: MockVirtualBalanceRewardPool;
   let stashToken: IAuraStashToken;
 
@@ -131,8 +131,8 @@ describe("Aura Spell Strategy test", () => {
               await auraRewarder.rewardManager()
             );
             
-            extraRewarder1 = <IAuraRewarder>(
-              await ethers.getContractAt("IRewarder", await auraRewarder.extraRewards(0))
+            extraRewarder1 = <ICvxExtraRewarder>(
+              await ethers.getContractAt("ICvxExtraRewarder", await auraRewarder.extraRewards(0))
             );
             
             stashToken = <IAuraStashToken>(
