@@ -25,11 +25,10 @@ import "../interfaces/curve/ICurvePool.sol";
 /// @author BlueberryProtocol
 /// @notice Abstract base oracle for Curve LP token price feeds.
 abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
-
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// Address provider for Curve-related contracts.
     ICurveAddressProvider public immutable addressProvider;
 
@@ -47,7 +46,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructor initializes the CurveBaseOracle with the provided parameters.
     /// @param base_ The address of the base oracle.
     /// @param addressProvider_ The address of the curve address provider.
@@ -73,6 +72,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         internal
         returns (address pool, address[] memory ulTokens, uint256 virtualPrice)
     {
+
         /// 1. Attempt retrieval from main Curve registry.
         address registry = addressProvider.get_registry();
         pool = ICurveRegistry(registry).get_pool_from_lp_token(crvLp);
@@ -80,6 +80,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             (uint256 n, ) = ICurveRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveRegistry(registry).get_coins(pool);
             ulTokens = new address[](n);
+
             for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
@@ -96,6 +97,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             address[8] memory coins = ICurveCryptoSwapRegistry(registry)
                 .get_coins(pool);
             ulTokens = new address[](n);
+
             for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
@@ -126,7 +128,10 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
     /// @dev Internal function to check for reentrancy issues with Curve pools.
     /// @param _pool The address of the Curve pool to check.
     /// @param _numTokens The number of tokens in the pool.
-    function _checkReentrant(address _pool, uint256 _numTokens) internal virtual;
+    function _checkReentrant(
+        address _pool,
+        uint256 _numTokens
+    ) internal virtual;
 
     /// @notice Fetches Curve pool details for the provided Curve LP token.
     /// @param crvLp The Curve LP token address.

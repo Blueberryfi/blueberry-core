@@ -31,7 +31,7 @@ describe("ShortLongSpell", () => {
   let augustusSwapper: MockParaswap;
 
   beforeEach(async () => {
-    await fork(1, 17089048);
+    await fork(17089048);
 
     [owner, alice] = await ethers.getSigners();
 

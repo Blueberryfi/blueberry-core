@@ -21,6 +21,7 @@ import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { evm_mine_blocks, fork } from "../helpers";
 import { Protocol, setupIchiProtocol } from "../helpers/setup-ichi-protocol";
+import { TickMath } from "@uniswap/v3-sdk";
 
 chai.use(near);
 chai.use(roughlyNear);
@@ -30,11 +31,11 @@ const USDC = ADDRESS.USDC;
 const USDT = ADDRESS.USDT;
 const ICHI = ADDRESS.ICHI;
 const DAI = ADDRESS.DAI;
-const WstETH = ADDRESS.wstETH;
 const ICHIV1 = ADDRESS.ICHI_FARM;
 const UNI_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
 
 const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
+const ETH_PRICE = 1600;
 
 describe("ICHI Angel Vaults Spell", () => {
   let admin: SignerWithAddress;
@@ -43,7 +44,6 @@ describe("ICHI Angel Vaults Spell", () => {
 
   let usdc: ERC20;
   let dai: ERC20;
-  let wstETH: ERC20;
   let ichi: MockIchiV2;
   let ichiV1: ERC20;
   let weth: IWETH;
@@ -55,26 +55,17 @@ describe("ICHI Angel Vaults Spell", () => {
   let ichiFarm: MockIchiFarm;
   let ichiVault: MockIchiVault;
   let daiVault: MockIchiVault;
-  let usdcVault: MockIchiVault;
-  let wstETHVault: MockIchiVault;
-  let wethVault: MockIchiVault;
-  let ichiLpTokenVault: MockIchiVault;
   let protocol: Protocol;
 
   let bICHI: Contract;
   let bDAI: Contract;
-  let bUSDC: Contract;
-  let bWstETH: Contract;
-  let bWETH: Contract;
-  let bICHI_Vault_LP: Contract;
 
   before(async () => {
-    await fork();
+    await fork(17089048);
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
-    wstETH = <ERC20>await ethers.getContractAt("ERC20", WstETH);
     ichi = <MockIchiV2>await ethers.getContractAt("MockIchiV2", ICHI);
     ichiV1 = <ERC20>await ethers.getContractAt("ERC20", ICHIV1);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
@@ -85,19 +76,12 @@ describe("ICHI Angel Vaults Spell", () => {
     ichiFarm = protocol.ichiFarm;
     ichiVault = protocol.ichi_USDC_ICHI_Vault;
     daiVault = protocol.ichi_USDC_DAI_Vault;
-    usdcVault = protocol.ichi_USDC_DAI_Vault;
-    wstETHVault = protocol.ichi_USDC_WSTETH_Vault;
-    wethVault = protocol.ichi_USDC_WETH_Vault;
     wichi = protocol.wichi;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
 
     bICHI = protocol.bICHI;
     bDAI = protocol.bDAI;
-    bUSDC = protocol.bUSDC;
-    bWstETH = protocol.bWstETH;
-    bWETH = protocol.bWETH;
-    bICHI_Vault_LP = protocol.bICHI_Vault_LP;
   });
 
   beforeEach(async () => {});
@@ -177,7 +161,7 @@ describe("ICHI Angel Vaults Spell", () => {
           ethers.constants.AddressZero,
           UNI_V3_ROUTER,
           ADDRESS.AUGUSTUS_SWAPPER,
-          ADDRESS.TOKEN_TRANSFER_PROXY,
+          ADDRESS.TOKEN_TRANSFER_PROXY
         )
       ).to.be.revertedWith("Initializable: contract is already initialized");
     });
@@ -252,7 +236,7 @@ describe("ICHI Angel Vaults Spell", () => {
       );
 
       // Call openPosition with 1,500 is succeeded at the second time because position size is exceeded max position size
-      const positionId = (await bank.nextPositionId()).sub(1); // 1
+      const positionId = (await bank.nextPositionId()).sub(1);
       await expect(
         bank.execute(
           positionId.toNumber(),
@@ -403,7 +387,7 @@ describe("ICHI Angel Vaults Spell", () => {
         depositAmount.sub(fee)
       );
 
-      const positionId = (await bank.nextPositionId()).sub(1); // 2
+      const positionId = (await bank.nextPositionId()).sub(1);
       const pos = await bank.positions(positionId);
       const afterWrappedTokenBalance = await werc20.balanceOfERC20(
         ichiVault.address,
@@ -458,7 +442,7 @@ describe("ICHI Angel Vaults Spell", () => {
         depositAmount.sub(fee)
       );
 
-      const positionId = (await bank.nextPositionId()).sub(1); // 3
+      const positionId = (await bank.nextPositionId()).sub(1);
       const pos = await bank.positions(positionId);
       const afterWrappedTokenBalance = await werc20.balanceOfERC20(
         daiVault.address,
@@ -480,227 +464,6 @@ describe("ICHI Angel Vaults Spell", () => {
         depositAmount.mul(50).div(10000)
       );
     });
-    it("should be able to open a position for wstETH angel vault", async () => {
-      await wstETH.approve(bank.address, ethers.constants.MaxUint256);
-      const depositAmount = utils.parseUnits("0.2", 18);
-      const borrowAmount = utils.parseUnits("30", 6);
-      const beforeTreasuryBalance = await wstETH.balanceOf(treasury.address);
-      const beforeWstETHBalance = await wstETH.balanceOf(bWstETH.address);
-      const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
-        wstETHVault.address,
-        bank.address
-      );
-      // Isolated collateral: WstETH
-      // Borrow: USDC
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData("openPosition", [
-          {
-            strategyId: 2,
-            collToken: WstETH,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: 0,
-          },
-        ])
-      );
-
-      const fee = depositAmount.mul(50).div(10000);
-      const afterWstETHBalance = await wstETH.balanceOf(bWstETH.address);
-      expect(afterWstETHBalance.sub(beforeWstETHBalance)).to.be.near(
-        depositAmount.sub(fee)
-      );
-
-      const positionId = (await bank.nextPositionId()).sub(1); // 3
-      const pos = await bank.positions(positionId);
-      const afterWrappedTokenBalance = await werc20.balanceOfERC20(
-        wstETHVault.address,
-        bank.address
-      );
-      expect(pos.owner).to.be.equal(admin.address);
-      expect(pos.collToken).to.be.equal(werc20.address);
-      expect(pos.collId).to.be.equal(BigNumber.from(wstETHVault.address));
-      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
-      expect(
-        afterWrappedTokenBalance.sub(beforeWrappedTokenBalance)
-      ).to.be.equal(pos.collateralSize);
-      const bankInfo = await bank.banks(USDC);
-      console.log("Bank Info", bankInfo, await bank.banks(WstETH));
-      console.log("Position Info", pos);
-
-      const afterTreasuryBalance = await wstETH.balanceOf(treasury.address);
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
-        depositAmount.mul(50).div(10000)
-      );
-    });
-    it("should be able to open a position for WETH angel vault", async () => {
-      await weth.approve(bank.address, ethers.constants.MaxUint256);
-      const depositAmount = utils.parseUnits("0.2", 18);
-      const borrowAmount = utils.parseUnits("30", 6);
-      const beforeTreasuryBalance = await weth.balanceOf(treasury.address);
-      const beforeWETHBalance = await weth.balanceOf(bWETH.address);
-      const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
-        wethVault.address,
-        bank.address
-      );
-      // Isolated collateral: WETH
-      // Borrow: USDC
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData("openPosition", [
-          {
-            strategyId: 3,
-            collToken: WETH,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: 0,
-          },
-        ])
-      );
-
-      const fee = depositAmount.mul(50).div(10000);
-      const afterWETHBalance = await weth.balanceOf(bWETH.address);
-      expect(afterWETHBalance.sub(beforeWETHBalance)).to.be.near(
-        depositAmount.sub(fee)
-      );
-
-      const positionId = (await bank.nextPositionId()).sub(1); // 3
-      const pos = await bank.positions(positionId);
-      const afterWrappedTokenBalance = await werc20.balanceOfERC20(
-        wethVault.address,
-        bank.address
-      );
-      expect(pos.owner).to.be.equal(admin.address);
-      expect(pos.collToken).to.be.equal(werc20.address);
-      expect(pos.collId).to.be.equal(BigNumber.from(wethVault.address));
-      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
-      expect(
-        afterWrappedTokenBalance.sub(beforeWrappedTokenBalance)
-      ).to.be.equal(pos.collateralSize);
-      const bankInfo = await bank.banks(USDC);
-      console.log("Bank Info", bankInfo, await bank.banks(WETH));
-      console.log("Position Info", pos);
-
-      const afterTreasuryBalance = await weth.balanceOf(treasury.address);
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
-        depositAmount.mul(50).div(10000)
-      );
-    });
-    it("should be able to open a position for ichi_USDC_ICHI_Vault angel vault", async () => {
-      await ichiVault.approve(bank.address, ethers.constants.MaxUint256);
-      const balance = await ichiVault.balanceOf(admin.address);
-      const depositAmount = balance;
-      const borrowAmount = utils.parseUnits("30", 6);
-      const beforeTreasuryBalance = await ichiVault.balanceOf(treasury.address);
-      const beforeLPBalance = await ichiVault.balanceOf(bICHI_Vault_LP.address);
-      const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
-        ichiVault.address,
-        bank.address
-      );
-      // Isolated collateral: ichi_USDC_ICHI_Vault
-      // Borrow: USDC
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData("openPosition", [
-          {
-            strategyId: 0,
-            collToken: ichiVault.address,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: 0,
-          },
-        ])
-      );
-
-      const fee = depositAmount.mul(50).div(10000);
-      const afterLPBalance = await ichiVault.balanceOf(bICHI_Vault_LP.address);
-      expect(afterLPBalance.sub(beforeLPBalance)).to.be.near(
-        depositAmount.sub(fee)
-      );
-
-      const positionId = (await bank.nextPositionId()).sub(1);
-      const pos = await bank.positions(positionId);
-      const afterWrappedTokenBalance = await werc20.balanceOfERC20(
-        ichiVault.address,
-        bank.address
-      );
-      expect(pos.owner).to.be.equal(admin.address);
-      expect(pos.collToken).to.be.equal(werc20.address);
-      expect(pos.collId).to.be.equal(BigNumber.from(ichiVault.address));
-      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
-      expect(
-        afterWrappedTokenBalance.sub(beforeWrappedTokenBalance)
-      ).to.be.equal(pos.collateralSize);
-      const bankInfo = await bank.banks(USDC);
-      console.log("Bank Info", bankInfo, await bank.banks(WETH));
-      console.log("Position Info", pos);
-
-      const afterTreasuryBalance = await ichiVault.balanceOf(treasury.address);
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
-        depositAmount.mul(50).div(10000)
-      );
-    });
-    it("should be able to open a position for USDC angel vault", async () => {
-      await usdc.approve(bank.address, ethers.constants.MaxUint256);
-      const depositAmount = utils.parseUnits("400", 6);
-      const borrowAmount = utils.parseUnits("30", 6);
-      const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
-      const beforeUSDCBalance = await usdc.balanceOf(bUSDC.address);
-      const beforeWrappedTokenBalance = await werc20.balanceOfERC20(
-        usdcVault.address,
-        bank.address
-      );
-      // Isolated collateral: USDC
-      // Borrow: USDC
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData("openPosition", [
-          {
-            strategyId: 1,
-            collToken: USDC,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: 0,
-          },
-        ])
-      );
-
-      const fee = depositAmount.mul(50).div(10000);
-      const afterUSDCBalance = await usdc.balanceOf(bUSDC.address);
-      expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.near(
-        depositAmount.sub(fee).sub(borrowAmount)
-      );
-
-      const positionId = (await bank.nextPositionId()).sub(1); // 3
-      const pos = await bank.positions(positionId);
-      const afterWrappedTokenBalance = await werc20.balanceOfERC20(
-        usdcVault.address,
-        bank.address
-      );
-      expect(pos.owner).to.be.equal(admin.address);
-      expect(pos.collToken).to.be.equal(werc20.address);
-      expect(pos.collId).to.be.equal(BigNumber.from(usdcVault.address));
-      expect(pos.collateralSize.gt(ethers.constants.Zero)).to.be.true;
-      expect(
-        afterWrappedTokenBalance.sub(beforeWrappedTokenBalance)
-      ).to.be.equal(pos.collateralSize);
-      const bankInfo = await bank.banks(USDC);
-      console.log("Bank Info", bankInfo, await bank.banks(USDC));
-      console.log("Position Info", pos);
-
-      const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
-        depositAmount.mul(50).div(10000)
-      );
-    });
     it("should be able to return position risk ratio", async () => {
       let risk = await bank.callStatic.getPositionRisk(1);
       console.log("Prev Position Risk", utils.formatUnits(risk, 2), "%");
@@ -715,6 +478,9 @@ describe("ICHI Angel Vaults Spell", () => {
       console.log("Position Risk", utils.formatUnits(risk, 2), "%");
     });
     it("should revert when closing a position for non-existing strategy", async () => {
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
         bank.execute(
@@ -730,7 +496,7 @@ describe("ICHI Angel Vaults Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -739,6 +505,9 @@ describe("ICHI Angel Vaults Spell", () => {
         .withArgs(spell.address, 5);
     });
     it("should revert when closing a position for non-existing collateral", async () => {
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
         bank.execute(
@@ -754,7 +523,7 @@ describe("ICHI Angel Vaults Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -763,6 +532,9 @@ describe("ICHI Angel Vaults Spell", () => {
         .withArgs(0, USDT);
     });
     it("should revert when closing a position which repays nothing", async () => {
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
         bank.execute(
@@ -778,7 +550,7 @@ describe("ICHI Angel Vaults Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -788,11 +560,13 @@ describe("ICHI Angel Vaults Spell", () => {
     });
 
     it("should revert when token price is changed and outToken amount is out of slippage range", async () => {
-      const positionId = 2; // 2
+      const positionId = (await bank.nextPositionId()).sub(2);
       const positionInfo = await bank.getPositionInfo(positionId);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       await usdc.transfer(spell.address, utils.parseUnits("10", 6)); // manually set rewards
 
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
       await expect(
         bank.execute(
           positionId,
@@ -807,7 +581,7 @@ describe("ICHI Angel Vaults Spell", () => {
               amountShareWithdraw: 0,
               amountOutMin: utils.parseEther("10000"),
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -821,11 +595,13 @@ describe("ICHI Angel Vaults Spell", () => {
           BigNumber.from(10).pow(16).mul(326), // $3.26
         ]
       );
-      const positionId = 2; // 2
+      const positionId = (await bank.nextPositionId()).sub(2);
       const positionInfo = await bank.getPositionInfo(positionId);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       await usdc.transfer(spell.address, utils.parseUnits("10", 6)); // manually set rewards
 
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
       await bank.execute(
         positionId,
         spell.address,
@@ -839,7 +615,7 @@ describe("ICHI Angel Vaults Spell", () => {
             amountShareWithdraw: 0,
             amountOutMin: 1,
             amountToSwap: 0,
-            swapData: '0x',
+            swapData: "0x",
           },
         ])
       );
@@ -849,9 +625,12 @@ describe("ICHI Angel Vaults Spell", () => {
       );
     });
     it("should be able to close portion of position", async () => {
-      const positionId = 2; // 2
+      const positionId = (await bank.nextPositionId()).sub(2);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       await usdc.transfer(spell.address, utils.parseUnits("10", 6)); // manually set rewards
+
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
 
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -872,7 +651,7 @@ describe("ICHI Angel Vaults Spell", () => {
             amountShareWithdraw: positionInfo.underlyingVaultShare.div(3),
             amountOutMin: 1,
             amountToSwap: 0,
-            swapData: '0x',
+            swapData: "0x",
           },
         ])
       );
@@ -903,9 +682,12 @@ describe("ICHI Angel Vaults Spell", () => {
       );
     });
     it("should be able to withdraw USDC", async () => {
-      const positionId = 2; // 2
+      const positionId = (await bank.nextPositionId()).sub(2);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       await usdc.transfer(spell.address, utils.parseUnits("10", 6)); // manually set rewards
+
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
 
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -926,7 +708,7 @@ describe("ICHI Angel Vaults Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
             amountToSwap: 0,
-            swapData: '0x',
+            swapData: "0x",
           },
         ])
       );
@@ -988,7 +770,7 @@ describe("ICHI Angel Vaults Spell", () => {
         depositAmount.sub(fee).sub(utils.parseUnits("5", 18))
       );
 
-      const positionId = (await bank.nextPositionId()).sub(1); // 4
+      const positionId = (await bank.nextPositionId()).sub(1);
       const pos = await bank.positions(positionId);
       const afterWrappedTokenBalance = await werc20.balanceOfERC20(
         ichiVault.address,
@@ -1011,7 +793,7 @@ describe("ICHI Angel Vaults Spell", () => {
       );
     });
     it("should be able to close portion of position", async () => {
-      const positionId = (await bank.nextPositionId()).sub(1); // 4
+      const positionId = (await bank.nextPositionId()).sub(1);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
 
       const positionInfo = await bank.getPositionInfo(positionId);
@@ -1030,13 +812,13 @@ describe("ICHI Angel Vaults Spell", () => {
             amountShareWithdraw: positionInfo.underlyingVaultShare.div(3),
             amountOutMin: 1,
             amountToSwap: 0,
-            swapData: '0x',
+            swapData: "0x",
           },
         ])
       );
     });
     it("should be able to withdraw ICHI", async () => {
-      const positionId = (await bank.nextPositionId()).sub(1); // 4
+      const positionId = (await bank.nextPositionId()).sub(1);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       await ichi.transfer(spell.address, utils.parseUnits("10", 18)); // manually set rewards
 
@@ -1054,7 +836,7 @@ describe("ICHI Angel Vaults Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
             amountToSwap: 0,
-            swapData: '0x',
+            swapData: "0x",
           },
         ])
       );
@@ -1151,6 +933,9 @@ describe("ICHI Angel Vaults Spell", () => {
       ).to.be.revertedWithCustomError(spell, "INCORRECT_LP");
     });
     it("should revert when closing a position for non-existing strategy", async () => {
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
         bank.execute(
@@ -1166,7 +951,7 @@ describe("ICHI Angel Vaults Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -1175,6 +960,9 @@ describe("ICHI Angel Vaults Spell", () => {
         .withArgs(spell.address, 5);
     });
     it("should revert when closing a position for non-existing collateral", async () => {
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
         bank.execute(
@@ -1190,7 +978,7 @@ describe("ICHI Angel Vaults Spell", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -1199,7 +987,7 @@ describe("ICHI Angel Vaults Spell", () => {
         .withArgs(0, USDT);
     });
     it("should be able to farm USDC on ICHI angel vault", async () => {
-      const positionId = await bank.nextPositionId(); // 5
+      const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
 
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
@@ -1256,7 +1044,7 @@ describe("ICHI Angel Vaults Spell", () => {
       console.log("Position Risk", utils.formatUnits(risk, 2), "%");
     });
     it("should revert increasing existing position when diff pos param given", async () => {
-      const positionId = (await bank.nextPositionId()).sub(1); // 5
+      const positionId = (await bank.nextPositionId()).sub(1);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
@@ -1283,6 +1071,9 @@ describe("ICHI Angel Vaults Spell", () => {
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       await usdc.transfer(spell.address, utils.parseUnits("10", 6)); // manually set rewards
 
+      const tick = await ichiVault.currentTick();
+      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+
       const pendingIchi = await ichiFarm.pendingIchi(
         ICHI_VAULT_PID,
         wichi.address
@@ -1294,7 +1085,7 @@ describe("ICHI Angel Vaults Spell", () => {
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeIchiBalance = await ichi.balanceOf(admin.address);
 
-      const positionId = (await bank.nextPositionId()).sub(1); // 5
+      const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
       await bank.execute(
         positionId,
@@ -1309,7 +1100,7 @@ describe("ICHI Angel Vaults Spell", () => {
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
             amountToSwap: 0,
-            swapData: '0x',
+            swapData: "0x",
           },
         ])
       );
@@ -1363,7 +1154,7 @@ describe("ICHI Angel Vaults Spell", () => {
     });
 
     it("should revert when another strategyId provided", async () => {
-      const nextPosId = await bank.nextPositionId(); // 6
+      const nextPosId = await bank.nextPositionId();
       await spell.addStrategy(
         alice.address,
         utils.parseUnits("50", 18),
@@ -1386,7 +1177,7 @@ describe("ICHI Angel Vaults Spell", () => {
 
     it("should revert when reducing position exceeds max LTV", async () => {
       const nextPosId = await bank.nextPositionId();
-      const positionId = nextPosId.sub(1); // 7
+      const positionId = nextPosId.sub(1);
       const positionInfo = await bank.getPositionInfo(positionId);
       const underlyingShareAmount = positionInfo.underlyingVaultShare;
 
@@ -1404,10 +1195,10 @@ describe("ICHI Angel Vaults Spell", () => {
     });
 
     it("should be able to reduce position within maxLTV", async () => {
-      const nextPosId = (await bank.nextPositionId()).sub(1); // 8
+      const nextPosId = await bank.nextPositionId();
 
       await bank.execute(
-        nextPosId,
+        nextPosId.sub(1),
         spell.address,
         iface.encodeFunctionData("reducePosition", [
           0,
@@ -1418,10 +1209,10 @@ describe("ICHI Angel Vaults Spell", () => {
     });
 
     it("should be able to increase position", async () => {
-      const nextPosId = (await bank.nextPositionId()).sub(1); // 9
+      const nextPosId = await bank.nextPositionId();
 
       await bank.execute(
-        nextPosId,
+        nextPosId.sub(1),
         spell.address,
         iface.encodeFunctionData("increasePosition", [
           ICHI,
@@ -1431,9 +1222,9 @@ describe("ICHI Angel Vaults Spell", () => {
     });
 
     it("should be able to maintain the position with more deposits/borrows", async () => {
-      const nextPosId = (await bank.nextPositionId()).sub(1); // 10
+      const nextPosId = await bank.nextPositionId();
       await bank.execute(
-        nextPosId,
+        nextPosId.sub(1),
         spell.address,
         iface.encodeFunctionData("openPositionFarm", [
           {
@@ -1449,10 +1240,10 @@ describe("ICHI Angel Vaults Spell", () => {
     });
 
     it("should revert maintaining position when farming pool id does not match", async () => {
-      const nextPosId = (await bank.nextPositionId()).sub(1); // 11
+      const nextPosId = await bank.nextPositionId();
       await expect(
         bank.execute(
-          nextPosId,
+          nextPosId.sub(1),
           spell.address,
           iface.encodeFunctionData("openPositionFarm", [
             {
@@ -1481,7 +1272,15 @@ describe("ICHI Angel Vaults Spell", () => {
       spell = <IchiSpell>(
         await upgrades.deployProxy(
           IchiSpell,
-          [bank.address, werc20.address, WETH, wichi.address, UNI_V3_ROUTER, ADDRESS.AUGUSTUS_SWAPPER, ADDRESS.TOKEN_TRANSFER_PROXY],
+          [
+            bank.address,
+            werc20.address,
+            WETH,
+            wichi.address,
+            UNI_V3_ROUTER,
+            ADDRESS.AUGUSTUS_SWAPPER,
+            ADDRESS.TOKEN_TRANSFER_PROXY,
+          ],
           { unsafeAllow: ["delegatecall"] }
         )
       );

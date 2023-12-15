@@ -25,6 +25,9 @@ error ZERO_ADDRESS();
 /// @notice Thrown when the lengths of input arrays do not match.
 error INPUT_ARRAY_MISMATCH();
 
+/// @notice Thrown when the caller is not authorized to call the function.
+error UNAUTHORIZED();
+
 /*//////////////////////////////////////////////////////////////////////////
                                 ORACLE ERRORS
 //////////////////////////////////////////////////////////////////////////*/

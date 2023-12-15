@@ -7,6 +7,8 @@ interface IRewarder {
 
     function withdraw(uint256, bool) external;
 
+    function withdrawAndUnwrap(uint256 amount, bool claim) external returns (bool);
+
     function extraRewards(uint256) external view returns (address);
 
     function extraRewardsLength() external view returns (uint256);
@@ -35,4 +37,7 @@ interface IRewarder {
     function clearExtraRewards() external;
 
     function rewardManager() external view returns (address);
+
+    function notifyRewardAmount(uint256 reward) external;
+    
 }

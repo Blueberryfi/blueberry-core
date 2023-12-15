@@ -367,8 +367,6 @@ describe("Ichi Vault Oracle", () => {
         amountOutMinimum: 0,
         sqrtPriceLimitX96: 0,
       });
-      lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
-      console.log("USDC/ICHI Lp Price: \t", utils.formatUnits(lpPrice, 18));
 
       // Swap $10K USDC to ICHI on Uni V3
       console.log("=== Swap $10K USDC to ICHI (Reverted) ===");

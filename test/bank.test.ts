@@ -472,7 +472,7 @@ describe("Bank", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -521,7 +521,7 @@ describe("Bank", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -570,7 +570,7 @@ describe("Bank", () => {
               amountShareWithdraw: ethers.constants.MaxUint256,
               amountOutMin: 1,
               amountToSwap: 0,
-              swapData: '0x',
+              swapData: "0x",
             },
           ])
         )
@@ -855,7 +855,7 @@ describe("Bank", () => {
     it("should be able to maintain the position to get rid of liquidation", async () => {
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log("Position Risk:", utils.formatUnits(risk, 2), "%");
+      console.log("Position Risk:", risk);
 
       await mockOracle.setPrice(
         [ICHI],
@@ -864,19 +864,22 @@ describe("Bank", () => {
         ]
       );
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log("Position Risk:", utils.formatUnits(risk, 2), "%");
+      console.log("Position Risk:", risk);
+      console.log("Liquidity Threshold:", (await bank.banks((await bank.positions(positionId)).underlyingToken)).liqThreshold);
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
+      console.log("Is Liquidatable:", await bank.callStatic.isLiquidatable(positionId));
 
       await bank.execute(
         positionId,
         spell.address,
         iface.encodeFunctionData("increasePosition", [
           ICHI,
-          depositAmount.div(3),
+          depositAmount.div(2),
         ])
-      );
+      );        
+
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log("Position Risk:", utils.formatUnits(risk, 2), "%");
+      console.log("Position Risk:", risk);
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.false;
     });
     it("should revert execution when it is liquidateable after execution", async () => {
@@ -899,7 +902,7 @@ describe("Bank", () => {
     });
   });
 
-  describe("Mics", () => {
+  describe("Misc", () => {
     describe("Owner", () => {
       it("should be able to allow contract calls", async () => {
         await expect(
@@ -950,8 +953,10 @@ describe("Bank", () => {
         expect(await bank.whitelistedSpells(admin.address)).to.be.false;
         await bank.whitelistSpells([admin.address], [true]);
         expect(await bank.whitelistedSpells(admin.address)).to.be.true;
+        await bank.whitelistSpells([admin.address], [false]);
+        expect(await bank.whitelistedSpells(admin.address)).to.be.false;
       });
-      it("should be able to whitelist tokens", async () => {
+      it("should be able to whitelist standard ERC20 tokens", async () => {
         await expect(
           bank.connect(alice).whitelistTokens([WETH], [true])
         ).to.be.revertedWith("Ownable: caller is not the owner");
@@ -963,8 +968,20 @@ describe("Bank", () => {
         await expect(bank.whitelistTokens([ADDRESS.CRV], [true]))
           .to.be.revertedWithCustomError(bank, "ORACLE_NOT_SUPPORT")
           .withArgs(ADDRESS.CRV);
+
+        await bank.whitelistTokens([WETH, ICHI], [true, true]);
+        expect(await bank.whitelistedTokens(WETH)).to.be.true;
+        expect(await bank.whitelistedTokens(ICHI)).to.be.true;
+
+        await bank.whitelistTokens([WETH, ICHI], [false, false]);
+        expect(await bank.whitelistedTokens(WETH)).to.be.false;
+        expect(await bank.whitelistedTokens(ICHI)).to.be.false;
+
+        await bank.whitelistTokens([WETH, ICHI], [true, true]);
+        expect(await bank.whitelistedTokens(WETH)).to.be.true;
+        expect(await bank.whitelistedTokens(ICHI)).to.be.true;
       });
-      it("should be able to whitelist tokens", async () => {
+      it("should be able to whitelist ERC1155 tokens", async () => {
         await expect(
           bank.connect(alice).whitelistERC1155([werc20.address], true)
         ).to.be.revertedWith("Ownable: caller is not the owner");
@@ -972,6 +989,15 @@ describe("Bank", () => {
         await expect(
           bank.whitelistERC1155([ethers.constants.AddressZero], true)
         ).to.be.revertedWithCustomError(bank, "ZERO_ADDRESS");
+
+        await bank.whitelistERC1155([werc20.address], true);
+        expect(await bank.whitelistedWrappedTokens(werc20.address)).to.be.true;
+
+        await bank.whitelistERC1155([werc20.address], false);
+        expect(await bank.whitelistedWrappedTokens(werc20.address)).to.be.false;
+
+        await bank.whitelistERC1155([werc20.address], true);
+        expect(await bank.whitelistedWrappedTokens(werc20.address)).to.be.true;
       });
       it("should be able to add bank", async () => {
         await expect(
@@ -1025,7 +1051,6 @@ describe("Bank", () => {
           CONTRACT_NAMES.SoftVault
         );
         const crvSoftVault = <SoftVault>(
-
           await upgrades.deployProxy(
             SoftVault,
             [config.address, bCRV.address, "Interest Bearing CRV", "ibCRV"],
@@ -1133,7 +1158,7 @@ describe("Bank", () => {
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: 1,
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
             ])
           )
@@ -1154,7 +1179,7 @@ describe("Bank", () => {
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: 1,
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
             ])
           )

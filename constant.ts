@@ -22,9 +22,10 @@ export enum CONTRACT_NAMES {
   WConvexPools = "WConvexPools",
   WAuraPools = "WAuraPools",
   WStakingRewards = "WStakingRewards",
+  PoolEscrow = "PoolEscrow",
+  PoolEscrowFactory = "PoolEscrowFactory",
 
   // Oracles
-  BandAdapterOracle = "BandAdapterOracle",
   ChainlinkAdapterOracle = "ChainlinkAdapterOracle",
   ChainlinkAdapterOracleL2 = "ChainlinkAdapterOracleL2",
   CoreOracle = "CoreOracle",
@@ -206,7 +207,6 @@ export const ADDRESS = {
 
   // Oracle
   Keep3rV1Oracle: "0x73353801921417F465377c8d898c6f4C0270282C",
-  BandStdRef: "0xDA7a001b254CD22e46d3eAB04d937489c93174C3",
   ChainlinkRegistry: "0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf",
   ChainlinkSequencerArb: "0xFdB631F5EE196F0ed6FAa767959853A9F217697D",
 
@@ -221,14 +221,12 @@ export const ADDRESS = {
 
   // Curve
   CRV_3Crv: "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490",
-  CRV_SUSD: "0xc25a3a3b969415c80451098fa907ec722572917f",
   CRV_TriCrypto: "0xc4ad29ba4b3c580e6d59105fff484999997675ff",
   CRV_FRAXUSDC: "0x3175df0976dfa876431c2e9ee6bc45b65d3473cc",
   CRV_FRAX3Crv: "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
   CRV_FRXETH: "0xf43211935c781d5ca1a41d2041f397b8a7366c7a",
   CRV_STETH: "0x06325440D014e39736583c165C2963BA99fAf14E",
   CRV_MIM3CRV: "0x5a6A4D54456819380173272A5E8E9B9904BdF41B",
-  CRV_CRVETH: "0xed4064f376cb8d68f770fb1ff088a3d0f3ff5c4d",
   CRV_CVXETH: "0x3A283D9c08E8b55966afb64C515f5143cf907611",
   CRV_CVXCRV_CRV: "0x971add32ea87f10bd192671630be3be8a11b8623",
   CRV_ALCX_FRAXBP: "0xf985005a3793dba4cce241b3c19ddcd3fe069ff4",
@@ -248,8 +246,6 @@ export const ADDRESS = {
   CVX_BOOSTER: "0xF403C135812408BFbE8713b5A23a04b3D48AAE31",
   CVX_3Crv_Id: 9,
   CVX_Frax3Crv_Id: 32,
-  CVX_Susd_Id: 4,
-  CVX_CrvEth_Id: 61,
   CVX_FraxEth_Id: 128,
   CVX_FraxUsdc_Id: 100,
   CVX_EthStEth_Id: 25,
@@ -259,6 +255,7 @@ export const ADDRESS = {
   // Aura
   AURA_BOOSTER: "0xA57b8d98dAE62B26Ec3bcC4a365338157060B234",
   AURA_OHM_ETH_POOL_ID: 55,
+  AURA_WSTETH_WETH_POOL_ID: 153,
   AURA_UDU_POOL_ID: 76,
   AURA_UDU_ID:
     "0x79c58f70905f734641735bc61e45c19dd9ad60bc0000000000000000000004e7",
@@ -275,6 +272,7 @@ export const ADDRESS = {
   BAL_WBTC_WETH: "0xa6f548df93de924d73be7d25dc02554c6bd66db5",
   BAL_BAL_WETH: "0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56",
   BAL_OHM_WETH: "0xD1eC5e215E8148D76F4460e4097FD3d5ae0A3558",
+  BAL_WSTETH_WETH: "0x93d199263632a4EF4Bb438F1feB99e57b4b5f0BD",
   BAL_WETH: "0x5c6ee304399dbdb9c8ef030ab642b10820db8f56",
 
   // Wrapper

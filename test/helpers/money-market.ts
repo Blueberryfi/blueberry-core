@@ -1,4 +1,3 @@
-import { BErc20Delegator } from "./../../typechain-types/contracts/money-market/BErc20Delegator";
 import { BigNumber, utils } from "ethers";
 import { ethers } from "hardhat";
 
@@ -141,11 +140,7 @@ async function deployWrapped(
   return bWrappedNativeDelegator;
 }
 
-export async function deployBTokens(
-  admin: string,
-  baseOracle: string,
-  extraTokens: { token: string; symbol: string }[] = []
-) {
+export async function deployBTokens(admin: string, baseOracle: string) {
   const unitroller = await deployUnitroller();
   const comptroller = await deployComptroller();
   const bTokenAdmin = await deployBTokenAdmin(admin);
@@ -283,16 +278,16 @@ export async function deployBTokens(
   );
   console.log("bBAL deployed at: ", bBAL.address);
 
-  const bALCX = await deployBToken(
-    ADDRESS.ALCX,
-    comptroller.address,
-    IRM.address,
-    "Blueberry ALCX",
-    "bALCX",
-    18,
-    bTokenAdmin.address
-  );
-  console.log("bALCX deployed at: ", bALCX.address);
+  //const bALCX = await deployBToken(
+  //  ADDRESS.ALCX,
+  //  comptroller.address,
+  //  IRM.address,
+  //  "Blueberry ALCX",
+  //  "bALCX",
+  //  18,
+  //  bTokenAdmin.address
+  //);
+  //console.log("bALCX deployed at: ", bALCX.address);
 
   // Deploy WETH
   baseRate = 0;
@@ -328,7 +323,7 @@ export async function deployBTokens(
     8,
     bTokenAdmin.address
   );
-  console.log("bBTC deployed at: ", bWBTC.address);
+  console.log("bWBTC deployed at: ", bWBTC.address);
 
   const bWstETH = await deployBToken(
     ADDRESS.wstETH,
@@ -341,20 +336,49 @@ export async function deployBTokens(
   );
   console.log("bWstETH deployed at: ", bWstETH.address);
 
-  const extraBTokens = await Promise.all(
-    extraTokens.map(
-      async ({ token, symbol }) =>
-        await deployBToken(
-          token,
-          comptroller.address,
-          IRM.address,
-          `Blueberry ${symbol}`,
-          `b${symbol}`,
-          18,
-          bTokenAdmin.address
-        )
-    )
-  );
+  // const bCrvStEth = await deployBToken(
+  //   ADDRESS.CRV_STETH,
+  //   comptroller.address,
+  //   IRM.address,
+  //   "Blueberry CrvSTETH",
+  //   "bCrvSTETH",
+  //   18,
+  //   bTokenAdmin.address
+  // );
+  // console.log("bCrvStEth deployed at: ", bCrvStEth.address);
+
+  // const bCrvFrxEth = await deployBToken(
+  //   ADDRESS.CRV_FRXETH,
+  //   comptroller.address,
+  //   IRM.address,
+  //   "Blueberry CrvFRXETH",
+  //   "bCrvFRXETH",
+  //   18,
+  //   bTokenAdmin.address
+  // );
+  // console.log("bCrvFrxEth deployed at: ", bCrvFrxEth.address);
+
+  // const bCrvMim3Crv = await deployBToken(
+  //   ADDRESS.CRV_MIM3CRV,
+  //   comptroller.address,
+  //   IRM.address,
+  //   "Blueberry CrvMIM3CRV",
+  //   "bCrvMIM3CRV",
+  //   18,
+  //   bTokenAdmin.address
+  // );
+  // console.log("bCrvMim3Crv deployed at: ", bCrvMim3Crv.address);
+
+  // const bCrvCvxCrv = await deployBToken(
+  //   ADDRESS.CRV_CVXCRV_CRV,
+  //   comptroller.address,
+  //   IRM.address,
+  //   "Blueberry CrvCVXCRV",
+  //   "bCrvCVXCRV",
+  //   18,
+  //   bTokenAdmin.address
+  // );
+  // console.log("bCrvCvxCrv deployed at: ", bCrvCvxCrv.address);
 
   await comptroller._supportMarket(bUSDC.address, 0);
   await comptroller._supportMarket(bICHI.address, 0);
@@ -365,15 +389,14 @@ export async function deployBTokens(
   await comptroller._supportMarket(bOHM.address, 0);
   await comptroller._supportMarket(bSUSHI.address, 0);
   await comptroller._supportMarket(bBAL.address, 0);
-  await comptroller._supportMarket(bALCX.address, 0);
+  //await comptroller._supportMarket(bALCX.address, 0);
   await comptroller._supportMarket(bWETH.address, 0);
   await comptroller._supportMarket(bWBTC.address, 0);
   await comptroller._supportMarket(bWstETH.address, 0);
-  await Promise.all(
-    extraBTokens.map(
-      async (bToken) => await comptroller._supportMarket(bToken.address, 0)
-    )
-  );
+  //await comptroller._supportMarket(bCrvStEth.address, 0);
+  // await comptroller._supportMarket(bCrvFrxEth.address, 0);
+  // await comptroller._supportMarket(bCrvMim3Crv.address, 0);
+  // await comptroller._supportMarket(bCrvCvxCrv.address, 0);
 
   return {
     comptroller,
@@ -386,10 +409,13 @@ export async function deployBTokens(
     bOHM,
     bSUSHI,
     bBAL,
-    // bALCX,
+    //bALCX,
     bWETH,
     bWBTC,
-    //bWstETH,
-    extraBTokens,
+    bWstETH,
+    // //bCrvStEth,
+    // bCrvFrxEth,
+    // bCrvMim3Crv,
+    // bCrvCvxCrv,
   };
 }

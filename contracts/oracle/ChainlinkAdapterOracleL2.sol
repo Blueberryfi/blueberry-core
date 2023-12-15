@@ -48,13 +48,13 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
 
     /// @notice Emitted when a new price feed for a token is set or updated.
     /// @param token The address of the token for which the price feed is set or updated.
-    /// @param priceFeed The address of the Chainlink price feed for the token.    
+    /// @param priceFeed The address of the Chainlink price feed for the token.
     event SetTokenPriceFeed(address indexed token, address indexed priceFeed);
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructs the ChainlinkAdapterOracleL2 and sets the L2 sequencer uptime feed.
     /// @param sequencerUptimeFeed_ The Chainlink L2 sequencer uptime feed source.
     constructor(ISequencerUptimeFeed sequencerUptimeFeed_) {
@@ -89,12 +89,15 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     ) external onlyOwner {
         if (tokens_.length != priceFeeds_.length)
             revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens_.length; idx++) {
-            if (tokens_[idx] == address(0)) revert Errors.ZERO_ADDRESS();
-            if (priceFeeds_[idx] == address(0)) revert Errors.ZERO_ADDRESS();
+        for (uint256 i = 0; i < tokens_.length; ) {
+            if (tokens_[i] == address(0)) revert Errors.ZERO_ADDRESS();
+            if (priceFeeds_[i] == address(0)) revert Errors.ZERO_ADDRESS();
 
-            priceFeeds[tokens_[idx]] = priceFeeds_[idx];
-            emit SetTokenPriceFeed(tokens_[idx], priceFeeds_[idx]);
+            priceFeeds[tokens_[i]] = priceFeeds_[i];
+            emit SetTokenPriceFeed(tokens_[i], priceFeeds_[i]);
+            unchecked {
+                ++i;
+            }
         }
     }
 

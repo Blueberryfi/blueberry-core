@@ -1,6 +1,7 @@
 .idea
 node_modules
 artifacts
+abi
 cache
 typechain
 build

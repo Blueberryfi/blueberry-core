@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "./IERC20Wrapper.sol";
-import "./convex/ICvxPools.sol";
+import "./convex/ICvxBooster.sol";
 import "./convex/IConvex.sol";
 
 /// @title IWConvexPools
@@ -36,8 +36,8 @@ interface IWConvexPools is IERC1155Upgradeable, IERC20Wrapper {
         returns (address[] memory rewardTokens, uint256[] memory rewards);
 
     /// @notice Fetch the Convex Pool contract interface.
-    /// @return The ICvxPools interface of the Convex Pool.
-    function cvxPools() external view returns (ICvxPools);
+    /// @return The ICvxBooster interface of the Convex Pool.
+    function cvxPools() external view returns (ICvxBooster);
 
 
     /// @notice Encode two uint values into a single uint.

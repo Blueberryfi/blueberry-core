@@ -127,6 +127,7 @@ contract CurveSpell is BasicSpell {
 
             if (tokens.length == 2) {
                 uint256[2] memory suppliedAmts;
+
                 for (uint256 i; i < 2; ++i) {
                     if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
@@ -139,6 +140,7 @@ contract CurveSpell is BasicSpell {
                 );
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
+
                 for (uint256 i; i < 3; ++i) {
                     if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
@@ -151,6 +153,7 @@ contract CurveSpell is BasicSpell {
                 );
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
+
                 for (uint256 i; i < 4; ++i) {
                     if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
                         suppliedAmts[i] = tokenBalance;
@@ -196,7 +199,6 @@ contract CurveSpell is BasicSpell {
         ClosePosParam calldata param,
         uint256[] calldata amounts,
         bytes[] calldata swapDatas,
-        bool isKilled,
         uint256 deadline
     )
         external
@@ -238,25 +240,11 @@ contract CurveSpell is BasicSpell {
                 // 4. Remove liquidity
                 _removeLiquidity(
                     param,
-                    isKilled,
                     pool,
                     tokens,
                     pos,
                     amountPosRemove
                 );
-            }
-
-            if (isKilled) {
-                uint256 len = tokens.length;
-                for (uint256 i; i != len; ++i) {
-                    if (tokens[i] != pos.debtToken) {
-                        _swapOnParaswap(
-                            tokens[i],
-                            amounts[i + 1],
-                            swapDatas[i + 1]
-                        );
-                    }
-                }
             }
         }
 
@@ -286,7 +274,6 @@ contract CurveSpell is BasicSpell {
 
     function _removeLiquidity(
         ClosePosParam memory param,
-        bool isKilled,
         address pool,
         address[] memory tokens,
         IBank.Position memory pos,
@@ -295,7 +282,7 @@ contract CurveSpell is BasicSpell {
         uint256 tokenIndex;
         uint256 len = tokens.length;
         {
-            for (uint256 i; i != len; ++i) {
+            for (uint256 i; i < len; ++i) {
                 if (tokens[i] == pos.debtToken) {
                     tokenIndex = i;
                     break;
@@ -303,26 +290,11 @@ contract CurveSpell is BasicSpell {
             }
         }
 
-        if (isKilled) {
-            if (len == 2) {
-                uint256[2] memory minOuts;
-                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-            } else if (len == 3) {
-                uint256[3] memory minOuts;
-                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-            } else if (len == 4) {
-                uint256[4] memory minOuts;
-                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-            } else {
-                revert("Invalid pool length");
-            }
-        } else {
-            ICurvePool(pool).remove_liquidity_one_coin(
-                amountPosRemove,
-                int128(uint128(tokenIndex)),
-                param.amountOutMin
-            );
-        }
+        ICurvePool(pool).remove_liquidity_one_coin(
+            amountPosRemove,
+            int128(uint128(tokenIndex)),
+            param.amountOutMin
+        );
 
         if (tokens[uint128(tokenIndex)] == ETH) {
             IWETH(WETH).deposit{value: address(this).balance}();

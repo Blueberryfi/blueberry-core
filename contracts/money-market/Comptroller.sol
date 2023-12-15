@@ -111,11 +111,9 @@ contract Comptroller is
      * @param account The address of the account to pull assets for
      * @return A dynamic list with the assets the account has entered
      */
-    function getAssetsIn(address account)
-        external
-        view
-        returns (BToken[] memory)
-    {
+    function getAssetsIn(
+        address account
+    ) external view returns (BToken[] memory) {
         BToken[] memory assetsIn = accountAssets[account];
 
         return assetsIn;
@@ -127,11 +125,10 @@ contract Comptroller is
      * @param bToken The bToken to check
      * @return True if the account is in the asset, otherwise false.
      */
-    function checkMembership(address account, BToken bToken)
-        external
-        view
-        returns (bool)
-    {
+    function checkMembership(
+        address account,
+        BToken bToken
+    ) external view returns (bool) {
         return markets[address(bToken)].accountMembership[account];
     }
 
@@ -140,10 +137,9 @@ contract Comptroller is
      * @param bTokens The list of addresses of the bToken markets to be enabled
      * @return Success indicator for whether each corresponding market was entered
      */
-    function enterMarkets(address[] memory bTokens)
-        public
-        returns (uint256[] memory)
-    {
+    function enterMarkets(
+        address[] memory bTokens
+    ) public returns (uint256[] memory) {
         uint256 len = bTokens.length;
 
         uint256[] memory results = new uint256[](len);
@@ -162,10 +158,10 @@ contract Comptroller is
      * @param borrower The address of the account to modify
      * @return Success indicator for whether the market was entered
      */
-    function addToMarketInternal(BToken bToken, address borrower)
-        internal
-        returns (Error)
-    {
+    function addToMarketInternal(
+        BToken bToken,
+        address borrower
+    ) internal returns (Error) {
         Market storage marketToJoin = markets[address(bToken)];
 
         require(marketToJoin.isListed, "market not listed");
@@ -275,11 +271,9 @@ contract Comptroller is
      * @param bTokenAddress The address of the asset to be checked
      * @return Whether or not the market is listed or delisted
      */
-    function isMarketListedOrDelisted(address bTokenAddress)
-        public
-        view
-        returns (bool)
-    {
+    function isMarketListedOrDelisted(
+        address bTokenAddress
+    ) public view returns (bool) {
         return
             markets[bTokenAddress].isListed || isMarketDelisted[bTokenAddress];
     }
@@ -301,11 +295,10 @@ contract Comptroller is
      * @param market The market
      * @return The credit
      */
-    function creditLimits(address protocol, address market)
-        public
-        view
-        returns (uint256)
-    {
+    function creditLimits(
+        address protocol,
+        address market
+    ) public view returns (uint256) {
         return _creditLimits[protocol][market];
     }
 
@@ -833,11 +826,10 @@ contract Comptroller is
      * @param bToken The market
      * @return The account is a credit account or not
      */
-    function isCreditAccount(address account, address bToken)
-        public
-        view
-        returns (bool)
-    {
+    function isCreditAccount(
+        address account,
+        address bToken
+    ) public view returns (bool) {
         return _creditLimits[account][bToken] > 0;
     }
 
@@ -867,15 +859,9 @@ contract Comptroller is
                 account liquidity in excess of collateral requirements,
      *          account shortfall below collateral requirements)
      */
-    function getAccountLiquidity(address account)
-        public
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    function getAccountLiquidity(
+        address account
+    ) public view returns (uint256, uint256, uint256) {
         (
             Error err,
             uint256 liquidity,
@@ -891,15 +877,9 @@ contract Comptroller is
                 account liquidity in excess of collateral requirements,
      *          account shortfall below collateral requirements)
      */
-    function getAccountLiquidityInternal(address account)
-        internal
-        view
-        returns (
-            Error,
-            uint256,
-            uint256
-        )
-    {
+    function getAccountLiquidityInternal(
+        address account
+    ) internal view returns (Error, uint256, uint256) {
         return
             getHypotheticalAccountLiquidityInternal(account, BToken(0), 0, 0);
     }
@@ -919,15 +899,7 @@ contract Comptroller is
         address bTokenModify,
         uint256 redeemTokens,
         uint256 borrowAmount
-    )
-        public
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    ) public view returns (uint256, uint256, uint256) {
         (
             Error err,
             uint256 liquidity,
@@ -958,15 +930,7 @@ contract Comptroller is
         BToken bTokenModify,
         uint256 redeemTokens,
         uint256 borrowAmount
-    )
-        internal
-        view
-        returns (
-            Error,
-            uint256,
-            uint256
-        )
-    {
+    ) internal view returns (Error, uint256, uint256) {
         AccountLiquidityLocalVars memory vars; // Holds all our calculation results
         uint256 oErr;
 
@@ -1146,10 +1110,9 @@ contract Comptroller is
      * @param newCloseFactorMantissa New close factor, scaled by 1e18
      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
      */
-    function _setCloseFactor(uint256 newCloseFactorMantissa)
-        external
-        returns (uint256)
-    {
+    function _setCloseFactor(
+        uint256 newCloseFactorMantissa
+    ) external returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
             return
@@ -1242,10 +1205,9 @@ contract Comptroller is
      * @param newLiquidationIncentiveMantissa New liquidationIncentive scaled by 1e18
      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
      */
-    function _setLiquidationIncentive(uint256 newLiquidationIncentiveMantissa)
-        external
-        returns (uint256)
-    {
+    function _setLiquidationIncentive(
+        uint256 newLiquidationIncentiveMantissa
+    ) external returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
             return
@@ -1277,10 +1239,10 @@ contract Comptroller is
      * @param version The version of the market (token)
      * @return uint 0=success, otherwise a failure. (See enum Error for details)
      */
-    function _supportMarket(BToken bToken, Version version)
-        external
-        returns (uint256)
-    {
+    function _supportMarket(
+        BToken bToken,
+        Version version
+    ) external returns (uint256) {
         require(msg.sender == admin, "admin only");
         require(
             !isMarketListedOrDelisted(address(bToken)),
@@ -1504,10 +1466,10 @@ contract Comptroller is
         return state;
     }
 
-    function _setFlashloanPaused(BToken bToken, bool state)
-        public
-        returns (bool)
-    {
+    function _setFlashloanPaused(
+        BToken bToken,
+        bool state
+    ) public returns (bool) {
         require(isMarketListed(address(bToken)), "market not listed");
         require(
             msg.sender == guardian || msg.sender == admin,

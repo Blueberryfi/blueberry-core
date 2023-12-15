@@ -103,10 +103,10 @@ contract BErc20 is BToken, BErc20Interface {
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowBehalf(address borrower, uint256 repayAmount)
-        external
-        returns (uint256)
-    {
+    function repayBorrowBehalf(
+        address borrower,
+        uint256 repayAmount
+    ) external returns (uint256) {
         (uint256 err, ) = repayBorrowBehalfInternal(
             borrower,
             repayAmount,
@@ -301,11 +301,9 @@ contract BErc20 is BToken, BErc20Interface {
      * @notice Get the account's bToken balances
      * @param account The address of the account
      */
-    function getBTokenBalanceInternal(address account)
-        internal
-        view
-        returns (uint256)
-    {
+    function getBTokenBalanceInternal(
+        address account
+    ) internal view returns (uint256) {
         return accountTokens[account];
     }
 

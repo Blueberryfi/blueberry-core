@@ -31,7 +31,7 @@ contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructs the WeightedBPTOracle contract.
     /// @dev Initializes the contract with the base oracle address.
     /// @param _base Address of the base oracle contract.
@@ -58,24 +58,28 @@ contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
         uint256 length = weights.length;
         uint256 temp = 1e18;
         uint256 invariant = 1e18;
+
         for(uint256 i; i < length; ++i) {
             temp = temp.mulDown(
-                (base.getPrice(tokens[i]).divDown(weights[i]))
-                .powDown(weights[i])
+                (base.getPrice(tokens[i]).divDown(weights[i])).powDown(
+                    weights[i]
+                )
             );
             invariant = invariant.mulDown(
-                (balances[i] * 10 ** (18 - IERC20Metadata(tokens[i]).decimals()))
-                .powDown(weights[i])
+                (balances[i] *
+                    10 ** (18 - IERC20Metadata(tokens[i]).decimals())).powDown(
+                        weights[i]
+                    )
             );
         }
+        
         try IBalancerPool(token).getActualSupply() returns (uint256 supply) {
-            return invariant
-                .mulDown(temp)
-                .divDown(supply);
+            return invariant.mulDown(temp).divDown(supply);
         } catch {
-            return invariant
-                .mulDown(temp)
-                .divDown(IBalancerPool(token).totalSupply());
+            return
+                invariant.mulDown(temp).divDown(
+                    IBalancerPool(token).totalSupply()
+                );
         }
     }
 

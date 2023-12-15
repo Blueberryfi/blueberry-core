@@ -16,7 +16,6 @@ import "../interfaces/balancer/IBalancerPool.sol";
 import "../interfaces/balancer/IRateProvider.sol";
 import "../interfaces/balancer/IBalancerVault.sol";
 import "../libraries/FixedPointMathLib.sol";
-import "hardhat/console.sol";
 
 /// @title Stable Balancer LP Oracle
 /// @author BlueberryProtocol
@@ -27,7 +26,7 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -43,13 +42,12 @@ contract StableBPTOracle is UsingBaseOracle, IBaseOracle {
         // Reentrancy guard to prevent flashloan attack
         checkReentrancy(vault);
 
-        (address[] memory tokens, , ) = vault
-            .getPoolTokens(pool.getPoolId());
+        (address[] memory tokens, , ) = vault.getPoolTokens(pool.getPoolId());
         address[] memory rateProviders = pool.getRateProviders();
 
         uint256 length = tokens.length;
         uint256 minPrice = type(uint256).max;
-        for(uint256 i; i != length; ++i) {
+        for (uint256 i; i < length; ++i) {
             if (tokens[i] == token) {
                 continue;
             }
