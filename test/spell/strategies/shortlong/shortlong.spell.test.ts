@@ -32,7 +32,7 @@ const WETH = ADDRESS.WETH;
 const DAI = ADDRESS.DAI;
 const WstETH = ADDRESS.wstETH;
 
-describe("ShortLong Spell", () => {
+describe("ShortLong Spell Test test", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
@@ -315,7 +315,7 @@ describe("ShortLong Spell", () => {
       DAI, // Swap Token
       daiSoftVault, // Soft Vault
       utils.parseUnits("1", 18), // wstETH Deposit Amount
-      utils.parseUnits("1", 18), // Collateral Swap Amount
+      utils.parseUnits("1.5", 18), // Collateral Swap Amount
       wstETH
     );
     await revertToSnapshot(snapshotId);
