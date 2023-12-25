@@ -532,7 +532,16 @@ contract WAuraPools is
             .extraRewardsLength();
         for (uint256 i; i < extraRewardsCount; ++i) {
             address extraRewarder = IRewarder(rewarder).extraRewards(i);
-            _syncExtraRewards(rewards, tokenId, extraRewarder);
+            bool mismatchFound = _syncExtraRewards(rewards, tokenId, extraRewarder);
+
+            if (!mismatchFound && accExtPerShare[tokenId][extraRewarder] == type(uint).max) {
+                uint256 rewardPerToken = IRewarder(extraRewarder)
+                    .rewardPerToken();
+
+                if (rewardPerToken != 0) {
+                    accExtPerShare[tokenId][extraRewarder] = rewardPerToken;
+                }
+            }
         }
     }
     
