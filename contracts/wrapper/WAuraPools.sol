@@ -298,7 +298,7 @@ contract WAuraPools is
                 rewards[i + 2] = 0;
             } else {
                 rewards[i + 2] = _getPendingReward(
-                    tokenRewardPerShare,
+                    tokenRewardPerShare == type(uint).max ? 0 : tokenRewardPerShare,
                     rewarder,
                     amount
                 );
