@@ -65,26 +65,13 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     mapping(address => bool) public bTokenInBank; /// Mapping from bToken to its existence in bank.
     mapping(uint256 => Position) public positions; /// Mapping from position ID to position data.
 
-    /// Flags and whitelists
-    bool public allowContractCalls; // The boolean status whether to allow call from contract (false = onlyEOA)
     mapping(address => bool) public whitelistedTokens; /// Mapping from token to whitelist status
     mapping(address => bool) public whitelistedWrappedTokens; /// Mapping from token to whitelist status
     mapping(address => bool) public whitelistedSpells; /// Mapping from spell to whitelist status
-    mapping(address => bool) public whitelistedContracts; /// Mapping from user to whitelist status
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Ensure that the function is called from EOA
-    /// when allowContractCalls is set to false and caller is not whitelisted
-    modifier onlyEOAEx() {
-        if (!allowContractCalls && !whitelistedContracts[msg.sender]) {
-            if (AddressUpgradeable.isContract(msg.sender))
-                revert Errors.NOT_EOA(msg.sender);
-        }
-        _;
-    }
 
     /// @dev Ensure that the token is already whitelisted
     modifier onlyWhitelistedToken(address token) {
@@ -172,30 +159,6 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
             revert Errors.NOT_UNDER_EXECUTION();
         }
         return positions[positionId].owner;
-    }
-
-    /// @dev Toggles the allowance of contract calls.
-    /// @param ok If true, contract calls are allowed. Otherwise, only EOA calls are allowed.
-    function setAllowContractCalls(bool ok) external onlyOwner {
-        allowContractCalls = ok;
-    }
-
-    /// @dev Sets whitelist statuses for various contracts.
-    /// @param contracts List of contract addresses.
-    /// @param statuses Corresponding list of whitelist statuses to set.
-    function whitelistContracts(
-        address[] calldata contracts,
-        bool[] calldata statuses
-    ) external onlyOwner {
-        if (contracts.length != statuses.length) {
-            revert Errors.INPUT_ARRAY_MISMATCH();
-        }
-        for (uint256 i = 0; i < contracts.length; ++i) {
-            if (contracts[i] == address(0)) {
-                revert Errors.ZERO_ADDRESS();
-            }
-            whitelistedContracts[contracts[i]] = statuses[i];
-        }
     }
 
     /// @dev Set the whitelist status for specific spells.
@@ -630,7 +593,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 positionId,
         address spell,
         bytes memory data
-    ) external lock onlyEOAEx returns (uint256) {
+    ) external lock returns (uint256) {
         if (!whitelistedSpells[spell])
             revert Errors.SPELL_NOT_WHITELISTED(spell);
         if (positionId == 0) {
