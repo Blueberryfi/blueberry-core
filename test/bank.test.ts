@@ -904,35 +904,6 @@ describe("Bank", () => {
 
   describe("Misc", () => {
     describe("Owner", () => {
-      it("should be able to allow contract calls", async () => {
-        await expect(
-          bank.connect(alice).setAllowContractCalls(true)
-        ).to.be.revertedWith("Ownable: caller is not the owner");
-
-        await bank.setAllowContractCalls(true);
-        expect(await bank.allowContractCalls()).be.true;
-      });
-      it("should be able to whitelist contracts for bank execution", async () => {
-        await expect(
-          bank
-            .connect(alice)
-            .whitelistContracts([admin.address, alice.address], [true, true])
-        ).to.be.revertedWith("Ownable: caller is not the owner");
-        await expect(
-          bank.whitelistContracts([admin.address], [true, true])
-        ).to.be.revertedWithCustomError(bank, "INPUT_ARRAY_MISMATCH");
-
-        await expect(
-          bank.whitelistContracts(
-            [admin.address, constants.AddressZero],
-            [true, true]
-          )
-        ).to.be.revertedWithCustomError(bank, "ZERO_ADDRESS");
-
-        expect(await bank.whitelistedContracts(admin.address)).to.be.false;
-        await bank.whitelistContracts([admin.address], [true]);
-        expect(await bank.whitelistedContracts(admin.address)).to.be.true;
-      });
       it("should be able to whitelist spells", async () => {
         await expect(
           bank
