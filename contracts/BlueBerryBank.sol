@@ -255,6 +255,38 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         emit AddBank(token, bToken, softVault, hardVault);
     }
 
+    function modifyBank(
+        uint8 bankIndex,
+        address token,
+        address softVault,
+        address hardVault,
+        uint256 liqThreshold
+    ) external onlyOwner onlyWhitelistedToken(token) {
+        if (softVault == address(0) || hardVault == address(0))
+            revert Errors.ZERO_ADDRESS();
+        if (liqThreshold > Constants.DENOMINATOR)
+            revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
+        if (liqThreshold < Constants.MIN_LIQ_THRESHOLD)
+            revert Errors.LIQ_THRESHOLD_TOO_LOW(liqThreshold);
+        
+        if (bankIndex >= allBanks.length) revert Errors.BANK_NOT_EXIST(bankIndex);
+
+        address bankToken = allBanks[bankIndex];
+        Bank storage bank = banks[bankToken];
+        address bToken = address(ISoftVault(softVault).bToken());
+
+        if (!bank.isListed) revert Errors.BANK_NOT_LISTED(token);
+
+        bank.bToken = bToken;
+        bank.softVault = softVault;
+        bank.hardVault = hardVault;
+        bank.liqThreshold = liqThreshold;
+
+        IHardVault(hardVault).setApprovalForAll(hardVault, true);
+
+        emit ModifyBank(token, bToken, softVault, hardVault);
+    }
+
     /// @dev Update the bank's operational status flags.
     /// @param _bankStatus The new status flags for the bank.
     function setBankStatus(uint256 _bankStatus) external onlyOwner {

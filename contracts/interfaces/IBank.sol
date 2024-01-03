@@ -46,7 +46,14 @@ interface IBank {
         address token,        /// The primary token associated with the bank.
         address bToken,       /// The corresponding bToken for the bank.
         address softVault,    /// Address of the soft vault.
-        address hardVault             /// Address of the hard vault.
+        address hardVault     /// Address of the hard vault.
+    );
+
+    event ModifyBank(
+        address token,        /// The primary token associated with the bank.
+        address bToken,       /// The corresponding bToken for the bank.
+        address softVault,    /// Address of the soft vault.
+        address hardVault     /// Address of the hard vault.
     );
 
     /// @notice Emitted when the oracle's address is updated by the owner.
@@ -101,9 +108,9 @@ interface IBank {
     /// @notice Emitted when a user adds tokens as collateral.
     event PutCollateral(
         uint256 positionId,        /// Position ID associated with the collateral.
-        address owner,     /// Owner of the collateral position.
-        address caller,    /// Address of the spell caller adding the collateral.
-        address token,     /// Token used as collateral.
+        address owner,             /// Owner of the collateral position.
+        address caller,            /// Address of the spell caller adding the collateral.
+        address token,             /// Token used as collateral.
         uint256 id,                /// ID of the wrapped token.
         uint256 amount             /// Amount of tokens put as collateral.
     );
@@ -111,8 +118,8 @@ interface IBank {
     /// @notice Emitted when a user retrieves tokens from their collateral.
     event TakeCollateral(
         uint256 positionId,        /// Position ID associated with the collateral.
-        address caller,    /// Address of the spell caller retrieving the collateral.
-        address token,     /// Token taken from the collateral.
+        address caller,            /// Address of the spell caller retrieving the collateral.
+        address token,             /// Token taken from the collateral.
         uint256 id,                /// ID of the wrapped token.
         uint256 amount             /// Amount of tokens taken from collateral.
     );
@@ -120,8 +127,8 @@ interface IBank {
     /// @notice Emitted when a position is liquidated.
     event Liquidate(
         uint256 positionId,           /// Position ID being liquidated.
-        address liquidator,   /// Address of the user performing the liquidation.
-        address debtToken,    /// Debt token associated with the position.
+        address liquidator,           /// Address of the user performing the liquidation.
+        address debtToken,            /// Debt token associated with the position.
         uint256 amount,               /// Amount used for liquidation.
         uint256 share,                /// Debt share associated with the liquidation.
         uint256 positionSize,         /// Size of the position being liquidated.
@@ -131,7 +138,7 @@ interface IBank {
     /// @notice Emitted when a position is executed.
     event Execute(
         uint256 positionId,        /// Position ID being executed.
-        address owner      /// Owner of the position.
+        address owner              /// Owner of the position.
     );
 
     /*//////////////////////////////////////////////////////////////////////////
