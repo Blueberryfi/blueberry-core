@@ -31,7 +31,7 @@ import {IBalancerPool} from "../interfaces/balancer/IBalancerPool.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IRewarder} from "../interfaces/convex/IRewarder.sol";
-import "hardhat/console.sol";
+
 /**
  * @title WauraPools
  * @author BlueberryProtocol
@@ -240,10 +240,6 @@ contract WAuraPools is
                 auraBalance -= rewardAmount;
             }
 
-            console.log("rewardToken: %s", _rewardToken);
-            console.log("rewardAmount: %s", rewardAmount);
-            console.log("balance: ", IERC20Upgradeable(_rewardToken).balanceOf(escrow));
-
             IPoolEscrow(escrow).transferToken(
                 _rewardToken,
                 msg.sender,
@@ -269,50 +265,61 @@ contract WAuraPools is
         returns (address[] memory tokens, uint256[] memory rewards)
     {
         (uint256 pid, uint256 originalBalPerShare) = decodeId(tokenId);
-        (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
 
         address stashToken = stashTokenInfo[pid].stashToken;
 
         uint256 extraRewardsCount = extraRewardsLength(pid);
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
-
-        /// BAL reward
-        tokens[0] = IRewarder(auraRewarder).rewardToken();
-        rewards[0] = _getPendingReward(
-            originalBalPerShare,
-            auraRewarder,
-            amount
-        );
-        /// AURA reward
+        
+        // BAL reward 
+        {
+            (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
+            /// BAL reward
+            tokens[0] = IRewarder(auraRewarder).rewardToken();
+            rewards[0] = _getPendingReward(
+                originalBalPerShare,
+                auraRewarder,
+                amount
+            );
+        }
+        // AURA reward
         tokens[1] = address(AURA);
         rewards[1] = _getAllocatedAURA(pid, originalBalPerShare, amount);
-
-        /// Additional rewards
+        
+        // This index is used to make sure that there is no gap in the returned array
+        uint256 index = 0;
+        bool stashTokenFound = false;
+        // Additional rewards
         for (uint256 i; i < extraRewardsCount; ++i) {
             address rewarder = extraRewards[pid].at(i);
             address rewardToken = IRewarder(rewarder).rewardToken();
 
             if (rewardToken == stashToken) {
-                // If the reward token is the stash token, skip it and decrement the length
-                //   of the rewards array
-                assembly {
-                    mstore(tokens, sub(mload(tokens), 1))
-                }
+                stashTokenFound = true;
                 continue;
             }
 
             uint256 tokenRewardPerShare = accExtPerShare[tokenId][rewarder];
-            tokens[i + 2] = rewardToken;
+            tokens[index + 2] = rewardToken;
 
             if (tokenRewardPerShare == 0) {
-                rewards[i + 2] = 0;
+                rewards[index + 2] = 0;
             } else {
-                rewards[i + 2] = _getPendingReward(
+                rewards[index + 2] = _getPendingReward(
                     tokenRewardPerShare == type(uint).max ? 0 : tokenRewardPerShare,
                     rewarder,
                     amount
                 );
+            }
+
+            index++;
+        }
+
+        if (stashTokenFound) {
+            assembly {
+                mstore(tokens, sub(mload(tokens), 1))
+                mstore(rewards, sub(mload(rewards), 1))
             }
         }
     }
@@ -483,12 +490,23 @@ contract WAuraPools is
 
         (, uint256 auraPreBalance) = _unpackBalances(packedBalances[pid]);
 
-        IRewarder(_auraRewarder).getReward(escrow, true);
+        uint256 auraQueriedBalance = AURA.balanceOf(escrow);
+
+        IRewarder(_auraRewarder).getReward(escrow, false);
+
+        _getExtraRewards(pid, escrow);
 
         uint256 auraPostBalance = AURA.balanceOf(escrow);
         uint256 auraReceived = auraPostBalance - auraPreBalance;
 
-        _getExtraRewards(pid, escrow);
+        // Due to the permissionless nature of Aura Rewarders, the balance of AURA
+        //   in the escrow contract may be different than the packed balance.
+        //   If the balance of AURA in the escrow contract is greater than the
+        //   packed balance, then we must add the difference to the auraReceived
+        //   to ensure that the auraPerShareByPid is accurate.
+        if (auraQueriedBalance > auraPreBalance) {
+            auraReceived += auraQueriedBalance - auraPreBalance;
+        }
 
         if (auraReceived > 0) {
             auraPerShareByPid[pid] += auraReceived.divWadDown(currentDeposits);
