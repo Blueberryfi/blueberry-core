@@ -191,9 +191,9 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const expectedAmounts = pendingRewardsInfo.rewards.map(
-              (reward: any) => 0
+              (reward: any) => reward
             );
-
+            console.log("Expected Amounts: ", expectedAmounts);
             const debt = await bank.callStatic.currentPositionDebt(positionId);
             const missing = debt.sub(borrowAmount);
 
@@ -216,7 +216,7 @@ describe("Aura Spell Strategy test", () => {
             const swapDatas = pendingRewardsInfo.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
-            console.log("Closing Position");
+
             await closePosition(
               alice,
               positionId,
