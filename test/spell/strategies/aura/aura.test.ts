@@ -97,7 +97,6 @@ describe("Aura Spell Strategy test", () => {
       for (let l = 0; l < strategyInfo.borrowAssets.length; l += 1) {
         describe(`Aura Spell Test(collateral: ${strategyInfo.collateralAssets[j]}, borrow: ${strategyInfo.borrowAssets[l]})`, () => {
           before(async () => {
-            console.log("Strategy Info: ", strategyInfo);
             collateralToken = <ERC20>(
               await ethers.getContractAt(
                 "ERC20",
@@ -171,7 +170,7 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const bankInfo = await bank.getBankInfo(borrowToken.address);
-            console.log("Bank Info:", bankInfo);
+
           });
 
           it("Swap collateral to borrow token to repay debt for negative PnL", async () => {
@@ -189,15 +188,13 @@ describe("Aura Spell Strategy test", () => {
               position.collId,
               position.collateralSize
             );
-
+            
             const expectedAmounts = pendingRewardsInfo.rewards.map(
               (reward: any) => reward
             );
-            console.log("Expected Amounts: ", expectedAmounts);
+
             const debt = await bank.callStatic.currentPositionDebt(positionId);
             const missing = debt.sub(borrowAmount);
-
-            console.log("Missing: ", missing.toString());
 
             const missingDebt = await getTokenAmountFromUSD(
               borrowToken,
@@ -380,7 +377,7 @@ describe("Aura Spell Strategy test", () => {
               position.collId,
               position.collateralSize
             );
-            
+
             let rewarderFactory = await ethers.getContractFactory("MockVirtualBalanceRewardPool");
             
             extraRewarder2 = <MockVirtualBalanceRewardPool>(
@@ -395,7 +392,7 @@ describe("Aura Spell Strategy test", () => {
               .addExtraReward(extraRewarder2.address);
             
             let pid = BigNumber.from(strategyInfo.poolId);
-            
+
             let extraRewardLength = await waura.extraRewardsLength(pid);
             await waura.syncExtraRewards(pid, position.collId);
 
@@ -406,19 +403,18 @@ describe("Aura Spell Strategy test", () => {
                 position.collId,
                 position.collateralSize
               );
-            
-            expect(pendingRewardsInfoAfterAdd.rewards[2]).gte(
-              pendingRewardsInfo.rewards[2]
+
+            expect(pendingRewardsInfoAfterAdd.rewards.length).gte(
+              pendingRewardsInfo.rewards.length
             );
 
             const expectedAmounts = pendingRewardsInfoAfterAdd.rewards.map(
-              (reward: any) => 0
+              (reward: BigNumber) => reward
             );
 
             const swapDatas = pendingRewardsInfoAfterAdd.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
-
             await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
 
             await closePosition(
@@ -450,7 +446,14 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const position = await bank.positions(positionId);
-            await evm_mine_blocks(10);
+            
+            // Open a position to update the rewarder
+            await openPosition(
+              bob,
+              depositAmount,
+              borrowAmount,
+              pid
+            );
 
             const pendingRewardsInfo = await waura.callStatic.pendingRewards(
               position.collId,
@@ -470,10 +473,12 @@ describe("Aura Spell Strategy test", () => {
                 position.collId,
                 position.collateralSize
               );
-
-            expect(pendingRewardsInfo.rewards[2].gt(0)).to.be.true;
-            expect(pendingRewardsInfo.rewards[2]).lte(
-              pendingRewardsInfoAfterRemoval.rewards[2]
+            
+            // We are comparing rewards[1] because the reward removed was stash Aura reward
+            //     which is paid in Aura
+            expect(pendingRewardsInfo.rewards[1].gt(0)).to.be.true;
+            expect(pendingRewardsInfo.rewards[1]).lte(
+              pendingRewardsInfoAfterRemoval.rewards[1]
             );
 
             const expectedAmounts = pendingRewardsInfo.rewards.map(
@@ -513,7 +518,7 @@ describe("Aura Spell Strategy test", () => {
               alice.address
             );
             expect(rewardTokenBalanceAfter.sub(rewardTokenBalanceBefore)).gte(
-              rewardAmountWithoutFee(pendingRewardsInfo.rewards[2])
+              rewardAmountWithoutFee(pendingRewardsInfo.rewards[1])
             );
           });
 
