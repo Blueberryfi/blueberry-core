@@ -7,6 +7,7 @@ import {
   WERC20,
   StableBPTOracle,
   CoreOracle,
+  WeightedBPTOracle,
 } from "../../typechain-types";
 
 import { near } from "../assertions/near";
@@ -17,7 +18,7 @@ chai.use(roughlyNear);
 
 const OneDay = 86400;
 
-describe("Balancer StablePool BPT Oracle", () => {
+describe("Balancer Stable Pool BPT Oracle", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
 
@@ -89,8 +90,20 @@ describe("Balancer StablePool BPT Oracle", () => {
       CONTRACT_NAMES.StableBPTOracle
     );
     stableBPTOracle = <StableBPTOracle>(
-      await StableBPTOracleFactory.deploy(coreOracle.address)
+      await StableBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address)
     );
+
+    await stableBPTOracle.deployed();
+
+    const WeightedBPTOracleFactory = await ethers.getContractFactory(
+      CONTRACT_NAMES.WeightedBPTOracle
+    );
+    let weightedOracle = <WeightedBPTOracle>(
+      await WeightedBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address)
+    );
+    await weightedOracle.deployed();
+
+    await stableBPTOracle.connect(admin).setWeightedPoolOracle(weightedOracle.address);
   });
 
   it('Verify Price of a Stable Pool: Balancer USDC-DAI-USDT', async () => {
@@ -108,7 +121,7 @@ describe("Balancer StablePool BPT Oracle", () => {
   it('Verify Price of Nested Stable Pool: GHO/USDC-DAI-USDT', async () => {
     const pointNine = ethers.utils.parseEther('0.9');
     const onePointOne = ethers.utils.parseEther('1.1');
-    console.log("lower bound: ", pointNine);
+
     let price = await stableBPTOracle.callStatic.getPrice(
       ADDRESS.BAL_GHO_3POOL
     );

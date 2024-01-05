@@ -5,20 +5,26 @@ import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import {
   ChainlinkAdapterOracle,
   CoreOracle,
+  StableBPTOracle,
   WeightedBPTOracle,
 } from "../../typechain-types";
 import { roughlyNear } from "../assertions/roughlyNear";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 chai.use(roughlyNear);
 
 const OneDay = 86400;
 
 describe("Balancer Weighted Pool BPT Oracle", () => {
+  let admin: SignerWithAddress;
   let weightedOracle: WeightedBPTOracle;
+  let stableOracle: StableBPTOracle;
   let coreOracle: CoreOracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
   before(async () => {
+    [admin] = await ethers.getSigners();
+
     const ChainlinkAdapterOracle = await ethers.getContractFactory(
       CONTRACT_NAMES.ChainlinkAdapterOracle
     );
@@ -54,9 +60,21 @@ describe("Balancer Weighted Pool BPT Oracle", () => {
       CONTRACT_NAMES.WeightedBPTOracle
     );
     weightedOracle = <WeightedBPTOracle>(
-      await WeightedBPTOracleFactory.deploy(coreOracle.address)
+      await WeightedBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address)
     );
     await weightedOracle.deployed();
+
+    const StableBPTOracleFactory = await ethers.getContractFactory(
+      CONTRACT_NAMES.StableBPTOracle
+    );
+
+    stableOracle = <StableBPTOracle>(
+      await StableBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address)
+    );
+
+    await stableOracle.deployed();
+
+    await weightedOracle.connect(admin).setStablePoolOracle(stableOracle.address);
 
     await coreOracle.setRoutes(
       [
