@@ -23,9 +23,11 @@ import "../interfaces/balancer-v2/IBalancerVault.sol";
 import "../libraries/FixedPointMathLib.sol";
 import "../libraries/balancer-v2/VaultReentrancyLib.sol";
 
-/// @title Stable Balancer LP Oracle
-/// @author BlueberryProtocol
-/// @notice Oracle contract which privides price feeds of Stable Balancer LP tokens
+/**
+ * @title StableBPTOracle
+ * @author BlueberryProtocol
+ * @notice Oracle contract which privides price feeds of Stable Balancer LP tokens
+ */
 contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracle {
     using FixedPointMathLib for uint256;
 
@@ -54,14 +56,11 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-    function setWeightedPoolOracle(address oracle) external onlyOwner {
-        if (oracle == address(0)) revert BBErrors.ZERO_ADDRESS();
 
-        weightedPoolOracle = IBaseOracle(oracle);
-    }
-
-    /// @notice Return the USD value of given Balancer Lp, with 18 decimals of precision.
-    /// @param token The ERC-20 token to check the value.
+    /**
+     * @notice Return the USD value of given Balancer Lp, with 18 decimals of precision.
+     * @param token The ERC-20 token to check the value.
+     */
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
         uint256 minPrice;
         IBalancerV2StablePool pool = IBalancerV2StablePool(token);
@@ -95,6 +94,17 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
         uint256 rate = pool.getRate();
 
         return minPrice.mulWadDown(rate);
+    }
+
+    /**
+     * @notice Set the weighted pool oracle
+     * @dev Only owner can set the weighted pool oracle
+     * @param oracle Address of the oracle to set as the weighted pool oracle
+     */
+    function setWeightedPoolOracle(address oracle) external onlyOwner {
+        if (oracle == address(0)) revert BBErrors.ZERO_ADDRESS();
+
+        weightedPoolOracle = IBaseOracle(oracle);
     }
 
     /**
@@ -139,6 +149,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
             uint256 rateProviderPrice = rateProvider.getRate();
             minCandidatePrice = minCandidatePrice.divWadDown(rateProviderPrice);
         }
+        
         return minCandidatePrice;
     }
 
