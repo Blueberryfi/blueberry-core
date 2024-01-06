@@ -78,7 +78,7 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
         
         uint256 totalSupply = pool.totalSupply();
 
-        return invariant.divDown(totalSupply).mulDown(mult);
+        return invariant.mulDown(mult).divDown(totalSupply);
     }
 
     /**

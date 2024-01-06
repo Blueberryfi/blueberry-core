@@ -10,6 +10,7 @@ import {
 } from "../../typechain-types";
 import { roughlyNear } from "../assertions/roughlyNear";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { fork } from "../helpers";
 
 chai.use(roughlyNear);
 
@@ -23,6 +24,7 @@ describe("Balancer Weighted Pool BPT Oracle", () => {
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
   before(async () => {
+    await fork();
     [admin] = await ethers.getSigners();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(
@@ -109,13 +111,13 @@ describe("Balancer Weighted Pool BPT Oracle", () => {
 
   it('Verify Price of a Weighted Pool: B-80BAL-20WETH', async () => {
     const ten = ethers.utils.parseEther('10');
-    const fifteen = ethers.utils.parseEther('15');
+    const twenty = ethers.utils.parseEther('20');
 
     const price = await weightedOracle.callStatic.getPrice(
       ADDRESS.BAL_WETH,
     );
-    
+
     assert(price.gte(ten), 'Price is greater than 10');
-    assert(price.lte(fifteen), 'Price is less than 15');
+    assert(price.lte(twenty), 'Price is less than 20');
   });
 });

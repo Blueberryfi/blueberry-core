@@ -12,6 +12,7 @@ import {
 
 import { near } from "../assertions/near";
 import { roughlyNear } from "../assertions/roughlyNear";
+import { fork } from "../helpers";
 
 chai.use(near);
 chai.use(roughlyNear);
@@ -27,6 +28,7 @@ describe("Balancer Stable Pool BPT Oracle", () => {
   let werc20: WERC20;
 
   before(async () => {
+    await fork();
     [admin, alice] = await ethers.getSigners();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(
@@ -83,9 +85,7 @@ describe("Balancer Stable Pool BPT Oracle", () => {
         chainlinkAdapterOracle.address,
       ]
     );
-  });
 
-  beforeEach(async () => {
     const StableBPTOracleFactory = await ethers.getContractFactory(
       CONTRACT_NAMES.StableBPTOracle
     );
@@ -104,6 +104,7 @@ describe("Balancer Stable Pool BPT Oracle", () => {
     await weightedOracle.deployed();
 
     await stableBPTOracle.connect(admin).setWeightedPoolOracle(weightedOracle.address);
+    await weightedOracle.connect(admin).setStablePoolOracle(stableBPTOracle.address);
   });
 
   it('Verify Price of a Stable Pool: Balancer USDC-DAI-USDT', async () => {
