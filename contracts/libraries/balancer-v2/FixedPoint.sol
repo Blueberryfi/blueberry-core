@@ -35,28 +35,28 @@ library FixedPoint {
         // Fixed Point addition is the same as regular checked addition
 
         uint256 c = a + b;
-        _require(c >= a, Errors.ADD_OVERFLOW);
+        _require(c >= a, BalancerErrors.ADD_OVERFLOW);
         return c;
     }
 
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
         // Fixed Point addition is the same as regular checked addition
 
-        _require(b <= a, Errors.SUB_OVERFLOW);
+        _require(b <= a, BalancerErrors.SUB_OVERFLOW);
         uint256 c = a - b;
         return c;
     }
 
     function mulDown(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 product = a * b;
-        _require(a == 0 || product / a == b, Errors.MUL_OVERFLOW);
+        _require(a == 0 || product / a == b, BalancerErrors.MUL_OVERFLOW);
 
         return product / ONE;
     }
 
     function mulUp(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 product = a * b;
-        _require(a == 0 || product / a == b, Errors.MUL_OVERFLOW);
+        _require(a == 0 || product / a == b, BalancerErrors.MUL_OVERFLOW);
 
         if (product == 0) {
             return 0;
@@ -72,26 +72,26 @@ library FixedPoint {
     }
 
     function divDown(uint256 a, uint256 b) internal pure returns (uint256) {
-        _require(b != 0, Errors.ZERO_DIVISION);
+        _require(b != 0, BalancerErrors.ZERO_DIVISION);
 
         if (a == 0) {
             return 0;
         } else {
             uint256 aInflated = a * ONE;
-            _require(aInflated / a == ONE, Errors.DIV_INTERNAL); // mul overflow
+            _require(aInflated / a == ONE, BalancerErrors.DIV_INTERNAL); // mul overflow
 
             return aInflated / b;
         }
     }
 
     function divUp(uint256 a, uint256 b) internal pure returns (uint256) {
-        _require(b != 0, Errors.ZERO_DIVISION);
+        _require(b != 0, BalancerErrors.ZERO_DIVISION);
 
         if (a == 0) {
             return 0;
         } else {
             uint256 aInflated = a * ONE;
-            _require(aInflated / a == ONE, Errors.DIV_INTERNAL); // mul overflow
+            _require(aInflated / a == ONE, BalancerErrors.DIV_INTERNAL); // mul overflow
 
             // The traditional divUp formula is:
             // divUp(x, y) := (x + y - 1) / y

@@ -57,9 +57,9 @@ library VaultReentrancyLib {
         //
         //    function _enterNonReentrant() private {
         //        // If the Vault is actually being reentered, it will revert in the first line, at the `_require` that
-        //        // checks the reentrancy flag, with "BAL#400" (corresponding to Errors.REENTRANCY) in the revertData.
+        //        // checks the reentrancy flag, with "BAL#400" (corresponding to BalancerErrors.REENTRANCY) in the revertData.
         //        // The full revertData will be: `abi.encodeWithSignature("Error(string)", "BAL#400")`.
-        //        _require(_status != _ENTERED, Errors.REENTRANCY);
+        //        _require(_status != _ENTERED, BalancerErrors.REENTRANCY);
         //
         //        // If the Vault is not being reentered, the check above will pass: but it will *still* revert,
         //        // because the next line attempts to modify storage during a staticcall. However, this type of
@@ -80,6 +80,6 @@ library VaultReentrancyLib {
             abi.encodeWithSelector(vault.manageUserBalance.selector, 0)
         );
 
-        _require(revertData.length == 0, Errors.REENTRANCY);
+        _require(revertData.length == 0, BalancerErrors.REENTRANCY);
     }
 }

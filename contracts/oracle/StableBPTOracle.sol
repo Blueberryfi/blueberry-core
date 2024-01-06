@@ -13,7 +13,7 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "./UsingBaseOracle.sol";
-import "../utils/BlueBerryErrors.sol" as BBErrors;
+import "../utils/BlueBerryErrors.sol" as Errors;
 
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/balancer-v2/IBalancerV2StablePool.sol";
@@ -102,7 +102,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
      * @param oracle Address of the oracle to set as the weighted pool oracle
      */
     function setWeightedPoolOracle(address oracle) external onlyOwner {
-        if (oracle == address(0)) revert BBErrors.ZERO_ADDRESS();
+        if (oracle == address(0)) revert Errors.ZERO_ADDRESS();
 
         weightedPoolOracle = IBaseOracle(oracle);
     }
@@ -149,7 +149,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
             uint256 rateProviderPrice = rateProvider.getRate();
             minCandidatePrice = minCandidatePrice.divWadDown(rateProviderPrice);
         }
-        
+
         return minCandidatePrice;
     }
 

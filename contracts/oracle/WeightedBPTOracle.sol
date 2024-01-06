@@ -13,7 +13,7 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "./UsingBaseOracle.sol";
-import "../utils/BlueBerryErrors.sol" as BBErrors;
+import "../utils/BlueBerryErrors.sol" as Errors;
 
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/balancer-v2/IBalancerV2WeightedPool.sol";
@@ -87,7 +87,7 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
      * @param oracle Address of the oracle to set as the stable pool oracle
      */
     function setStablePoolOracle(address oracle) external onlyOwner {
-        if (oracle == address(0)) revert BBErrors.ZERO_ADDRESS();
+        if (oracle == address(0)) revert Errors.ZERO_ADDRESS();
 
         stablePoolOracle = IBaseOracle(oracle);
     }
