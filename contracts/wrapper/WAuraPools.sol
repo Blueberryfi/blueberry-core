@@ -487,10 +487,8 @@ contract WAuraPools is
             packedBalances[pid] = _packBalances(lastBalPerToken, AURA.balanceOf(escrow));
             return;
         }
-
+        
         (, uint256 auraPreBalance) = _unpackBalances(packedBalances[pid]);
-
-        uint256 auraQueriedBalance = AURA.balanceOf(escrow);
 
         IRewarder(_auraRewarder).getReward(escrow, false);
 
@@ -498,15 +496,6 @@ contract WAuraPools is
 
         uint256 auraPostBalance = AURA.balanceOf(escrow);
         uint256 auraReceived = auraPostBalance - auraPreBalance;
-
-        // Due to the permissionless nature of Aura Rewarders, the balance of AURA
-        //   in the escrow contract may be different than the packed balance.
-        //   If the balance of AURA in the escrow contract is greater than the
-        //   packed balance, then we must add the difference to the auraReceived
-        //   to ensure that the auraPerShareByPid is accurate.
-        if (auraQueriedBalance > auraPreBalance) {
-            auraReceived += auraQueriedBalance - auraPreBalance;
-        }
 
         if (auraReceived > 0) {
             auraPerShareByPid[pid] += auraReceived.divWadDown(currentDeposits);
