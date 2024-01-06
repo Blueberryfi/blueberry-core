@@ -16,10 +16,10 @@ import "./UsingBaseOracle.sol";
 import "../utils/BlueBerryErrors.sol" as BBErrors;
 
 import "../interfaces/IBaseOracle.sol";
-import "../interfaces/balancer/IBalancerPool.sol";
-import "../interfaces/balancer/IBalancerVault.sol";
-import "../libraries/balancer/FixedPoint.sol";
-import "../libraries/balancer/VaultReentrancyLib.sol";
+import "../interfaces/balancer-v2/IBalancerV2WeightedPool.sol";
+import "../interfaces/balancer-v2/IBalancerVault.sol";
+import "../libraries/balancer-v2/FixedPoint.sol";
+import "../libraries/balancer-v2/VaultReentrancyLib.sol";
 
 /// @title WeightedBPTOracle
 /// @dev Provides price feeds for Weighted Balancer LP tokens.
@@ -66,7 +66,7 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
     /// @notice Return the USD value of given Balancer Lp, with 18 decimals of precision.
     /// @param token The ERC-20 token to check the value.
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
-        IBalancerPool pool = IBalancerPool(token);
+        IBalancerV2WeightedPool pool = IBalancerV2WeightedPool(token);
 
         (address[] memory tokens, , ) = VAULT
             .getPoolTokens(pool.getPoolId());

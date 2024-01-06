@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "./BasicSpell.sol";
 import "../interfaces/IWAuraPools.sol";
-import "../interfaces/balancer/IBalancerPool.sol";
+import "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
 import "../libraries/UniversalERC20.sol";
 
@@ -221,7 +221,7 @@ contract AuraSpell is BasicSpell {
                 ) = _getExitPoolParams(param, lpToken);
 
                 wAuraPools.getVault(lpToken).exitPool(
-                    IBalancerPool(lpToken).getPoolId(),
+                    IBalancerV2Pool(lpToken).getPoolId(),
                     address(this),
                     address(this),
                     IBalancerVault.ExitPoolRequest(

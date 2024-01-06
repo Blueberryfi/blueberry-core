@@ -70,6 +70,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         address crvLp
     )
         internal
+        view
         returns (address pool, address[] memory ulTokens, uint256 virtualPrice)
     {
 

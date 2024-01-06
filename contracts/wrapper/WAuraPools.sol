@@ -26,8 +26,8 @@ import {IAura} from "../interfaces/aura/IAura.sol";
 import {IAuraBooster} from "../interfaces/aura/IAuraBooster.sol";
 import {IAuraStashToken} from "../interfaces/aura/IAuraStashToken.sol";
 import {ICvxExtraRewarder} from "../interfaces/convex/ICvxExtraRewarder.sol";
-import {IBalancerVault} from "../interfaces/balancer/IBalancerVault.sol";
-import {IBalancerPool} from "../interfaces/balancer/IBalancerPool.sol";
+import {IBalancerVault} from "../interfaces/balancer-v2/IBalancerVault.sol";
+import {IBalancerV2Pool} from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IRewarder} from "../interfaces/convex/IRewarder.sol";
@@ -334,7 +334,7 @@ contract WAuraPools is
     /// @param bpt Address of the BPT token
     /// @return Pool id associated with the BPT token
     function getBPTPoolId(address bpt) public view returns (bytes32) {
-        return IBalancerPool(bpt).getPoolId();
+        return IBalancerV2Pool(bpt).getPoolId();
     }
     
     /// @notice Gets the escrow contract address for a given PID
@@ -410,7 +410,7 @@ contract WAuraPools is
     /// @param bpt Address of the BPT token
     /// @return Vault associated with the provided BPT token
     function getVault(address bpt) public view returns (IBalancerVault) {
-        return IBalancerVault(IBalancerPool(bpt).getVault());
+        return IBalancerVault(IBalancerV2Pool(bpt).getVault());
     }
 
     /// @notice Calculate the amount of pending reward for a given LP amount.

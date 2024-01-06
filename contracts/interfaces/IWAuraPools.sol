@@ -14,8 +14,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "./IERC20Wrapper.sol";
-import "./balancer/IBalancerPool.sol";
-import "./balancer/IBalancerVault.sol";
+import "./balancer-v2/IBalancerV2Pool.sol";
+import "./balancer-v2/IBalancerVault.sol";
 import "./aura/IAuraBooster.sol";
 import "./aura/IAura.sol";
 

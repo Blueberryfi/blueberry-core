@@ -16,12 +16,12 @@ import "./UsingBaseOracle.sol";
 import "../utils/BlueBerryErrors.sol" as BBErrors;
 
 import "../interfaces/IBaseOracle.sol";
-import "../interfaces/balancer/IBalancerPool.sol";
-import "../interfaces/balancer/IRateProvider.sol";
-import "../interfaces/balancer/IBalancerVault.sol";
+import "../interfaces/balancer-v2/IBalancerV2StablePool.sol";
+import "../interfaces/balancer-v2/IRateProvider.sol";
+import "../interfaces/balancer-v2/IBalancerVault.sol";
 
 import "../libraries/FixedPointMathLib.sol";
-import "../libraries/balancer/VaultReentrancyLib.sol";
+import "../libraries/balancer-v2/VaultReentrancyLib.sol";
 
 /// @title Stable Balancer LP Oracle
 /// @author BlueberryProtocol
@@ -64,7 +64,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
     /// @param token The ERC-20 token to check the value.
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
         uint256 minPrice;
-        IBalancerPool pool = IBalancerPool(token);
+        IBalancerV2StablePool pool = IBalancerV2StablePool(token);
 
         (address[] memory tokens, , ) = VAULT.getPoolTokens(pool.getPoolId());
         address[] memory rateProviders = pool.getRateProviders();

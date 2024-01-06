@@ -11,7 +11,7 @@
 pragma solidity 0.8.22;
 
 import "./CurveBaseOracle.sol";
-import "../libraries/balancer/FixedPoint.sol";
+import "../libraries/balancer-v2/FixedPoint.sol";
 import "../utils/BlueBerryConst.sol" as Constants;
 
 /// @author BlueberryProtocol
