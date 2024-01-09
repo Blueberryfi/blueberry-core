@@ -12,6 +12,7 @@ import {
   BlueBerryBank,
   ERC20,
   FeeManager,
+  StableBPTOracle,
 } from "../../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../../constant";
 import { deployBTokens } from "../../helpers/money-market";
@@ -25,7 +26,8 @@ const TwoDays = OneDay * 2;
 const OneHour = 3600;
 
 export const setupOracles = async (): Promise<CoreOracle> => {
-  console.log("setup oracles");
+  let [admin] = await ethers.getSigners();
+
   const ChainlinkAdapterOracle = await ethers.getContractFactory(
     CONTRACT_NAMES.ChainlinkAdapterOracle
   );
@@ -37,7 +39,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
     [ADDRESS.WETH, ADDRESS.WBTC, ADDRESS.wstETH],
     [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC, ADDRESS.stETH]
   );
-  console.log("remappings set");
+
   await chainlinkAdapterOracle.setTimeGap(
     [
       ADDRESS.ETH,
@@ -103,17 +105,20 @@ export const setupOracles = async (): Promise<CoreOracle> => {
     CONTRACT_NAMES.WeightedBPTOracle
   );
   const weightedOracle = <WeightedBPTOracle>(
-    await WeightedBPTOracleFactory.deploy(oracle.address)
+    await WeightedBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, oracle.address, admin.address)
   );
 
   const StableBPTOracleFactory = await ethers.getContractFactory(
     CONTRACT_NAMES.StableBPTOracle
   );
 
-  const stableOracle = <WeightedBPTOracle>(
-    await StableBPTOracleFactory.deploy(oracle.address)
+  const stableOracle = <StableBPTOracle>(
+    await StableBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, oracle.address, admin.address)
   );
-
+  
+  await weightedOracle.connect(admin).setStablePoolOracle(stableOracle.address);
+  await stableOracle.connect(admin).setWeightedPoolOracle(weightedOracle.address);
+  
   await oracle.setRoutes(
     [
       ADDRESS.USDC,
