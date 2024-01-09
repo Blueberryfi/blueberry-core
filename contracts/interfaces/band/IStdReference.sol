@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 interface IStdReference {
     /// A structure returned whenever someone requests for standard reference data.

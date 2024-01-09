@@ -2,9 +2,11 @@
 
 ## Protocol Summary
 
-Blueberry Core v1 is an upgrade and fork from Alpha Homora v2, a leveraged yield-farming product. Here are some key features:
+Blueberry Core v1 a leveraged yield-farming product. 
+Additional documentation can be found [here](https://docs.blueberry.garden/).
+Here are some key features:
 
-The protocol is integrated with existing lending protocol (Blueberry Money Market). Whenever a user wants to borrow funds (on leverage) to yield farm additionally, Blueberry Bank will borrow from the lending protocol (Blueberry Money Market).
+The protocol is integrated with an existing lending protocol (Blueberry Money Market). Whenever a user wants to borrow funds (on leverage) to yield farm additionally, Blueberry Bank will borrow from the lending protocol (Blueberry Money Market).
 
 - A wide varitey of assets are borrow-able, including stables like USDC, USDT, DAI.
 - Each "spell" defines how the protocol interacts with the end deployment. Such as concentrated liquidity vaults, e.g. Ichi vault.
@@ -17,7 +19,7 @@ The protocol is integrated with existing lending protocol (Blueberry Money Marke
 - BlueberryBank
   - Store each position's collateral tokens (in the form of wrapped NFT tokens)
   - Users can execute "spells", e.g. opening a new position, closing/adjusting existing position.
-- Spells (e.g. Ichi,Uniswap/Sushiswap/Curve/...)
+- Spells (e.g. Ichi,Uniswap/Aura/Convex/...)
   - Define how to interact with each external protocol
   - Execute `borrow`/`repay` assets by intereacting with the bank, which will then interact with the lending protocol (Blueberry Money Market).
   
@@ -38,7 +40,7 @@ The protocol is integrated with existing lending protocol (Blueberry Money Marke
 ### putCollateral
 
 1. User calls `execute(0, USDT, WETH, data)` on BlueberryBank contract. `data` encodes IchiSpell function call with arguments (including how much of each asset to supply, to borrow, and slippage control settings).
-2. BlueberryBank uses data call to encoded `putCollateral` function call with arguments) to IchiSpell.
+2. BlueberryBank uses data call to encoded `putCollateral` function call with arguments to IchiSpell.
 3. IchiSpell executes `putCollateralWERC20`
   - `_doBorrow` from the lending protocol
   - Deposit Single asset into ICHI vault and recieve LP Token
@@ -58,3 +60,27 @@ Prices are determined in USD.
 - For regular assets, asset prices can be derived from Chainlink, Band, or Uniswap feeds.
 - For LP tokens, asset prices will determine the optimal reserve proportion of the underlying assets, which are then used to compoute the value of LP tokens. See `Uniswapv3AdpaterOracle.sol` for example implementation.
    
+## Getting Started
+
+Steps to run the tests:
+Hardhat version 2.12.4 Block height 17089048 Eth mainnet fork
+
+Copies all the files
+> Clone the repo
+### Installs all of the files
+> yarn install
+### Required for tests and all other actions to work  
+> Create .env file with env var DEPLOY_ACCOUNT_KEY= , 
+ETHERSCAN_API_KEY=
+
+> If needed update the RPC provider in `hardhat.config.js`  and `/test/helpers/index.js` to your own provider. Currently set to ankr mainnet node.
+
+### Compiles all of the contracts
+> yarn hardhat compile
+
+### Runs all of the tests
+> yarn hardhat test
+
+### Displays the coverage of the contracts
+> yarn hardhat coverage
+

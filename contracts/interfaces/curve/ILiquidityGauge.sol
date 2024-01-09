@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 interface ILiquidityGauge {
     function minter() external view returns (address);
@@ -14,4 +14,6 @@ interface ILiquidityGauge {
     function deposit(uint256 value) external;
 
     function withdraw(uint256 value) external;
+
+    function claimable_tokens(address user) external returns (uint256);
 }

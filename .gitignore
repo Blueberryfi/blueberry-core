@@ -1,6 +1,7 @@
 .idea
 node_modules
 artifacts
+abi
 cache
 typechain
 build
@@ -10,3 +11,4 @@ typechain-types
 .env
 .vscode/
 .deps/
+.openzeppelin/

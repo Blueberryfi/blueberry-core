@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 interface IFeedRegistry {
-    function decimals(address base, address quote)
-        external
-        view
-        returns (uint8);
+    function decimals(
+        address base,
+        address quote
+    ) external view returns (uint8);
 
-    function latestRoundData(address base, address quote)
+    function latestRoundData(
+        address base,
+        address quote
+    )
         external
         view
         returns (

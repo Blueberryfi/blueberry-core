@@ -8,38 +8,55 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueBerryConst.sol" as Constants;
 
-/**
- * @author gmspacex
- * @title BaseAdapter
- * @notice Base Adapter Contract which interacts with external oracle services
- */
+/// @title BaseAdapter
+/// @author BlueberryProtocol
+/// @notice This contract provides a base for adapters that interface with external oracle services.
+/// It allows the owner to set time gaps for price feed data of different tokens.
 abstract contract BaseAdapter is Ownable {
-    /// @dev Mapping from token address to max delay time
-    mapping(address => uint256) public maxDelayTimes;
+    /*//////////////////////////////////////////////////////////////////////////
+                                      PUBLIC STORAGE 
+    //////////////////////////////////////////////////////////////////////////*/
 
-    event SetMaxDelayTime(address token, uint256 maxDelayTime);
+    /// @notice A mapping that associates each token address with its respective time gap.
+    /// Time gap represents the acceptable age of the data before it is considered outdated.
+    mapping(address => uint256) public timeGaps;
 
-    /// @notice Set max delay time for each token
-    /// @param tokens List of remapped tokens to set max delay
-    /// @param maxDelays List of max delay times to set to
-    function setMaxDelayTimes(
+    /*//////////////////////////////////////////////////////////////////////////
+                                      EVENTS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Emitted when a time gap for a specific token is set or updated.
+    /// @param token The token address for which the time gap was set.
+    /// @param gap The new time gap value (in seconds).
+    event SetTimeGap(address token, uint256 gap);
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @notice Allows the owner to set time gaps for a list of tokens.
+    /// The time gap is used to determine the acceptable age of the oracle data.
+    /// @param tokens List of token addresses for which time gaps will be set.
+    /// @param gaps Corresponding list of time gaps to set for each token.
+    function setTimeGap(
         address[] calldata tokens,
-        uint256[] calldata maxDelays
+        uint256[] calldata gaps
     ) external onlyOwner {
-        if (tokens.length != maxDelays.length)
-            revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
-            if (maxDelays[idx] > 2 days)
-                revert Errors.TOO_LONG_DELAY(maxDelays[idx]);
-            if (maxDelays[idx] < 10) revert Errors.TOO_LOW_MEAN(maxDelays[idx]);
-            if (tokens[idx] == address(0)) revert Errors.ZERO_ADDRESS();
-            maxDelayTimes[tokens[idx]] = maxDelays[idx];
-            emit SetMaxDelayTime(tokens[idx], maxDelays[idx]);
+        if (tokens.length != gaps.length) revert Errors.INPUT_ARRAY_MISMATCH();
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            if (gaps[i] > Constants.MAX_TIME_GAP)
+                revert Errors.TOO_LONG_DELAY(gaps[i]);
+            if (gaps[i] < Constants.MIN_TIME_GAP)
+                revert Errors.TOO_LOW_MEAN(gaps[i]);
+            if (tokens[i] == address(0)) revert Errors.ZERO_ADDRESS();
+            timeGaps[tokens[i]] = gaps[i];
+            emit SetTimeGap(tokens[i], gaps[i]);
         }
     }
 }

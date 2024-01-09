@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./MockERC20.sol";
@@ -16,6 +16,10 @@ contract MockIchiV2 is MockERC20 {
     // constant that represents difference in decimals between ICHI V1 and ICHI V2 tokens
     uint256 constant DECIMALS_DIFF = 1e9;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
     constructor(address ichiV1_) MockERC20("ICHI", "ICHI", 18) {
         ichiV1 = ichiV1_;
     }
