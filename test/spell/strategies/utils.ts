@@ -221,6 +221,14 @@ export const setupVaults = async (
       signer,
       100
     );
+
+    if (amount == 0) {
+      tokens.pop();
+      softVaults.pop();
+      bTokenList.pop();
+      continue;
+    }
+    
     await underlyingToken
       .connect(signer)
       .approve(softVault.address, ethers.constants.MaxUint256);

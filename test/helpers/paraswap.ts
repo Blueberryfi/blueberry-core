@@ -1,6 +1,6 @@
 import axios from "axios";
 import { ethers } from "hardhat";
-import { SwapSide, constructSimpleSDK } from "@paraswap/sdk";
+import { OptimalRate, SwapSide, TransactionParams, constructSimpleSDK } from "@paraswap/sdk";
 import { BigNumber, BigNumberish, utils } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
@@ -88,26 +88,32 @@ export const faucetToken = async (
     },
   });
 
-  const calldata = await paraswapSdk.swap.buildTx(
-    {
-      srcToken: ADDRESS.ETH,
-      destToken: toToken,
-      srcAmount: amount.toString(),
-      slippage: 10 * 0.015 * 10000, // 15% slippage
-      priceRoute: priceRoute,
-      userAddress: signer.address,
-    },
-    { ignoreChecks: true, ignoreGasEstimate: true }
-  );
+  let preBalance = await token.balanceOf(signer.address);
 
-  await signer.sendTransaction({
-    data: calldata.data,
-    value: calldata.value,
-    from: signer.address,
-    to: ADDRESS.AUGUSTUS_SWAPPER,
-  });
+  let txStatus = false;
+  let retryCount = 1;
+  while (txStatus === false) {
+    try {
+      let slippage = (10) * (0.01 + (0.001 * retryCount)) * 10000;
+      console.log(slippage);
+      const calldata = await buildTxCalldata(toToken, amount, priceRoute, signer, slippage);
 
-  return BigNumber.from(priceRoute.destAmount).mul(85).div(100);
+      await signer.sendTransaction({
+        data: calldata.data,
+        value: calldata.value,
+        from: signer.address,
+        to: ADDRESS.AUGUSTUS_SWAPPER,
+      });
+      txStatus = true;
+    } catch (e) {
+      retryCount++;
+
+      if (retryCount > 10) {
+        return 0;
+      }
+    }
+  }
+  return (await token.balanceOf(signer.address)).sub(preBalance);
 };
 
 export const getParaswapCalldataToBuy = async (
@@ -146,3 +152,23 @@ export const getParaswapCalldataToBuy = async (
     calldata,
   };
 };
+
+async function buildTxCalldata(
+  toToken: string,
+  amount: BigNumberish,
+  priceRoute: OptimalRate,
+  signer: SignerWithAddress,
+  slippage: number
+): Promise<TransactionParams> {
+  return await paraswapSdk.swap.buildTx(
+    {
+      srcToken: ADDRESS.ETH,
+      destToken: toToken,
+      srcAmount: amount.toString(),
+      slippage: slippage,
+      priceRoute: priceRoute,
+      userAddress: signer.address,
+    },
+    { ignoreChecks: true, ignoreGasEstimate: true }
+  );
+}
