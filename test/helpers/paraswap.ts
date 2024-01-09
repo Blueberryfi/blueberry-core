@@ -93,7 +93,7 @@ export const faucetToken = async (
       srcToken: ADDRESS.ETH,
       destToken: toToken,
       srcAmount: amount.toString(),
-      slippage: 10 * 0.01 * 10000, // 10% slippage
+      slippage: 10 * 0.015 * 10000, // 15% slippage
       priceRoute: priceRoute,
       userAddress: signer.address,
     },
@@ -107,7 +107,7 @@ export const faucetToken = async (
     to: ADDRESS.AUGUSTUS_SWAPPER,
   });
 
-  return BigNumber.from(priceRoute.destAmount).mul(90).div(100);
+  return BigNumber.from(priceRoute.destAmount).mul(85).div(100);
 };
 
 export const getParaswapCalldataToBuy = async (

@@ -302,9 +302,8 @@ export const getTokenAmountFromUSD = async (
   oracle: CoreOracle,
   usdAmount: BigNumberish
 ): Promise<BigNumber> => {
-  console.log("Enter");
   const price = await oracle.callStatic.getPrice(token.address);
-  console.log("Price", price.toString());
+
   const decimals = await token.decimals();
 
   return utils
