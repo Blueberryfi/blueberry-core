@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/convex/IRewarder.sol";
 import "./MockERC20.sol";
-
+import "hardhat/console.sol";
 contract MockBooster {
     using SafeERC20 for IERC20;
 
@@ -87,6 +87,11 @@ contract MockBooster {
         return true;
     }
 
+    function withdrawTo(uint256 _pid, uint256 _amount, address _to) external returns (bool) {
+        _withdraw(_pid, _amount, msg.sender, _to);
+        return true;
+    }
+
     function withdraw(uint256 _pid, uint256 _amount) public returns (bool) {
         _withdraw(_pid, _amount, msg.sender, msg.sender);
         return true;
@@ -104,6 +109,7 @@ contract MockBooster {
 
         //remove lp balance
         address token = pool.token;
+
         MockERC20(token).burn(_from, _amount);
 
         //return lp tokens

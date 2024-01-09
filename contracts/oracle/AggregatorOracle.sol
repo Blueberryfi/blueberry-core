@@ -18,10 +18,9 @@ import "../interfaces/IBaseOracle.sol";
 
 /// @title AggregatorOracle
 /// @author BlueberryProtocol
-/// @notice This contract aggregates price feeds from multiple oracle sources, 
+/// @notice This contract aggregates price feeds from multiple oracle sources,
 ///         ensuring a more reliable and resilient price data.
 contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
-
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
@@ -69,10 +68,9 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
 
         primarySourceCount[token] = sources.length;
         maxPriceDeviations[token] = maxPriceDeviation;
-        for (uint256 idx = 0; idx < sources.length; idx++) {
-            if (address(sources[idx]) == address(0))
-                revert Errors.ZERO_ADDRESS();
-            primarySources[token][idx] = sources[idx];
+        for (uint256 i = 0; i < sources.length; ++i) {
+            if (address(sources[i]) == address(0)) revert Errors.ZERO_ADDRESS();
+            primarySources[token][i] = sources[i];
         }
         emit SetPrimarySources(token, maxPriceDeviation, sources);
     }
@@ -106,11 +104,11 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
             tokens.length != maxPriceDeviationList.length
         ) revert Errors.INPUT_ARRAY_MISMATCH();
 
-        for (uint256 idx = 0; idx < tokens.length; idx++) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
             _setPrimarySources(
-                tokens[idx],
-                maxPriceDeviationList[idx],
-                allSources[idx]
+                tokens[i],
+                maxPriceDeviationList[i],
+                allSources[i]
             );
         }
     }
@@ -127,17 +125,15 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
 
         /// Get valid oracle sources
         uint256 validSourceCount = 0;
-        for (uint256 idx = 0; idx < candidateSourceCount; idx++) {
-            try primarySources[token][idx].getPrice(token) returns (
-                uint256 px
-            ) {
+        for (uint256 i = 0; i < candidateSourceCount; ++i) {
+            try primarySources[token][i].getPrice(token) returns (uint256 px) {
                 if (px != 0) prices[validSourceCount++] = px;
             } catch {}
         }
         if (validSourceCount == 0) revert Errors.NO_VALID_SOURCE(token);
         /// Sort prices in ascending order
         for (uint256 i = 0; i < validSourceCount - 1; ++i) {
-            for (uint256 j = 0; j < validSourceCount - i - 1; j++) {
+            for (uint256 j = 0; j < validSourceCount - i - 1; ++j) {
                 if (prices[j] > prices[j + 1]) {
                     (prices[j], prices[j + 1]) = (prices[j + 1], prices[j]);
                 }

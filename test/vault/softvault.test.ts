@@ -4,7 +4,7 @@ import chai, { expect } from "chai";
 import {
   ERC20,
   FeeManager,
-  ICErc20,
+  IBErc20,
   IUniswapV2Router02,
   IWETH,
   ProtocolConfig,
@@ -18,7 +18,7 @@ import { near } from "../assertions/near";
 chai.use(roughlyNear);
 chai.use(near);
 
-const CUSDC = ADDRESS.bUSDC;
+const BUSDC = ADDRESS.bUSDC;
 const USDC = ADDRESS.USDC;
 const WETH = ADDRESS.WETH;
 
@@ -30,7 +30,7 @@ describe("SoftVault", () => {
 
   let usdc: ERC20;
   let weth: IWETH;
-  let cUSDC: ICErc20;
+  let bUSDC: IBErc20;
   let vault: SoftVault;
   let config: ProtocolConfig;
 
@@ -38,7 +38,7 @@ describe("SoftVault", () => {
     [admin, alice, bank, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC, admin);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-    cUSDC = <ICErc20>await ethers.getContractAt("ICErc20", CUSDC);
+    bUSDC = <IBErc20>await ethers.getContractAt("IBErc20", BUSDC);
 
     const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
     config = <ProtocolConfig>await upgrades.deployProxy(
@@ -64,15 +64,16 @@ describe("SoftVault", () => {
 
   beforeEach(async () => {
     const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
+
     vault = <SoftVault>(
       await upgrades.deployProxy(
         SoftVault,
-        [config.address, CUSDC, "Interest Bearing USDC", "ibUSDC"],
+        [config.address, BUSDC, "Interest Bearing USDC", "ibUSDC"],
         { unsafeAllow: ["delegatecall"] }
       )
     );
-    await vault.deployed();
 
+    await vault.deployed();
     // deposit 50 eth -> 50 WETH
     await weth.deposit({ value: utils.parseUnits("50") });
     await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
@@ -99,33 +100,25 @@ describe("SoftVault", () => {
         CONTRACT_NAMES.SoftVault
       );
       await expect(
-        upgrades.deployProxy(
-          SoftVault,
-          [
-            config.address,
-            ethers.constants.AddressZero,
-            "Interest Bearing USDC",
-            "ibUSDC",
-          ],
-          { unsafeAllow: ["delegatecall"] }
-        )
+        upgrades.deployProxy(SoftVault, [
+          config.address,
+          ethers.constants.AddressZero,
+          "Interest Bearing USDC",
+          "ibUSDC",
+        ])
       ).to.be.revertedWithCustomError(SoftVault, "ZERO_ADDRESS");
       await expect(
-        upgrades.deployProxy(
-          SoftVault,
-          [
-            ethers.constants.AddressZero,
-            CUSDC,
-            "Interest Bearing USDC",
-            "ibUSDC",
-          ],
-          { unsafeAllow: ["delegatecall"] }
-        )
+        upgrades.deployProxy(SoftVault, [
+          ethers.constants.AddressZero,
+          BUSDC,
+          "Interest Bearing USDC",
+          "ibUSDC",
+        ])
       ).to.be.revertedWithCustomError(SoftVault, "ZERO_ADDRESS");
     });
     it("should set bToken along with uToken in constructor", async () => {
       expect(await vault.uToken()).to.be.equal(USDC);
-      expect(await vault.bToken()).to.be.equal(CUSDC);
+      expect(await vault.bToken()).to.be.equal(BUSDC);
     });
     it("should revert initializing twice", async () => {
       await expect(
@@ -155,8 +148,8 @@ describe("SoftVault", () => {
       await usdc.approve(vault.address, depositAmount);
       await vault.deposit(depositAmount);
 
-      const exchangeRate = await cUSDC.exchangeRateStored();
-      expect(await cUSDC.balanceOf(vault.address)).to.be.equal(
+      const exchangeRate = await bUSDC.exchangeRateStored();
+      expect(await bUSDC.balanceOf(vault.address)).to.be.equal(
         depositAmount.mul(BigNumber.from(10).pow(18)).div(exchangeRate)
       );
     });
@@ -164,7 +157,7 @@ describe("SoftVault", () => {
       await usdc.approve(vault.address, depositAmount);
       await vault.deposit(depositAmount);
 
-      const cBalance = await cUSDC.balanceOf(vault.address);
+      const cBalance = await bUSDC.balanceOf(vault.address);
       const shareBalance = await vault.balanceOf(admin.address);
       expect(cBalance).to.be.equal(shareBalance);
     });
@@ -193,7 +186,7 @@ describe("SoftVault", () => {
       await expect(vault.withdraw(shareBalance)).to.be.emit(vault, "Withdrawn");
 
       expect(await vault.balanceOf(admin.address)).to.be.equal(0);
-      expect(await cUSDC.balanceOf(vault.address)).to.be.equal(0);
+      expect(await bUSDC.balanceOf(vault.address)).to.be.equal(0);
 
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterTreasuryBalance = await usdc.balanceOf(treasury.address);

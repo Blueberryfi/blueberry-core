@@ -12,6 +12,7 @@ env:
   ## Sets environment variable
   DEPLOY_ACCOUNT_KEY: ${{ secrets.DEPLOY_ACCOUNT_KEY }}
   ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+  ALCHEMY_ARB_API_KEY: ${{ secrets.ALCHEMY_ARB_API_KEY }}
   ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
   INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
   LLAMA_API_KEY: ${{ secrets.LLAMA_API_KEY}}
@@ -80,7 +81,7 @@ jobs:
       - name: Set up node
         uses: actions/setup-node@v2
         with:
-          node-version: 16
+          node-version: 18
       - name: Node module cache
         uses: actions/cache@v2
         id: cache
@@ -107,10 +108,10 @@ jobs:
           restore-keys: |
             artifacts-
       - name: Hardhat compile
-        run: npx hardhat compile
+        run: yarn hardhat compile
         if: steps.hardhat-cache.outputs.cache-hit != 'true'
       - name: Run Test
-        run: npx hardhat test
+        run: yarn hardhat test
         timeout-minutes: 30
         env:
           # pass GitHub token to allow accurately detecting a build vs a re-run build

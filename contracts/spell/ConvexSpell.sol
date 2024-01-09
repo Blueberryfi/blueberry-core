@@ -32,7 +32,6 @@ contract ConvexSpell is BasicSpell {
         ClosePosParam param;
         uint256[] amounts;
         bytes[] swapDatas;
-        bool isKilled;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -150,7 +149,7 @@ contract ConvexSpell is BasicSpell {
             if (isBorrowTokenWeth) {
                 bool hasEth;
                 uint256 tokenLength = tokens.length;
-                for (uint256 i; i != tokenLength; ++i) {
+                for (uint256 i; i < tokenLength; ++i) {
                     if (tokens[i] == ETH) {
                         hasEth = true;
                         break;
@@ -187,6 +186,7 @@ contract ConvexSpell is BasicSpell {
                     );
                 } else {
                     uint256[2] memory suppliedAmts;
+
                     for (uint256 i; i < 2; ++i) {
                         if (
                             (tokens[i] == borrowToken) ||
@@ -203,6 +203,7 @@ contract ConvexSpell is BasicSpell {
                 }
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
+                
                 for (uint256 i; i < 3; ++i) {
                     if (
                         (tokens[i] == borrowToken) ||
@@ -218,6 +219,7 @@ contract ConvexSpell is BasicSpell {
                 );
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
+
                 for (uint256 i; i < 4; ++i) {
                     if (
                         (tokens[i] == borrowToken) ||
@@ -227,6 +229,7 @@ contract ConvexSpell is BasicSpell {
                         break;
                     }
                 }
+                
                 ICurvePool(pool).add_liquidity{value: ethValue}(
                     suppliedAmts,
                     _minLPMint
@@ -256,7 +259,7 @@ contract ConvexSpell is BasicSpell {
             );
             // distribute multiple rewards to users
             uint256 tokensLength = rewardTokens.length;
-            for (uint256 i; i != tokensLength; ++i) {
+            for (uint256 i; i < tokensLength; ++i) {
                 _doRefundRewards(rewardTokens[i]);
             }
         }
@@ -302,30 +305,12 @@ contract ConvexSpell is BasicSpell {
         _sellRewards(rewardTokens, closePosParam);
 
         /// 3. Remove liquidity
-        address[] memory tokens = _removeLiquidity(
+        _removeLiquidity(
             closePosParam.param,
-            closePosParam.isKilled,
             pos,
             crvLp,
             amountPosRemove
         );
-
-        if (closePosParam.isKilled) {
-            for (uint256 i; i != tokens.length; ++i) {
-                address token = tokens[i];
-                if (token == ETH) {
-                    token = WETH;
-                    IWETH(WETH).deposit{value: address(this).balance}();
-                }
-                if (token != pos.debtToken) {
-                    _swapOnParaswap(
-                        token,
-                        closePosParam.amounts[i + rewardTokens.length],
-                        closePosParam.swapDatas[i + rewardTokens.length]
-                    );
-                }
-            }
-        }
 
         /// 4. Withdraw isolated collateral from Bank
         _doWithdraw(
@@ -360,14 +345,12 @@ contract ConvexSpell is BasicSpell {
 
     /// @dev Removes liquidity from a Curve pool for a given position.
     /// @param param Contains data required to close the position.
-    /// @param isKilled If the convex pool is killed
     /// @param pos Data structure representing the current bank position.
     /// @param crvLp Address of the Curve LP token.
     /// @param amountPosRemove Amount of LP tokens to be removed from the pool.
     ///        If set to max, will remove all available LP tokens.
     function _removeLiquidity(
         ClosePosParam memory param,
-        bool isKilled,
         IBank.Position memory pos,
         address crvLp,
         uint256 amountPosRemove
@@ -381,37 +364,14 @@ contract ConvexSpell is BasicSpell {
 
         int128 tokenIndex;
         uint256 len = tokens.length;
-        for (uint256 i; i != len; ++i) {
+        for (uint256 i; i < len; ++i) {
             if (tokens[i] == pos.debtToken) {
                 tokenIndex = int128(uint128(i));
                 break;
             }
         }
 
-        if (isKilled) {
-            if (len == 2) {
-                if (tokens[1] == _3CRV) {
-                    uint256[4] memory minOuts;
-                    ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).remove_liquidity(
-                        pool,
-                        amountPosRemove,
-                        minOuts
-                    );
-                    return _getMetaPoolTokens(tokens[0]);
-                } else {
-                    uint256[2] memory minOuts;
-                    ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-                }
-            } else if (len == 3) {
-                uint256[3] memory minOuts;
-                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-            } else if (len == 4) {
-                uint256[4] memory minOuts;
-                ICurvePool(pool).remove_liquidity(amountPosRemove, minOuts);
-            } else {
-                revert("Invalid pool length");
-            }
-        } else if (len == 2 && tokens[1] == _3CRV) {
+        if (len == 2 && tokens[1] == _3CRV) {
             int128 index;
             if (tokens[0] == param.borrowToken) {
                 index = 0;
@@ -462,7 +422,7 @@ contract ConvexSpell is BasicSpell {
         ClosePositionFarmParam calldata closePosParam
     ) internal {
         uint256 tokensLength = rewardTokens.length;
-        for (uint256 i; i != tokensLength; ++i) {
+        for (uint256 i; i < tokensLength; ++i) {
             address sellToken = rewardTokens[i];
 
             /// Apply any potential fees on the reward.

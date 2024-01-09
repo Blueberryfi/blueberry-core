@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "../interfaces/aura/IAuraStashToken.sol";
 
-contract MockStashToken {
+contract MockStashToken is IAuraStashToken {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -15,6 +16,7 @@ contract MockStashToken {
 
     address public rewardPool;
     address public baseToken;
+    address public stash;
 
     uint256 internal _totalSupply;
 
@@ -62,5 +64,13 @@ contract MockStashToken {
         IERC20(baseToken).safeTransfer(_to, _amount);
 
         return true;
+    }
+
+    function setStash(address _stash) external {
+        stash = _stash;
+    }
+
+    function setTotalSupply(uint256 _totalSupply_) external {
+        _totalSupply = _totalSupply_;
     }
 }

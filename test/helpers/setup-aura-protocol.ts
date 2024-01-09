@@ -21,6 +21,9 @@ import {
   WAuraPools,
   AuraSpell,
   Comptroller,
+  PoolEscrow,
+  PoolEscrowFactory,
+  IAuraBooster,
 } from "../../typechain-types";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
 import { deployBTokens } from "./money-market";
@@ -49,6 +52,7 @@ export interface AuraProtocol {
   config: ProtocolConfig;
   bank: BlueBerryBank;
   auraSpell: AuraSpell;
+  auraBooster: IAuraBooster;
   usdcSoftVault: SoftVault;
   crvSoftVault: SoftVault;
   daiSoftVault: SoftVault;
@@ -61,10 +65,9 @@ export interface AuraProtocol {
   bDAI: Contract;
   bMIM: Contract;
   bLINK: Contract;
-  bOHM: Contract;
   bSUSHI: Contract;
   bBAL: Contract;
-  bALCX: Contract;
+  //bALCX: Contract;
   bWETH: Contract;
   bWBTC: Contract;
 }
@@ -95,6 +98,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   let daiSoftVault: SoftVault;
   let hardVault: HardVault;
 
+  let escrowBase: PoolEscrow;
+  let escrowFactory: PoolEscrowFactory;
+
   let comptroller: Comptroller;
   let bUSDC: Contract;
   let bICHI: Contract;
@@ -102,10 +108,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   let bDAI: Contract;
   let bMIM: Contract;
   let bLINK: Contract;
-  let bOHM: Contract;
   let bSUSHI: Contract;
   let bBAL: Contract;
-  let bALCX: Contract;
+  //let bALCX: Contract;
   let bWETH: Contract;
   let bWBTC: Contract;
 
@@ -250,10 +255,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   bDAI = bTokens.bDAI;
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
-  bOHM = bTokens.bOHM;
   bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
-  bALCX = bTokens.bALCX;
+  //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
   bWBTC = bTokens.bWBTC;
 
@@ -298,14 +302,29 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   );
   await werc20.deployed();
 
+  const escrowBaseFactory = await ethers.getContractFactory("PoolEscrow");
+  escrowBase = await escrowBaseFactory.deploy();
+
+  await escrowBase.deployed();
+
+  const escrowFactoryFactory = await ethers.getContractFactory(
+    "PoolEscrowFactory"
+  );
+  escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
+
+  await escrowFactory.deployed();
+
   const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
   waura = <WAuraPools>(
     await upgrades.deployProxy(
       WAuraPools,
-      [AURA, ADDRESS.AURA_BOOSTER, STASH_AURA],
+      [AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address],
       { unsafeAllow: ["delegatecall"] }
     )
   );
+
+  escrowFactory.initialize(waura.address, ADDRESS.AURA_BOOSTER);
+
   await waura.deployed();
 
   // Deploy CRV spell
@@ -325,6 +344,11 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     )
   );
   await auraSpell.deployed();
+
+  let auraBooster = <IAuraBooster>(
+    await ethers.getContractAt("IAuraBooster", ADDRESS.AURA_BOOSTER)
+  );
+
   // await curveSpell.setSwapRouter(ADDRESS.SUSHI_ROUTER);
   await auraSpell.addStrategy(
     ADDRESS.BAL_UDU,
@@ -446,6 +470,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     feeManager,
     bank,
     auraSpell,
+    auraBooster,
     usdcSoftVault,
     crvSoftVault,
     daiSoftVault,
@@ -457,10 +482,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     bDAI,
     bMIM,
     bLINK,
-    bOHM,
     bSUSHI,
     bBAL,
-    bALCX,
+    //bALCX,
     bWETH,
     bWBTC,
   };

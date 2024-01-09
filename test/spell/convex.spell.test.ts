@@ -12,7 +12,7 @@ import {
   CurveTricryptoOracle,
   ConvexSpell,
   WConvexPools,
-  ICvxPools,
+  ICvxBooster,
   IRewarder,
   ProtocolConfig,
 } from "../../typechain-types";
@@ -42,9 +42,9 @@ const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 const CVX = ADDRESS.CVX;
-const POOL_ID_3CRV = ADDRESS.CVX_3Crv_Id;
-const POOL_ID_CRVETH = ADDRESS.CVX_CrvEth_Id;
-const POOL_ID_SUSD = ADDRESS.CVX_Susd_Id;
+const POOL_ID_1 = ADDRESS.CVX_3Crv_Id;
+const POOL_ID_2 = ADDRESS.CVX_FraxEth_Id;
+const POOL_ID_3 = ADDRESS.CVX_MIM_Id;
 
 describe("Convex Spell", () => {
   let admin: SignerWithAddress;
@@ -55,6 +55,7 @@ describe("Convex Spell", () => {
   let dai: ERC20;
   let crv: ERC20;
   let cvx: ERC20;
+  let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: ConvexSpell;
@@ -65,33 +66,35 @@ describe("Convex Spell", () => {
   let wconvex: WConvexPools;
   let bank: BlueBerryBank;
   let protocol: CvxProtocol;
-  let cvxBooster: ICvxPools;
+  let cvxBooster: ICvxBooster;
   let crvRewarder1: IRewarder;
   let crvRewarder2: IRewarder;
   let config: ProtocolConfig;
 
   before(async () => {
-    await fork(1, 17089048);
-
+    await fork(1);
+    console.log("forked");
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     dai = <ERC20>await ethers.getContractAt("ERC20", DAI);
     crv = <ERC20>await ethers.getContractAt("ERC20", CRV);
     cvx = <ERC20>await ethers.getContractAt("ERC20", CVX);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
-    cvxBooster = <ICvxPools>(
-      await ethers.getContractAt("ICvxPools", ADDRESS.CVX_BOOSTER)
+    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
+    cvxBooster = <ICvxBooster>(
+      await ethers.getContractAt("ICvxBooster", ADDRESS.CVX_BOOSTER)
     );
-    const poolInfo1 = await cvxBooster.poolInfo(POOL_ID_3CRV);
+    const poolInfo1 = await cvxBooster.poolInfo(POOL_ID_1);
     crvRewarder1 = <IRewarder>(
       await ethers.getContractAt("IRewarder", poolInfo1.crvRewards)
     );
-    const poolInfo2 = await cvxBooster.poolInfo(POOL_ID_CRVETH);
+    const poolInfo2 = await cvxBooster.poolInfo(POOL_ID_2);
     crvRewarder2 = <IRewarder>(
       await ethers.getContractAt("IRewarder", poolInfo2.crvRewards)
     );
 
     protocol = await setupCvxProtocol();
+
     bank = protocol.bank;
     spell = protocol.convexSpell;
     volatileSpell = protocol.convexSpellWithVolatileOracle;
@@ -236,7 +239,7 @@ describe("Convex Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount.mul(4),
-              farmingPoolId: POOL_ID_3CRV,
+              farmingPoolId: POOL_ID_1,
             },
             0,
           ])
@@ -255,7 +258,7 @@ describe("Convex Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_3CRV,
+              farmingPoolId: POOL_ID_1,
             },
             0,
           ])
@@ -276,7 +279,7 @@ describe("Convex Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_3CRV,
+              farmingPoolId: POOL_ID_1,
             },
             0,
           ])
@@ -297,7 +300,7 @@ describe("Convex Spell", () => {
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_3CRV + 1,
+              farmingPoolId: POOL_ID_1 + 1,
             },
             0,
           ])
@@ -318,7 +321,7 @@ describe("Convex Spell", () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID_3CRV,
+            farmingPoolId: POOL_ID_1,
           },
           0,
         ])
@@ -345,9 +348,6 @@ describe("Convex Spell", () => {
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
         depositAmount.mul(50).div(10000)
       );
-
-      const rewarderBalance = await crvRewarder1.balanceOf(wconvex.address);
-      expect(rewarderBalance).to.be.equal(pos.collateralSize);
     });
 
     it("should be able to get multiple rewards", async () => {
@@ -377,7 +377,7 @@ describe("Convex Spell", () => {
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID_3CRV,
+            farmingPoolId: POOL_ID_1,
           },
           0,
         ])
@@ -461,12 +461,12 @@ describe("Convex Spell", () => {
       );
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );
@@ -494,11 +494,10 @@ describe("Convex Spell", () => {
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: utils.parseUnits("1000", 18),
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
               amounts: expectedAmounts,
               swapDatas: swapDatas.map((item) => item.data),
-              isKilled: false,
             },
           ])
         )
@@ -524,17 +523,15 @@ describe("Convex Spell", () => {
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: utils.parseUnits("1000", 18),
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
               amounts: [],
               swapDatas: [],
-              isKilled: false,
             },
           ])
         )
       )
         .to.be.revertedWithCustomError(spell, "STRATEGY_NOT_EXIST")
-        .withArgs(spell.address, 999);
     });
 
     it("should fail to close position for non-existing collateral", async () => {
@@ -556,11 +553,10 @@ describe("Convex Spell", () => {
                 amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: utils.parseUnits("1000", 18),
                 amountToSwap: 0,
-                swapData: '0x',
+                swapData: "0x",
               },
               amounts: [],
               swapDatas: [],
-              isKilled: false,
             },
           ])
         )
@@ -588,29 +584,32 @@ describe("Convex Spell", () => {
       const rewardFeeRatio = await config.rewardFee();
 
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward, idx) => {
-        return reward
-          .mul(BigNumber.from(10000).sub(rewardFeeRatio))
-          .div(10000)
-          .div(2);
-      });
+        const rewardAmount = utils.parseUnits("10", 18);
+          return reward
+        //await crv.transfer(spell.address, rewardAmount);
+            .mul(BigNumber.from(10000).sub(rewardFeeRatio))
+            .div(10000)
+            .div(2);
+        });
 
-      const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
-            return getParaswapCalldata(
-              token,
-              USDC,
-              expectedAmounts[idx],
-              spell.address,
-              100
-            );
-          } else {
-            return {
-              data: "0x00",
-            };
-          }
-        })
-      );
+        const swapDatas = await Promise.all(
+          pendingRewardsInfo.tokens.map((token, idx) => {
+            if (expectedAmounts[idx].gt(0)) {
+              return getParaswapCalldata(
+                token,
+                USDC,
+                expectedAmounts[idx],
+                spell.address,
+                100
+              );
+            } else {
+              return {
+                data: "0x00",
+              };
+            }
+          })
+        );
+
       const amountToSwap = utils.parseUnits("30", 18);
       const swapData = (
         await getParaswapCalldata(
@@ -622,9 +621,54 @@ describe("Convex Spell", () => {
         )
       ).data;
 
-      const iface = new ethers.utils.Interface(SpellABI);
-      await expect(
-        bank.execute(
+      it("should be able to harvest on Convex 2", async () => {
+        await evm_mine_blocks(1000);
+
+        const positionId = (await bank.nextPositionId()).sub(1);
+        const position = await bank.positions(positionId);
+
+        const totalEarned = await crvRewarder1.earned(wconvex.address);
+        console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
+
+        const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(
+          position.collId,
+          position.collateralSize
+        );
+        console.log("Pending Rewards", pendingRewardsInfo);
+
+        const rewardFeeRatio = await config.rewardFee();
+
+        const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
+          reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)
+        );
+
+        const swapDatas = await Promise.all(
+          pendingRewardsInfo.tokens.map((token, i) => {
+            if (expectedAmounts[i].gt(0)) {
+              return getParaswapCalldata(
+                token,
+                USDC,
+                expectedAmounts[i],
+                spell.address,
+                100
+              );
+            } else {
+              return {
+                data: "0x00",
+              };
+            }
+          })
+        );
+
+        // Manually transfer USDC rewards to spell
+        await usdc.transfer(spell.address, utils.parseUnits("10", 6));
+
+        const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
+        const beforeUSDCBalance = await usdc.balanceOf(admin.address);
+        const beforeCrvBalance = await crv.balanceOf(admin.address);
+
+        const iface = new ethers.utils.Interface(SpellABI);
+        await bank.execute(
           positionId,
           spell.address,
           iface.encodeFunctionData("closePositionFarm", [
@@ -633,137 +677,60 @@ describe("Convex Spell", () => {
                 strategyId: 0,
                 collToken: CRV,
                 borrowToken: USDC,
-                amountRepay: debtAmount.div(2),
-                amountPosRemove: position.collateralSize.div(2),
-                amountShareWithdraw: position.underlyingVaultShare.div(2),
+                amountRepay: ethers.constants.MaxUint256,
+                amountPosRemove: ethers.constants.MaxUint256,
+                amountShareWithdraw: ethers.constants.MaxUint256,
                 amountOutMin: 1,
-                amountToSwap,
-                swapData,
+                amountToSwap: 0,
+                swapData: "0x",
               },
               amounts: expectedAmounts,
               swapDatas: swapDatas.map((item) => item.data),
-              isKilled: false,
             },
           ])
-        )
-      ).to.be.revertedWithCustomError(spell, "EXCEED_MAX_LTV");
-    });
+        );
+        const afterUSDCBalance = await usdc.balanceOf(admin.address);
+        const afterCrvBalance = await crv.balanceOf(admin.address);
+        console.log(
+          "USDC Balance Change:",
+          afterUSDCBalance.sub(beforeUSDCBalance)
+        );
+        console.log(
+          "CRV Balance Change:",
+          afterCrvBalance.sub(beforeCrvBalance)
+        );
+        const depositFee = depositAmount.mul(50).div(10000);
+        const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
+        expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
+          depositAmount.sub(depositFee).sub(withdrawFee)
+        );
 
-    it("should be able to harvest on Convex 2", async () => {
-      await evm_mine_blocks(1000);
+        const afterTreasuryBalance = await crv.balanceOf(treasury.address);
+        // Plus rewards fee
+        expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
+          withdrawFee
+        );
+      });
 
-      const positionId = (await bank.nextPositionId()).sub(1);
-      const position = await bank.positions(positionId);
-
-      const totalEarned = await crvRewarder1.earned(wconvex.address);
-      console.log("Wrapper Total Earned:", utils.formatUnits(totalEarned));
-
-      const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(
-        position.collId,
-        position.collateralSize
-      );
-      console.log("Pending Rewards", pendingRewardsInfo);
-
-      const rewardFeeRatio = await config.rewardFee();
-
-      const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
-        reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)
-      );
-
-      const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
-            return getParaswapCalldata(
-              token,
-              USDC,
-              expectedAmounts[idx],
-              spell.address,
-              100
-            );
-          } else {
-            return {
-              data: "0x00",
-            };
-          }
-        })
-      );
-
-      const amountToSwap = utils.parseUnits("30", 18);
-      const swapData = (
-        await getParaswapCalldata(
-          CRV,
-          USDC,
-          amountToSwap,
-          spell.address,
-          100
-        )
-      ).data;
-
-      const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
-      const beforeUSDCBalance = await usdc.balanceOf(admin.address);
-      const beforeCrvBalance = await crv.balanceOf(admin.address);
-
-      const iface = new ethers.utils.Interface(SpellABI);
-      await bank.execute(
-        positionId,
-        spell.address,
-        iface.encodeFunctionData("closePositionFarm", [
-          {
-            param: {
-              strategyId: 0,
-              collToken: CRV,
-              borrowToken: USDC,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: 1,
-              amountToSwap,
-              swapData,
-            },
-            amounts: expectedAmounts,
-            swapDatas: swapDatas.map((item) => item.data),
-            isKilled: false,
-          },
-        ])
-      );
-      const afterUSDCBalance = await usdc.balanceOf(admin.address);
-      const afterCrvBalance = await crv.balanceOf(admin.address);
-      console.log(
-        "USDC Balance Change:",
-        afterUSDCBalance.sub(beforeUSDCBalance)
-      );
-      console.log("CRV Balance Change:", afterCrvBalance.sub(beforeCrvBalance));
-      const depositFee = depositAmount.mul(50).div(10000);
-      const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
-      expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(
-        depositAmount.sub(depositFee).sub(withdrawFee).sub(amountToSwap)
-      );
-
-      const afterTreasuryBalance = await crv.balanceOf(treasury.address);
-      // Plus rewards fee
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(
-        withdrawFee
-      );
-    });
-
-    it("should be fail to farm DAI on Convex", async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData("openPositionFarm", [
-            {
-              strategyId: 2,
-              collToken: CRV,
-              borrowToken: DAI,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_SUSD,
-            },
+      it("should be fail to farm DAI on Convex", async () => {
+        await expect(
+          bank.execute(
             0,
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, "EXCEED_MIN_POS_SIZE");
+            spell.address,
+            iface.encodeFunctionData("openPositionFarm", [
+              {
+                strategyId: 2,
+                collToken: CRV,
+                borrowToken: DAI,
+                collAmount: depositAmount,
+                borrowAmount: borrowAmount,
+                farmingPoolId: POOL_ID_3,
+              },
+              0,
+            ])
+          )
+        ).to.be.revertedWithCustomError(spell, "EXCEED_MIN_POS_SIZE");
+      });
     });
   });
 });

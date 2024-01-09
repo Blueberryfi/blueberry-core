@@ -11,6 +11,8 @@ import {
   MockERC20,
   MockBaseRewardPool,
   MockVirtualBalanceRewardPool,
+  PoolEscrow,
+  PoolEscrowFactory,
 } from "../../typechain-types";
 import { generateRandomAddress } from "../helpers";
 
@@ -26,6 +28,8 @@ describe("WConvexPools", () => {
   let booster: MockBooster;
   let crvRewards: MockBaseRewardPool;
   let wConvexPools: WConvexPools;
+  let escrowBase: PoolEscrow;
+  let escrowFactory: PoolEscrowFactory;
 
   beforeEach(async () => {
     [alice] = await ethers.getSigners();
@@ -41,6 +45,9 @@ describe("WConvexPools", () => {
     );
     cvx = await MockConvexTokenFactory.deploy();
 
+    const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
+    booster = await MockBoosterFactory.deploy();
+
     const MockBaseRewardPoolFactory = await ethers.getContractFactory(
       "MockBaseRewardPool"
     );
@@ -48,7 +55,8 @@ describe("WConvexPools", () => {
       0,
       stakingToken.address,
       rewardToken.address,
-      cvx.address
+      cvx.address,
+      booster.address
     );
 
     await cvx.setOperator(crvRewards.address);
@@ -63,19 +71,27 @@ describe("WConvexPools", () => {
 
     await crvRewards.addExtraReward(extraRewarder.address);
 
-    const MockBoosterFactory = await ethers.getContractFactory("MockBooster");
-    booster = await MockBoosterFactory.deploy();
+    const escrowBaseFactory = await ethers.getContractFactory("PoolEscrow");
+    escrowBase = await escrowBaseFactory.deploy();
+
+    const escrowFactoryFactory = await ethers.getContractFactory(
+      "PoolEscrowFactory"
+    );
+    escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
 
     const WConvexPoolsFactory = await ethers.getContractFactory(
       CONTRACT_NAMES.WConvexPools
     );
+
     wConvexPools = <WConvexPools>(
       await upgrades.deployProxy(
         WConvexPoolsFactory,
-        [cvx.address, booster.address],
+        [cvx.address, booster.address, escrowFactory.address],
         { unsafeAllow: ["delegatecall"] }
       )
     );
+
+    escrowFactory.initialize(wConvexPools.address, booster.address);
 
     await booster.addPool(
       lpToken.address,
@@ -97,7 +113,11 @@ describe("WConvexPools", () => {
 
     it("should revert initializing twice", async () => {
       await expect(
-        wConvexPools.initialize(cvx.address, booster.address)
+        wConvexPools.initialize(
+          cvx.address,
+          booster.address,
+          escrowFactory.address
+        )
       ).to.be.revertedWith("Initializable: contract is already initialized");
     });
   });
@@ -390,8 +410,10 @@ describe("WConvexPools", () => {
     it("deposit into cvxPools", async () => {
       await wConvexPools.mint(pid, amount);
 
-      expect(await crvRewards.balanceOf(wConvexPools.address)).to.be.eq(amount);
-      expect(await lpToken.balanceOf(wConvexPools.address)).to.be.eq(0);
+      const escrowContract = await wConvexPools.getEscrow(pid);
+
+      expect(await crvRewards.balanceOf(escrowContract)).to.be.eq(amount);
+      expect(await lpToken.balanceOf(escrowContract)).to.be.eq(0);
       expect(await lpToken.balanceOf(booster.address)).to.be.eq(amount);
       expect(await stakingToken.balanceOf(crvRewards.address)).to.be.eq(amount);
     });
@@ -412,10 +434,7 @@ describe("WConvexPools", () => {
       ).to.be.eq(extraRewardPerToken);
 
       expect(await wConvexPools.extraRewardsLength(pid)).to.be.eq(1);
-      expect(
-        await wConvexPools.extraRewardsIdx(pid, extraRewarder.address)
-      ).to.be.eq(1);
-      expect(await wConvexPools.extraRewards(pid, 0)).to.be.eq(
+      expect(await wConvexPools.getExtraRewarder(pid, 0)).to.be.eq(
         extraRewarder.address
       );
     });
@@ -425,10 +444,7 @@ describe("WConvexPools", () => {
       await wConvexPools.mint(pid, amount);
 
       expect(await wConvexPools.extraRewardsLength(pid)).to.be.eq(1);
-      expect(
-        await wConvexPools.extraRewardsIdx(pid, extraRewarder.address)
-      ).to.be.eq(1);
-      expect(await wConvexPools.extraRewards(pid, 0)).to.be.eq(
+      expect(await wConvexPools.getExtraRewarder(pid, 0)).to.be.eq(
         extraRewarder.address
       );
     });
@@ -462,9 +478,11 @@ describe("WConvexPools", () => {
       await crvRewards.setRewardPerToken(newCrvRewardPerToken);
       await extraRewarder.setRewardPerToken(newExtraRewardPerToken);
 
+      const escrowContract = await wConvexPools.getEscrow(pid);
+
       const res = await wConvexPools.pendingRewards(tokenId, mintAmount);
-      await crvRewards.setReward(wConvexPools.address, res[1][0]);
-      await extraRewarder.setReward(wConvexPools.address, res[1][2]);
+      await crvRewards.setReward(escrowContract, res[1][0]);
+      await extraRewarder.setReward(escrowContract, res[1][2]);
     });
 
     it("withdraw from cvxPools", async () => {
@@ -472,10 +490,12 @@ describe("WConvexPools", () => {
 
       await wConvexPools.burn(tokenId, amount);
 
-      expect(await crvRewards.balanceOf(wConvexPools.address)).to.be.eq(
+      const escrowContract = await wConvexPools.getEscrow(pid);
+
+      expect(await crvRewards.balanceOf(escrowContract)).to.be.eq(
         mintAmount.sub(amount)
       );
-      expect(await lpToken.balanceOf(wConvexPools.address)).to.be.eq(0);
+      expect(await lpToken.balanceOf(escrowContract)).to.be.eq(0);
       expect(await lpToken.balanceOf(alice.address)).to.be.eq(
         balBefore.add(amount)
       );

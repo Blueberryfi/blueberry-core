@@ -10,8 +10,8 @@ export const latestBlockNumber = async () => {
 };
 
 export const evm_increaseTime = async (seconds: number) => {
-  await network.provider.send("evm_increaseTime", [seconds]);
-  await network.provider.send("evm_mine", []);
+  await ethers.provider.send("evm_increaseTime", [seconds]);
+  await evm_mine_blocks(1);
 };
 
 export const evm_mine_blocks = async (n: number) => {
@@ -26,15 +26,15 @@ export const currentTime = async () => {
   return block.timestamp;
 };
 
-export const fork = async (chainId: number = 1, blockNumber?: number) => {
+export const fork = async (chainId: number = 1, blockNumber: number = 18695050) => {
   if (chainId === 1) {
     await network.provider.request({
       method: "hardhat_reset",
       params: [
         {
           forking: {
-            jsonRpcUrl: `https://rpc.ankr.com/eth`,
-            blockNumber,
+            jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+            blockNumber: blockNumber,
           },
         },
       ],
@@ -45,8 +45,8 @@ export const fork = async (chainId: number = 1, blockNumber?: number) => {
       params: [
         {
           forking: {
-            jsonRpcUrl: `https://arb1.arbitrum.io/rpc`,
-            blockNumber,
+            jsonRpcUrl: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_ARB_API_KEY}`,
+            blockNumber: blockNumber,
           },
         },
       ],

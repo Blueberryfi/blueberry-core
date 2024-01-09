@@ -60,7 +60,7 @@ export interface CrvProtocol {
   bOHM: Contract,
   bSUSHI: Contract,
   bBAL: Contract,
-  bALCX: Contract,
+  //bALCX: Contract,
   bWETH: Contract,
   bWBTC: Contract,
 }
@@ -101,7 +101,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   let bOHM: Contract;
   let bSUSHI: Contract;
   let bBAL: Contract;
-  let bALCX: Contract;
+  //let bALCX: Contract;
   let bWETH: Contract;
   let bWBTC: Contract;
 
@@ -245,7 +245,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   bOHM = bTokens.bOHM;
   bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
-  bALCX = bTokens.bALCX;
+  //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
   bWBTC = bTokens.bWBTC;
 
@@ -326,21 +326,21 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
     utils.parseUnits("100", 18),
     utils.parseUnits("2000", 18)
   );
-  await curveSpell.addStrategy(
-    ADDRESS.CRV_CRVETH,
-    utils.parseUnits("100", 18),
-    utils.parseUnits("2000", 18)
-  );
+  // await curveSpell.addStrategy(
+  //   ADDRESS.CRV_CRVETH,
+  //   utils.parseUnits("100", 18),
+  //   utils.parseUnits("2000", 18)
+  // );
   await curveSpell.setCollateralsMaxLTVs(
     0,
     [USDC, CRV, DAI],
     [30000, 30000, 30000]
   );
-  await curveSpell.setCollateralsMaxLTVs(
-    1,
-    [USDC, CRV, DAI],
-    [30000, 30000, 30000]
-  );
+  // await curveSpell.setCollateralsMaxLTVs(
+  //   1,
+  //   [USDC, CRV, DAI],
+  //   [30000, 30000, 30000]
+  // );
 
   // Setup Bank
   await bank.whitelistSpells(
@@ -439,7 +439,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
     bOHM,
     bSUSHI,
     bBAL,
-    bALCX,
+    //bALCX,
     bWETH,
     bWBTC,
   }

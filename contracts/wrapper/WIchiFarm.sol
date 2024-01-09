@@ -176,6 +176,7 @@ contract WIchiFarm is
         ichiFarm.deposit(pid, amount, address(this));
         (uint256 ichiPerShare, , ) = ichiFarm.poolInfo(pid);
         uint256 id = encodeId(pid, ichiPerShare);
+        _validateTokenId(id);
         _mint(msg.sender, id, amount, "");
         return id;
     }
@@ -221,5 +222,15 @@ contract WIchiFarm is
             );
         }
         return rewards[0];
+    }
+
+    /**
+     * @notice Verifies that the provided token id is unique and has not been minted yet
+     * @param id The token id to validate
+     */
+    function _validateTokenId(uint256 id) internal view {
+        if (balanceOf(msg.sender, id) != 0) {
+            revert Errors.DUPLICATE_TOKEN_ID(id);
+        }
     }
 }

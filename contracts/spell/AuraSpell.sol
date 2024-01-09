@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "./BasicSpell.sol";
 import "../interfaces/IWAuraPools.sol";
-import "../interfaces/balancer/IBalancerPool.sol";
+import "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
 import "../libraries/UniversalERC20.sol";
 
@@ -34,8 +34,6 @@ contract AuraSpell is BasicSpell {
     IWAuraPools public wAuraPools;
     /// @dev Address of AURA token
     address public AURA;
-    /// @dev Address of Stash AURA token
-    address public STASH_AURA;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -67,7 +65,6 @@ contract AuraSpell is BasicSpell {
 
         wAuraPools = IWAuraPools(wAuraPools_);
         AURA = address(wAuraPools.AURA());
-        STASH_AURA = wAuraPools.STASH_AURA();
         IWAuraPools(wAuraPools_).setApprovalForAll(address(bank_), true);
     }
 
@@ -130,6 +127,7 @@ contract AuraSpell is BasicSpell {
                 })
             );
         }
+
         /// 4. Ensure that the resulting LTV does not exceed maximum allowed value.
         _validateMaxLTV(param.strategyId);
 
@@ -140,28 +138,32 @@ contract AuraSpell is BasicSpell {
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
             (uint256 pid, ) = wAuraPools.decodeId(pos.collId);
+
             if (param.farmingPoolId != pid)
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             if (pos.collToken != address(wAuraPools))
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            
             bank.takeCollateral(pos.collateralSize);
+            
             (address[] memory rewardTokens, ) = wAuraPools.burn(
                 pos.collId,
                 pos.collateralSize
             );
-            /// Distribute the multiple rewards to users.
+            
+            // Distribute the multiple rewards to users.
             uint256 rewardTokensLength = rewardTokens.length;
-            for (uint256 i; i != rewardTokensLength; ++i) {
-                _doRefundRewards(
-                    rewardTokens[i] == STASH_AURA ? AURA : rewardTokens[i]
-                );
+            for (uint256 i; i < rewardTokensLength; ++i) {
+                _doRefundRewards(rewardTokens[i]);
             }
         }
 
         /// 7. Deposit the tokens in the Aura pool and place the wrapped collateral tokens in the Blueberry Bank.
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
         IERC20(lpToken).universalApprove(address(wAuraPools), lpAmount);
+
         uint256 id = wAuraPools.mint(param.farmingPoolId, lpAmount);
+
         bank.putCollateral(address(wAuraPools), id, lpAmount);
     }
 
@@ -181,6 +183,7 @@ contract AuraSpell is BasicSpell {
         /// Information about the position from Blueberry Bank
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address[] memory rewardTokens;
+
         /// Ensure the position's collateral token matches the expected one
         {
             address lpToken = strategies[param.strategyId].vault;
@@ -189,15 +192,18 @@ contract AuraSpell is BasicSpell {
             if (wAuraPools.getUnderlyingToken(pos.collId) != lpToken)
                 revert Errors.INCORRECT_UNDERLYING(lpToken);
 
-            /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards
             bank.takeCollateral(param.amountPosRemove);
-            (rewardTokens, ) = wAuraPools.burn(
-                pos.collId,
-                param.amountPosRemove
-            );
+            
+            /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards            
+            {
+                (rewardTokens, ) = wAuraPools.burn(
+                    pos.collId,
+                    param.amountPosRemove
+                );
 
-            /// 2. Swap each reward token for the debt token
-            _sellRewards(rewardTokens, expectedRewards, swapDatas);
+                /// 2. Swap each reward token for the debt token
+                _sellRewards(rewardTokens, expectedRewards, swapDatas);
+            }
 
             {
                 /// 3. Determine the exact amount of position to remove
@@ -207,7 +213,6 @@ contract AuraSpell is BasicSpell {
                         address(this)
                     );
                 }
-
                 /// 4. Parameters for removing liquidity
                 (
                     uint256[] memory minAmountsOut,
@@ -216,7 +221,7 @@ contract AuraSpell is BasicSpell {
                 ) = _getExitPoolParams(param, lpToken);
 
                 wAuraPools.getVault(lpToken).exitPool(
-                    IBalancerPool(lpToken).getPoolId(),
+                    IBalancerV2Pool(lpToken).getPoolId(),
                     address(this),
                     address(this),
                     IBalancerVault.ExitPoolRequest(
@@ -271,7 +276,7 @@ contract AuraSpell is BasicSpell {
         uint256[] memory amountsIn = new uint256[](length);
         bool isLPIncluded;
 
-        for (i; i != length; ++i) {
+        for (i; i < length; ++i) {
             if (tokens[i] != lpToken) {
                 amountsIn[j] = IERC20(tokens[i]).balanceOf(address(this));
                 if (amountsIn[j] > 0) {
@@ -309,7 +314,7 @@ contract AuraSpell is BasicSpell {
         uint256[] memory minAmountsOut = new uint256[](length);
         uint256 exitTokenIndex;
 
-        for (uint256 i; i != length; ++i) {
+        for (uint256 i; i < length; ++i) {
             if (tokens[i] == borrowToken) {
                 minAmountsOut[i] = amountOutMin;
                 break;
@@ -328,9 +333,9 @@ contract AuraSpell is BasicSpell {
         bytes[] calldata swapDatas
     ) internal {
         uint256 rewardTokensLength = rewardTokens.length;
-        for (uint256 i; i != rewardTokensLength; ++i) {
+
+        for (uint256 i; i < rewardTokensLength; ++i) {
             address sellToken = rewardTokens[i];
-            if (sellToken == STASH_AURA) sellToken = AURA;
 
             _doCutRewardsFee(sellToken);
             if (

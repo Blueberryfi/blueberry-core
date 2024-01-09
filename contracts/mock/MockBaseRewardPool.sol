@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/convex/IRewarder.sol";
+import "../interfaces/convex/ICvxBooster.sol";
 import "./MockVirtualBalanceRewardPool.sol";
 import "./MockConvexToken.sol";
 
@@ -16,6 +17,7 @@ contract MockBaseRewardPool {
 
     IERC20 public rewardToken;
     IERC20 public stakingToken;
+    ICvxBooster public booster;
     uint256 public constant duration = 7 days;
 
     uint256 public rewardPerToken;
@@ -50,13 +52,15 @@ contract MockBaseRewardPool {
         uint256 pid_,
         address stakingToken_,
         address rewardToken_,
-        address convex_
+        address convex_,
+        address booster_
     ) {
         pid = pid_;
         stakingToken = IERC20(stakingToken_);
         rewardToken = IERC20(rewardToken_);
 
         convexOrAura = MockConvexToken(convex_);
+        booster = ICvxBooster(booster_);
     }
 
     function setReward(address user, uint amount) external {
@@ -179,9 +183,14 @@ contract MockBaseRewardPool {
         uint256 amount,
         bool claim
     ) public updateReward(msg.sender) returns (bool) {
+        
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
+
+        stakingToken.safeTransfer(address(this), amount);
         emit Withdrawn(msg.sender, amount);
+
+        booster.withdrawTo(pid, amount, msg.sender);
 
         //get rewards too
         if (claim) {
@@ -202,8 +211,7 @@ contract MockBaseRewardPool {
         if (reward > 0) {
             rewards[_account] = 0;
             rewardToken.safeTransfer(_account, reward);
-
-            convexOrAura.mint(_account, reward);
+            convexOrAura.mintTestTokens(_account, reward);
             emit RewardPaid(_account, reward);
         }
 

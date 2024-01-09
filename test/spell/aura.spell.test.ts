@@ -11,14 +11,14 @@ import {
   CurveVolatileOracle,
   CurveTricryptoOracle,
   WAuraPools,
-  ICvxPools,
+  IAuraBooster,
   IRewarder,
   AuraSpell,
   ProtocolConfig,
 } from "../../typechain-types";
 import { ethers, upgrades } from "hardhat";
 import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { AuraProtocol, evm_increaseTime, setupAuraProtocol } from "../helpers";
+import { AuraProtocol, evm_mine_blocks, setupAuraProtocol } from "../helpers";
 import SpellABI from "../../abi/AuraSpell.json";
 import chai, { expect } from "chai";
 import { near } from "../assertions/near";
@@ -61,7 +61,7 @@ describe("Aura Spell", () => {
   let waura: WAuraPools;
   let bank: BlueBerryBank;
   let protocol: AuraProtocol;
-  let auraBooster: ICvxPools;
+  let auraBooster: IAuraBooster;
   let auraRewarder: IRewarder;
   let config: ProtocolConfig;
 
@@ -76,8 +76,8 @@ describe("Aura Spell", () => {
     bal = <ERC20>await ethers.getContractAt("ERC20", BAL);
     usdc = <ERC20>await ethers.getContractAt("ERC20", USDC);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
-    auraBooster = <ICvxPools>(
-      await ethers.getContractAt("ICvxPools", ADDRESS.AURA_BOOSTER)
+    auraBooster = <IAuraBooster>(
+      await ethers.getContractAt("IAuraBooster", ADDRESS.AURA_BOOSTER)
     );
     const poolInfo = await auraBooster.poolInfo(ADDRESS.AURA_UDU_POOL_ID);
     auraRewarder = <IRewarder>(
@@ -280,7 +280,7 @@ describe("Aura Spell", () => {
     it("should be able to farm USDC on Aura", async () => {
       const positionId = await bank.nextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
-      await bank.execute(
+      const res = await bank.execute(
         0,
         spell.address,
         iface.encodeFunctionData("openPositionFarm", [
@@ -296,12 +296,15 @@ describe("Aura Spell", () => {
         ])
       );
 
+      const txReceipt = await res.wait();
+
       const bankInfo = await bank.getBankInfo(USDC);
       console.log("USDC Bank Info:", bankInfo);
 
       const pos = await bank.positions(positionId);
       console.log("Position Info:", pos);
       console.log("Position Value:", await bank.callStatic.getPositionValue(1));
+
       expect(pos.owner).to.be.equal(admin.address);
       expect(pos.collToken).to.be.equal(waura.address);
       expect(pos.debtToken).to.be.equal(USDC);
@@ -314,9 +317,6 @@ describe("Aura Spell", () => {
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(
         depositAmount.mul(50).div(10000)
       );
-
-      const rewarderBalance = await auraRewarder.balanceOf(waura.address);
-      expect(rewarderBalance).to.be.equal(pos.collateralSize);
     });
 
     it("should be able to get multiple rewards", async () => {
@@ -327,7 +327,7 @@ describe("Aura Spell", () => {
       const beforeSenderBalBalance = await bal.balanceOf(admin.address);
       const beforeTreasuryAuraBalance = await aura.balanceOf(admin.address);
 
-      await evm_increaseTime(120);
+      await evm_mine_blocks(10);
 
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(
         position.collId,
@@ -467,7 +467,7 @@ describe("Aura Spell", () => {
     });
 
     it("should be able to close portion of position without withdrawing isolated collaterals", async () => {
-      await evm_increaseTime(86400);
+      await evm_mine_blocks(1000);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
@@ -488,12 +488,12 @@ describe("Aura Spell", () => {
       );
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );
@@ -507,6 +507,8 @@ describe("Aura Spell", () => {
 
       console.log("Pending Rewards", pendingRewardsInfo);
 
+      // Manually transfer CRV rewards to spell
+      //await usdc.transfer(spell.address, utils.parseUnits("10", 6));
       const amountToSwap = utils.parseUnits("30", 18);
       const swapData = (
         await getParaswapCalldata(
@@ -532,8 +534,8 @@ describe("Aura Spell", () => {
               amountPosRemove: position.collateralSize.div(2),
               amountShareWithdraw: position.underlyingVaultShare.div(2),
               amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: "0x",
+              amountToSwap,
+              swapData,
             },
             expectedAmounts,
             swapDatas.map((item) => item.data),
@@ -543,7 +545,7 @@ describe("Aura Spell", () => {
     });
 
     it("should be able to harvest on Aura", async () => {
-      await evm_increaseTime(86400);
+      await evm_mine_blocks(1000);
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
@@ -562,12 +564,12 @@ describe("Aura Spell", () => {
       );
 
       const swapDatas = await Promise.all(
-        pendingRewardsInfo.tokens.map((token, idx) => {
-          if (expectedAmounts[idx].gt(0)) {
+        pendingRewardsInfo.tokens.map((token, i) => {
+          if (expectedAmounts[i].gt(0)) {
             return getParaswapCalldata(
               token,
               USDC,
-              expectedAmounts[idx],
+              expectedAmounts[i],
               spell.address,
               100
             );
@@ -581,6 +583,8 @@ describe("Aura Spell", () => {
 
       console.log("Pending Rewards", pendingRewardsInfo);
 
+      // Manually transfer CRV rewards to spell
+      //await usdc.transfer(spell.address, utils.parseUnits("10", 6))
       const amountToSwap = utils.parseUnits("30", 18);
       const swapData = (
         await getParaswapCalldata(
@@ -609,8 +613,8 @@ describe("Aura Spell", () => {
             amountPosRemove: ethers.constants.MaxUint256,
             amountShareWithdraw: ethers.constants.MaxUint256,
             amountOutMin: 1,
-            amountToSwap: 0,
-            swapData: "0x",
+            amountToSwap,
+            swapData,
           },
           expectedAmounts,
           swapDatas.map((item) => item.data),

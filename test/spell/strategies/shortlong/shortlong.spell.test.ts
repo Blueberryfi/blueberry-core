@@ -32,7 +32,7 @@ const WETH = ADDRESS.WETH;
 const DAI = ADDRESS.DAI;
 const WstETH = ADDRESS.wstETH;
 
-describe("ShortLong Spell", () => {
+describe("ShortLong Spell Test test", () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
@@ -83,13 +83,14 @@ describe("ShortLong Spell", () => {
 
   it("should be able to long DAI + earn wstETH (collateral: WBTC, borrowToken: DAI)", async () => {
     snapshotId = await takeSnapshot();
+    console.log("Snapshot ID:", snapshotId);
     await testFarm(
       4,
       WBTC,
       DAI,
       WstETH,
       utils.parseUnits("0.1", 8),
-      utils.parseUnits("100", 18),
+      utils.parseUnits("1", 18),
       0,
       wbtc
     );
@@ -276,7 +277,7 @@ describe("ShortLong Spell", () => {
   });
 
   it("should be able to close position #7", async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.nextPositionId()).sub(1);    
     await testClosePosition(
       positionId,
       1,
@@ -295,11 +296,11 @@ describe("ShortLong Spell", () => {
     snapshotId = await takeSnapshot();
     await testFarm(
       2,
-      WstETH,
-      LINK,
-      DAI,
-      utils.parseUnits("1", 18),
-      utils.parseUnits("20", 18),
+      WstETH, // Collateral Token
+      LINK, // Borrow Token
+      DAI, // Swap Token
+      utils.parseUnits("2", 18), // wstETH Deposit Amount
+      utils.parseUnits("2", 18), // LINK Borrow Amount
       0,
       wstETH
     );
@@ -310,12 +311,12 @@ describe("ShortLong Spell", () => {
     await testClosePosition(
       positionId,
       2,
-      WstETH,
-      LINK,
-      DAI,
-      daiSoftVault,
-      utils.parseUnits("1", 18),
-      utils.parseUnits("0.05", 18),
+      WstETH, // Collateral Token
+      LINK, // Borrow Token
+      DAI, // Swap Token
+      daiSoftVault, // Soft Vault
+      utils.parseUnits("1", 18), // wstETH Deposit Amount
+      utils.parseUnits("1.5", 18), // Collateral Swap Amount
       wstETH
     );
     await revertToSnapshot(snapshotId);
@@ -329,7 +330,7 @@ describe("ShortLong Spell", () => {
       LINK,
       DAI,
       utils.parseUnits("0.1", 8),
-      utils.parseUnits("20", 18),
+      utils.parseUnits("2", 18),
       0,
       wbtc
     );
@@ -630,7 +631,7 @@ describe("ShortLong Spell", () => {
     );
 
     const bankInfo = await bank.getBankInfo(DAI);
-    console.log("USDC Bank Info:", bankInfo);
+    console.log("DAI Bank Info:", bankInfo);
 
     const pos = await bank.positions(positionId);
     console.log("Position Info:", pos);

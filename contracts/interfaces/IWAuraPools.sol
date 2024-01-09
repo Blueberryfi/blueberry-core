@@ -14,9 +14,9 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "./IERC20Wrapper.sol";
-import "./balancer/IBalancerPool.sol";
-import "./balancer/IBalancerVault.sol";
-import "./aura/IAuraPools.sol";
+import "./balancer-v2/IBalancerV2Pool.sol";
+import "./balancer-v2/IBalancerVault.sol";
+import "./aura/IAuraBooster.sol";
 import "./aura/IAura.sol";
 
 /// @title IWAuraPools
@@ -24,13 +24,17 @@ import "./aura/IAura.sol";
 /// @dev This allows users to interact with Balancer-based Aura pools, 
 ///      staking liquidity pool tokens for rewards.
 interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
+
+    struct StashTokenInfo {
+        address stashToken;
+        address rewarder;
+        uint256 lastStashRewardPerToken;
+        uint256 stashAuraReceived;
+    }
+
     /// @notice Get the AURA token's contract address.
     /// @return An IAura interface of the AURA token.
     function AURA() external view returns (IAura);
-
-    /// @notice Get the stash AURA token's contract address.
-    /// @return Address of the STASH AURA token.
-    function STASH_AURA() external view returns (address);
 
     /// @notice Encode two uint values into a single uint.
     function encodeId(uint, uint) external pure returns (uint);
@@ -66,9 +70,9 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @return An IBalancerVault interface of the associated vault.
     function getVault(address bpt) external view returns (IBalancerVault);
 
-    /// @notice Fetch the Aura Pools contract interface.
-    /// @return The IAuraPools interface of the Aura Pools.
-    function auraPools() external view returns (IAuraPools);
+    /// @notice Fetch the Aura Booster contract interface.
+    /// @return The IAuraBooster interface of the Aura Booster.
+    function auraBooster() external view returns (IAuraBooster);
 
     /// @notice Fetch detailed information for a specific Aura pool using its pool ID.
     /// @param pid The pool ID.

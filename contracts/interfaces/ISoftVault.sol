@@ -3,7 +3,7 @@
 pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "./compound/ICErc20.sol";
+import "./money-market/IBErc20.sol";
 
 /// @title ISoftVault
 /// @notice Interface for the SoftVault, allowing deposits and withdrawals of assets.
@@ -42,7 +42,7 @@ interface ISoftVault is IERC20Upgradeable {
 
     /// @notice Get the corresponding Blueberry Money Market bToken for this vault.
     /// @return A Blueberry Money Market bToken interface.
-    function bToken() external view returns (ICErc20);
+    function bToken() external view returns (IBErc20);
 
     /// @notice Get the underlying ERC20 token for this vault.
     /// @return An ERC20 interface of the underlying token.

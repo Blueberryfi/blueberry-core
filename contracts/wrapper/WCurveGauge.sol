@@ -168,7 +168,9 @@ contract WCurveGauge is
         gauge.deposit(amount);
 
         uint256 id = encodeId(gid, accCrvPerShares[gid]);
+        _validateTokenId(id);
         _mint(msg.sender, id, amount, "");
+        
         return id;
     }
 
@@ -210,6 +212,16 @@ contract WCurveGauge is
         uint256 supply = gauge.balanceOf(address(this));
         if (gain > 0 && supply > 0) {
             accCrvPerShares[gid] += (gain * 1e18) / supply;
+        }
+    }
+
+        /**
+     * @notice Verifies that the provided token id is unique and has not been minted yet
+     * @param id The token id to validate
+     */
+    function _validateTokenId(uint256 id) internal view {
+        if (balanceOf(msg.sender, id) != 0) {
+            revert Errors.DUPLICATE_TOKEN_ID(id);
         }
     }
 }
