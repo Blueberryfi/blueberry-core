@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 
 import "./BasicSpell.sol";
 import "../interfaces/IWAuraPools.sol";
-import "../interfaces/balancer/IBalancerPool.sol";
+import "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import "../libraries/Paraswap/PSwapLib.sol";
 import "../libraries/UniversalERC20.sol";
 
@@ -146,17 +146,15 @@ contract AuraSpell is BasicSpell {
             
             bank.takeCollateral(pos.collateralSize);
             
-            (address[] memory rewardTokens, , address stashToken) = wAuraPools.burn(
+            (address[] memory rewardTokens, ) = wAuraPools.burn(
                 pos.collId,
                 pos.collateralSize
             );
             
             // Distribute the multiple rewards to users.
             uint256 rewardTokensLength = rewardTokens.length;
-            for (uint256 i; i != rewardTokensLength; ++i) {
-                _doRefundRewards(
-                    rewardTokens[i] == stashToken ? AURA : rewardTokens[i]
-                );
+            for (uint256 i; i < rewardTokensLength; ++i) {
+                _doRefundRewards(rewardTokens[i]);
             }
         }
 
@@ -198,14 +196,13 @@ contract AuraSpell is BasicSpell {
             
             /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards            
             {
-                address stashToken;
-                (rewardTokens, , stashToken) = wAuraPools.burn(
+                (rewardTokens, ) = wAuraPools.burn(
                     pos.collId,
                     param.amountPosRemove
                 );
 
                 /// 2. Swap each reward token for the debt token
-                _sellRewards(rewardTokens, expectedRewards, swapDatas, stashToken);
+                _sellRewards(rewardTokens, expectedRewards, swapDatas);
             }
 
             {
@@ -224,7 +221,7 @@ contract AuraSpell is BasicSpell {
                 ) = _getExitPoolParams(param, lpToken);
 
                 wAuraPools.getVault(lpToken).exitPool(
-                    IBalancerPool(lpToken).getPoolId(),
+                    IBalancerV2Pool(lpToken).getPoolId(),
                     address(this),
                     address(this),
                     IBalancerVault.ExitPoolRequest(
@@ -279,7 +276,7 @@ contract AuraSpell is BasicSpell {
         uint256[] memory amountsIn = new uint256[](length);
         bool isLPIncluded;
 
-        for (i; i != length; ++i) {
+        for (i; i < length; ++i) {
             if (tokens[i] != lpToken) {
                 amountsIn[j] = IERC20(tokens[i]).balanceOf(address(this));
                 if (amountsIn[j] > 0) {
@@ -317,7 +314,7 @@ contract AuraSpell is BasicSpell {
         uint256[] memory minAmountsOut = new uint256[](length);
         uint256 exitTokenIndex;
 
-        for (uint256 i; i != length; ++i) {
+        for (uint256 i; i < length; ++i) {
             if (tokens[i] == borrowToken) {
                 minAmountsOut[i] = amountOutMin;
                 break;
@@ -333,14 +330,12 @@ contract AuraSpell is BasicSpell {
     function _sellRewards(
         address[] memory rewardTokens,
         uint256[] calldata expectedRewards,
-        bytes[] calldata swapDatas,
-        address stashToken
+        bytes[] calldata swapDatas
     ) internal {
         uint256 rewardTokensLength = rewardTokens.length;
 
-        for (uint256 i; i != rewardTokensLength; ++i) {
+        for (uint256 i; i < rewardTokensLength; ++i) {
             address sellToken = rewardTokens[i];
-            if (sellToken == stashToken) sellToken = AURA;
 
             _doCutRewardsFee(sellToken);
             if (

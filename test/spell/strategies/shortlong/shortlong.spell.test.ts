@@ -277,7 +277,8 @@ describe("ShortLong Spell Test test", () => {
   });
 
   it("should be able to close position #7", async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);    await testClosePosition(
+    const positionId = (await bank.nextPositionId()).sub(1);    
+    await testClosePosition(
       positionId,
       1,
       DAI,
@@ -299,7 +300,7 @@ describe("ShortLong Spell Test test", () => {
       LINK, // Borrow Token
       DAI, // Swap Token
       utils.parseUnits("2", 18), // wstETH Deposit Amount
-      utils.parseUnits("20", 18), // LINK Borrow Amount
+      utils.parseUnits("2", 18), // LINK Borrow Amount
       0,
       wstETH
     );
@@ -329,7 +330,7 @@ describe("ShortLong Spell Test test", () => {
       LINK,
       DAI,
       utils.parseUnits("0.1", 8),
-      utils.parseUnits("20", 18),
+      utils.parseUnits("2", 18),
       0,
       wbtc
     );

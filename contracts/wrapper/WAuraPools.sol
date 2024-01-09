@@ -26,8 +26,8 @@ import {IAura} from "../interfaces/aura/IAura.sol";
 import {IAuraBooster} from "../interfaces/aura/IAuraBooster.sol";
 import {IAuraStashToken} from "../interfaces/aura/IAuraStashToken.sol";
 import {ICvxExtraRewarder} from "../interfaces/convex/ICvxExtraRewarder.sol";
-import {IBalancerVault} from "../interfaces/balancer/IBalancerVault.sol";
-import {IBalancerPool} from "../interfaces/balancer/IBalancerPool.sol";
+import {IBalancerVault} from "../interfaces/balancer-v2/IBalancerVault.sol";
+import {IBalancerV2Pool} from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import {IPoolEscrow} from "./escrow/interfaces/IPoolEscrow.sol";
 import {IPoolEscrowFactory} from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import {IRewarder} from "../interfaces/convex/IRewarder.sol";
@@ -71,14 +71,14 @@ contract WAuraPools is
     mapping(uint256 => uint256) public auraPerShareByPid;
     /// token id => auraPerShareDebt;
     mapping(uint256 => uint256) public auraPerShareDebt;
-    /// @dev pid => last bal reward per token
-    mapping(uint256 => uint256) public lastBalPerTokenByPid;
     /// @dev pid => escrow contract address
     mapping(uint256 => address) public escrows;
     /// @dev pid => stash token data
     mapping(uint256 => StashTokenInfo) public stashTokenInfo;
     /// @dev pid => A set of extra rewarders
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private extraRewards;
+    /// @dev pid => packed balances
+    mapping(uint256 => uint256) private packedBalances;
 
     uint256 public REWARD_MULTIPLIER_DENOMINATOR;
 
@@ -148,7 +148,6 @@ contract WAuraPools is
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
-
         /// Escrow deployment/get logic
         address escrow;
 
@@ -165,6 +164,8 @@ contract WAuraPools is
             amount
         );
 
+        _updateAuraReward(pid, 0);
+
         /// Deposit LP from escrow contract
         IPoolEscrow(escrow).deposit(amount);
         
@@ -173,7 +174,7 @@ contract WAuraPools is
             .rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
 
-        _updateAuraReward(id);
+        _validateTokenId(id);
 
         _mint(msg.sender, id, amount, "");
 
@@ -182,14 +183,14 @@ contract WAuraPools is
             .extraRewardsLength();
         for (uint256 i; i < extraRewardsCount; ++i) {
             address extraRewarder = IRewarder(auraRewarder).extraRewards(i);
-            bool mismatchFound = _syncExtraRewards(pid, id, extraRewarder);
+            bool mismatchFound = _syncExtraRewards(extraRewards[pid], id, extraRewarder);
             
             if (!mismatchFound) {
                 _setAccExtPerShare(id, extraRewarder);
             }
         }
 
-        auraPerShareDebt[id] += auraPerShareByPid[pid];
+        auraPerShareDebt[id] = auraPerShareByPid[pid];
 
         emit Minted(pid, amount, msg.sender);
     }
@@ -205,13 +206,10 @@ contract WAuraPools is
     )
         external
         nonReentrant
-        returns (address[] memory rewardTokens, uint256[] memory rewards, address stashToken)
+        returns (address[] memory rewardTokens, uint256[] memory rewards)
     {
         (uint256 pid, ) = decodeId(id);
-        StashTokenInfo storage _stashTokenInfo = stashTokenInfo[pid];
         address escrow = getEscrow(pid);
-        stashToken = _stashTokenInfo.stashToken;
-
         // @dev sanity check
         assert(escrow != address(0));
 
@@ -219,30 +217,40 @@ contract WAuraPools is
             amount = balanceOf(msg.sender, id);
         }
 
-        _updateAuraReward(id);
+        _updateAuraReward(pid, id);
 
         (rewardTokens, rewards) = pendingRewards(id, amount);
-
+        
         _burn(msg.sender, id, amount);
+
+        (uint256 lastBalPerToken, uint256 auraBalance) = _unpackBalances(packedBalances[pid]);
         
         /// Claim and withdraw LP from escrow contract
         IPoolEscrow(escrow).withdrawLpToken(amount, msg.sender);
         
         uint256 rewardTokensLength = rewardTokens.length;
+
         for (uint256 i; i < rewardTokensLength; ++i) {
             address _rewardToken = rewardTokens[i];
-            /// If the reward token is AURA
-            if (_rewardToken == stashToken) {
-                _rewardToken = address(AURA);
+            uint256 rewardAmount = rewards[i];
+
+            if (rewardAmount == 0) {
+                continue;
+            }
+            
+            if (_rewardToken == address(AURA)) {
+                auraBalance -= rewardAmount;
             }
 
             IPoolEscrow(escrow).transferToken(
                 _rewardToken,
                 msg.sender,
-                rewards[i]
+                rewardAmount
             );
         }
-        
+
+        packedBalances[pid] = _packBalances(lastBalPerToken, auraBalance);
+
         emit Burned(id, amount, msg.sender);
     }
 
@@ -252,50 +260,68 @@ contract WAuraPools is
     /// @param amount The amount of the token.
     /// @return tokens Array of token addresses.
     /// @return rewards Array of corresponding reward amounts.
-    function pendingRewards(
-        uint256 tokenId,
-        uint256 amount
-    )
+    function pendingRewards(uint256 tokenId, uint256 amount)
         public
         view
         override
         returns (address[] memory tokens, uint256[] memory rewards)
     {
         (uint256 pid, uint256 originalBalPerShare) = decodeId(tokenId);
-        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
-            pid
-        );
-        uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
+
+        address stashToken = stashTokenInfo[pid].stashToken;
+
         uint256 extraRewardsCount = extraRewardsLength(pid);
         tokens = new address[](extraRewardsCount + 2);
         rewards = new uint256[](extraRewardsCount + 2);
-
-        /// BAL reward
-        tokens[0] = IRewarder(auraRewarder).rewardToken();
-        rewards[0] = _getPendingReward(
-            originalBalPerShare,
-            auraRewarder,
-            amount,
-            lpDecimals
-        );
-        /// AURA reward
+        
+        // BAL reward 
+        {
+            (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
+            /// BAL reward
+            tokens[0] = IRewarder(auraRewarder).rewardToken();
+            rewards[0] = _getPendingReward(
+                originalBalPerShare,
+                auraRewarder,
+                amount
+            );
+        }
+        // AURA reward
         tokens[1] = address(AURA);
         rewards[1] = _getAllocatedAURA(pid, originalBalPerShare, amount);
-
-        /// Additional rewards
+        
+        // This index is used to make sure that there is no gap in the returned array
+        uint256 index = 0;
+        bool stashTokenFound = false;
+        // Additional rewards
         for (uint256 i; i < extraRewardsCount; ++i) {
             address rewarder = extraRewards[pid].at(i);
+            address rewardToken = IRewarder(rewarder).rewardToken();
+
+            if (rewardToken == stashToken) {
+                stashTokenFound = true;
+                continue;
+            }
+
             uint256 tokenRewardPerShare = accExtPerShare[tokenId][rewarder];
-            tokens[i + 2] = IRewarder(rewarder).rewardToken();
+            tokens[index + 2] = rewardToken;
+
             if (tokenRewardPerShare == 0) {
-                rewards[i + 2] = 0;
+                rewards[index + 2] = 0;
             } else {
-                rewards[i + 2] = _getPendingReward(
+                rewards[index + 2] = _getPendingReward(
                     tokenRewardPerShare == type(uint).max ? 0 : tokenRewardPerShare,
                     rewarder,
-                    amount,
-                    lpDecimals
+                    amount
                 );
+            }
+
+            index++;
+        }
+
+        if (stashTokenFound) {
+            assembly {
+                mstore(tokens, sub(mload(tokens), 1))
+                mstore(rewards, sub(mload(rewards), 1))
             }
         }
     }
@@ -310,7 +336,7 @@ contract WAuraPools is
     /// @param bpt Address of the BPT token
     /// @return Pool id associated with the BPT token
     function getBPTPoolId(address bpt) public view returns (bytes32) {
-        return IBalancerPool(bpt).getPoolId();
+        return IBalancerV2Pool(bpt).getPoolId();
     }
     
     /// @notice Gets the escrow contract address for a given PID
@@ -386,20 +412,18 @@ contract WAuraPools is
     /// @param bpt Address of the BPT token
     /// @return Vault associated with the provided BPT token
     function getVault(address bpt) public view returns (IBalancerVault) {
-        return IBalancerVault(IBalancerPool(bpt).getVault());
+        return IBalancerVault(IBalancerV2Pool(bpt).getVault());
     }
 
     /// @notice Calculate the amount of pending reward for a given LP amount.
     /// @param originalRewardPerShare The cached value of BAL per share at the time of opening the position.
     /// @param rewarder The address of the rewarder contract.
     /// @param amount The amount of LP for which reward is being calculated.
-    /// @param lpDecimals The number of decimals of the LP token.
     /// @return rewards The calculated reward amount.
     function _getPendingReward(
         uint256 originalRewardPerShare,
         address rewarder,
-        uint256 amount,
-        uint256 lpDecimals
+        uint256 amount
     ) internal view returns (uint256 rewards) {
         /// Retrieve current reward per token from rewarder
         uint256 currentRewardPerShare = IRewarder(rewarder).rewardPerToken();
@@ -407,55 +431,9 @@ contract WAuraPools is
         uint256 share = currentRewardPerShare > originalRewardPerShare
             ? currentRewardPerShare - originalRewardPerShare
             : 0;
+
         /// Calculate the total rewards base on share and amount.
-        rewards = share * amount / 10**lpDecimals;
-    }
-
-    /// @notice  Calculate the pending AURA reward amount.
-    /// @dev AuraMinter can mint additional tokens after `inflationProtectionTime` has passed
-    /// And its value is `1749120350`  ==> Thursday 5 June 2025 12:32:30 PM GMT+07:00
-    /// @param auraRewarder Address of Aura rewarder contract
-    /// @param balAmount The amount of BAL reward for AURA calculation.
-    /// @dev AURA token is minted in booster contract following the mint logic in the below
-    function _getAuraPendingReward(
-        address auraRewarder,
-        uint256 balAmount
-    ) internal view returns (uint256 mintAmount) {
-        if (balAmount == 0) return 0;
-        /// AURA mint request amount = amount * reward_multiplier / reward_multiplier_denominator
-        uint256 mintRequestAmount = balAmount * auraBooster.getRewardMultipliers(auraRewarder) / REWARD_MULTIPLIER_DENOMINATOR;
-
-        /// AURA token mint logic
-        /// e.g. emissionsMinted = 6e25 - 5e25 - 0 = 1e25;
-        uint256 totalSupply = AURA.totalSupply();
-        uint256 initAmount = AURA.INIT_MINT_AMOUNT();
-        uint256 minterMinted;
-        uint256 reductionPerCliff = AURA.reductionPerCliff();
-        uint256 totalCliffs = AURA.totalCliffs();
-        uint256 emissionMaxSupply = AURA.EMISSIONS_MAX_SUPPLY();
-
-        uint256 emissionsMinted = totalSupply - initAmount - minterMinted;
-        /// e.g. reductionPerCliff = 5e25 / 500 = 1e23
-        /// e.g. cliff = 1e25 / 1e23 = 100
-        uint256 cliff = emissionsMinted / reductionPerCliff;
-
-        /// e.g. 100 < 500
-        if (cliff < totalCliffs) {
-            /// e.g. (new) reduction = (500 - 100) * 2.5 + 700 = 1700;
-            /// e.g. (new) reduction = (500 - 250) * 2.5 + 700 = 1325;
-            /// e.g. (new) reduction = (500 - 400) * 2.5 + 700 = 950;
-            uint256 reduction = ((totalCliffs - cliff) * 5) / 2 + 700;
-            /// e.g. (new) amount = 1e19 * 1700 / 500 =  34e18;
-            /// e.g. (new) amount = 1e19 * 1325 / 500 =  26.5e18;
-            /// e.g. (new) amount = 1e19 * 950 / 500  =  19e17;
-            mintAmount = (mintRequestAmount * reduction) / totalCliffs;
-
-            /// e.g. amtTillMax = 5e25 - 1e25 = 4e25
-            uint256 amtTillMax = emissionMaxSupply - emissionsMinted;
-            if (mintAmount > amtTillMax) {
-                mintAmount = amtTillMax;
-            }
-        }
+        rewards = share.mulWadDown(amount);
     }
 
     function _getAllocatedAURA(
@@ -464,8 +442,7 @@ contract WAuraPools is
         uint256 amount
     ) internal view returns (uint256 mintAmount) {
         address escrow = getEscrow(pid);
-
-        (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
+        (, , , address auraRewarder, , ) = getPoolInfoFromPoolId(
             pid
         );
         uint256 currentDeposits = IRewarder(auraRewarder).balanceOf(
@@ -479,40 +456,26 @@ contract WAuraPools is
         uint256 auraPerShare = auraPerShareByPid[pid] -
             auraPerShareDebt[encodeId(pid, originalBalPerShare)];
 
-        uint256 lastBalPerToken = lastBalPerTokenByPid[pid];
-
-        uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
-        uint256 earned = _getPendingReward(
-            lastBalPerToken,
-            auraRewarder,
-            currentDeposits,
-            lpDecimals
-        );
-
-        if (earned > 0) {
-            uint256 auraReward = _getAuraPendingReward(auraRewarder, earned);
-
-            auraPerShare += auraReward / currentDeposits;
-        }
-
-        return auraPerShare * amount;
+        return auraPerShare.mulWadDown(amount);
     }
 
     /// @notice Private function to update aura rewards
-    /// @param tokenId The tokenId of the positon.
+    /// @param pid The pool id.
+    /// @param tokenId The token id.
     /// @dev Claims rewards and updates auraPerShareByPid accordingly
-    function _updateAuraReward(uint256 tokenId) private {
-        (uint256 pid, ) = decodeId(tokenId);
+    function _updateAuraReward(uint256 pid, uint256 tokenId) private {
         StashTokenInfo storage _stashTokenInfo = stashTokenInfo[pid];
         address escrow = getEscrow(pid);
         address stashToken = _stashTokenInfo.stashToken;
-
         // _auraRewarder rewards users in AURA
         (, , , address _auraRewarder, address stashAura, ) = getPoolInfoFromPoolId(pid);
-
         uint256 lastBalPerToken = IRewarder(_auraRewarder).rewardPerToken();
 
-        lastBalPerTokenByPid[pid] = lastBalPerToken;
+        // If the token is not minted yet the tokenId will be 0
+        //   and rewards will be synced later
+        if (tokenId != 0) {
+            syncExtraRewards(pid, tokenId);
+        }
 
         if (stashToken == address(0)) {
             _setAuraStashToken(_stashTokenInfo, _auraRewarder, stashAura);
@@ -523,20 +486,33 @@ contract WAuraPools is
         );
 
         if (currentDeposits == 0) {
+            packedBalances[pid] = _packBalances(lastBalPerToken, AURA.balanceOf(escrow));
             return;
         }
-
-        uint256 auraPreBalance = AURA.balanceOf(escrow);
+        
+        (, uint256 auraPreBalance) = _unpackBalances(packedBalances[pid]);
 
         IRewarder(_auraRewarder).getReward(escrow, false);
 
-        uint256 auraReceived = AURA.balanceOf(escrow) - auraPreBalance;
-
         _getExtraRewards(pid, escrow);
 
+        uint256 auraPostBalance = AURA.balanceOf(escrow);
+        uint256 auraReceived = auraPostBalance - auraPreBalance;
+
         if (auraReceived > 0) {
-            auraPerShareByPid[pid] += auraReceived / currentDeposits;
+            auraPerShareByPid[pid] += auraReceived.divWadDown(currentDeposits);
         }
+
+        packedBalances[pid] = _packBalances(lastBalPerToken, auraPostBalance);
+    }
+
+    function _packBalances(uint256 lastBalPerToken, uint256 auraBalance) internal pure returns (uint256) {
+        return lastBalPerToken << 128 | auraBalance;
+    }
+
+    function _unpackBalances(uint256 packedBalance) internal pure returns (uint256 lastBalPerToken, uint256 auraBalance) {
+        lastBalPerToken = packedBalance >> 128;
+        auraBalance = packedBalance & ((1 << 128) - 1);
     }
 
     function _getExtraRewards(uint256 pid, address escrow) internal {
@@ -560,12 +536,31 @@ contract WAuraPools is
 
             address _rewardToken = IRewarder(_extraRewarder)
                 .rewardToken();
-
             // Initialize the stashToken if it is not initialized
             if (_isAuraStashToken(_rewardToken, stashAura)) {
                 stashTokenData.stashToken = _rewardToken;
                 stashTokenData.rewarder = _extraRewarder;
                 break;
+            }
+        }
+    }
+
+    function syncExtraRewards(uint256 pid, uint256 tokenId) public {
+        (, , , address rewarder, , ) = getPoolInfoFromPoolId(pid);
+        EnumerableSetUpgradeable.AddressSet storage rewards = extraRewards[pid];
+        uint256 extraRewardsCount = IRewarder(rewarder)
+            .extraRewardsLength();
+        for (uint256 i; i < extraRewardsCount; ++i) {
+            address extraRewarder = IRewarder(rewarder).extraRewards(i);
+            bool mismatchFound = _syncExtraRewards(rewards, tokenId, extraRewarder);
+
+            if (!mismatchFound && accExtPerShare[tokenId][extraRewarder] == type(uint).max) {
+                uint256 rewardPerToken = IRewarder(extraRewarder)
+                    .rewardPerToken();
+
+                if (rewardPerToken != 0) {
+                    accExtPerShare[tokenId][extraRewarder] = rewardPerToken;
+                }
             }
         }
     }
@@ -578,8 +573,11 @@ contract WAuraPools is
             : rewardPerToken;
     }
 
-    function _syncExtraRewards(uint256 pid, uint256 tokenId, address rewarder) internal returns (bool mismatchFound) {
-        EnumerableSetUpgradeable.AddressSet storage rewards = extraRewards[pid];
+    function _syncExtraRewards(
+        EnumerableSetUpgradeable.AddressSet storage rewards,
+        uint256 tokenId,
+        address rewarder
+    ) internal returns (bool mismatchFound) {
         if (!rewards.contains(rewarder)) {
             rewards.add(rewarder);
             _setAccExtPerShare(tokenId, rewarder);
@@ -598,6 +596,16 @@ contract WAuraPools is
             return stash == auraStash;
         } catch  {
             return false;
+        }
+    }
+
+    /**
+     * @notice Verifies that the provided token id is unique and has not been minted yet
+     * @param id The token id to validate
+     */
+    function _validateTokenId(uint256 id) internal view {
+        if (balanceOf(msg.sender, id) != 0) {
+            revert Errors.DUPLICATE_TOKEN_ID(id);
         }
     }
 }

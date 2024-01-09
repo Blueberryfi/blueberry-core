@@ -163,7 +163,7 @@ contract WConvexPools is
             }
         }
 
-        cvxPerShareDebt[id] += cvxPerShareByPid[pid];
+        cvxPerShareDebt[id] = cvxPerShareByPid[pid];
     }
 
     /// Burns ERC1155 token to redeem ERC20 token back and harvest rewards
@@ -460,6 +460,16 @@ contract WConvexPools is
         for (uint256 i; i < currentExtraRewardsCount; ++i) {
             address extraRewarder = extraRewards[pid].at(i);
             ICvxExtraRewarder(extraRewarder).getReward(escrow);
+        }
+    }
+
+    /**
+     * @notice Verifies that the provided token id is unique and has not been minted yet
+     * @param id The token id to validate
+     */
+    function _validateTokenId(uint256 id) internal view {
+        if (balanceOf(msg.sender, id) != 0) {
+            revert Errors.DUPLICATE_TOKEN_ID(id);
         }
     }
 }

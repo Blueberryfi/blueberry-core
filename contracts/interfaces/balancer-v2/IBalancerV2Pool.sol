@@ -2,9 +2,7 @@
 
 pragma solidity 0.8.22;
 
-interface IBalancerPool {
-    function getRate() external view returns (uint256);
-
+interface IBalancerV2Pool {
     function getVault() external view returns (address);
 
     function getPoolId() external view returns (bytes32);
@@ -12,8 +10,4 @@ interface IBalancerPool {
     function totalSupply() external view returns (uint256);
 
     function getActualSupply() external view returns (uint256);
-
-    function getNormalizedWeights() external view returns (uint256[] memory);
-
-    function getRateProviders() external view returns (address[] memory);
 }

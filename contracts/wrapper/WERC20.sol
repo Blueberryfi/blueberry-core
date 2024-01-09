@@ -110,6 +110,8 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
             address(this)
         );
         id = _encodeTokenId(token);
+        _validateTokenId(id);
+        
         _mint(msg.sender, id, balanceAfter - balanceBefore, "");
     }
 
@@ -122,5 +124,15 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     ) external override nonReentrant {
         _burn(msg.sender, _encodeTokenId(token), amount);
         IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
+    }
+
+    /**
+     * @notice Verifies that the provided token id is unique and has not been minted yet
+     * @param id The token id to validate
+     */
+    function _validateTokenId(uint256 id) internal view {
+        if (balanceOf(msg.sender, id) != 0) {
+            revert Errors.DUPLICATE_TOKEN_ID(id);
+        }
     }
 }
