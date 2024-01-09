@@ -97,7 +97,6 @@ describe("Aura Spell Strategy test", () => {
       for (let l = 0; l < strategyInfo.borrowAssets.length; l += 1) {
         describe(`Aura Spell Test(collateral: ${strategyInfo.collateralAssets[j]}, borrow: ${strategyInfo.borrowAssets[l]})`, () => {
           before(async () => {
-            console.log("Strategy Info: ", strategyInfo);
             collateralToken = <ERC20>(
               await ethers.getContractAt(
                 "ERC20",
@@ -171,7 +170,7 @@ describe("Aura Spell Strategy test", () => {
             );
 
             const bankInfo = await bank.getBankInfo(borrowToken.address);
-            console.log("Bank Info:", bankInfo);
+
           });
 
           it("Swap collateral to borrow token to repay debt for negative PnL", async () => {
@@ -189,15 +188,13 @@ describe("Aura Spell Strategy test", () => {
               position.collId,
               position.collateralSize
             );
-
+            
             const expectedAmounts = pendingRewardsInfo.rewards.map(
-              (reward: any) => 0
+              (reward: any) => reward
             );
 
             const debt = await bank.callStatic.currentPositionDebt(positionId);
             const missing = debt.sub(borrowAmount);
-
-            console.log("Missing: ", missing.toString());
 
             const missingDebt = await getTokenAmountFromUSD(
               borrowToken,
@@ -216,7 +213,7 @@ describe("Aura Spell Strategy test", () => {
             const swapDatas = pendingRewardsInfo.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
-            console.log("Closing Position");
+
             await closePosition(
               alice,
               positionId,
@@ -231,7 +228,6 @@ describe("Aura Spell Strategy test", () => {
             );
           });
 
-          // https://github.com/sherlock-audit/2023-07-blueberry-judging/issues/109
           it("Validate keeping AURA reward after others claimed reward", async () => {
             const aliceDepositAmount = await getTokenAmountFromUSD(
               collateralToken,
@@ -270,7 +266,6 @@ describe("Aura Spell Strategy test", () => {
                 position.collId,
                 position.collateralSize
               );
-
             const bobPendingRewardsInfoBefore =
               await waura.callStatic.pendingRewards(
                 bobPosition.collId,
@@ -278,27 +273,26 @@ describe("Aura Spell Strategy test", () => {
               );
 
             const expectedAmounts = alicePendingRewardsInfoBefore.rewards.map(
-              (reward: any) => 0
+              (reward: any) => reward
             );
-
-            const bobExpectedAmounts = bobPendingRewardsInfoBefore.rewards.map(
-              (reward: any) => 0
-            )
 
             const swapDatas = alicePendingRewardsInfoBefore.tokens.map(
               (token: any, i: any) => ({
                 data: "0x",
               })
             );
-
-            console.log("Alice Pending Rewards", alicePendingRewardsInfoBefore);
-            console.log("Bob Pending Rewards", bobPendingRewardsInfoBefore);
+            
+            const bobSwapDatas = bobPendingRewardsInfoBefore.tokens.map(
+              (token: any, i: any) => ({
+                data: "0x",
+              })
+            );
 
             await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
 
             const aliceAuraBalanceBefore = await aura.balanceOf(alice.address);
             const bobAuraBalanceBefore = await aura.balanceOf(bob.address);
-            console.log("Closing Alice Position");
+
             await closePosition(
               alice,
               positionId,
@@ -315,15 +309,10 @@ describe("Aura Spell Strategy test", () => {
             evm_mine_blocks(1);
 
             const bobPendingRewardsInfoAfter =  
-              await waura.callStatic.pendingRewards(
+              await waura.pendingRewards(
                 bobPosition.collId,
                 bobPosition.collateralSize
               );
-
-            console.log(
-              "Bob Pending Rewards after alice closed position",
-              bobPendingRewardsInfoAfter
-            );
 
             const aliceAuraBalanceAfter = await aura.balanceOf(alice.address);
             expect(aliceAuraBalanceAfter.sub(aliceAuraBalanceBefore)).gte(
@@ -335,7 +324,11 @@ describe("Aura Spell Strategy test", () => {
             );
 
             await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
-            console.log("Closing Bob Position");
+            
+            const bobExpectedAmounts = bobPendingRewardsInfoAfter.rewards.map(
+              (reward: any) => reward
+            );
+            
             await closePosition(
               bob,
               bobPositionId,
@@ -345,8 +338,8 @@ describe("Aura Spell Strategy test", () => {
               1,
               0,
               "0x",
-              expectedAmounts,
-              swapDatas.map((item: { data: any; }) => item.data)
+              bobExpectedAmounts,
+              bobSwapDatas.map((item: { data: any; }) => item.data)
             );
 
             const bobAuraBalanceAfter = await aura.balanceOf(bob.address);
@@ -358,7 +351,7 @@ describe("Aura Spell Strategy test", () => {
           it("Do not fail when new reward added after deposit", async () => {
             // Check extra reward count, and if it's 0, add mock rewarder
             const extraRewarderLen = await auraRewarder.extraRewardsLength();
-            console.log("Extra Rewarder Length: ", extraRewarderLen.toString());
+
             const rewardManager = await ethers.getImpersonatedSigner(
               await auraRewarder.rewardManager()
             );
@@ -370,14 +363,12 @@ describe("Aura Spell Strategy test", () => {
                 .addExtraReward(extraRewarder1.address);
               extraRewardAddedManually = true;
             }
-
             const positionId = await openPosition(
               alice,
               depositAmount,
               borrowAmount,
               strategyInfo.poolId ?? "0"
             );
-
             await evm_mine_blocks(10);
 
             const position = await bank.positions(positionId);
@@ -386,7 +377,7 @@ describe("Aura Spell Strategy test", () => {
               position.collId,
               position.collateralSize
             );
-            
+
             let rewarderFactory = await ethers.getContractFactory("MockVirtualBalanceRewardPool");
             
             extraRewarder2 = <MockVirtualBalanceRewardPool>(
@@ -399,32 +390,31 @@ describe("Aura Spell Strategy test", () => {
             await auraRewarder
               .connect(rewardManager)
               .addExtraReward(extraRewarder2.address);
+            
+            let pid = BigNumber.from(strategyInfo.poolId);
 
-            expect(await auraRewarder.extraRewardsLength()).gte(2);
+            let extraRewardLength = await waura.extraRewardsLength(pid);
+            await waura.syncExtraRewards(pid, position.collId);
+
+            expect(await waura.extraRewardsLength(pid)).greaterThan(extraRewardLength);
 
             const pendingRewardsInfoAfterAdd =
-              await waura.callStatic.pendingRewards(
+              await waura.pendingRewards(
                 position.collId,
                 position.collateralSize
               );
-            expect(pendingRewardsInfoAfterAdd.rewards[2]).gte(
-              pendingRewardsInfo.rewards[2]
+
+            expect(pendingRewardsInfoAfterAdd.rewards.length).gte(
+              pendingRewardsInfo.rewards.length
             );
 
-            const expectedAmounts = pendingRewardsInfo.rewards.map(
-              (reward: any) => 0
+            const expectedAmounts = pendingRewardsInfoAfterAdd.rewards.map(
+              (reward: BigNumber) => reward
             );
 
-            const swapDatas = pendingRewardsInfo.tokens.map((token: any, i: any) => ({
+            const swapDatas = pendingRewardsInfoAfterAdd.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
-
-            console.log("Pending Rewards: ", pendingRewardsInfo);
-            console.log(
-              "Pending Rewards After new extra rewarder added: ",
-              pendingRewardsInfoAfterAdd
-            );
-
             await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
 
             await closePosition(
@@ -446,23 +436,31 @@ describe("Aura Spell Strategy test", () => {
               await auraRewarder.rewardManager()
             );
             
+            let pid = BigNumber.from(strategyInfo.poolId);
+
             const positionId = await openPosition(
               alice,
               depositAmount,
               borrowAmount,
-              strategyInfo.poolId ?? "0"
+              pid
             );
+
             const position = await bank.positions(positionId);
-            await evm_mine_blocks(10);
+            
+            // Open a position to update the rewarder
+            await openPosition(
+              bob,
+              depositAmount,
+              borrowAmount,
+              pid
+            );
 
             const pendingRewardsInfo = await waura.callStatic.pendingRewards(
               position.collId,
               position.collateralSize
             );
 
-            console.log("Pending Rewards: ", pendingRewardsInfo);
             await auraRewarder.connect(rewardManager).clearExtraRewards();
-            console.log("Extra rewards deleted");
 
             await evm_mine_blocks(10);
 
@@ -475,10 +473,12 @@ describe("Aura Spell Strategy test", () => {
                 position.collId,
                 position.collateralSize
               );
-
-            expect(pendingRewardsInfo.rewards[2].gt(0)).to.be.true;
-            expect(pendingRewardsInfo.rewards[2]).lte(
-              pendingRewardsInfoAfterRemoval.rewards[2]
+            
+            // We are comparing rewards[1] because the reward removed was stash Aura reward
+            //     which is paid in Aura
+            expect(pendingRewardsInfo.rewards[1].gt(0)).to.be.true;
+            expect(pendingRewardsInfo.rewards[1]).lte(
+              pendingRewardsInfoAfterRemoval.rewards[1]
             );
 
             const expectedAmounts = pendingRewardsInfo.rewards.map(
@@ -488,11 +488,6 @@ describe("Aura Spell Strategy test", () => {
             const swapDatas = pendingRewardsInfo.tokens.map((token: any, i: any) => ({
               data: "0x",
             }));
-
-            // console.log(
-            //   "Pending Rewards After removal: ",
-            //   pendingRewardsInfoAfterRemoval
-            // );
             
             let auraInstance = <ERC20>(
               await ethers.getContractAt(
@@ -505,9 +500,7 @@ describe("Aura Spell Strategy test", () => {
               alice.address
             );
 
-            console.log("rewardTokenBalanceBefore: ", rewardTokenBalanceBefore);
             await setTokenBalance(borrowToken, spell, utils.parseEther("1000"));
-            console.log("Closing position");
             await closePosition(
               alice,
               positionId,
@@ -524,9 +517,8 @@ describe("Aura Spell Strategy test", () => {
             const rewardTokenBalanceAfter = await auraInstance.balanceOf(
               alice.address
             );
-            console.log("rewardTokenBalanceBefore: ", rewardTokenBalanceBefore);
             expect(rewardTokenBalanceAfter.sub(rewardTokenBalanceBefore)).gte(
-              rewardAmountWithoutFee(pendingRewardsInfo.rewards[2])
+              rewardAmountWithoutFee(pendingRewardsInfo.rewards[1])
             );
           });
 

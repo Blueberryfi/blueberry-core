@@ -14,8 +14,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "./IERC20Wrapper.sol";
-import "./balancer/IBalancerPool.sol";
-import "./balancer/IBalancerVault.sol";
+import "./balancer-v2/IBalancerV2Pool.sol";
+import "./balancer-v2/IBalancerVault.sol";
 import "./aura/IAuraBooster.sol";
 import "./aura/IAura.sol";
 
@@ -107,11 +107,10 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @param amount The amount of ERC1155 tokens to burn.
     /// @return rewardTokens An array of reward token addresses.
     /// @return rewards An array of reward amounts corresponding to the reward token addresses.
-    /// @return stashToken The address of the stash token for the specific pool.
     function burn(
         uint id,
         uint amount
     )
         external
-        returns (address[] memory rewardTokens, uint256[] memory rewards, address stashToken);
+        returns (address[] memory rewardTokens, uint256[] memory rewards);
 }

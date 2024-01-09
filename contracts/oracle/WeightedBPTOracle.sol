@@ -10,83 +10,103 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "./UsingBaseOracle.sol";
-import "../interfaces/IBaseOracle.sol";
-import "../interfaces/balancer/IBalancerPool.sol";
-import "../interfaces/balancer/IBalancerVault.sol";
-import "../libraries/balancer/FixedPoint.sol";
+import "../utils/BlueBerryErrors.sol" as Errors;
 
-/// @title WeightedBPTOracle
-/// @dev Provides price feeds for Weighted Balancer LP tokens.
-/// @author BlueberryProtocol
-///
-/// This contract fetches and computes the value of a Balancer LP token in terms of USD.
-/// It uses the base oracle to fetch underlying token values and then computes the
-/// value of the LP token using Balancer's formula.
-contract WeightedBPTOracle is UsingBaseOracle, IBaseOracle {
+import "../interfaces/IBaseOracle.sol";
+import "../interfaces/balancer-v2/IBalancerV2WeightedPool.sol";
+import "../interfaces/balancer-v2/IBalancerVault.sol";
+import "../libraries/balancer-v2/FixedPoint.sol";
+import "../libraries/balancer-v2/VaultReentrancyLib.sol";
+
+/**
+ * @title WeightedBPTOracle
+ * @author BlueberryProtocol
+ * @notice Oracle contract which privides price feeds of Balancer LP tokens for weighted pools
+ */
+contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracle {
     using FixedPoint for uint256;
 
+    IBaseOracle public stablePoolOracle;
+    IBalancerVault public immutable VAULT;
+
+    // Protects the oracle from being manipulated via read-only reentrancy
+    modifier balancerNonReentrant {
+        VaultReentrancyLib.ensureNotInVaultContext(VAULT);
+        _;
+    }
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Constructs the WeightedBPTOracle contract.
-    /// @dev Initializes the contract with the base oracle address.
-    /// @param _base Address of the base oracle contract.
-    constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
+    constructor(
+        IBalancerVault _vault,
+        IBaseOracle _base,
+        address _owner
+    ) UsingBaseOracle(_base) Ownable2StepUpgradeable() {
+        VAULT = _vault;
+        _transferOwnership(_owner);
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Return the USD value of given Balancer Lp, with 18 decimals of precision.
-    /// @param token The ERC-20 token to check the value.
-    function getPrice(address token) external override returns (uint256) {
-        IBalancerPool pool = IBalancerPool(token);
-        IBalancerVault vault = IBalancerVault(pool.getVault());
+    /**
+     * @notice Return the USD value of given Balancer Lp, with 18 decimals of precision.
+     * @param token The ERC-20 token to check the value.
+     */
+    function getPrice(address token) public override balancerNonReentrant returns (uint256) {
+        IBalancerV2WeightedPool pool = IBalancerV2WeightedPool(token);
 
-        // Reentrancy guard to prevent flashloan attack
-        checkReentrancy(vault);
-
-        (address[] memory tokens, uint256[] memory balances, ) = vault
+        (address[] memory tokens, , ) = VAULT
             .getPoolTokens(pool.getPoolId());
 
         uint256[] memory weights = pool.getNormalizedWeights();
 
         uint256 length = weights.length;
-        uint256 temp = 1e18;
-        uint256 invariant = 1e18;
+        uint256 mult = 1e18;
+        uint256 invariant = pool.getInvariant();
 
-        for(uint256 i; i < length; ++i) {
-            temp = temp.mulDown(
-                (base.getPrice(tokens[i]).divDown(weights[i])).powDown(
-                    weights[i]
-                )
-            );
-            invariant = invariant.mulDown(
-                (balances[i] *
-                    10 ** (18 - IERC20Metadata(tokens[i]).decimals())).powDown(
-                        weights[i]
-                    )
-            );
+        for (uint256 i; i < length; ++i) {
+            uint256 price = _getMarketPrice(tokens[i]);
+            uint256 weight = weights[i];
+            mult = mult.mulDown((price.divDown(weight)).powDown(weight));
         }
         
-        try IBalancerPool(token).getActualSupply() returns (uint256 supply) {
-            return invariant.mulDown(temp).divDown(supply);
-        } catch {
-            return
-                invariant.mulDown(temp).divDown(
-                    IBalancerPool(token).totalSupply()
-                );
-        }
+        uint256 totalSupply = pool.totalSupply();
+
+        return invariant.mulDown(mult).divDown(totalSupply);
     }
 
-    /// @dev Checks for reentrancy by calling a no-op function on the Balancer Vault.
-    ///      This is a preventative measure against potential reentrancy attacks.
-    /// @param vault The Balancer Vault contract instance.
-    function checkReentrancy(IBalancerVault vault) internal {
-        vault.manageUserBalance(new IBalancerVault.UserBalanceOp[](0));
+    /**
+     * @notice Set the stable pool oracle
+     * @dev Only owner can set the stable pool oracle
+     * @param oracle Address of the oracle to set as the stable pool oracle
+     */
+    function setStablePoolOracle(address oracle) external onlyOwner {
+        if (oracle == address(0)) revert Errors.ZERO_ADDRESS();
+
+        stablePoolOracle = IBaseOracle(oracle);
+    }
+
+    /**
+     * @notice Returns the price of a given token
+     * @dev If the token is not supported by the base oracle, we assume that it is a nested pool
+     *    and we will try to get the price from the stable pool oracle or recursively
+     * @param token Address of the token to fetch the price for.
+     */
+    function _getMarketPrice(address token) internal returns (uint256) {
+        try base.getPrice(token) returns (uint256 price) {
+            return price;
+        } catch {
+            try stablePoolOracle.getPrice(token) returns (uint256 price) {
+                return price;
+            } catch {
+                return getPrice(token);
+            }
+        }
     }
 }
