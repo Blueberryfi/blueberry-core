@@ -198,6 +198,9 @@ error REDEEM_FAILED(uint256 amount);
                                 WRAPPER ERRORS
 //////////////////////////////////////////////////////////////////////////*/
 
+/// @notice Thrown when a duplicate tokenId is added.
+error DUPLICATE_TOKEN_ID(uint256 tokenId);
+
 /// @notice Thrown when an invalid token ID is provided.
 error INVALID_TOKEN_ID(uint256 tokenId);
 

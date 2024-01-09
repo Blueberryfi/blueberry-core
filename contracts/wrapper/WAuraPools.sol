@@ -174,6 +174,8 @@ contract WAuraPools is
             .rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
 
+        _validateTokenId(id);
+
         _mint(msg.sender, id, amount, "");
 
         // Store extra rewards info
@@ -188,7 +190,7 @@ contract WAuraPools is
             }
         }
 
-        auraPerShareDebt[id] += auraPerShareByPid[pid];
+        auraPerShareDebt[id] = auraPerShareByPid[pid];
 
         emit Minted(pid, amount, msg.sender);
     }
@@ -594,6 +596,16 @@ contract WAuraPools is
             return stash == auraStash;
         } catch  {
             return false;
+        }
+    }
+
+    /**
+     * @notice Verifies that the provided token id is unique and has not been minted yet
+     * @param id The token id to validate
+     */
+    function _validateTokenId(uint256 id) internal view {
+        if (balanceOf(msg.sender, id) != 0) {
+            revert Errors.DUPLICATE_TOKEN_ID(id);
         }
     }
 }
