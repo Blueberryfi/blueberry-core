@@ -51,6 +51,7 @@ export interface Protocol {
   usdcSoftVault: SoftVault,
   ichiSoftVault: SoftVault,
   daiSoftVault: SoftVault,
+  wethSoftVault: SoftVault,
   hardVault: HardVault,
   feeManager: FeeManager,
   uniV3Lib: UniV3WrappedLib,
@@ -91,6 +92,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   let usdcSoftVault: SoftVault;
   let ichiSoftVault: SoftVault;
   let daiSoftVault: SoftVault;
+  let wethSoftVault: SoftVault;
   let hardVault: HardVault;
   let ichiFarm: MockIchiFarm;
   let ichi_USDC_ICHI_Vault: MockIchiVault;
@@ -118,10 +120,10 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
   // Prepare USDC
-  // deposit 80 eth -> 80 WETH
+  // deposit 100 eth -> 100 WETH
   await weth.deposit({ value: utils.parseUnits('100') });
 
-  // swap 40 WETH -> USDC, 40 WETH -> DAI
+  // swap 30 WETH -> USDC, 30 WETH -> DAI
   await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
   const uniV2Router = <IUniswapV2Router02>await ethers.getContractAt(
     CONTRACT_NAMES.IUniswapV2Router02,
@@ -381,10 +383,20 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiSoftVault.deployed();
   await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address, 9000);
 
+  wethSoftVault = <SoftVault>(
+    await upgrades.deployProxy(
+      SoftVault,
+      [config.address, bWETH.address, "Interest Bearing WETH", "ibWETH"],
+      { unsafeAllow: ["delegatecall"] }
+    )
+  );
+  await wethSoftVault.deployed();
+
   // Whitelist bank contract on compound
   await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits("3000000"));
   await comptroller._setCreditLimit(bank.address, bICHI.address, utils.parseUnits("3000000"));
   await comptroller._setCreditLimit(bank.address, bDAI.address, utils.parseUnits("3000000"));
+  await comptroller._setCreditLimit(bank.address, bWETH.address, utils.parseUnits("3000000"));
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits("500", 6));
@@ -418,6 +430,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     usdcSoftVault,
     ichiSoftVault,
     daiSoftVault,
+    wethSoftVault,
     hardVault,
     uniV3Lib: LibInstance,
     bUSDC,
