@@ -11,7 +11,6 @@ library Utils {
    * @param beneficiary Beneficiary address
    * 0 then 100% will be transferred to beneficiary. Pass 10000 for 100%
    * @param path Route to be taken for this swap to take place
-
    */
     struct SellData {
         address fromToken;
@@ -69,7 +68,7 @@ library Utils {
     struct Route {
         uint256 index; //Adapter at which index needs to be used
         address targetExchange;
-        uint percent;
+        uint256 percent;
         bytes payload;
         uint256 networkFee; //Network fee is associated with 0xv3 trades
     }

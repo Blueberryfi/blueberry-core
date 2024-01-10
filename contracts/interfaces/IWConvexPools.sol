@@ -15,13 +15,13 @@ import "./convex/IConvex.sol";
 interface IWConvexPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @notice Fetch the CVX token contract interface.
     /// @return The IConvex interface of the CVX token.
-    function CVX() external view returns (IConvex);
+    function cvxToken() external view returns (IConvex);
 
     /// @notice Mint an ERC1155 token corresponding to a staked amount in a specific Convex pool.
     /// @param gid The pool ID representing the specific Convex pool.
     /// @param amount The amount of liquidity provider tokens to stake.
     /// @return id The ID of the newly minted ERC1155 token representing the staked position.
-    function mint(uint gid, uint amount) external returns (uint id);
+    function mint(uint256 gid, uint256 amount) external returns (uint256 id);
 
     /// @notice Burn an ERC1155 token to redeem staked liquidity provider tokens and any earned rewards.
     /// @param id The ID of the ERC1155 token representing the staked position.
@@ -29,24 +29,21 @@ interface IWConvexPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @return rewardTokens An array of reward token addresses.
     /// @return rewards An array of reward amounts corresponding to the reward token addresses.
     function burn(
-        uint id,
-        uint amount
-    )
-        external
-        returns (address[] memory rewardTokens, uint256[] memory rewards);
+        uint256 id,
+        uint256 amount
+    ) external returns (address[] memory rewardTokens, uint256[] memory rewards);
 
     /// @notice Fetch the Convex Pool contract interface.
-    /// @return The ICvxBooster interface of the Convex Pool.
-    function cvxPools() external view returns (ICvxBooster);
-
+    /// @return The ICvxBooster interface of the Convex Booster.
+    function cvxBooster() external view returns (ICvxBooster);
 
     /// @notice Encode two uint values into a single uint.
-    function encodeId(uint, uint) external pure returns (uint);
+    function encodeId(uint256, uint256) external pure returns (uint256);
 
     /// @notice Decode an encoded ID into two separate uint values.
     /// @param id The encoded uint ID to decode.
     /// @return The two individual uint values decoded from the provided ID.
-    function decodeId(uint id) external pure returns (uint, uint);
+    function decodeId(uint256 id) external pure returns (uint256, uint256);
 
     /// @notice Fetch detailed information for a specific Convex pool using its pool ID.
     /// @param pid The pool ID.
@@ -61,12 +58,5 @@ interface IWConvexPools is IERC1155Upgradeable, IERC20Wrapper {
     )
         external
         view
-        returns (
-            address lptoken,
-            address token,
-            address gauge,
-            address crvRewards,
-            address stash,
-            bool shutdown
-        );
+        returns (address lptoken, address token, address gauge, address crvRewards, address stash, bool shutdown);
 }

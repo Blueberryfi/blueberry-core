@@ -1,11 +1,11 @@
-import axios from "axios";
-import { ethers } from "hardhat";
-import { OptimalRate, SwapSide, TransactionParams, constructSimpleSDK } from "@paraswap/sdk";
-import { BigNumber, BigNumberish, utils } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { ERC20, IWETH } from "../../typechain-types";
-import { setTokenBalance } from ".";
+import axios from 'axios';
+import { ethers } from 'hardhat';
+import { OptimalRate, SwapSide, TransactionParams, constructSimpleSDK } from '@paraswap/sdk';
+import { BigNumber, BigNumberish, utils } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ADDRESS, CONTRACT_NAMES } from '../../constant';
+import { ERC20, IWETH } from '../../typechain-types';
+import { setTokenBalance } from '.';
 
 const paraswapSdk = constructSimpleSDK({
   chainId: 1,
@@ -24,13 +24,7 @@ export const getParaswapCalldata = async (
     destToken: toToken,
     amount: amount.toString(),
     options: {
-      includeDEXS: [
-        "UniswapV3",
-        "UniswapV2",
-        "SushiSwap",
-        "BalancerV1",
-        "BalancerV2",
-      ],
+      includeDEXS: ['UniswapV3', 'UniswapV2', 'SushiSwap', 'BalancerV1', 'BalancerV2'],
       maxImpact: maxImpact,
       otherExchangePrices: true,
     },
@@ -61,18 +55,16 @@ export const faucetToken = async (
     return amount;
   }
   if (toToken === ADDRESS.WETH) {
-    const weth = <IWETH>(
-      await ethers.getContractAt(CONTRACT_NAMES.IWETH, ADDRESS.WETH)
-    );
+    const weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, ADDRESS.WETH);
 
     await weth.connect(signer).deposit({ value: amount });
     return amount;
   }
 
-  const token = <ERC20>await ethers.getContractAt("ERC20", toToken);
+  const token = <ERC20>await ethers.getContractAt('ERC20', toToken);
   try {
-    await setTokenBalance(token, signer, utils.parseEther("100000"));
-    return utils.parseEther("100000");
+    await setTokenBalance(token, signer, utils.parseEther('100000'));
+    return utils.parseEther('100000');
   } catch {}
 
   const priceRoute = await paraswapSdk.swap.getRate({
@@ -82,19 +74,19 @@ export const faucetToken = async (
     destDecimals: await token.decimals(),
     amount: amount.toString(),
     options: {
-      includeDEXS: ["UniswapV2", "SushiSwap", "BalancerV1", "BalancerV2", "Curve", "UniswapV3"],
+      includeDEXS: ['UniswapV2', 'SushiSwap', 'BalancerV1', 'BalancerV2', 'Curve', 'UniswapV3'],
       maxImpact: maxImpact,
       otherExchangePrices: true,
     },
   });
 
-  let preBalance = await token.balanceOf(signer.address);
+  const preBalance = await token.balanceOf(signer.address);
 
   let txStatus = false;
   let retryCount = 1;
   while (txStatus === false) {
     try {
-      let slippage = (10) * (0.01 + (0.001 * retryCount)) * 10000;
+      const slippage = 10 * (0.01 + 0.001 * retryCount) * 10000;
       console.log(slippage);
       const calldata = await buildTxCalldata(toToken, amount, priceRoute, signer, slippage);
 
@@ -129,7 +121,7 @@ export const getParaswapCalldataToBuy = async (
     amount: toAmount.toString(),
     side: SwapSide.BUY,
     options: {
-      includeDEXS: ["UniswapV3", "UniswapV2", "BalancerV1"],
+      includeDEXS: ['UniswapV3', 'UniswapV2', 'BalancerV1'],
       maxImpact: maxImpact,
       otherExchangePrices: true,
     },

@@ -13,7 +13,7 @@ contract MockBToken is ERC20("Mock", "Mock") {
         underlying = _underlying;
     }
 
-    function borrowBalanceCurrent(address account) external returns (uint256) {
+    function borrowBalanceCurrent(address account) external view returns (uint256) {
         return borrowBalanceStored[account];
     }
 
@@ -33,7 +33,7 @@ contract MockBToken is ERC20("Mock", "Mock") {
         return 0;
     }
 
-    function exchangeRateStored() external view returns (uint256) {
+    function exchangeRateStored() external pure returns (uint256) {
         return 1e18;
     }
 }

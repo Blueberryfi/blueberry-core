@@ -28,7 +28,7 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -61,12 +61,9 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     /// @notice Fetches the underlying ERC20 token address for a given ERC1155 tokenId.
     /// @param tokenId The tokenId of the wrapped ERC20.
     /// @return token The underlying ERC20 token address.
-    function getUnderlyingToken(
-        uint256 tokenId
-    ) external pure override returns (address token) {
+    function getUnderlyingToken(uint256 tokenId) external pure override returns (address token) {
         token = _decodeTokenId(tokenId);
-        if (_encodeTokenId(token) != tokenId)
-            revert Errors.INVALID_TOKEN_ID(tokenId);
+        if (_encodeTokenId(token) != tokenId) revert Errors.INVALID_TOKEN_ID(tokenId);
     }
 
     /// @notice Retrieves pending rewards from the farming pool for a given tokenId.
@@ -77,16 +74,15 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     function pendingRewards(
         uint256 tokenId,
         uint amount
-    ) public view override returns (address[] memory, uint256[] memory) {}
+    ) public view override returns (address[] memory, uint256[] memory) {
+        // solhint-disable-previous-line no-empty-blocks
+    }
 
     /// @notice Fetches the balance of the underlying ERC20 token for a specific user.
     /// @param token The ERC20 token address.
     /// @param user The user's address.
     /// @return The user's balance of the specified ERC20 token.
-    function balanceOfERC20(
-        address token,
-        address user
-    ) external view override returns (uint256) {
+    function balanceOfERC20(address token, address user) external view override returns (uint256) {
         return balanceOf(user, _encodeTokenId(token));
     }
 
@@ -94,34 +90,20 @@ contract WERC20 is ERC1155Upgradeable, ReentrancyGuardUpgradeable, IWERC20 {
     /// @param token The address of the ERC20 token to wrap.
     /// @param amount The amount of the ERC20 token to wrap.
     /// @return id The tokenId of the wrapped ERC20 token.
-    function mint(
-        address token,
-        uint256 amount
-    ) external override nonReentrant returns (uint256 id) {
-        uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(
-            address(this)
-        );
-        IERC20Upgradeable(token).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
-        uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(
-            address(this)
-        );
+    function mint(address token, uint256 amount) external override nonReentrant returns (uint256 id) {
+        uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(address(this));
+        IERC20Upgradeable(token).safeTransferFrom(msg.sender, address(this), amount);
+        uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(address(this));
         id = _encodeTokenId(token);
         _validateTokenId(id);
-        
+
         _mint(msg.sender, id, balanceAfter - balanceBefore, "");
     }
 
     /// @notice Allows users to burn their ERC1155 token to retrieve the original ERC20 tokens.
     /// @param token The address of the ERC20 token to unwrap.
     /// @param amount The amount of the ERC20 token to unwrap.
-    function burn(
-        address token,
-        uint256 amount
-    ) external override nonReentrant {
+    function burn(address token, uint256 amount) external override nonReentrant {
         _burn(msg.sender, _encodeTokenId(token), amount);
         IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
     }

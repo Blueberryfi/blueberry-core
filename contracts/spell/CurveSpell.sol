@@ -31,7 +31,7 @@ contract CurveSpell is BasicSpell {
     /// @dev address of CurveOracle
     ICurveOracle public crvOracle;
     /// @dev address of CRV token
-    address public CRV;
+    address public crvToken;
 
     function initialize(
         IBank bank_,
@@ -42,19 +42,13 @@ contract CurveSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(
-            bank_,
-            werc20_,
-            weth_,
-            augustusSwapper_,
-            tokenTransferProxy_
-        );
+        __BasicSpell_init(bank_, werc20_, weth_, augustusSwapper_, tokenTransferProxy_);
         if (wCurveGauge_ == address(0) || crvOracle_ == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
 
         wCurveGauge = IWCurveGauge(wCurveGauge_);
-        CRV = address(wCurveGauge.CRV());
+        crvToken = address(wCurveGauge.crvToken());
         crvOracle = ICurveOracle(crvOracle_);
         IWCurveGauge(wCurveGauge_).setApprovalForAll(address(bank_), true);
 
@@ -68,11 +62,7 @@ contract CurveSpell is BasicSpell {
      * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(
-        address crvLp,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    ) external onlyOwner {
+    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
@@ -83,11 +73,7 @@ contract CurveSpell is BasicSpell {
     function openPositionFarm(
         OpenPosParam calldata param,
         uint256 minLPMint
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         address lp = strategies[param.strategyId].vault;
         if (wCurveGauge.getLpFromGaugeId(param.farmingPoolId) != lp) {
             revert Errors.INCORRECT_LP(lp);
@@ -98,10 +84,7 @@ contract CurveSpell is BasicSpell {
         _doLend(param.collToken, param.collAmount);
 
         // 2. Borrow specific amounts
-        uint256 borrowBalance = _doBorrow(
-            param.borrowToken,
-            param.borrowAmount
-        );
+        uint256 borrowBalance = _doBorrow(param.borrowToken, param.borrowAmount);
 
         // 3. Add liquidity on curve
         {
@@ -134,10 +117,7 @@ contract CurveSpell is BasicSpell {
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(
-                    suppliedAmts,
-                    minLPMint
-                );
+                ICurvePool(pool).add_liquidity{ value: ethValue }(suppliedAmts, minLPMint);
             } else if (tokens.length == 3) {
                 uint256[3] memory suppliedAmts;
 
@@ -147,10 +127,7 @@ contract CurveSpell is BasicSpell {
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(
-                    suppliedAmts,
-                    minLPMint
-                );
+                ICurvePool(pool).add_liquidity{ value: ethValue }(suppliedAmts, minLPMint);
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
 
@@ -160,10 +137,7 @@ contract CurveSpell is BasicSpell {
                         break;
                     }
                 }
-                ICurvePool(pool).add_liquidity{value: ethValue}(
-                    suppliedAmts,
-                    minLPMint
-                );
+                ICurvePool(pool).add_liquidity{ value: ethValue }(suppliedAmts, minLPMint);
             }
         }
 
@@ -185,7 +159,7 @@ contract CurveSpell is BasicSpell {
             }
             bank.takeCollateral(pos.collateralSize);
             wCurveGauge.burn(pos.collId, pos.collateralSize);
-            _doRefundRewards(CRV);
+            _doRefundRewards(crvToken);
         }
 
         // 7. Deposit on Curve Gauge, Put wrapped collateral tokens on Blueberry Bank
@@ -200,11 +174,7 @@ contract CurveSpell is BasicSpell {
         uint256[] calldata amounts,
         bytes[] calldata swapDatas,
         uint256 deadline
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         if (block.timestamp > deadline) revert Errors.EXPIRED(deadline);
 
         address crvLp = strategies[param.strategyId].vault;
@@ -222,7 +192,7 @@ contract CurveSpell is BasicSpell {
 
         {
             // 2. Swap rewards tokens to debt token
-            _swapOnParaswap(CRV, amounts[0], swapDatas[0]);
+            _swapOnParaswap(crvToken, amounts[0], swapDatas[0]);
         }
 
         {
@@ -238,13 +208,7 @@ contract CurveSpell is BasicSpell {
                 }
 
                 // 4. Remove liquidity
-                _removeLiquidity(
-                    param,
-                    pool,
-                    tokens,
-                    pos,
-                    amountPosRemove
-                );
+                _removeLiquidity(param, pool, tokens, pos, amountPosRemove);
             }
         }
 
@@ -269,7 +233,7 @@ contract CurveSpell is BasicSpell {
         // 8. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
-        _doRefund(CRV);
+        _doRefund(crvToken);
     }
 
     function _removeLiquidity(
@@ -290,32 +254,16 @@ contract CurveSpell is BasicSpell {
             }
         }
 
-        ICurvePool(pool).remove_liquidity_one_coin(
-            amountPosRemove,
-            int128(uint128(tokenIndex)),
-            param.amountOutMin
-        );
+        ICurvePool(pool).remove_liquidity_one_coin(amountPosRemove, int128(uint128(tokenIndex)), param.amountOutMin);
 
         if (tokens[uint128(tokenIndex)] == ETH) {
-            IWETH(WETH).deposit{value: address(this).balance}();
+            IWETH(WETH).deposit{ value: address(this).balance }();
         }
     }
 
-    function _swapOnParaswap(
-        address token,
-        uint256 amount,
-        bytes calldata swapData
-    ) internal {
+    function _swapOnParaswap(address token, uint256 amount, bytes calldata swapData) internal {
         if (amount == 0) return;
-        if (
-            !PSwapLib.swap(
-                augustusSwapper,
-                tokenTransferProxy,
-                token,
-                amount,
-                swapData
-            )
-        ) {
+        if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, token, amount, swapData)) {
             revert Errors.SWAP_FAILED(token);
         }
 

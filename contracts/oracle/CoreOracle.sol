@@ -14,7 +14,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20Metadat
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol" as Constants;
 import "../utils/BlueBerryErrors.sol" as Errors;
 import "../interfaces/ICoreOracle.sol";
 import "../interfaces/IERC20Wrapper.sol";
@@ -66,17 +65,12 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /// @notice Register oracle routes for specific tokens.
     /// @param tokens Array of token addresses.
     /// @param oracleRoutes Array of oracle addresses corresponding to each token.
-    function setRoutes(
-        address[] calldata tokens,
-        address[] calldata oracleRoutes
-    ) external onlyOwner {
-        if (tokens.length != oracleRoutes.length)
-            revert Errors.INPUT_ARRAY_MISMATCH();
+    function setRoutes(address[] calldata tokens, address[] calldata oracleRoutes) external onlyOwner {
+        if (tokens.length != oracleRoutes.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 i = 0; i < tokens.length; ++i) {
             address token = tokens[i];
             address route = oracleRoutes[i];
-            if (token == address(0) || route == address(0))
-                revert Errors.ZERO_ADDRESS();
+            if (token == address(0) || route == address(0)) revert Errors.ZERO_ADDRESS();
 
             routes[token] = route;
             emit SetRoute(token, route);
@@ -126,10 +120,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /// @param token ERC1155 token address.
     /// @param tokenId ERC1155 token ID.
     /// @return bool True if the underlying token is supported, false otherwise
-    function isWrappedTokenSupported(
-        address token,
-        uint256 tokenId
-    ) external override returns (bool) {
+    function isWrappedTokenSupported(address token, uint256 tokenId) external override returns (bool) {
         address uToken = IERC20Wrapper(token).getUnderlyingToken(tokenId);
         return _isTokenSupported(uToken);
     }
@@ -138,10 +129,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /// @param token ERC20 token address.
     /// @param amount Amount of the token.
     /// @return value USD value of the token amount.
-    function _getTokenValue(
-        address token,
-        uint256 amount
-    ) internal returns (uint256 value) {
+    function _getTokenValue(address token, uint256 amount) internal returns (uint256 value) {
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         value = (_getPrice(token) * amount) / 10 ** decimals;
     }
@@ -164,10 +152,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /// @param token ERC20 token address.
     /// @param amount Amount of the token.
     /// @return value USD value of the token amount.
-    function getTokenValue(
-        address token,
-        uint256 amount
-    ) external override returns (uint256) {
+    function getTokenValue(address token, uint256 amount) external override returns (uint256) {
         return _getTokenValue(token, amount);
     }
 }

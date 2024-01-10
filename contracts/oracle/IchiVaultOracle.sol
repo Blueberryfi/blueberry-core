@@ -26,12 +26,7 @@ import "../interfaces/ichi/IICHIVault.sol";
 /// @dev The logic of this oracle is using legacy & traditional mathematics of Uniswap V2 Lp Oracle.
 ///      Base token prices are fetched from Chainlink or Band Protocol.
 ///      To prevent flashloan price manipulations, it compares spot & twap prices from Uni V3 Pool.
-contract IchiVaultOracle is
-    UsingBaseOracle,
-    IBaseOracle,
-    Ownable,
-    BaseOracleExt
-{
+contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt {
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
@@ -42,7 +37,7 @@ contract IchiVaultOracle is
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructs a new instance of the contract.
     /// @param _base The base oracle instance.
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
@@ -64,16 +59,15 @@ contract IchiVaultOracle is
     /// @dev Input token is the underlying token of ICHI Vaults which is token0 or token1 of Uni V3 Pool
     /// @param token Token to price deviation
     /// @param maxPriceDeviation Max price deviation (in 1e18) of price feeds
-    function setPriceDeviation(
-        address token,
-        uint256 maxPriceDeviation
-    ) external onlyOwner {
+    function setPriceDeviation(address token, uint256 maxPriceDeviation) external onlyOwner {
         /// Validate inputs
         if (token == address(0)) revert Errors.ZERO_ADDRESS();
-        if (maxPriceDeviation > Constants.MAX_PRICE_DEVIATION)
+        if (maxPriceDeviation > Constants.MAX_PRICE_DEVIATION) {
             revert Errors.OUT_OF_DEVIATION_CAP(maxPriceDeviation);
+        }
 
         maxPriceDeviations[token] = maxPriceDeviation;
+
         emit SetPriceDeviation(token, maxPriceDeviation);
     }
 
@@ -81,9 +75,7 @@ contract IchiVaultOracle is
     /// @dev Returns token0 price of 1e18 amount
     /// @param vault ICHI Vault address
     /// @return price spot price of token0 quoted in token1
-    function spotPrice0InToken1(
-        IICHIVault vault
-    ) public view returns (uint256) {
+    function spotPrice0InToken1(IICHIVault vault) public view returns (uint256) {
         return
             UniV3WrappedLibContainer.getQuoteAtTick(
                 vault.currentTick(), // current tick
@@ -97,18 +89,11 @@ contract IchiVaultOracle is
     /// @dev Returns token0 price of 1e18 amount
     /// @param vault ICHI Vault address
     /// @return price spot price of token0 quoted in token1
-    function twapPrice0InToken1(
-        IICHIVault vault
-    ) public view returns (uint256) {
+    function twapPrice0InToken1(IICHIVault vault) public view returns (uint256) {
         uint32 twapPeriod = vault.twapPeriod();
-        if (twapPeriod > Constants.MAX_TIME_GAP)
-            revert Errors.TOO_LONG_DELAY(twapPeriod);
-        if (twapPeriod < Constants.MIN_TIME_GAP)
-            revert Errors.TOO_LOW_MEAN(twapPeriod);
-        (int24 twapTick, ) = UniV3WrappedLibContainer.consult(
-            vault.pool(),
-            twapPeriod
-        );
+        if (twapPeriod > Constants.MAX_TIME_GAP) revert Errors.TOO_LONG_DELAY(twapPeriod);
+        if (twapPeriod < Constants.MIN_TIME_GAP) revert Errors.TOO_LOW_MEAN(twapPeriod);
+        (int24 twapTick, ) = UniV3WrappedLibContainer.consult(vault.pool(), twapPeriod);
         return
             UniV3WrappedLibContainer.getQuoteAtTick(
                 twapTick,
@@ -133,8 +118,7 @@ contract IchiVaultOracle is
         uint256 spotPrice = spotPrice0InToken1(vault);
         uint256 twapPrice = twapPrice0InToken1(vault);
         uint256 maxPriceDeviation = maxPriceDeviations[token0];
-        if (!_isValidPrices(spotPrice, twapPrice, maxPriceDeviation))
-            revert Errors.EXCEED_DEVIATION();
+        if (!_isValidPrices(spotPrice, twapPrice, maxPriceDeviation)) revert Errors.EXCEED_DEVIATION();
 
         /// Total reserve / total supply
         (uint256 r0, uint256 r1) = vault.getTotalAmounts();
@@ -143,10 +127,7 @@ contract IchiVaultOracle is
         uint256 t0Decimal = IERC20Metadata(token0).decimals();
         uint256 t1Decimal = IERC20Metadata(token1).decimals();
 
-        uint256 totalReserve = (r0 * px0) /
-            10 ** t0Decimal +
-            (r1 * px1) /
-            10 ** t1Decimal;
+        uint256 totalReserve = (r0 * px0) / 10 ** t0Decimal + (r1 * px1) / 10 ** t1Decimal;
 
         return (totalReserve * 10 ** vault.decimals()) / totalSupply;
     }

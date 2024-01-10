@@ -3,10 +3,7 @@
 pragma solidity 0.8.22;
 
 interface IFeedRegistry {
-    function decimals(
-        address base,
-        address quote
-    ) external view returns (uint8);
+    function decimals(address base, address quote) external view returns (uint8);
 
     function latestRoundData(
         address base,
@@ -14,11 +11,5 @@ interface IFeedRegistry {
     )
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 }

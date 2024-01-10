@@ -107,7 +107,6 @@ error INCORRECT_LIMITS();
 /// @notice Thrown when Curve LP is already registered.
 error CRV_LP_ALREADY_REGISTERED(address lp);
 
-
 /*//////////////////////////////////////////////////////////////////////////
                             GENERAL SPELL ERRORS
 //////////////////////////////////////////////////////////////////////////*/
@@ -160,7 +159,6 @@ error INCORRECT_DEBT(address debtToken);
 error NOT_FROM_UNIV3(address sender);
 error SWAP_FAILED(address swapToken);
 
-
 /*//////////////////////////////////////////////////////////////////////////
                             CURVE SPELL ERRORS
 //////////////////////////////////////////////////////////////////////////*/
@@ -176,7 +174,6 @@ error NO_CURVE_POOL(uint256 pid);
 
 /// @notice Thrown when no LP has been registered.
 error NO_LP_REGISTERED(address lp);
-
 
 /*//////////////////////////////////////////////////////////////////////////
                                 VAULT ERRORS
@@ -217,7 +214,7 @@ error BAD_REWARD_PER_SHARE(uint256 rewardPerShare);
 /// @notice Thrown when a function is called without a required execution flag.
 error NOT_UNDER_EXECUTION();
 
-/// @notice Thrown when a transaction isn't initiated 
+/// @notice Thrown when a transaction isn't initiated
 /// by an externally owned account (EOA).
 error NOT_EOA(address from);
 
@@ -226,7 +223,6 @@ error NOT_FROM_SPELL(address from);
 
 /// @notice Thrown when the sender is not the owner of a given position ID.
 error NOT_FROM_OWNER(uint256 positionId, address sender);
-
 
 /// @notice Thrown when a spell address isn't whitelisted.
 error SPELL_NOT_WHITELISTED(address spell);

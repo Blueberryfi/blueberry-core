@@ -21,12 +21,12 @@ contract JumpRateModelV2 is InterestRateModel {
     /**
      * @notice The approximate number of blocks per year that is assumed by the interest rate model
      */
-    uint256 public constant blocksPerYear = 2628000;
+    uint256 public constant BLOCKS_PER_YEAR = 2628000;
 
     /**
      * @notice The minimum roof value used for calculating borrow rate.
      */
-    uint256 internal constant minRoofValue = 1e18;
+    uint256 internal constant _MIN_ROOF_VALUE = 1e18;
 
     /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate
@@ -68,13 +68,7 @@ contract JumpRateModelV2 is InterestRateModel {
         uint256 kink_,
         uint256 roof_
     ) public {
-        updateJumpRateModelInternal(
-            baseRatePerYear,
-            multiplierPerYear,
-            jumpMultiplierPerYear,
-            kink_,
-            roof_
-        );
+        _updateJumpRateModelInternal(baseRatePerYear, multiplierPerYear, jumpMultiplierPerYear, kink_, roof_);
     }
 
     /**
@@ -84,11 +78,7 @@ contract JumpRateModelV2 is InterestRateModel {
      * @param reserves The amount of reserves in the market (currently unused)
      * @return The utilization rate as a mantissa between [0, 1e18]
      */
-    function utilizationRate(
-        uint256 cash,
-        uint256 borrows,
-        uint256 reserves
-    ) public view returns (uint256) {
+    function utilizationRate(uint256 cash, uint256 borrows, uint256 reserves) public view returns (uint256) {
         // Utilization rate is 0 when there are no borrows
         if (borrows == 0) {
             return 0;
@@ -109,24 +99,15 @@ contract JumpRateModelV2 is InterestRateModel {
      * @param reserves The amount of reserves in the market
      * @return The borrow rate percentage per block as a mantissa (scaled by 1e18)
      */
-    function getBorrowRate(
-        uint256 cash,
-        uint256 borrows,
-        uint256 reserves
-    ) public view returns (uint256) {
+    function getBorrowRate(uint256 cash, uint256 borrows, uint256 reserves) public view returns (uint256) {
         uint256 util = utilizationRate(cash, borrows, reserves);
 
         if (util <= kink) {
             return util.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
         } else {
-            uint256 normalRate = kink.mul(multiplierPerBlock).div(1e18).add(
-                baseRatePerBlock
-            );
+            uint256 normalRate = kink.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
             uint256 excessUtil = util.sub(kink);
-            return
-                excessUtil.mul(jumpMultiplierPerBlock).div(1e18).add(
-                    normalRate
-                );
+            return excessUtil.mul(jumpMultiplierPerBlock).div(1e18).add(normalRate);
         }
     }
 
@@ -144,13 +125,10 @@ contract JumpRateModelV2 is InterestRateModel {
         uint256 reserves,
         uint256 reserveFactorMantissa
     ) public view returns (uint256) {
-        uint256 oneMinusReserveFactor = uint256(1e18).sub(
-            reserveFactorMantissa
-        );
+        uint256 oneMinusReserveFactor = uint256(1e18).sub(reserveFactorMantissa);
         uint256 borrowRate = getBorrowRate(cash, borrows, reserves);
         uint256 rateToPool = borrowRate.mul(oneMinusReserveFactor).div(1e18);
-        return
-            utilizationRate(cash, borrows, reserves).mul(rateToPool).div(1e18);
+        return utilizationRate(cash, borrows, reserves).mul(rateToPool).div(1e18);
     }
 
     /**
@@ -161,29 +139,21 @@ contract JumpRateModelV2 is InterestRateModel {
      * @param kink_ The utilization point at which the jump multiplier is applied
      * @param roof_ The utilization point at which the borrow rate is fixed
      */
-    function updateJumpRateModelInternal(
+    function _updateJumpRateModelInternal(
         uint256 baseRatePerYear,
         uint256 multiplierPerYear,
         uint256 jumpMultiplierPerYear,
         uint256 kink_,
         uint256 roof_
     ) internal {
-        require(roof_ >= minRoofValue, "invalid roof value");
+        require(roof_ >= _MIN_ROOF_VALUE, "invalid roof value");
 
-        baseRatePerBlock = baseRatePerYear.div(blocksPerYear);
-        multiplierPerBlock = (multiplierPerYear.mul(1e18)).div(
-            blocksPerYear.mul(kink_)
-        );
-        jumpMultiplierPerBlock = jumpMultiplierPerYear.div(blocksPerYear);
+        baseRatePerBlock = baseRatePerYear.div(BLOCKS_PER_YEAR);
+        multiplierPerBlock = (multiplierPerYear.mul(1e18)).div(BLOCKS_PER_YEAR.mul(kink_));
+        jumpMultiplierPerBlock = jumpMultiplierPerYear.div(BLOCKS_PER_YEAR);
         kink = kink_;
         roof = roof_;
 
-        emit NewInterestParams(
-            baseRatePerBlock,
-            multiplierPerBlock,
-            jumpMultiplierPerBlock,
-            kink,
-            roof
-        );
+        emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink, roof);
     }
 }

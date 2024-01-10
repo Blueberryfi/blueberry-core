@@ -34,16 +34,12 @@ contract IchiSpell is BasicSpell {
                                    PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Temporary state to store Uniswap V3 pool for swapping operations.
-    IUniswapV3Pool private SWAP_POOL;
-
     /// @dev Address of the Uniswap V3 router.
-    IUniswapV3Router private uniV3Router;
-
+    IUniswapV3Router private _uniV3Router;
     /// @dev Address of the ICHI farm wrapper.
     IWIchiFarm public wIchiFarm;
     /// @dev Address of the ICHI token.
-    address public ICHI;
+    address public ichiToken;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -75,31 +71,21 @@ contract IchiSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(
-            bank_,
-            werc20_,
-            weth_,
-            augustusSwapper_,
-            tokenTransferProxy_
-        );
+        __BasicSpell_init(bank_, werc20_, weth_, augustusSwapper_, tokenTransferProxy_);
         if (wichiFarm_ == address(0)) revert Errors.ZERO_ADDRESS();
 
         wIchiFarm = IWIchiFarm(wichiFarm_);
-        ICHI = address(wIchiFarm.ICHI());
+        ichiToken = address(wIchiFarm.ichiV2());
         wIchiFarm.setApprovalForAll(address(bank_), true);
 
-        uniV3Router = IUniswapV3Router(uniV3Router_);
+        _uniV3Router = IUniswapV3Router(uniV3Router_);
     }
 
     /// @notice Adds a strategy to the contract.
     /// @param vault Address of the vault linked to the strategy.
     /// @param minPosSize Minimum position size in USD, normalized to 1e18.
     /// @param maxPosSize Maximum position size in USD, normalized to 1e18.
-    function addStrategy(
-        address vault,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    ) external onlyOwner {
+    function addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(vault, minPosSize, maxPosSize);
     }
 
@@ -114,20 +100,15 @@ contract IchiSpell is BasicSpell {
 
         /// 2. Borrow specific amounts
         IICHIVault vault = IICHIVault(strategy.vault);
-        if (
-            vault.token0() != param.borrowToken &&
-            vault.token1() != param.borrowToken
-        ) revert Errors.INCORRECT_DEBT(param.borrowToken);
-        uint256 borrowBalance = _doBorrow(
-            param.borrowToken,
-            param.borrowAmount
-        );
+        if (vault.token0() != param.borrowToken && vault.token1() != param.borrowToken)
+            revert Errors.INCORRECT_DEBT(param.borrowToken);
+        uint256 borrowBalance = _doBorrow(param.borrowToken, param.borrowAmount);
 
         /// 3. Add liquidity - Deposit on ICHI Vault
         bool isTokenA = vault.token0() == param.borrowToken;
         IERC20(param.borrowToken).universalApprove(address(vault), borrowBalance);
 
-        uint ichiVaultShare;
+        uint256 ichiVaultShare;
         if (isTokenA) {
             ichiVaultShare = vault.deposit(borrowBalance, 0, address(this));
         } else {
@@ -146,20 +127,13 @@ contract IchiSpell is BasicSpell {
     /// @dev param struct found in {BasicSpell}.
     function openPosition(
         OpenPosParam calldata param
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         /// 1-5 Deposit on ichi vault
         _deposit(param);
 
         /// 6. Put collateral - ICHI Vault Lp Token
         address vault = strategies[param.strategyId].vault;
-        _doPutCollateral(
-            vault,
-            IERC20Upgradeable(vault).balanceOf(address(this))
-        );
+        _doPutCollateral(vault, IERC20Upgradeable(vault).balanceOf(address(this)));
     }
 
     /// @notice Deposits assets into an IchiVault and then farms them in Ichi Farm.
@@ -167,11 +141,7 @@ contract IchiSpell is BasicSpell {
     /// @dev param struct found in {BasicSpell}.
     function openPositionFarm(
         OpenPosParam calldata param
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         Strategy memory strategy = strategies[param.strategyId];
         address lpToken = wIchiFarm.ichiFarm().lpToken(param.farmingPoolId);
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
@@ -187,13 +157,11 @@ contract IchiSpell is BasicSpell {
             uint256 collSize = pos.collateralSize;
             if (collSize > 0) {
                 (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
-                if (param.farmingPoolId != decodedPid)
-                    revert Errors.INCORRECT_PID(param.farmingPoolId);
-                if (posCollToken != address(wIchiFarm))
-                    revert Errors.INCORRECT_COLTOKEN(posCollToken);
+                if (param.farmingPoolId != decodedPid) revert Errors.INCORRECT_PID(param.farmingPoolId);
+                if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
                 bank.takeCollateral(collSize);
                 wIchiFarm.burn(collId, collSize);
-                _doRefundRewards(ICHI);
+                _doRefundRewards(ichiToken);
             }
         }
 
@@ -229,29 +197,26 @@ contract IchiSpell is BasicSpell {
 
         /// 4. Swap withdrawn tokens to debt token
         bool isTokenA = vault.token0() == param.borrowToken;
-        uint256 amountIn = IERC20Upgradeable(
-            isTokenA ? vault.token1() : vault.token0()
-        ).balanceOf(address(this));
+        uint256 amountIn = IERC20Upgradeable(isTokenA ? vault.token1() : vault.token0()).balanceOf(address(this));
 
         if (amountIn > 0) {
             address[] memory swapPath = new address[](2);
             swapPath[0] = isTokenA ? vault.token1() : vault.token0();
             swapPath[1] = isTokenA ? vault.token0() : vault.token1();
 
-            IUniswapV3Router.ExactInputSingleParams
-                memory params = IUniswapV3Router.ExactInputSingleParams({
-                    tokenIn: swapPath[0],
-                    tokenOut: swapPath[1],
-                    fee: IUniswapV3Pool(vault.pool()).fee(),
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: amountIn,
-                    amountOutMinimum: param.amountOutMin,
-                    sqrtPriceLimitX96: 0
-                });
-            
-            IERC20(params.tokenIn).universalApprove(address(uniV3Router), amountIn);
-            uniV3Router.exactInputSingle(params);
+            IUniswapV3Router.ExactInputSingleParams memory params = IUniswapV3Router.ExactInputSingleParams({
+                tokenIn: swapPath[0],
+                tokenOut: swapPath[1],
+                fee: IUniswapV3Pool(vault.pool()).fee(),
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: amountIn,
+                amountOutMinimum: param.amountOutMin,
+                sqrtPriceLimitX96: 0
+            });
+
+            IERC20(params.tokenIn).universalApprove(address(_uniV3Router), amountIn);
+            _uniV3Router.exactInputSingle(params);
         }
 
         /// 5. Withdraw isolated collateral from Bank
@@ -275,16 +240,9 @@ contract IchiSpell is BasicSpell {
     /// @dev param struct found in {BasicSpell}.
     function closePosition(
         ClosePosParam calldata param
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         /// 1. Take out collateral
-        _doTakeCollateral(
-            strategies[param.strategyId].vault,
-            param.amountPosRemove
-        );
+        _doTakeCollateral(strategies[param.strategyId].vault, param.amountPosRemove);
 
         /// 2-8. Remove liquidity
         _withdraw(param);
@@ -295,29 +253,23 @@ contract IchiSpell is BasicSpell {
     /// @dev param struct found in {BasicSpell}.
     function closePositionFarm(
         ClosePosParam calldata param
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         address vault = strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
-        if (IWIchiFarm(posCollToken).getUnderlyingToken(collId) != vault)
-            revert Errors.INCORRECT_UNDERLYING(vault);
-        if (posCollToken != address(wIchiFarm))
-            revert Errors.INCORRECT_COLTOKEN(posCollToken);
+        if (IWIchiFarm(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
+        if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
 
         /// 1. Take out collateral
         bank.takeCollateral(param.amountPosRemove);
         wIchiFarm.burn(collId, param.amountPosRemove);
-        _doRefundRewards(ICHI);
+        _doRefundRewards(ichiToken);
 
         /// 2-8. Remove liquidity
         _withdraw(param);
 
         /// 9. Refund ichi token
-        _doRefund(ICHI);
+        _doRefund(ichiToken);
     }
 }

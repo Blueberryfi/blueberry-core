@@ -8,17 +8,14 @@ import "./IERC20Wrapper.sol";
 
 /// @title IWERC20
 /// @notice This interface defines the functionality of the Wrapped ERC20 (WERC20) token.
-/// @dev WERC20 tokens enable ERC20 tokens to be represented 
+/// @dev WERC20 tokens enable ERC20 tokens to be represented
 ///      as ERC1155 tokens, providing batch transfer capabilities and more.
 interface IWERC20 is IERC1155Upgradeable, IERC20Wrapper {
     /// @notice Fetch the balance of `user` for a specific underlying ERC20 token.
     /// @param token The address of the underlying ERC20 token.
     /// @param user The address of the user whose balance will be retrieved.
     /// @return The balance of the given user's address in terms of the underlying ERC20 token.
-    function balanceOfERC20(
-        address token,
-        address user
-    ) external view returns (uint256);
+    function balanceOfERC20(address token, address user) external view returns (uint256);
 
     /// @notice Mint a new ERC1155 token corresponding to a given ERC20 token.
     /// @param token The address of the ERC20 token being wrapped.

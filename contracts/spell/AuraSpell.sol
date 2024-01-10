@@ -33,7 +33,7 @@ contract AuraSpell is BasicSpell {
     /// @dev Address to Wrapped Aura Pools
     IWAuraPools public wAuraPools;
     /// @dev Address of AURA token
-    address public AURA;
+    address public auraToken;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -54,17 +54,11 @@ contract AuraSpell is BasicSpell {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) external initializer {
-        __BasicSpell_init(
-            bank_,
-            werc20_,
-            weth_,
-            augustusSwapper_,
-            tokenTransferProxy_
-        );
+        __BasicSpell_init(bank_, werc20_, weth_, augustusSwapper_, tokenTransferProxy_);
         if (wAuraPools_ == address(0)) revert Errors.ZERO_ADDRESS();
 
         wAuraPools = IWAuraPools(wAuraPools_);
-        AURA = address(wAuraPools.AURA());
+        auraToken = address(wAuraPools.auraToken());
         IWAuraPools(wAuraPools_).setApprovalForAll(address(bank_), true);
     }
 
@@ -72,11 +66,7 @@ contract AuraSpell is BasicSpell {
     /// @param bpt Address of the Balancer Pool Token.
     /// @param minPosSize, USD price of minimum position size for given strategy, based 1e18
     /// @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
-    function addStrategy(
-        address bpt,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    ) external onlyOwner {
+    function addStrategy(address bpt, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(bpt, minPosSize, maxPosSize);
     }
 
@@ -85,17 +75,11 @@ contract AuraSpell is BasicSpell {
     function openPositionFarm(
         OpenPosParam calldata param,
         uint256 minimumBPT
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         /// Extract strategy details for the given strategy ID.
         Strategy memory strategy = strategies[param.strategyId];
         /// Fetch pool information based on provided farming pool ID.
-        (address lpToken, , , , , ) = wAuraPools.getPoolInfoFromPoolId(
-            param.farmingPoolId
-        );
+        (address lpToken, , , , , ) = wAuraPools.getPoolInfoFromPoolId(param.farmingPoolId);
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
@@ -110,10 +94,11 @@ contract AuraSpell is BasicSpell {
             IBalancerVault vault = wAuraPools.getVault(lpToken);
 
             (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
-            (
-                uint256[] memory maxAmountsIn,
-                uint256[] memory amountsIn
-            ) = _getJoinPoolParamsAndApprove(address(vault), tokens, lpToken);
+            (uint256[] memory maxAmountsIn, uint256[] memory amountsIn) = _getJoinPoolParamsAndApprove(
+                address(vault),
+                tokens,
+                lpToken
+            );
 
             vault.joinPool(
                 wAuraPools.getBPTPoolId(lpToken),
@@ -139,18 +124,13 @@ contract AuraSpell is BasicSpell {
         if (pos.collateralSize > 0) {
             (uint256 pid, ) = wAuraPools.decodeId(pos.collId);
 
-            if (param.farmingPoolId != pid)
-                revert Errors.INCORRECT_PID(param.farmingPoolId);
-            if (pos.collToken != address(wAuraPools))
-                revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-            
+            if (param.farmingPoolId != pid) revert Errors.INCORRECT_PID(param.farmingPoolId);
+            if (pos.collToken != address(wAuraPools)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+
             bank.takeCollateral(pos.collateralSize);
-            
-            (address[] memory rewardTokens, ) = wAuraPools.burn(
-                pos.collId,
-                pos.collateralSize
-            );
-            
+
+            (address[] memory rewardTokens, ) = wAuraPools.burn(pos.collId, pos.collateralSize);
+
             // Distribute the multiple rewards to users.
             uint256 rewardTokensLength = rewardTokens.length;
             for (uint256 i; i < rewardTokensLength; ++i) {
@@ -175,11 +155,7 @@ contract AuraSpell is BasicSpell {
         ClosePosParam calldata param,
         uint256[] calldata expectedRewards,
         bytes[] calldata swapDatas
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         /// Information about the position from Blueberry Bank
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address[] memory rewardTokens;
@@ -187,19 +163,14 @@ contract AuraSpell is BasicSpell {
         /// Ensure the position's collateral token matches the expected one
         {
             address lpToken = strategies[param.strategyId].vault;
-            if (pos.collToken != address(wAuraPools))
-                revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-            if (wAuraPools.getUnderlyingToken(pos.collId) != lpToken)
-                revert Errors.INCORRECT_UNDERLYING(lpToken);
+            if (pos.collToken != address(wAuraPools)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            if (wAuraPools.getUnderlyingToken(pos.collId) != lpToken) revert Errors.INCORRECT_UNDERLYING(lpToken);
 
             bank.takeCollateral(param.amountPosRemove);
-            
-            /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards            
+
+            /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards
             {
-                (rewardTokens, ) = wAuraPools.burn(
-                    pos.collId,
-                    param.amountPosRemove
-                );
+                (rewardTokens, ) = wAuraPools.burn(pos.collId, param.amountPosRemove);
 
                 /// 2. Swap each reward token for the debt token
                 _sellRewards(rewardTokens, expectedRewards, swapDatas);
@@ -209,9 +180,7 @@ contract AuraSpell is BasicSpell {
                 /// 3. Determine the exact amount of position to remove
                 uint256 amountPosRemove = param.amountPosRemove;
                 if (amountPosRemove == type(uint256).max) {
-                    amountPosRemove = IERC20Upgradeable(lpToken).balanceOf(
-                        address(this)
-                    );
+                    amountPosRemove = IERC20Upgradeable(lpToken).balanceOf(address(this));
                 }
                 /// 4. Parameters for removing liquidity
                 (
@@ -321,7 +290,6 @@ contract AuraSpell is BasicSpell {
             }
 
             if (tokens[i] != lpToken) ++exitTokenIndex;
-
         }
 
         return (minAmountsOut, tokens, exitTokenIndex);
@@ -340,13 +308,7 @@ contract AuraSpell is BasicSpell {
             _doCutRewardsFee(sellToken);
             if (
                 expectedRewards[i] != 0 &&
-                !PSwapLib.swap(
-                    augustusSwapper,
-                    tokenTransferProxy,
-                    sellToken,
-                    expectedRewards[i],
-                    swapDatas[i]
-                )
+                !PSwapLib.swap(augustusSwapper, tokenTransferProxy, sellToken, expectedRewards[i], swapDatas[i])
             ) revert Errors.SWAP_FAILED(sellToken);
 
             /// Refund rest (dust) amount to owner

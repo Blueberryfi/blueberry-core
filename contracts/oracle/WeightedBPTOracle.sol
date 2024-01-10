@@ -33,10 +33,11 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
     IBalancerVault public immutable VAULT;
 
     // Protects the oracle from being manipulated via read-only reentrancy
-    modifier balancerNonReentrant {
+    modifier balancerNonReentrant() {
         VaultReentrancyLib.ensureNotInVaultContext(VAULT);
         _;
     }
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -61,8 +62,7 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
         IBalancerV2WeightedPool pool = IBalancerV2WeightedPool(token);
 
-        (address[] memory tokens, , ) = VAULT
-            .getPoolTokens(pool.getPoolId());
+        (address[] memory tokens, , ) = VAULT.getPoolTokens(pool.getPoolId());
 
         uint256[] memory weights = pool.getNormalizedWeights();
 
@@ -75,7 +75,7 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
             uint256 weight = weights[i];
             mult = mult.mulDown((price.divDown(weight)).powDown(weight));
         }
-        
+
         uint256 totalSupply = pool.totalSupply();
 
         return invariant.mulDown(mult).divDown(totalSupply);

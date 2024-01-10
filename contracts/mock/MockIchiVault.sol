@@ -3,8 +3,7 @@ pragma solidity 0.8.22;
 
 /// @title Provides functions for deriving a pool address from the factory, tokens, and the fee
 library PoolAddress {
-    bytes32 internal constant POOL_INIT_CODE_HASH =
-        0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54;
+    bytes32 internal constant POOL_INIT_CODE_HASH = 0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54;
 
     /// @notice The identifying key of the pool
     struct PoolKey {
@@ -18,23 +17,16 @@ library PoolAddress {
     /// @param tokenB The second token of a pool, unsorted
     /// @param fee The fee level of the pool
     /// @return Poolkey The pool details with ordered token0 and token1 assignments
-    function getPoolKey(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) internal pure returns (PoolKey memory) {
+    function getPoolKey(address tokenA, address tokenB, uint24 fee) internal pure returns (PoolKey memory) {
         if (tokenA > tokenB) (tokenA, tokenB) = (tokenB, tokenA);
-        return PoolKey({token0: tokenA, token1: tokenB, fee: fee});
+        return PoolKey({ token0: tokenA, token1: tokenB, fee: fee });
     }
 
     /// @notice Deterministically computes the pool address given the factory and PoolKey
     /// @param factory The Uniswap V3 factory contract address
     /// @param key The PoolKey
     /// @return pool The contract address of the V3 pool
-    function computeAddress(
-        address factory,
-        PoolKey memory key
-    ) internal pure returns (address pool) {
+    function computeAddress(address factory, PoolKey memory key) internal pure returns (address pool) {
         require(key.token0 < key.token1);
         pool = address(
             uint160(
@@ -43,9 +35,7 @@ library PoolAddress {
                         abi.encodePacked(
                             hex"ff",
                             factory,
-                            keccak256(
-                                abi.encode(key.token0, key.token1, key.fee)
-                            ),
+                            keccak256(abi.encode(key.token0, key.token1, key.fee)),
                             POOL_INIT_CODE_HASH
                         )
                     )
@@ -74,14 +64,7 @@ import "../libraries/UniV3/UniV3WrappedLibContainer.sol";
  ICHIVaults should be deployed by the ICHIVaultFactory. 
  ICHIVaults should not be used with tokens that charge transaction fees.  
  */
-contract MockIchiVault is
-    IICHIVault,
-    IUniswapV3MintCallback,
-    IUniswapV3SwapCallback,
-    ERC20,
-    ReentrancyGuard,
-    Ownable
-{
+contract MockIchiVault is IICHIVault, IUniswapV3MintCallback, IUniswapV3SwapCallback, ERC20, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     address public ichiVaultFactory;
@@ -121,15 +104,15 @@ contract MockIchiVault is
     uint256 public override hysteresis;
 
     uint256 public constant PRECISION = 10 ** 18;
-    uint256 constant PERCENT = 100;
-    address constant NULL_ADDRESS = address(0);
+    uint256 constant _PERCENT = 100;
+    address constant _NULL_ADDRESS = address(0);
 
     uint32 public twapPeriod;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /**
      @notice creates an instance of ICHIVault based on the pool. 
             allowToken parameters control whether the ICHIVault allows one-sided or two-sided liquidity provision
@@ -146,11 +129,8 @@ contract MockIchiVault is
         address _factory,
         uint32 _twapPeriod
     ) ERC20("ICHI Vault Liquidity", "ICHI_Vault_LP") {
-        require(_pool != NULL_ADDRESS, "IV.constructor: zero address");
-        require(
-            _allowToken0 || _allowToken1,
-            "IV.constructor: no allowed tokens"
-        );
+        require(_pool != _NULL_ADDRESS, "IV.constructor: zero address");
+        require(_allowToken0 || _allowToken1, "IV.constructor: no allowed tokens");
 
         ichiVaultFactory = _factory;
         pool = _pool;
@@ -165,18 +145,11 @@ contract MockIchiVault is
         transferOwnership(__owner);
 
         maxTotalSupply = 0; // no cap
-        hysteresis = PRECISION / PERCENT; // 1% threshold
+        hysteresis = PRECISION / _PERCENT; // 1% threshold
         deposit0Max = type(uint256).max; // max uint256
         deposit1Max = type(uint256).max; // max uint256
-        affiliate = NULL_ADDRESS; // by default there is no affiliate address
-        emit DeployICHIVault(
-            msg.sender,
-            _pool,
-            _allowToken0,
-            _allowToken1,
-            __owner,
-            _twapPeriod
-        );
+        affiliate = _NULL_ADDRESS; // by default there is no affiliate address
+        emit DeployICHIVault(msg.sender, _pool, _allowToken0, _allowToken1, __owner, _twapPeriod);
     }
 
     function setTwapPeriod(uint32 newTwapPeriod) external onlyOwner {
@@ -200,41 +173,21 @@ contract MockIchiVault is
     ) external override nonReentrant returns (uint256 shares) {
         require(allowToken0 || deposit0 == 0, "IV.deposit: token0 not allowed");
         require(allowToken1 || deposit1 == 0, "IV.deposit: token1 not allowed");
-        require(
-            deposit0 > 0 || deposit1 > 0,
-            "IV.deposit: deposits must be > 0"
-        );
-        require(
-            deposit0 < deposit0Max && deposit1 < deposit1Max,
-            "IV.deposit: deposits too large"
-        );
-        require(to != NULL_ADDRESS && to != address(this), "IV.deposit: to");
+        require(deposit0 > 0 || deposit1 > 0, "IV.deposit: deposits must be > 0");
+        require(deposit0 < deposit0Max && deposit1 < deposit1Max, "IV.deposit: deposits too large");
+        require(to != _NULL_ADDRESS && to != address(this), "IV.deposit: to");
 
         // update fees for inclusion in total pool amounts
         (uint128 baseLiquidity, , ) = _position(baseLower, baseUpper);
         if (baseLiquidity > 0) {
-            (uint256 burn0, uint256 burn1) = IUniswapV3Pool(pool).burn(
-                baseLower,
-                baseUpper,
-                0
-            );
-            require(
-                burn0 == 0 && burn1 == 0,
-                "IV.deposit: unexpected burn (1)"
-            );
+            (uint256 burn0, uint256 burn1) = IUniswapV3Pool(pool).burn(baseLower, baseUpper, 0);
+            require(burn0 == 0 && burn1 == 0, "IV.deposit: unexpected burn (1)");
         }
 
         (uint128 limitLiquidity, , ) = _position(limitLower, limitUpper);
         if (limitLiquidity > 0) {
-            (uint256 burn0, uint256 burn1) = IUniswapV3Pool(pool).burn(
-                limitLower,
-                limitUpper,
-                0
-            );
-            require(
-                burn0 == 0 && burn1 == 0,
-                "IV.deposit: unexpected burn (2)"
-            );
+            (uint256 burn0, uint256 burn1) = IUniswapV3Pool(pool).burn(limitLower, limitUpper, 0);
+            require(burn0 == 0 && burn1 == 0, "IV.deposit: unexpected burn (2)");
         }
 
         // Spot
@@ -246,47 +199,31 @@ contract MockIchiVault is
         uint256 twap = _fetchTwap(pool, token0, token1, twapPeriod, PRECISION);
 
         // if difference between spot and twap is too big, check if the price may have been manipulated in this block
-        uint256 delta = (price > twap)
-            ? ((price - twap) * PRECISION) / price
-            : ((twap - price) * PRECISION) / twap;
-        if (delta > hysteresis)
-            require(checkHysteresis(), "IV.deposit: try later");
+        uint256 delta = (price > twap) ? ((price - twap) * PRECISION) / price : ((twap - price) * PRECISION) / twap;
+        if (delta > hysteresis) require(_checkHysteresis(), "IV.deposit: try later");
 
         (uint256 pool0, uint256 pool1) = getTotalAmounts();
 
         // aggregated deposit
-        uint256 deposit0PricedInToken1 = (deposit0 *
-            ((price < twap) ? price : twap)) / PRECISION;
+        uint256 deposit0PricedInToken1 = (deposit0 * ((price < twap) ? price : twap)) / PRECISION;
 
         if (deposit0 > 0) {
-            IERC20(token0).safeTransferFrom(
-                msg.sender,
-                address(this),
-                deposit0
-            );
+            IERC20(token0).safeTransferFrom(msg.sender, address(this), deposit0);
         }
         if (deposit1 > 0) {
-            IERC20(token1).safeTransferFrom(
-                msg.sender,
-                address(this),
-                deposit1
-            );
+            IERC20(token1).safeTransferFrom(msg.sender, address(this), deposit1);
         }
 
         shares = deposit1 + deposit0PricedInToken1;
 
         if (totalSupply() != 0) {
-            uint256 pool0PricedInToken1 = (pool0 *
-                ((price > twap) ? price : twap)) / PRECISION;
+            uint256 pool0PricedInToken1 = (pool0 * ((price > twap) ? price : twap)) / PRECISION;
             shares = (shares * totalSupply()) / (pool0PricedInToken1 + pool1);
         }
         _mint(to, shares);
         emit Deposit(msg.sender, to, shares, deposit0, deposit1);
         // Check total supply cap not exceeded. A value of 0 means no limit.
-        require(
-            maxTotalSupply == 0 || totalSupply() <= maxTotalSupply,
-            "IV.deposit: maxTotalSupply"
-        );
+        require(maxTotalSupply == 0 || totalSupply() <= maxTotalSupply, "IV.deposit: maxTotalSupply");
     }
 
     /**
@@ -300,14 +237,9 @@ contract MockIchiVault is
     function withdraw(
         uint256 shares,
         address to
-    )
-        external
-        override
-        nonReentrant
-        returns (uint256 amount0, uint256 amount1)
-    {
+    ) external override nonReentrant returns (uint256 amount0, uint256 amount1) {
         require(shares > 0, "IV.withdraw: shares");
-        require(to != NULL_ADDRESS, "IV.withdraw: to");
+        require(to != _NULL_ADDRESS, "IV.withdraw: to");
 
         // Withdraw liquidity from Uniswap pool
         (uint256 base0, uint256 base1) = _burnLiquidity(
@@ -327,10 +259,8 @@ contract MockIchiVault is
 
         // Push tokens proportional to unused balances
         uint256 _totalSupply = totalSupply();
-        uint256 unusedAmount0 = (IERC20(token0).balanceOf(address(this)) *
-            shares) / _totalSupply;
-        uint256 unusedAmount1 = (IERC20(token1).balanceOf(address(this)) *
-            shares) / _totalSupply;
+        uint256 unusedAmount0 = (IERC20(token0).balanceOf(address(this)) * shares) / _totalSupply;
+        uint256 unusedAmount1 = (IERC20(token1).balanceOf(address(this)) * shares) / _totalSupply;
         if (unusedAmount0 > 0) IERC20(token0).safeTransfer(to, unusedAmount0);
         if (unusedAmount1 > 0) IERC20(token1).safeTransfer(to, unusedAmount1);
 
@@ -364,15 +294,11 @@ contract MockIchiVault is
         int256 swapQuantity
     ) external override nonReentrant onlyOwner {
         require(
-            _baseLower < _baseUpper &&
-                _baseLower % tickSpacing == 0 &&
-                _baseUpper % tickSpacing == 0,
+            _baseLower < _baseUpper && _baseLower % tickSpacing == 0 && _baseUpper % tickSpacing == 0,
             "IV.rebalance: base position invalid"
         );
         require(
-            _limitLower < _limitUpper &&
-                _limitLower % tickSpacing == 0 &&
-                _limitUpper % tickSpacing == 0,
+            _limitLower < _limitUpper && _limitLower % tickSpacing == 0 && _limitUpper % tickSpacing == 0,
             "IV.rebalance: limit position invalid"
         );
 
@@ -387,32 +313,14 @@ contract MockIchiVault is
         }
 
         // Withdraw all liquidity and collect all fees from Uniswap pool
-        (, uint256 feesBase0, uint256 feesBase1) = _position(
-            baseLower,
-            baseUpper
-        );
-        (, uint256 feesLimit0, uint256 feesLimit1) = _position(
-            limitLower,
-            limitUpper
-        );
+        (, uint256 feesBase0, uint256 feesBase1) = _position(baseLower, baseUpper);
+        (, uint256 feesLimit0, uint256 feesLimit1) = _position(limitLower, limitUpper);
 
         uint256 fees0 = feesBase0 + feesLimit0;
         uint256 fees1 = feesBase1 + feesLimit1;
 
-        _burnLiquidity(
-            baseLower,
-            baseUpper,
-            baseLiquidity,
-            address(this),
-            true
-        );
-        _burnLiquidity(
-            limitLower,
-            limitUpper,
-            limitLiquidity,
-            address(this),
-            true
-        );
+        _burnLiquidity(baseLower, baseUpper, baseLiquidity, address(this), true);
+        _burnLiquidity(limitLower, limitUpper, limitLiquidity, address(this), true);
 
         emit Rebalance(
             currentTick(),
@@ -505,27 +413,13 @@ contract MockIchiVault is
     ) internal returns (uint256 amount0, uint256 amount1) {
         if (liquidity > 0) {
             // Burn liquidity
-            (uint256 owed0, uint256 owed1) = IUniswapV3Pool(pool).burn(
-                tickLower,
-                tickUpper,
-                liquidity
-            );
+            (uint256 owed0, uint256 owed1) = IUniswapV3Pool(pool).burn(tickLower, tickUpper, liquidity);
 
             // Collect amount owed
-            uint128 collect0 = collectAll
-                ? type(uint128).max
-                : _uint128Safe(owed0);
-            uint128 collect1 = collectAll
-                ? type(uint128).max
-                : _uint128Safe(owed1);
+            uint128 collect0 = collectAll ? type(uint128).max : _uint128Safe(owed0);
+            uint128 collect1 = collectAll ? type(uint128).max : _uint128Safe(owed1);
             if (collect0 > 0 || collect1 > 0) {
-                (amount0, amount1) = IUniswapV3Pool(pool).collect(
-                    to,
-                    tickLower,
-                    tickUpper,
-                    collect0,
-                    collect1
-                );
+                (amount0, amount1) = IUniswapV3Pool(pool).collect(to, tickLower, tickUpper, collect0, collect1);
             }
         }
     }
@@ -536,11 +430,7 @@ contract MockIchiVault is
      @param tickUpper The upper tick of the liquidity position
      @param shares number of shares
      */
-    function _liquidityForShares(
-        int24 tickLower,
-        int24 tickUpper,
-        uint256 shares
-    ) internal view returns (uint128) {
+    function _liquidityForShares(int24 tickLower, int24 tickUpper, uint256 shares) internal view returns (uint128) {
         (uint128 position, , ) = _position(tickLower, tickUpper);
         return _uint128Safe((uint256(position) * shares) / totalSupply());
     }
@@ -556,16 +446,9 @@ contract MockIchiVault is
     function _position(
         int24 tickLower,
         int24 tickUpper
-    )
-        internal
-        view
-        returns (uint128 liquidity, uint128 tokensOwed0, uint128 tokensOwed1)
-    {
-        bytes32 positionKey = keccak256(
-            abi.encodePacked(address(this), tickLower, tickUpper)
-        );
-        (liquidity, , , tokensOwed0, tokensOwed1) = IUniswapV3Pool(pool)
-            .positions(positionKey);
+    ) internal view returns (uint128 liquidity, uint128 tokensOwed0, uint128 tokensOwed1) {
+        bytes32 positionKey = keccak256(abi.encodePacked(address(this), tickLower, tickUpper));
+        (liquidity, , , tokensOwed0, tokensOwed1) = IUniswapV3Pool(pool).positions(positionKey);
     }
 
     /**
@@ -575,11 +458,7 @@ contract MockIchiVault is
      @param amount1 required amount of token1
      @param data encoded payer's address
      */
-    function uniswapV3MintCallback(
-        uint256 amount0,
-        uint256 amount1,
-        bytes calldata data
-    ) external override {
+    function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata data) external override {
         require(msg.sender == address(pool), "cb1");
         address payer = abi.decode(data, (address));
 
@@ -587,10 +466,8 @@ contract MockIchiVault is
             if (amount0 > 0) IERC20(token0).safeTransfer(msg.sender, amount0);
             if (amount1 > 0) IERC20(token1).safeTransfer(msg.sender, amount1);
         } else {
-            if (amount0 > 0)
-                IERC20(token0).safeTransferFrom(payer, msg.sender, amount0);
-            if (amount1 > 0)
-                IERC20(token1).safeTransferFrom(payer, msg.sender, amount1);
+            if (amount0 > 0) IERC20(token0).safeTransferFrom(payer, msg.sender, amount0);
+            if (amount1 > 0) IERC20(token1).safeTransferFrom(payer, msg.sender, amount1);
         }
     }
 
@@ -601,11 +478,7 @@ contract MockIchiVault is
      @param amount1Delta required amount of token1
      @param data encoded payer's address
      */
-    function uniswapV3SwapCallback(
-        int256 amount0Delta,
-        int256 amount1Delta,
-        bytes calldata data
-    ) external override {
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external override {
         require(msg.sender == address(pool), "cb2");
         address payer = abi.decode(data, (address));
 
@@ -613,21 +486,13 @@ contract MockIchiVault is
             if (payer == address(this)) {
                 IERC20(token0).safeTransfer(msg.sender, uint256(amount0Delta));
             } else {
-                IERC20(token0).safeTransferFrom(
-                    payer,
-                    msg.sender,
-                    uint256(amount0Delta)
-                );
+                IERC20(token0).safeTransferFrom(payer, msg.sender, uint256(amount0Delta));
             }
         } else if (amount1Delta > 0) {
             if (payer == address(this)) {
                 IERC20(token1).safeTransfer(msg.sender, uint256(amount1Delta));
             } else {
-                IERC20(token1).safeTransferFrom(
-                    payer,
-                    msg.sender,
-                    uint256(amount1Delta)
-                );
+                IERC20(token1).safeTransferFrom(payer, msg.sender, uint256(amount1Delta));
             }
         }
     }
@@ -635,11 +500,9 @@ contract MockIchiVault is
     /**
      @notice Checks if the last price change happened in the current block
      */
-    function checkHysteresis() private view returns (bool) {
+    function _checkHysteresis() private view returns (bool) {
         (, , uint16 observationIndex, , , , ) = IUniswapV3Pool(pool).slot0();
-        (uint32 blockTimestamp, , , ) = IUniswapV3Pool(pool).observations(
-            observationIndex
-        );
+        (uint32 blockTimestamp, , , ) = IUniswapV3Pool(pool).observations(observationIndex);
         return (block.timestamp != blockTimestamp);
     }
 
@@ -680,10 +543,7 @@ contract MockIchiVault is
      @param _deposit0Max The maximum amount of token0 allowed in a deposit
      @param _deposit1Max The maximum amount of token1 allowed in a deposit
      */
-    function setDepositMax(
-        uint256 _deposit0Max,
-        uint256 _deposit1Max
-    ) external override onlyOwner {
+    function setDepositMax(uint256 _deposit0Max, uint256 _deposit1Max) external override onlyOwner {
         deposit0Max = _deposit0Max;
         deposit1Max = _deposit1Max;
         emit DepositMax(msg.sender, _deposit0Max, _deposit1Max);
@@ -748,12 +608,7 @@ contract MockIchiVault is
      @param total0 Quantity of token0 in both positions (and unused in the ICHIVault)
      @param total1 Quantity of token1 in both positions (and unused in the ICHIVault)
      */
-    function getTotalAmounts()
-        public
-        view
-        override
-        returns (uint256 total0, uint256 total1)
-    {
+    function getTotalAmounts() public view override returns (uint256 total0, uint256 total1) {
         (, uint256 base0, uint256 base1) = getBasePosition();
         (, uint256 limit0, uint256 limit1) = getLimitPosition();
         total0 = IERC20(token0).balanceOf(address(this)) + base0 + limit0;
@@ -766,21 +621,9 @@ contract MockIchiVault is
      @param amount0 Estimated amount of token0 that could be collected by burning the base position
      @param amount1 Estimated amount of token1 that could be collected by burning the base position
      */
-    function getBasePosition()
-        public
-        view
-        returns (uint128 liquidity, uint256 amount0, uint256 amount1)
-    {
-        (
-            uint128 positionLiquidity,
-            uint128 tokensOwed0,
-            uint128 tokensOwed1
-        ) = _position(baseLower, baseUpper);
-        (amount0, amount1) = _amountsForLiquidity(
-            baseLower,
-            baseUpper,
-            positionLiquidity
-        );
+    function getBasePosition() public view returns (uint128 liquidity, uint256 amount0, uint256 amount1) {
+        (uint128 positionLiquidity, uint128 tokensOwed0, uint128 tokensOwed1) = _position(baseLower, baseUpper);
+        (amount0, amount1) = _amountsForLiquidity(baseLower, baseUpper, positionLiquidity);
         liquidity = positionLiquidity;
         amount0 += uint256(tokensOwed0);
         amount1 += uint256(tokensOwed1);
@@ -792,21 +635,9 @@ contract MockIchiVault is
      @param amount0 Estimated amount of token0 that could be collected by burning the limit position
      @param amount1 Estimated amount of token1 that could be collected by burning the limit position
      */
-    function getLimitPosition()
-        public
-        view
-        returns (uint128 liquidity, uint256 amount0, uint256 amount1)
-    {
-        (
-            uint128 positionLiquidity,
-            uint128 tokensOwed0,
-            uint128 tokensOwed1
-        ) = _position(limitLower, limitUpper);
-        (amount0, amount1) = _amountsForLiquidity(
-            limitLower,
-            limitUpper,
-            positionLiquidity
-        );
+    function getLimitPosition() public view returns (uint128 liquidity, uint256 amount0, uint256 amount1) {
+        (uint128 positionLiquidity, uint128 tokensOwed0, uint128 tokensOwed1) = _position(limitLower, limitUpper);
+        (amount0, amount1) = _amountsForLiquidity(limitLower, limitUpper, positionLiquidity);
         liquidity = positionLiquidity;
         amount0 += uint256(tokensOwed0);
         amount1 += uint256(tokensOwed1);
@@ -836,13 +667,7 @@ contract MockIchiVault is
         int24 _tick,
         uint256 _amountIn
     ) internal pure returns (uint256 amountOut) {
-        return
-            UniV3WrappedLibContainer.getQuoteAtTick(
-                _tick,
-                uint128(_amountIn),
-                _tokenIn,
-                _tokenOut
-            );
+        return UniV3WrappedLibContainer.getQuoteAtTick(_tick, uint128(_amountIn), _tokenIn, _tokenOut);
     }
 
     /**

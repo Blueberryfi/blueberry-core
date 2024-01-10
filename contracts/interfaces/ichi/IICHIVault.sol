@@ -73,21 +73,9 @@ interface IICHIVault is IERC20, IERC20Metadata {
 
     event SetTwapPeriod(address sender, uint32 newTwapPeriod);
 
-    event Deposit(
-        address indexed sender,
-        address indexed to,
-        uint256 shares,
-        uint256 amount0,
-        uint256 amount1
-    );
+    event Deposit(address indexed sender, address indexed to, uint256 shares, uint256 amount0, uint256 amount1);
 
-    event Withdraw(
-        address indexed sender,
-        address indexed to,
-        uint256 shares,
-        uint256 amount0,
-        uint256 amount1
-    );
+    event Withdraw(address indexed sender, address indexed to, uint256 shares, uint256 amount0, uint256 amount1);
 
     event Rebalance(
         int24 tick,
@@ -102,11 +90,7 @@ interface IICHIVault is IERC20, IERC20Metadata {
 
     event Hysteresis(address indexed sender, uint256 hysteresis);
 
-    event DepositMax(
-        address indexed sender,
-        uint256 deposit0Max,
-        uint256 deposit1Max
-    );
+    event DepositMax(address indexed sender, uint256 deposit0Max, uint256 deposit1Max);
 
     event Affiliate(address indexed sender, address affiliate);
 }

@@ -5,12 +5,11 @@ pragma solidity 0.8.22;
 import "./IFeeManager.sol";
 
 /// @title IProtocolConfig
-/// @notice Interface for the Protocol Configuration, 
+/// @notice Interface for the Protocol Configuration,
 ///         encapsulating various fees and related configuration parameters.
-/// @dev This interface defines methods to retrieve fees 
+/// @dev This interface defines methods to retrieve fees
 ///      and related parameters that govern the behavior of the protocol.
 interface IProtocolConfig {
-
     /// @notice Retrieve the deposit fee rate applied when users deposit into the protocol.
     /// @return The deposit fee rate.
     function depositFee() external view returns (uint256);

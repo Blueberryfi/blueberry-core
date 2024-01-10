@@ -28,14 +28,7 @@ contract BErc20 is BToken, BErc20Interface {
         uint8 decimals_
     ) public {
         // BToken initialize does the bulk of the work
-        super.initialize(
-            comptroller_,
-            interestRateModel_,
-            initialExchangeRateMantissa_,
-            name_,
-            symbol_,
-            decimals_
-        );
+        super.initialize(comptroller_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_);
 
         // Set underlying and sanity check it
         underlying = underlying_;
@@ -51,7 +44,7 @@ contract BErc20 is BToken, BErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mint(uint256 mintAmount) external returns (uint256) {
-        (uint256 err, ) = mintInternal(mintAmount, false);
+        (uint256 err, ) = _mintInternal(mintAmount, false);
         require(err == 0, "mint failed");
     }
 
@@ -62,7 +55,7 @@ contract BErc20 is BToken, BErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint256 redeemTokens) external returns (uint256) {
-        require(redeemInternal(redeemTokens, false) == 0, "redeem failed");
+        require(_redeemInternal(redeemTokens, false) == 0, "redeem failed");
     }
 
     /**
@@ -72,10 +65,7 @@ contract BErc20 is BToken, BErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256) {
-        require(
-            redeemUnderlyingInternal(redeemAmount, false) == 0,
-            "redeem underlying failed"
-        );
+        require(_redeemUnderlyingInternal(redeemAmount, false) == 0, "redeem underlying failed");
     }
 
     /**
@@ -84,7 +74,7 @@ contract BErc20 is BToken, BErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function borrow(uint256 borrowAmount) external returns (uint256) {
-        require(borrowInternal(borrowAmount, false) == 0, "borrow failed");
+        require(_borrowInternal(borrowAmount, false) == 0, "borrow failed");
     }
 
     /**
@@ -93,7 +83,7 @@ contract BErc20 is BToken, BErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrow(uint256 repayAmount) external returns (uint256) {
-        (uint256 err, ) = repayBorrowInternal(repayAmount, false);
+        (uint256 err, ) = _repayBorrowInternal(repayAmount, false);
         require(err == 0, "repay failed");
     }
 
@@ -103,15 +93,8 @@ contract BErc20 is BToken, BErc20Interface {
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowBehalf(
-        address borrower,
-        uint256 repayAmount
-    ) external returns (uint256) {
-        (uint256 err, ) = repayBorrowBehalfInternal(
-            borrower,
-            repayAmount,
-            false
-        );
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
+        (uint256 err, ) = _repayBorrowBehalfInternal(borrower, repayAmount, false);
         require(err == 0, "repay behalf failed");
     }
 
@@ -128,12 +111,7 @@ contract BErc20 is BToken, BErc20Interface {
         uint256 repayAmount,
         BTokenInterface bTokenCollateral
     ) external returns (uint256) {
-        (uint256 err, ) = liquidateBorrowInternal(
-            borrower,
-            repayAmount,
-            bTokenCollateral,
-            false
-        );
+        (uint256 err, ) = _liquidateBorrowInternal(borrower, repayAmount, bTokenCollateral, false);
         require(err == 0, "liquidate borrow failed");
     }
 
@@ -142,11 +120,8 @@ contract BErc20 is BToken, BErc20Interface {
      * @param addAmount The amount fo underlying token to add as reserves
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _addReserves(uint256 addAmount) external returns (uint256) {
-        require(
-            _addReservesInternal(addAmount, false) == 0,
-            "add reserves failed"
-        );
+    function addReserves(uint256 addAmount) external returns (uint256) {
+        require(_addReservesInternal(addAmount, false) == 0, "add reserves failed");
     }
 
     /*** Safe Token ***/
@@ -156,7 +131,7 @@ contract BErc20 is BToken, BErc20Interface {
      * @dev This excludes the value of the current message, if any
      * @return The quantity of underlying tokens owned by this contract
      */
-    function getCashPrior() internal view returns (uint256) {
+    function _getCashPrior() internal view returns (uint256) {
         EIP20Interface token = EIP20Interface(underlying);
         return token.balanceOf(address(this));
     }
@@ -168,19 +143,13 @@ contract BErc20 is BToken, BErc20Interface {
      *      which may be less than `amount` if there is a fee attached to the transfer.
      *
      *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
-     *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
+     *      See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferIn(
-        address from,
-        uint256 amount,
-        bool isNative
-    ) internal returns (uint256) {
+    function _doTransferIn(address from, uint256 amount, bool isNative) internal returns (uint256) {
         isNative; // unused
 
         EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
-        uint256 balanceBefore = EIP20Interface(underlying).balanceOf(
-            address(this)
-        );
+        uint256 balanceBefore = EIP20Interface(underlying).balanceOf(address(this));
         token.transferFrom(from, address(this), amount);
 
         bool success;
@@ -203,26 +172,22 @@ contract BErc20 is BToken, BErc20Interface {
         require(success, "transfer failed");
 
         // Calculate the amount that was *actually* transferred
-        uint256 balanceAfter = EIP20Interface(underlying).balanceOf(
-            address(this)
-        );
-        return sub_(balanceAfter, balanceBefore);
+        uint256 balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
+        return _sub(balanceAfter, balanceBefore);
     }
 
     /**
-     * @dev Similar to EIP20 transfer, except it handles a False success from `transfer` and returns an explanatory
-     *      error code rather than reverting. If caller has not called checked protocol's balance, this may revert due to
-     *      insufficient cash held in this contract. If caller has checked protocol's balance prior to this call, and verified
-     *      it is >= amount, this should not revert in normal conditions.
+     * @dev Similar to EIP20 transfer, except it handles a False success from `transfer`
+     *    and returns an explanatory
+     *    error code rather than reverting. If caller has not called checked protocol's balance, this may revert due to
+     *    insufficient cash held in this contract. If caller has checked protocol's balance prior to this call,
+     *    and verified
+     *    it is >= amount, this should not revert in normal conditions.
      *
-     *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
-     *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
+     *    Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
+     *    See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferOut(
-        address payable to,
-        uint256 amount,
-        bool isNative
-    ) internal {
+    function _doTransferOut(address payable to, uint256 amount, bool isNative) internal {
         isNative; // unused
 
         EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
@@ -257,17 +222,9 @@ contract BErc20 is BToken, BErc20Interface {
      * @param tokens The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferTokens(
-        address spender,
-        address src,
-        address dst,
-        uint256 tokens
-    ) internal returns (uint256) {
+    function _transferTokens(address spender, address src, address dst, uint256 tokens) internal returns (uint256) {
         /* Fail if transfer not allowed */
-        require(
-            comptroller.transferAllowed(address(this), src, dst, tokens) == 0,
-            "rejected"
-        );
+        require(comptroller.transferAllowed(address(this), src, dst, tokens) == 0, "rejected");
 
         /* Do not allow self-transfers */
         require(src != dst, "bad input");
@@ -277,16 +234,16 @@ contract BErc20 is BToken, BErc20Interface {
         if (spender == src) {
             startingAllowance = uint256(-1);
         } else {
-            startingAllowance = transferAllowances[src][spender];
+            startingAllowance = _transferAllowances[src][spender];
         }
 
         /* Do the calculations, checking for {under,over}flow */
-        accountTokens[src] = sub_(accountTokens[src], tokens);
-        accountTokens[dst] = add_(accountTokens[dst], tokens);
+        _accountTokens[src] = _sub(_accountTokens[src], tokens);
+        _accountTokens[dst] = _add(_accountTokens[dst], tokens);
 
         /* Eat some of the allowance (if necessary) */
         if (startingAllowance != uint256(-1)) {
-            transferAllowances[src][spender] = sub_(startingAllowance, tokens);
+            _transferAllowances[src][spender] = _sub(startingAllowance, tokens);
         }
 
         /* We emit a Transfer event */
@@ -301,10 +258,8 @@ contract BErc20 is BToken, BErc20Interface {
      * @notice Get the account's bToken balances
      * @param account The address of the account
      */
-    function getBTokenBalanceInternal(
-        address account
-    ) internal view returns (uint256) {
-        return accountTokens[account];
+    function _getBTokenBalanceInternal(address account) internal view returns (uint256) {
+        return _accountTokens[account];
     }
 
     struct MintLocalVars {
@@ -319,18 +274,12 @@ contract BErc20 is BToken, BErc20Interface {
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not
-     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual mint amount.
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol),
+     *     and the actual mint amount.
      */
-    function mintFresh(
-        address minter,
-        uint256 mintAmount,
-        bool isNative
-    ) internal returns (uint256, uint256) {
+    function _mintFresh(address minter, uint256 mintAmount, bool isNative) internal returns (uint256, uint256) {
         /* Fail if mint not allowed */
-        require(
-            comptroller.mintAllowed(address(this), minter, mintAmount) == 0,
-            "rejected"
-        );
+        require(comptroller.mintAllowed(address(this), minter, mintAmount) == 0, "rejected");
 
         /*
          * Return if mintAmount is zero.
@@ -341,11 +290,11 @@ contract BErc20 is BToken, BErc20Interface {
         }
 
         /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        require(accrualBlockNumber == _getBlockNumber(), "market is stale");
 
         MintLocalVars memory vars;
 
-        vars.exchangeRateMantissa = exchangeRateStoredInternal();
+        vars.exchangeRateMantissa = _exchangeRateStoredInternal();
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -359,36 +308,28 @@ contract BErc20 is BToken, BErc20Interface {
          *  in case of a fee. On success, the bToken holds an additional `actualMintAmount`
          *  of cash.
          */
-        vars.actualMintAmount = doTransferIn(minter, mintAmount, isNative);
+        vars.actualMintAmount = _doTransferIn(minter, mintAmount, isNative);
 
         /*
          * We get the current exchange rate and calculate the number of bTokens to be minted:
          *  mintTokens = actualMintAmount / exchangeRate
          */
-        vars.mintTokens = div_ScalarByExpTruncate(
-            vars.actualMintAmount,
-            Exp({mantissa: vars.exchangeRateMantissa})
-        );
+        vars.mintTokens = _divScalarByExpTruncate(vars.actualMintAmount, Exp({ mantissa: vars.exchangeRateMantissa }));
 
         /*
          * We calculate the new total supply of bTokens and minter token balance, checking for overflow:
          *  totalSupply = totalSupply + mintTokens
          *  accountTokens[minter] = accountTokens[minter] + mintTokens
          */
-        totalSupply = add_(totalSupply, vars.mintTokens);
-        accountTokens[minter] = add_(accountTokens[minter], vars.mintTokens);
+        totalSupply = _add(totalSupply, vars.mintTokens);
+        _accountTokens[minter] = _add(_accountTokens[minter], vars.mintTokens);
 
         /* We emit a Mint event, and a Transfer event */
         emit Mint(minter, vars.actualMintAmount, vars.mintTokens);
         emit Transfer(address(this), minter, vars.mintTokens);
 
         /* We call the defense hook */
-        comptroller.mintVerify(
-            address(this),
-            minter,
-            vars.actualMintAmount,
-            vars.mintTokens
-        );
+        comptroller.mintVerify(address(this), minter, vars.actualMintAmount, vars.mintTokens);
 
         return (uint256(Error.NO_ERROR), vars.actualMintAmount);
     }
@@ -403,14 +344,15 @@ contract BErc20 is BToken, BErc20Interface {
 
     /**
      * @notice User redeems bTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current block. Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
+     * @dev Assumes interest has already been accrued up to the current block.
+     *      Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
      * @param redeemer The address of the account which is redeeming the tokens
      * @param redeemTokensIn The number of bTokens to redeem into underlying
      * @param redeemAmountIn The number of underlying tokens to receive from redeeming bTokens
      * @param isNative The amount is in native or not
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemFresh(
+    function _redeemFresh(
         address payable redeemer,
         uint256 redeemTokensIn,
         uint256 redeemAmountIn,
@@ -421,7 +363,7 @@ contract BErc20 is BToken, BErc20Interface {
         RedeemLocalVars memory vars;
 
         /* exchangeRate = invoke Exchange Rate Stored() */
-        vars.exchangeRateMantissa = exchangeRateStoredInternal();
+        vars.exchangeRateMantissa = _exchangeRateStoredInternal();
 
         /* If redeemTokensIn > 0: */
         if (redeemTokensIn > 0) {
@@ -431,32 +373,19 @@ contract BErc20 is BToken, BErc20Interface {
              *  redeemAmount = redeemTokensIn x exchangeRateCurrent
              */
             vars.redeemTokens = redeemTokensIn;
-            vars.redeemAmount = mul_ScalarTruncate(
-                Exp({mantissa: vars.exchangeRateMantissa}),
-                redeemTokensIn
-            );
+            vars.redeemAmount = _mulScalarTruncate(Exp({ mantissa: vars.exchangeRateMantissa }), redeemTokensIn);
         } else {
             /*
              * We get the current exchange rate and calculate the amount to be redeemed:
              *  redeemTokens = redeemAmountIn / exchangeRate
              *  redeemAmount = redeemAmountIn
              */
-            vars.redeemTokens = div_ScalarByExpTruncate(
-                redeemAmountIn,
-                Exp({mantissa: vars.exchangeRateMantissa})
-            );
+            vars.redeemTokens = _divScalarByExpTruncate(redeemAmountIn, Exp({ mantissa: vars.exchangeRateMantissa }));
             vars.redeemAmount = redeemAmountIn;
         }
 
         /* Fail if redeem not allowed */
-        require(
-            comptroller.redeemAllowed(
-                address(this),
-                redeemer,
-                vars.redeemTokens
-            ) == 0,
-            "rejected"
-        );
+        require(comptroller.redeemAllowed(address(this), redeemer, vars.redeemTokens) == 0, "rejected");
 
         /*
          * Return if redeemTokensIn and redeemAmountIn are zero.
@@ -467,21 +396,18 @@ contract BErc20 is BToken, BErc20Interface {
         }
 
         /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        require(accrualBlockNumber == _getBlockNumber(), "market is stale");
 
         /*
          * We calculate the new total supply and redeemer balance, checking for underflow:
          *  totalSupplyNew = totalSupply - redeemTokens
          *  accountTokensNew = accountTokens[redeemer] - redeemTokens
          */
-        vars.totalSupplyNew = sub_(totalSupply, vars.redeemTokens);
-        vars.accountTokensNew = sub_(
-            accountTokens[redeemer],
-            vars.redeemTokens
-        );
+        vars.totalSupplyNew = _sub(totalSupply, vars.redeemTokens);
+        vars.accountTokensNew = _sub(_accountTokens[redeemer], vars.redeemTokens);
 
         /* Reverts if protocol has insufficient cash */
-        require(getCashPrior() >= vars.redeemAmount, "insufficient cash");
+        require(_getCashPrior() >= vars.redeemAmount, "insufficient cash");
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -489,7 +415,7 @@ contract BErc20 is BToken, BErc20Interface {
 
         /* We write previously calculated values into storage */
         totalSupply = vars.totalSupplyNew;
-        accountTokens[redeemer] = vars.accountTokensNew;
+        _accountTokens[redeemer] = vars.accountTokensNew;
 
         /*
          * We invoke doTransferOut for the redeemer and the redeemAmount.
@@ -497,19 +423,14 @@ contract BErc20 is BToken, BErc20Interface {
          *  On success, the bToken has redeemAmount less of cash.
          *  doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
          */
-        doTransferOut(redeemer, vars.redeemAmount, isNative);
+        _doTransferOut(redeemer, vars.redeemAmount, isNative);
 
         /* We emit a Transfer event, and a Redeem event */
         emit Transfer(redeemer, address(this), vars.redeemTokens);
         emit Redeem(redeemer, vars.redeemAmount, vars.redeemTokens);
 
         /* We call the defense hook */
-        comptroller.redeemVerify(
-            address(this),
-            redeemer,
-            vars.redeemAmount,
-            vars.redeemTokens
-        );
+        comptroller.redeemVerify(address(this), redeemer, vars.redeemAmount, vars.redeemTokens);
 
         return uint256(Error.NO_ERROR);
     }
@@ -524,7 +445,7 @@ contract BErc20 is BToken, BErc20Interface {
      * @param seizeTokens The number of bTokens to seize
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function seizeInternal(
+    function _seizeInternal(
         address seizerToken,
         address liquidator,
         address borrower,
@@ -532,13 +453,7 @@ contract BErc20 is BToken, BErc20Interface {
     ) internal returns (uint256) {
         /* Fail if seize not allowed */
         require(
-            comptroller.seizeAllowed(
-                address(this),
-                seizerToken,
-                liquidator,
-                borrower,
-                seizeTokens
-            ) == 0,
+            comptroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens) == 0,
             "rejected"
         );
 
@@ -558,23 +473,14 @@ contract BErc20 is BToken, BErc20Interface {
          *  borrowerTokensNew = accountTokens[borrower] - seizeTokens
          *  liquidatorTokensNew = accountTokens[liquidator] + seizeTokens
          */
-        accountTokens[borrower] = sub_(accountTokens[borrower], seizeTokens);
-        accountTokens[liquidator] = add_(
-            accountTokens[liquidator],
-            seizeTokens
-        );
+        _accountTokens[borrower] = _sub(_accountTokens[borrower], seizeTokens);
+        _accountTokens[liquidator] = _add(_accountTokens[liquidator], seizeTokens);
 
         /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, seizeTokens);
 
         /* We call the defense hook */
-        comptroller.seizeVerify(
-            address(this),
-            seizerToken,
-            liquidator,
-            borrower,
-            seizeTokens
-        );
+        comptroller.seizeVerify(address(this), seizerToken, liquidator, borrower, seizeTokens);
 
         return uint256(Error.NO_ERROR);
     }

@@ -30,28 +30,18 @@ interface ICoreOracle is IBaseOracle {
     /// @param token ERC1155 token address to check support for.
     /// @param tokenId ERC1155 token id to check support for.
     /// @return A boolean indicating whether the wrapped token is supported or not.
-    function isWrappedTokenSupported(
-        address token,
-        uint256 tokenId
-    ) external returns (bool);
+    function isWrappedTokenSupported(address token, uint256 tokenId) external returns (bool);
 
     /// @notice Returns the USD value of a specific wrapped ERC1155 token.
     /// @param token ERC1155 token address.
     /// @param id ERC1155 token id.
     /// @param amount Amount of the token for which to get the USD value, normalized to 1e18 decimals.
     /// @return The USD value of the given wrapped token amount.
-    function getWrappedTokenValue(
-        address token,
-        uint256 id,
-        uint256 amount
-    ) external returns (uint256);
+    function getWrappedTokenValue(address token, uint256 id, uint256 amount) external returns (uint256);
 
     /// @notice Returns the USD value of a given amount of a specific ERC20 token.
     /// @param token ERC20 token address.
     /// @param amount Amount of the ERC20 token for which to get the USD value.
     /// @return The USD value of the given token amount.
-    function getTokenValue(
-        address token,
-        uint256 amount
-    ) external returns (uint256);
+    function getTokenValue(address token, uint256 amount) external returns (uint256);
 }

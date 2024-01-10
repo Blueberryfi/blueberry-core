@@ -58,8 +58,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /// @notice Constructs the ChainlinkAdapterOracleL2 and sets the L2 sequencer uptime feed.
     /// @param sequencerUptimeFeed_ The Chainlink L2 sequencer uptime feed source.
     constructor(ISequencerUptimeFeed sequencerUptimeFeed_) {
-        if (address(sequencerUptimeFeed_) == address(0))
-            revert Errors.ZERO_ADDRESS();
+        if (address(sequencerUptimeFeed_) == address(0)) revert Errors.ZERO_ADDRESS();
 
         sequencerUptimeFeed = sequencerUptimeFeed_;
     }
@@ -70,11 +69,8 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
 
     /// @notice Sets the Chainlink L2 sequencer uptime feed registry source.
     /// @param sequencerUptimeFeed_ Chainlink L2 sequencer uptime feed source.
-    function setSequencerUptimeFeed(
-        ISequencerUptimeFeed sequencerUptimeFeed_
-    ) external onlyOwner {
-        if (address(sequencerUptimeFeed_) == address(0))
-            revert Errors.ZERO_ADDRESS();
+    function setSequencerUptimeFeed(ISequencerUptimeFeed sequencerUptimeFeed_) external onlyOwner {
+        if (address(sequencerUptimeFeed_) == address(0)) revert Errors.ZERO_ADDRESS();
 
         sequencerUptimeFeed = sequencerUptimeFeed_;
         emit SetSequencerUptimeFeed(address(sequencerUptimeFeed_));
@@ -83,12 +79,8 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /// @notice Sets the price feeds for specified tokens.
     /// @param tokens_ List of tokens for which the price feeds are being set.
     /// @param priceFeeds_ Corresponding list of Chainlink price feeds.
-    function setPriceFeeds(
-        address[] calldata tokens_,
-        address[] calldata priceFeeds_
-    ) external onlyOwner {
-        if (tokens_.length != priceFeeds_.length)
-            revert Errors.INPUT_ARRAY_MISMATCH();
+    function setPriceFeeds(address[] calldata tokens_, address[] calldata priceFeeds_) external onlyOwner {
+        if (tokens_.length != priceFeeds_.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 i = 0; i < tokens_.length; ) {
             if (tokens_[i] == address(0)) revert Errors.ZERO_ADDRESS();
             if (priceFeeds_[i] == address(0)) revert Errors.ZERO_ADDRESS();
@@ -111,8 +103,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token_);
 
         /// 2. L2 sequencer status check (0 = up, 1 = down).
-        (, int256 answer, uint256 startedAt, , ) = sequencerUptimeFeed
-            .latestRoundData();
+        (, int256 answer, uint256 startedAt, , ) = sequencerUptimeFeed.latestRoundData();
 
         /// Ensure the grace period has passed after the sequencer is back up.
         bool isSequencerUp = answer == 0;
@@ -122,9 +113,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
 
         uint256 timeSinceUp = block.timestamp - startedAt;
         if (timeSinceUp <= Constants.SEQUENCER_GRACE_PERIOD_TIME) {
-            revert Errors.SEQUENCER_GRACE_PERIOD_NOT_OVER(
-                address(sequencerUptimeFeed)
-            );
+            revert Errors.SEQUENCER_GRACE_PERIOD_NOT_OVER(address(sequencerUptimeFeed));
         }
 
         /// 3. Retrieve the price from the Chainlink feed.
@@ -132,20 +121,12 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
         if (priceFeed == address(0)) revert Errors.ZERO_ADDRESS();
 
         /// Get token-USD price
-        (
-            uint80 roundID,
-            int256 price,
-            ,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = AggregatorV3Interface(priceFeed).latestRoundData();
-        if (updatedAt < block.timestamp - maxDelayTime)
-            revert Errors.PRICE_OUTDATED(token_);
+        (uint80 roundID, int256 price, , uint256 updatedAt, uint80 answeredInRound) = AggregatorV3Interface(priceFeed)
+            .latestRoundData();
+        if (updatedAt < block.timestamp - maxDelayTime) revert Errors.PRICE_OUTDATED(token_);
         if (price <= 0) revert Errors.PRICE_NEGATIVE(token_);
         if (answeredInRound < roundID) revert Errors.PRICE_OUTDATED(token_);
 
-        return
-            (price.toUint256() * Constants.PRICE_PRECISION) /
-            Constants.CHAINLINK_PRICE_FEED_PRECISION;
+        return (price.toUint256() * Constants.PRICE_PRECISION) / Constants.CHAINLINK_PRICE_FEED_PRECISION;
     }
 }

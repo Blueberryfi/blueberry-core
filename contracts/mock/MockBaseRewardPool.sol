@@ -48,13 +48,7 @@ contract MockBaseRewardPool {
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    constructor(
-        uint256 pid_,
-        address stakingToken_,
-        address rewardToken_,
-        address convex_,
-        address booster_
-    ) {
+    constructor(uint256 pid_, address stakingToken_, address rewardToken_, address convex_, address booster_) {
         pid = pid_;
         stakingToken = IERC20(stakingToken_);
         rewardToken = IERC20(rewardToken_);
@@ -63,7 +57,7 @@ contract MockBaseRewardPool {
         booster = ICvxBooster(booster_);
     }
 
-    function setReward(address user, uint amount) external {
+    function setReward(address user, uint256 amount) external {
         rewards[user] = amount;
     }
 
@@ -98,7 +92,7 @@ contract MockBaseRewardPool {
         return Math.min(block.timestamp, periodFinish);
     }
 
-    function setRewardPerToken(uint _rewardPerToken) external {
+    function setRewardPerToken(uint256 _rewardPerToken) external {
         rewardPerToken = _rewardPerToken;
     }
 
@@ -106,9 +100,7 @@ contract MockBaseRewardPool {
         return rewards[account];
     }
 
-    function stake(
-        uint256 _amount
-    ) public updateReward(msg.sender) returns (bool) {
+    function stake(uint256 _amount) public updateReward(msg.sender) returns (bool) {
         require(_amount > 0, "RewardPool : Cannot stake 0");
 
         _totalSupply = _totalSupply.add(_amount);
@@ -120,14 +112,11 @@ contract MockBaseRewardPool {
         return true;
     }
 
-    function stakeFor(
-        address _for,
-        uint256 _amount
-    ) public updateReward(_for) returns (bool) {
+    function stakeFor(address _for, uint256 _amount) public updateReward(_for) returns (bool) {
         require(_amount > 0, "RewardPool : Cannot stake 0");
 
         //also stake to linked rewards
-        for (uint i = 0; i < extraRewards.length; ++i) {
+        for (uint256 i = 0; i < extraRewards.length; ++i) {
             MockVirtualBalanceRewardPool(extraRewards[i]).stake(_for, _amount);
         }
 
@@ -148,18 +137,12 @@ contract MockBaseRewardPool {
         return true;
     }
 
-    function withdraw(
-        uint256 amount,
-        bool claim
-    ) public updateReward(msg.sender) returns (bool) {
+    function withdraw(uint256 amount, bool claim) public updateReward(msg.sender) returns (bool) {
         require(amount > 0, "RewardPool : Cannot withdraw 0");
 
         //also withdraw from linked rewards
-        for (uint i = 0; i < extraRewards.length; ++i) {
-            MockVirtualBalanceRewardPool(extraRewards[i]).withdraw(
-                msg.sender,
-                amount
-            );
+        for (uint256 i = 0; i < extraRewards.length; ++i) {
+            MockVirtualBalanceRewardPool(extraRewards[i]).withdraw(msg.sender, amount);
         }
 
         _totalSupply = _totalSupply.sub(amount);
@@ -179,11 +162,7 @@ contract MockBaseRewardPool {
         withdraw(_balances[msg.sender], claim);
     }
 
-    function withdrawAndUnwrap(
-        uint256 amount,
-        bool claim
-    ) public updateReward(msg.sender) returns (bool) {
-        
+    function withdrawAndUnwrap(uint256 amount, bool claim) public updateReward(msg.sender) returns (bool) {
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
 
@@ -203,10 +182,7 @@ contract MockBaseRewardPool {
         withdrawAndUnwrap(_balances[msg.sender], claim);
     }
 
-    function getReward(
-        address _account,
-        bool _claimExtras
-    ) public updateReward(_account) returns (bool) {
+    function getReward(address _account, bool _claimExtras) public updateReward(_account) returns (bool) {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
@@ -217,10 +193,8 @@ contract MockBaseRewardPool {
 
         //also get rewards from linked rewards
         if (_claimExtras) {
-            for (uint i = 0; i < extraRewards.length; ++i) {
-                MockVirtualBalanceRewardPool(extraRewards[i]).getReward(
-                    _account
-                );
+            for (uint256 i = 0; i < extraRewards.length; ++i) {
+                MockVirtualBalanceRewardPool(extraRewards[i]).getReward(_account);
             }
         }
 
@@ -233,11 +207,7 @@ contract MockBaseRewardPool {
     }
 
     function donate(uint256 _amount) external returns (bool) {
-        IERC20(rewardToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
+        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards.add(_amount);
     }
 
@@ -266,9 +236,7 @@ contract MockBaseRewardPool {
         return true;
     }
 
-    function notifyRewardAmount(
-        uint256 reward
-    ) internal updateReward(address(0)) {
+    function _notifyRewardAmount(uint256 reward) internal updateReward(address(0)) {
         historicalRewards = historicalRewards.add(reward);
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(duration);

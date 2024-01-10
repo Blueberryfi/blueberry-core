@@ -30,41 +30,23 @@ interface IParaswap {
 
     event FeeTaken(uint256 fee, uint256 partnerShare, uint256 paraswapShare);
 
-    function multiSwap(
-        Utils.SellData calldata data
-    ) external payable returns (uint256);
+    function multiSwap(Utils.SellData calldata data) external payable returns (uint256);
 
-    function megaSwap(
-        Utils.MegaSwapSellData calldata data
-    ) external payable returns (uint256);
+    function megaSwap(Utils.MegaSwapSellData calldata data) external payable returns (uint256);
 
-    function protectedMultiSwap(
-        Utils.SellData calldata data
-    ) external payable returns (uint256);
+    function protectedMultiSwap(Utils.SellData calldata data) external payable returns (uint256);
 
-    function protectedMegaSwap(
-        Utils.MegaSwapSellData calldata data
-    ) external payable returns (uint256);
+    function protectedMegaSwap(Utils.MegaSwapSellData calldata data) external payable returns (uint256);
 
-    function protectedSimpleSwap(
-        Utils.SimpleData calldata data
-    ) external payable returns (uint256 receivedAmount);
+    function protectedSimpleSwap(Utils.SimpleData calldata data) external payable returns (uint256 receivedAmount);
 
-    function protectedSimpleBuy(
-        Utils.SimpleData calldata data
-    ) external payable;
+    function protectedSimpleBuy(Utils.SimpleData calldata data) external payable;
 
-    function simpleSwap(
-        Utils.SimpleData calldata data
-    ) external payable returns (uint256 receivedAmount);
+    function simpleSwap(Utils.SimpleData calldata data) external payable returns (uint256 receivedAmount);
 
     function simpleBuy(Utils.SimpleData calldata data) external payable;
 
-    function swapOnUniswap(
-        uint256 amountIn,
-        uint256 amountOutMin,
-        address[] calldata path
-    ) external payable;
+    function swapOnUniswap(uint256 amountIn, uint256 amountOutMin, address[] calldata path) external payable;
 
     function swapOnUniswapFork(
         address factory,
@@ -74,11 +56,7 @@ interface IParaswap {
         address[] calldata path
     ) external payable;
 
-    function buyOnUniswap(
-        uint256 amountInMax,
-        uint256 amountOut,
-        address[] calldata path
-    ) external payable;
+    function buyOnUniswap(uint256 amountInMax, uint256 amountOut, address[] calldata path) external payable;
 
     function buyOnUniswapFork(
         address factory,

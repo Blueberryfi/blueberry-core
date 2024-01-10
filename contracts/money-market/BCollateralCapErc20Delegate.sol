@@ -11,13 +11,15 @@ contract BCollateralCapErc20Delegate is BCollateralCapErc20 {
     /**
      * @notice Construct an empty delegate
      */
-    constructor() public {}
+    constructor() public {
+        // solhint-disable-previous-line no-empty-blocks
+    }
 
     /**
      * @notice Called by the delegator on a delegate to initialize it for duty
      * @param data The encoded bytes data for any initialization
      */
-    function _becomeImplementation(bytes memory data) public {
+    function becomeImplementation(bytes memory data) public {
         // Shh -- currently unused
         data;
 
@@ -33,15 +35,15 @@ contract BCollateralCapErc20Delegate is BCollateralCapErc20 {
 
         // Set BToken version in comptroller
         ComptrollerInterfaceExtension(address(comptroller)).updateBTokenVersion(
-                address(this),
-                ComptrollerV1Storage.Version.COLLATERALCAP
-            );
+            address(this),
+            ComptrollerV1Storage.Version.COLLATERALCAP
+        );
     }
 
     /**
      * @notice Called by the delegator on a delegate to forfeit its responsibility
      */
-    function _resignImplementation() public {
+    function resignImplementation() public {
         // Shh -- we don't ever want this hook to be marked pure
         if (false) {
             implementation = address(0);

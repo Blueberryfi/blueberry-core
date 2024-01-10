@@ -54,7 +54,7 @@ contract ComptrollerErrorReporter {
     /**
      * @dev use this when reporting a known error from the money market or a non-upgradeable collaborator
      */
-    function fail(Error err, FailureInfo info) internal returns (uint256) {
+    function _fail(Error err, FailureInfo info) internal returns (uint256) {
         emit Failure(uint256(err), uint256(info), 0);
 
         return uint256(err);
@@ -63,11 +63,7 @@ contract ComptrollerErrorReporter {
     /**
      * @dev use this when reporting an opaque error from an upgradeable collaborator contract
      */
-    function failOpaque(
-        Error err,
-        FailureInfo info,
-        uint256 opaqueError
-    ) internal returns (uint256) {
+    function _failOpaque(Error err, FailureInfo info, uint256 opaqueError) internal returns (uint256) {
         emit Failure(uint256(err), uint256(info), opaqueError);
 
         return uint256(err);
@@ -170,7 +166,7 @@ contract TokenErrorReporter {
     /**
      * @dev use this when reporting a known error from the money market or a non-upgradeable collaborator
      */
-    function fail(Error err, FailureInfo info) internal returns (uint256) {
+    function _fail(Error err, FailureInfo info) internal returns (uint256) {
         emit Failure(uint256(err), uint256(info), 0);
 
         return uint256(err);
@@ -179,11 +175,7 @@ contract TokenErrorReporter {
     /**
      * @dev use this when reporting an opaque error from an upgradeable collaborator contract
      */
-    function failOpaque(
-        Error err,
-        FailureInfo info,
-        uint256 opaqueError
-    ) internal returns (uint256) {
+    function _failOpaque(Error err, FailureInfo info, uint256 opaqueError) internal returns (uint256) {
         emit Failure(uint256(err), uint256(info), opaqueError);
 
         return uint256(err);

@@ -7,15 +7,13 @@ import "./IERC20Wrapper.sol";
 import "./ichi/IIchiV2.sol";
 import "./ichi/IIchiFarm.sol";
 
-
 /// @title IWIchiFarm
 /// @notice This is the interface for the WIchiFarm contract
 /// @dev WIchiFarm contract integrates both ERC1155 and ERC20Wrapper functionalities.
 interface IWIchiFarm is IERC1155Upgradeable, IERC20Wrapper {
-    
     /// @notice Fetch the address of the legacy ICHI token.
     /// @return A IIchiV2 interface representing the legacy ICHI token.
-    function ICHI() external view returns (IIchiV2);
+    function ichiV2() external view returns (IIchiV2);
 
     /// @notice Fetch the address of the ICHI farming contract.
     /// @return A IIchiFarm interface representing the ICHI farming contract.

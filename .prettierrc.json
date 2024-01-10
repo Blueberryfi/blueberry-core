@@ -16,7 +16,15 @@
       "files": "*.sol",
       "options": {
         "singleQuote": false,
-        "tabWidth": 4
+        "tabWidth": 4,
+        "max-line-length": ["error", 120],
+        "func-param-name-mixedcase": "error",
+        "modifier-name-mixedcase": "error",
+        "private-vars-leading-underscore": "error",
+        "reason-string": ["error", {"maxLength": 64}],
+        "func-visibility": ["error", {"ignoreConstructors": true}],
+        "compiler-version": ["off"],
+        "no-global-import": ["off"]
       }
     },
     {

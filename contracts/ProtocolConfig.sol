@@ -16,42 +16,39 @@ import "./utils/BlueBerryConst.sol" as Constants;
 import "./utils/BlueBerryErrors.sol" as Errors;
 import "./interfaces/IProtocolConfig.sol";
 
-
 /// @title ProtocolConfig
 /// @author BlueberryProtocol
 /// @notice This contract acts as the central point of all configurable states in the Blueberry Protocol.
-///         It holds references to fee management, various fee types and values, 
+///         It holds references to fee management, various fee types and values,
 ///         treasury settings, and other system configurations.
 
 contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
-
     /// Fee manager of the protocol to handle different types of fees.
     IFeeManager public feeManager;
 
     /// Fee structures related to leveraging activities.
-    uint256 public depositFee;             // Fee applied on deposits.
-    uint256 public withdrawFee;            // Fee applied on withdrawals.
-    uint256 public rewardFee;              // Fee applied on reward claims.
+    uint256 public depositFee; // Fee applied on deposits.
+    uint256 public withdrawFee; // Fee applied on withdrawals.
+    uint256 public rewardFee; // Fee applied on reward claims.
 
     /// Fee structures related to vault operations.
-    uint256 public withdrawVaultFee;                 /// Fee applied on vault withdrawals.
-    uint256 public withdrawVaultFeeWindow;           /// Time window for which the vault withdrawal fee applies.
-    uint256 public withdrawVaultFeeWindowStartTime;  /// Start timestamp of the withdrawal fee window.
+    uint256 public withdrawVaultFee; /// Fee applied on vault withdrawals.
+    uint256 public withdrawVaultFeeWindow; /// Time window for which the vault withdrawal fee applies.
+    uint256 public withdrawVaultFeeWindowStartTime; /// Start timestamp of the withdrawal fee window.
 
     /// Fee distribution rates.
-    uint256 public treasuryFeeRate;        /// Portion of the fee sent to the protocol's treasury.
-    uint256 public blbStablePoolFeeRate;   /// Portion of the fee for $BLB stablecoin pool.
-    uint256 public blbIchiVaultFeeRate;    /// Portion of the fee for $BLB-ICHI vault.
+    uint256 public treasuryFeeRate; /// Portion of the fee sent to the protocol's treasury.
+    uint256 public blbStablePoolFeeRate; /// Portion of the fee for $BLB stablecoin pool.
+    uint256 public blbIchiVaultFeeRate; /// Portion of the fee for $BLB-ICHI vault.
 
     /// Addresses associated with the protocol.
-    address public treasury;               /// Address of the protocol's treasury.
-    address public blbUsdcIchiVault;       /// Address of the $BLB-USDC ICHI vault.
-    address public blbStabilityPool;       /// Address of the $BLB stability pool against stablecoins.
+    address public treasury; /// Address of the protocol's treasury.
+    address public blbUsdcIchiVault; /// Address of the $BLB-USDC ICHI vault.
+    address public blbStabilityPool; /// Address of the $BLB stability pool against stablecoins.
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-        
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -85,8 +82,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     /// @dev Owner priviledged function to start the withdraw vault fee window
     /// @notice This function can only be called once per vault
     function startVaultWithdrawFee() external onlyOwner {
-        if (withdrawVaultFeeWindowStartTime > 0)
-            revert Errors.FEE_WINDOW_ALREADY_STARTED();
+        if (withdrawVaultFeeWindowStartTime > 0) revert Errors.FEE_WINDOW_ALREADY_STARTED();
         withdrawVaultFeeWindowStartTime = block.timestamp;
     }
 
@@ -94,8 +90,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     /// @param depositFee_ Fee rate applied to the deposit
     function setDepositFee(uint256 depositFee_) external onlyOwner {
         /// Capped at 20%
-        if (depositFee_ > Constants.MAX_FEE_RATE)
-            revert Errors.RATIO_TOO_HIGH(depositFee_);
+        if (depositFee_ > Constants.MAX_FEE_RATE) revert Errors.RATIO_TOO_HIGH(depositFee_);
         depositFee = depositFee_;
     }
 
@@ -103,16 +98,13 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     /// @param withdrawFee_ Fee rate applied to the withdraw
     function setWithdrawFee(uint256 withdrawFee_) external onlyOwner {
         /// Capped at 20%
-        if (withdrawFee_ > Constants.MAX_FEE_RATE)
-            revert Errors.RATIO_TOO_HIGH(withdrawFee_);
+        if (withdrawFee_ > Constants.MAX_FEE_RATE) revert Errors.RATIO_TOO_HIGH(withdrawFee_);
         withdrawFee = withdrawFee_;
     }
 
     /// @dev Owner priviledged function to set withdraw vault fee window duration
     /// @param withdrawVaultFeeWindow_ Duration of the withdraw vault fee window
-    function setWithdrawVaultFeeWindow(
-        uint256 withdrawVaultFeeWindow_
-    ) external onlyOwner {
+    function setWithdrawVaultFeeWindow(uint256 withdrawVaultFeeWindow_) external onlyOwner {
         /// Capped at 60 days
         if (withdrawVaultFeeWindow_ > Constants.MAX_WITHDRAW_VAULT_FEE_WINDOW)
             revert Errors.FEE_WINDOW_TOO_LONG(withdrawVaultFeeWindow_);
@@ -123,8 +115,7 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     /// @param rewardFee_ Fee rate applied to the rewards
     function setRewardFee(uint256 rewardFee_) external onlyOwner {
         /// Capped at 20%
-        if (rewardFee_ > Constants.MAX_FEE_RATE)
-            revert Errors.RATIO_TOO_HIGH(rewardFee_);
+        if (rewardFee_ > Constants.MAX_FEE_RATE) revert Errors.RATIO_TOO_HIGH(rewardFee_);
         rewardFee = rewardFee_;
     }
 
@@ -137,10 +128,8 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         uint256 blbStablePoolFeeRate_,
         uint256 blbIchiVaultFeeRate_
     ) external onlyOwner {
-        if (
-            (treasuryFeeRate_ + blbStablePoolFeeRate_ + blbIchiVaultFeeRate_) !=
-            Constants.DENOMINATOR
-        ) revert Errors.INVALID_FEE_DISTRIBUTION();
+        if ((treasuryFeeRate_ + blbStablePoolFeeRate_ + blbIchiVaultFeeRate_) != Constants.DENOMINATOR)
+            revert Errors.INVALID_FEE_DISTRIBUTION();
         treasuryFeeRate = treasuryFeeRate_;
         blbStablePoolFeeRate = blbStablePoolFeeRate_;
         blbIchiVaultFeeRate = blbIchiVaultFeeRate_;

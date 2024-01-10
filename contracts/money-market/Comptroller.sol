@@ -13,12 +13,7 @@ import "./Unitroller.sol";
  * @title Blueberry's Comptroller Contract
  * @author Compound (modified by Blueberry)
  */
-contract Comptroller is
-    ComptrollerV1Storage,
-    ComptrollerInterface,
-    ComptrollerErrorReporter,
-    Exponential
-{
+contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerErrorReporter, Exponential {
     /// @notice Emitted when an admin supports a market
     event MarketListed(BToken bToken);
 
@@ -32,38 +27,22 @@ contract Comptroller is
     event MarketExited(BToken bToken, address account);
 
     /// @notice Emitted when close factor is changed by admin
-    event NewCloseFactor(
-        uint256 oldCloseFactorMantissa,
-        uint256 newCloseFactorMantissa
-    );
+    event NewCloseFactor(uint256 oldCloseFactorMantissa, uint256 newCloseFactorMantissa);
 
     /// @notice Emitted when a collateral factor is changed by admin
-    event NewCollateralFactor(
-        BToken bToken,
-        uint256 oldCollateralFactorMantissa,
-        uint256 newCollateralFactorMantissa
-    );
+    event NewCollateralFactor(BToken bToken, uint256 oldCollateralFactorMantissa, uint256 newCollateralFactorMantissa);
 
     /// @notice Emitted when liquidation incentive is changed by admin
-    event NewLiquidationIncentive(
-        uint256 oldLiquidationIncentiveMantissa,
-        uint256 newLiquidationIncentiveMantissa
-    );
+    event NewLiquidationIncentive(uint256 oldLiquidationIncentiveMantissa, uint256 newLiquidationIncentiveMantissa);
 
     /// @notice Emitted when price oracle is changed
-    event NewPriceOracle(
-        PriceOracle oldPriceOracle,
-        PriceOracle newPriceOracle
-    );
+    event NewPriceOracle(PriceOracle oldPriceOracle, PriceOracle newPriceOracle);
 
     /// @notice Emitted when guardian is changed
     event NewGuardian(address oldGuardian, address newGuardian);
 
     /// @notice Emitted when liquidity mining module is changed
-    event NewLiquidityMining(
-        address oldLiquidityMining,
-        address newLiquidityMining
-    );
+    event NewLiquidityMining(address oldLiquidityMining, address newLiquidityMining);
 
     /// @notice Emitted when an action is paused globally
     event ActionPaused(string action, bool pauseState);
@@ -78,27 +57,16 @@ contract Comptroller is
     event NewSupplyCap(BToken indexed bToken, uint256 newSupplyCap);
 
     /// @notice Emitted when protocol's credit limit has changed
-    event CreditLimitChanged(
-        address protocol,
-        address market,
-        uint256 creditLimit
-    );
+    event CreditLimitChanged(address protocol, address market, uint256 creditLimit);
 
     /// @notice Emitted when bToken version is changed
-    event NewBTokenVersion(
-        BToken bToken,
-        Version oldVersion,
-        Version newVersion
-    );
+    event NewBTokenVersion(BToken bToken, Version oldVersion, Version newVersion);
 
     /// @notice Emitted when credit limit manager is changed
-    event NewCreditLimitManager(
-        address oldCreditLimitManager,
-        address newCreditLimitManager
-    );
+    event NewCreditLimitManager(address oldCreditLimitManager, address newCreditLimitManager);
 
     // No collateralFactorMantissa may exceed this value
-    uint256 internal constant collateralFactorMaxMantissa = 0.9e18; // 0.9
+    uint256 internal constant _COLLATERAL_FACTOR_MAX_MANTISSA = 0.9e18; // 0.9
 
     constructor() public {
         admin = msg.sender;
@@ -111,9 +79,7 @@ contract Comptroller is
      * @param account The address of the account to pull assets for
      * @return A dynamic list with the assets the account has entered
      */
-    function getAssetsIn(
-        address account
-    ) external view returns (BToken[] memory) {
+    function getAssetsIn(address account) external view returns (BToken[] memory) {
         BToken[] memory assetsIn = accountAssets[account];
 
         return assetsIn;
@@ -125,10 +91,7 @@ contract Comptroller is
      * @param bToken The bToken to check
      * @return True if the account is in the asset, otherwise false.
      */
-    function checkMembership(
-        address account,
-        BToken bToken
-    ) external view returns (bool) {
+    function checkMembership(address account, BToken bToken) external view returns (bool) {
         return markets[address(bToken)].accountMembership[account];
     }
 
@@ -137,9 +100,7 @@ contract Comptroller is
      * @param bTokens The list of addresses of the bToken markets to be enabled
      * @return Success indicator for whether each corresponding market was entered
      */
-    function enterMarkets(
-        address[] memory bTokens
-    ) public returns (uint256[] memory) {
+    function enterMarkets(address[] memory bTokens) public returns (uint256[] memory) {
         uint256 len = bTokens.length;
 
         uint256[] memory results = new uint256[](len);
@@ -158,19 +119,14 @@ contract Comptroller is
      * @param borrower The address of the account to modify
      * @return Success indicator for whether the market was entered
      */
-    function addToMarketInternal(
-        BToken bToken,
-        address borrower
-    ) internal returns (Error) {
+    function _addToMarketInternal(BToken bToken, address borrower) internal returns (Error) {
         Market storage marketToJoin = markets[address(bToken)];
 
         require(marketToJoin.isListed, "market not listed");
 
         if (marketToJoin.version == Version.COLLATERALCAP) {
             // register collateral for the borrower if the token is CollateralCap version.
-            BCollateralCapErc20Interface(address(bToken)).registerCollateral(
-                borrower
-            );
+            BCollateralCapErc20Interface(address(bToken)).registerCollateral(borrower);
         }
 
         if (marketToJoin.accountMembership[borrower] == true) {
@@ -201,25 +157,19 @@ contract Comptroller is
     function exitMarket(address bTokenAddress) external returns (uint256) {
         BToken bToken = BToken(bTokenAddress);
         /* Get sender tokensHeld and amountOwed underlying from the bToken */
-        (uint256 oErr, uint256 tokensHeld, uint256 amountOwed, ) = bToken
-            .getAccountSnapshot(msg.sender);
+        (uint256 oErr, uint256 tokensHeld, uint256 amountOwed, ) = bToken.getAccountSnapshot(msg.sender);
         require(oErr == 0, "exitMarket: getAccountSnapshot failed"); // semi-opaque error code
 
         /* Fail if the sender has a borrow balance */
         require(amountOwed == 0, "nonzero borrow balance");
 
         /* Fail if the sender is not permitted to redeem all of their tokens */
-        require(
-            redeemAllowedInternal(bTokenAddress, msg.sender, tokensHeld) == 0,
-            "failed to exit market"
-        );
+        require(redeemAllowedInternal(bTokenAddress, msg.sender, tokensHeld) == 0, "failed to exit market");
 
         Market storage marketToExit = markets[bTokenAddress];
 
         if (marketToExit.version == Version.COLLATERALCAP) {
-            BCollateralCapErc20Interface(bTokenAddress).unregisterCollateral(
-                msg.sender
-            );
+            BCollateralCapErc20Interface(bTokenAddress).unregisterCollateral(msg.sender);
         }
 
         /* Return true if the sender is not already ‘in’ the market */
@@ -271,11 +221,8 @@ contract Comptroller is
      * @param bTokenAddress The address of the asset to be checked
      * @return Whether or not the market is listed or delisted
      */
-    function isMarketListedOrDelisted(
-        address bTokenAddress
-    ) public view returns (bool) {
-        return
-            markets[bTokenAddress].isListed || isMarketDelisted[bTokenAddress];
+    function isMarketListedOrDelisted(address bTokenAddress) public view returns (bool) {
+        return markets[bTokenAddress].isListed || isMarketDelisted[bTokenAddress];
     }
 
     /**
@@ -295,10 +242,7 @@ contract Comptroller is
      * @param market The market
      * @return The credit
      */
-    function creditLimits(
-        address protocol,
-        address market
-    ) public view returns (uint256) {
+    function creditLimits(address protocol, address market) public view returns (uint256) {
         return _creditLimits[protocol][market];
     }
 
@@ -311,11 +255,7 @@ contract Comptroller is
      * @param mintAmount The amount of underlying being supplied to the market in exchange for tokens
      * @return 0 if the mint is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function mintAllowed(
-        address bToken,
-        address minter,
-        uint256 mintAmount
-    ) external returns (uint256) {
+    function mintAllowed(address bToken, address minter, uint256 mintAmount) external returns (uint256) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!mintGuardianPaused[bToken], "mint is paused");
         require(!isCreditAccount(minter, bToken), "credit account cannot mint");
@@ -329,11 +269,7 @@ contract Comptroller is
             uint256 totalBorrows = BToken(bToken).totalBorrows();
             uint256 totalReserves = BToken(bToken).totalReserves();
             // totalSupplies = totalCash + totalBorrows - totalReserves
-            (MathError mathErr, uint256 totalSupplies) = addThenSubUInt(
-                totalCash,
-                totalBorrows,
-                totalReserves
-            );
+            (MathError mathErr, uint256 totalSupplies) = addThenSubUInt(totalCash, totalBorrows, totalReserves);
             require(mathErr == MathError.NO_ERROR, "totalSupplies failed");
 
             uint256 nextTotalSupplies = add_(totalSupplies, mintAmount);
@@ -350,12 +286,7 @@ contract Comptroller is
      * @param actualMintAmount The amount of the underlying asset being minted
      * @param mintTokens The number of tokens being minted
      */
-    function mintVerify(
-        address bToken,
-        address minter,
-        uint256 actualMintAmount,
-        uint256 mintTokens
-    ) external {
+    function mintVerify(address bToken, address minter, uint256 actualMintAmount, uint256 mintTokens) external {
         // Shh - currently unused
         bToken;
         minter;
@@ -375,24 +306,17 @@ contract Comptroller is
      * @param redeemTokens The number of bTokens to exchange for the underlying asset in the market
      * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function redeemAllowed(
-        address bToken,
-        address redeemer,
-        uint256 redeemTokens
-    ) external returns (uint256) {
+    function redeemAllowed(address bToken, address redeemer, uint256 redeemTokens) external returns (uint256) {
         return redeemAllowedInternal(bToken, redeemer, redeemTokens);
     }
 
-    function redeemAllowedInternal(
+    function _redeemAllowedInternal(
         address bToken,
         address redeemer,
         uint256 redeemTokens
     ) internal view returns (uint256) {
         require(isMarketListedOrDelisted(bToken), "market not listed");
-        require(
-            !isCreditAccount(redeemer, bToken),
-            "credit account cannot redeem"
-        );
+        require(!isCreditAccount(redeemer, bToken), "credit account cannot redeem");
 
         /* If the redeemer is not 'in' the market, then we can bypass the liquidity check */
         if (!markets[bToken].accountMembership[redeemer]) {
@@ -400,16 +324,12 @@ contract Comptroller is
         }
 
         /* Otherwise, perform a hypothetical liquidity check to guard against shortfall */
-        (
-            Error err,
-            ,
-            uint256 shortfall
-        ) = getHypotheticalAccountLiquidityInternal(
-                redeemer,
-                BToken(bToken),
-                redeemTokens,
-                0
-            );
+        (Error err, , uint256 shortfall) = getHypotheticalAccountLiquidityInternal(
+            redeemer,
+            BToken(bToken),
+            redeemTokens,
+            0
+        );
         require(err == Error.NO_ERROR, "failed to get account liquidity");
         require(shortfall == 0, "insufficient liquidity");
 
@@ -423,12 +343,7 @@ contract Comptroller is
      * @param redeemAmount The amount of the underlying asset being redeemed
      * @param redeemTokens The number of tokens being redeemed
      */
-    function redeemVerify(
-        address bToken,
-        address redeemer,
-        uint256 redeemAmount,
-        uint256 redeemTokens
-    ) external {
+    function redeemVerify(address bToken, address redeemer, uint256 redeemAmount, uint256 redeemTokens) external {
         // Shh - currently unused
         bToken;
         redeemer;
@@ -446,11 +361,7 @@ contract Comptroller is
      * @param borrowAmount The amount of underlying the account would borrow
      * @return 0 if the borrow is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
-    function borrowAllowed(
-        address bToken,
-        address borrower,
-        uint256 borrowAmount
-    ) external returns (uint256) {
+    function borrowAllowed(address bToken, address borrower, uint256 borrowAmount) external returns (uint256) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!borrowGuardianPaused[bToken], "borrow is paused");
 
@@ -461,10 +372,7 @@ contract Comptroller is
             require(msg.sender == bToken, "sender must be bToken");
 
             // attempt to add borrower to the market
-            require(
-                addToMarketInternal(BToken(bToken), borrower) == Error.NO_ERROR,
-                "failed to add market"
-            );
+            require(addToMarketInternal(BToken(bToken), borrower) == Error.NO_ERROR, "failed to add market");
 
             // it should be impossible to break the important invariant
             assert(markets[bToken].accountMembership[borrower]);
@@ -482,24 +390,16 @@ contract Comptroller is
         uint256 creditLimit = _creditLimits[borrower][bToken];
         // If the borrower is a credit account, check the credit limit instead of account liquidity.
         if (creditLimit > 0) {
-            (uint256 oErr, , uint256 borrowBalance, ) = BToken(bToken)
-                .getAccountSnapshot(borrower);
+            (uint256 oErr, , uint256 borrowBalance, ) = BToken(bToken).getAccountSnapshot(borrower);
             require(oErr == 0, "snapshot error");
-            require(
-                creditLimit >= add_(borrowBalance, borrowAmount),
-                "insufficient credit limit"
-            );
+            require(creditLimit >= add_(borrowBalance, borrowAmount), "insufficient credit limit");
         } else {
-            (
-                Error err,
-                ,
-                uint256 shortfall
-            ) = getHypotheticalAccountLiquidityInternal(
-                    borrower,
-                    BToken(bToken),
-                    0,
-                    borrowAmount
-                );
+            (Error err, , uint256 shortfall) = getHypotheticalAccountLiquidityInternal(
+                borrower,
+                BToken(bToken),
+                0,
+                borrowAmount
+            );
             require(err == Error.NO_ERROR, "failed to get account liquidity");
             require(shortfall == 0, "insufficient liquidity");
         }
@@ -512,11 +412,7 @@ contract Comptroller is
      * @param borrower The address borrowing the underlying
      * @param borrowAmount The amount of the underlying asset requested to borrow
      */
-    function borrowVerify(
-        address bToken,
-        address borrower,
-        uint256 borrowAmount
-    ) external {
+    function borrowVerify(address bToken, address borrower, uint256 borrowAmount) external {
         // Shh - currently unused
         bToken;
         borrower;
@@ -548,10 +444,7 @@ contract Comptroller is
         require(isMarketListedOrDelisted(bToken), "market not listed");
 
         if (isCreditAccount(borrower, bToken)) {
-            require(
-                borrower == payer,
-                "cannot repay on behalf of credit account"
-            );
+            require(borrower == payer, "cannot repay on behalf of credit account");
         }
 
         return uint256(Error.NO_ERROR);
@@ -599,35 +492,24 @@ contract Comptroller is
         address borrower,
         uint256 repayAmount
     ) external returns (uint256) {
-        require(
-            !isCreditAccount(borrower, bTokenBorrowed),
-            "cannot liquidate credit account"
-        );
+        require(!isCreditAccount(borrower, bTokenBorrowed), "cannot liquidate credit account");
 
         // Shh - currently unused
         liquidator;
 
         require(
-            isMarketListedOrDelisted(bTokenBorrowed) &&
-                isMarketListedOrDelisted(bTokenCollateral),
+            isMarketListedOrDelisted(bTokenBorrowed) && isMarketListedOrDelisted(bTokenCollateral),
             "market not listed"
         );
 
         /* The borrower must have shortfall in order to be liquidatable */
-        (Error err, , uint256 shortfall) = getAccountLiquidityInternal(
-            borrower
-        );
+        (Error err, , uint256 shortfall) = getAccountLiquidityInternal(borrower);
         require(err == Error.NO_ERROR, "failed to get account liquidity");
         require(shortfall > 0, "insufficient shortfall");
 
         /* The liquidator may not repay more than what is allowed by the closeFactor */
-        uint256 borrowBalance = BToken(bTokenBorrowed).borrowBalanceStored(
-            borrower
-        );
-        uint256 maxClose = mul_ScalarTruncate(
-            Exp({mantissa: closeFactorMantissa}),
-            borrowBalance
-        );
+        uint256 borrowBalance = BToken(bTokenBorrowed).borrowBalanceStored(borrower);
+        uint256 maxClose = mul_ScalarTruncate(Exp({ mantissa: closeFactorMantissa }), borrowBalance);
         if (repayAmount > maxClose) {
             return uint256(Error.TOO_MUCH_REPAY);
         }
@@ -682,23 +564,18 @@ contract Comptroller is
     ) external returns (uint256) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!seizeGuardianPaused, "seize is paused");
-        require(
-            !isCreditAccount(borrower, bTokenBorrowed),
-            "cannot seize from credit account"
-        );
+        require(!isCreditAccount(borrower, bTokenBorrowed), "cannot seize from credit account");
 
         // Shh - currently unused
         liquidator;
         seizeTokens;
 
         require(
-            isMarketListedOrDelisted(bTokenBorrowed) &&
-                isMarketListedOrDelisted(bTokenCollateral),
+            isMarketListedOrDelisted(bTokenBorrowed) && isMarketListedOrDelisted(bTokenCollateral),
             "market not listed"
         );
         require(
-            BToken(bTokenCollateral).comptroller() ==
-                BToken(bTokenBorrowed).comptroller(),
+            BToken(bTokenCollateral).comptroller() == BToken(bTokenBorrowed).comptroller(),
             "comptroller mismatched"
         );
 
@@ -749,10 +626,7 @@ contract Comptroller is
     ) external returns (uint256) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!transferGuardianPaused, "transfer is paused");
-        require(
-            !isCreditAccount(dst, bToken),
-            "cannot transfer to a credit account"
-        );
+        require(!isCreditAccount(dst, bToken), "cannot transfer to a credit account");
 
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
@@ -766,12 +640,7 @@ contract Comptroller is
      * @param dst The account which receives the tokens
      * @param transferTokens The number of bTokens to transfer
      */
-    function transferVerify(
-        address bToken,
-        address src,
-        address dst,
-        uint256 transferTokens
-    ) external {
+    function transferVerify(address bToken, address src, address dst, uint256 transferTokens) external {
         // Shh - currently unused
         bToken;
         src;
@@ -784,6 +653,7 @@ contract Comptroller is
         }
     }
 
+    /* solhint-disable no-unused-vars */
     /**
      * @notice Checks if the account should be allowed to transfer tokens in the given market
      * @param bToken The market to verify the transfer against
@@ -791,7 +661,6 @@ contract Comptroller is
      * @param amount The amount of the tokens
      * @param params The other parameters
      */
-
     function flashloanAllowed(
         address bToken,
         address receiver,
@@ -800,6 +669,8 @@ contract Comptroller is
     ) external view returns (bool) {
         return !flashloanGuardianPaused[bToken];
     }
+
+    /* solhint-enable no-unused-vars */
 
     /**
      * @notice Update BToken's version.
@@ -826,10 +697,7 @@ contract Comptroller is
      * @param bToken The market
      * @return The account is a credit account or not
      */
-    function isCreditAccount(
-        address account,
-        address bToken
-    ) public view returns (bool) {
+    function isCreditAccount(address account, address bToken) public view returns (bool) {
         return _creditLimits[account][bToken] > 0;
     }
 
@@ -859,14 +727,13 @@ contract Comptroller is
                 account liquidity in excess of collateral requirements,
      *          account shortfall below collateral requirements)
      */
-    function getAccountLiquidity(
-        address account
-    ) public view returns (uint256, uint256, uint256) {
-        (
-            Error err,
-            uint256 liquidity,
-            uint256 shortfall
-        ) = getHypotheticalAccountLiquidityInternal(account, BToken(0), 0, 0);
+    function getAccountLiquidity(address account) public view returns (uint256, uint256, uint256) {
+        (Error err, uint256 liquidity, uint256 shortfall) = getHypotheticalAccountLiquidityInternal(
+            account,
+            BToken(0),
+            0,
+            0
+        );
 
         return (uint256(err), liquidity, shortfall);
     }
@@ -877,11 +744,8 @@ contract Comptroller is
                 account liquidity in excess of collateral requirements,
      *          account shortfall below collateral requirements)
      */
-    function getAccountLiquidityInternal(
-        address account
-    ) internal view returns (Error, uint256, uint256) {
-        return
-            getHypotheticalAccountLiquidityInternal(account, BToken(0), 0, 0);
+    function _getAccountLiquidityInternal(address account) internal view returns (Error, uint256, uint256) {
+        return getHypotheticalAccountLiquidityInternal(account, BToken(0), 0, 0);
     }
 
     /**
@@ -900,16 +764,12 @@ contract Comptroller is
         uint256 redeemTokens,
         uint256 borrowAmount
     ) public view returns (uint256, uint256, uint256) {
-        (
-            Error err,
-            uint256 liquidity,
-            uint256 shortfall
-        ) = getHypotheticalAccountLiquidityInternal(
-                account,
-                BToken(bTokenModify),
-                redeemTokens,
-                borrowAmount
-            );
+        (Error err, uint256 liquidity, uint256 shortfall) = getHypotheticalAccountLiquidityInternal(
+            account,
+            BToken(bTokenModify),
+            redeemTokens,
+            borrowAmount
+        );
         return (uint256(err), liquidity, shortfall);
     }
 
@@ -925,7 +785,7 @@ contract Comptroller is
                 hypothetical account liquidity in excess of collateral requirements,
      *          hypothetical account shortfall below collateral requirements)
      */
-    function getHypotheticalAccountLiquidityInternal(
+    function _getHypotheticalAccountLiquidityInternal(
         address account,
         BToken bTokenModify,
         uint256 redeemTokens,
@@ -945,46 +805,32 @@ contract Comptroller is
             }
 
             // Read the balances and exchange rate from the bToken
-            (
-                oErr,
-                vars.bTokenBalance,
-                vars.borrowBalance,
-                vars.exchangeRateMantissa
-            ) = asset.getAccountSnapshot(account);
+            (oErr, vars.bTokenBalance, vars.borrowBalance, vars.exchangeRateMantissa) = asset.getAccountSnapshot(
+                account
+            );
             require(oErr == 0, "snapshot error");
 
-            // Unlike compound protocol, getUnderlyingPrice is relatively expensive because we use ChainLink as our primary price feed.
-            // If user has no supply / borrow balance on this asset, and user is not redeeming / borrowing this asset, skip it.
-            if (
-                vars.bTokenBalance == 0 &&
-                vars.borrowBalance == 0 &&
-                asset != bTokenModify
-            ) {
+            // Unlike compound protocol, getUnderlyingPrice is relatively expensive because we use ChainLink
+            //     as our primary price feed.
+            // If user has no supply / borrow balance on this asset, and user is not redeeming /
+            //     borrowing this asset, skip it.
+            if (vars.bTokenBalance == 0 && vars.borrowBalance == 0 && asset != bTokenModify) {
                 continue;
             }
 
-            vars.collateralFactor = Exp({
-                mantissa: markets[address(asset)].collateralFactorMantissa
-            });
-            vars.exchangeRate = Exp({mantissa: vars.exchangeRateMantissa});
+            vars.collateralFactor = Exp({ mantissa: markets[address(asset)].collateralFactorMantissa });
+            vars.exchangeRate = Exp({ mantissa: vars.exchangeRateMantissa });
 
             // Get the normalized price of the asset
             vars.oraclePriceMantissa = oracle.getUnderlyingPrice(asset);
             require(vars.oraclePriceMantissa > 0, "price error");
-            vars.oraclePrice = Exp({mantissa: vars.oraclePriceMantissa});
+            vars.oraclePrice = Exp({ mantissa: vars.oraclePriceMantissa });
 
             // Pre-compute a conversion factor from tokens -> ether (normalized price value)
-            vars.tokensToDenom = mul_(
-                mul_(vars.collateralFactor, vars.exchangeRate),
-                vars.oraclePrice
-            );
+            vars.tokensToDenom = mul_(mul_(vars.collateralFactor, vars.exchangeRate), vars.oraclePrice);
 
             // sumCollateral += tokensToDenom * bTokenBalance
-            vars.sumCollateral = mul_ScalarTruncateAddUInt(
-                vars.tokensToDenom,
-                vars.bTokenBalance,
-                vars.sumCollateral
-            );
+            vars.sumCollateral = mul_ScalarTruncateAddUInt(vars.tokensToDenom, vars.bTokenBalance, vars.sumCollateral);
 
             // sumBorrowPlusEffects += oraclePrice * borrowBalance
             vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(
@@ -1015,17 +861,9 @@ contract Comptroller is
 
         // These are safe, as the underflow condition is checked first
         if (vars.sumCollateral > vars.sumBorrowPlusEffects) {
-            return (
-                Error.NO_ERROR,
-                vars.sumCollateral - vars.sumBorrowPlusEffects,
-                0
-            );
+            return (Error.NO_ERROR, vars.sumCollateral - vars.sumBorrowPlusEffects, 0);
         } else {
-            return (
-                Error.NO_ERROR,
-                0,
-                vars.sumBorrowPlusEffects - vars.sumCollateral
-            );
+            return (Error.NO_ERROR, 0, vars.sumBorrowPlusEffects - vars.sumCollateral);
         }
     }
 
@@ -1043,16 +881,9 @@ contract Comptroller is
         uint256 actualRepayAmount
     ) external view returns (uint256, uint256) {
         /* Read oracle prices for borrowed and collateral markets */
-        uint256 priceBorrowedMantissa = oracle.getUnderlyingPrice(
-            BToken(bTokenBorrowed)
-        );
-        uint256 priceCollateralMantissa = oracle.getUnderlyingPrice(
-            BToken(bTokenCollateral)
-        );
-        require(
-            priceBorrowedMantissa > 0 && priceCollateralMantissa > 0,
-            "price error"
-        );
+        uint256 priceBorrowedMantissa = oracle.getUnderlyingPrice(BToken(bTokenBorrowed));
+        uint256 priceCollateralMantissa = oracle.getUnderlyingPrice(BToken(bTokenCollateral));
+        require(priceBorrowedMantissa > 0 && priceCollateralMantissa > 0, "price error");
 
         /*
          * Get the exchange rate and calculate the number of collateral tokens to seize:
@@ -1060,15 +891,14 @@ contract Comptroller is
          *  seizeTokens = seizeAmount / exchangeRate
          *   = actualRepayAmount * (liquidationIncentive * priceBorrowed) / (priceCollateral * exchangeRate)
          */
-        uint256 exchangeRateMantissa = BToken(bTokenCollateral)
-            .exchangeRateStored(); // Note: reverts on error
+        uint256 exchangeRateMantissa = BToken(bTokenCollateral).exchangeRateStored(); // Note: reverts on error
         Exp memory numerator = mul_(
-            Exp({mantissa: liquidationIncentiveMantissa}),
-            Exp({mantissa: priceBorrowedMantissa})
+            Exp({ mantissa: liquidationIncentiveMantissa }),
+            Exp({ mantissa: priceBorrowedMantissa })
         );
         Exp memory denominator = mul_(
-            Exp({mantissa: priceCollateralMantissa}),
-            Exp({mantissa: exchangeRateMantissa})
+            Exp({ mantissa: priceCollateralMantissa }),
+            Exp({ mantissa: exchangeRateMantissa })
         );
         Exp memory ratio = div_(numerator, denominator);
         uint256 seizeTokens = mul_ScalarTruncate(ratio, actualRepayAmount);
@@ -1083,14 +913,10 @@ contract Comptroller is
      * @dev Admin function to set a new price oracle
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _setPriceOracle(PriceOracle newOracle) public returns (uint256) {
+    function setPriceOracle(PriceOracle newOracle) public returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return
-                fail(
-                    Error.UNAUTHORIZED,
-                    FailureInfo.SET_PRICE_ORACLE_OWNER_CHECK
-                );
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PRICE_ORACLE_OWNER_CHECK);
         }
 
         // Track the old oracle for the comptroller
@@ -1110,16 +936,10 @@ contract Comptroller is
      * @param newCloseFactorMantissa New close factor, scaled by 1e18
      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
      */
-    function _setCloseFactor(
-        uint256 newCloseFactorMantissa
-    ) external returns (uint256) {
+    function setCloseFactor(uint256 newCloseFactorMantissa) external returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return
-                fail(
-                    Error.UNAUTHORIZED,
-                    FailureInfo.SET_CLOSE_FACTOR_OWNER_CHECK
-                );
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_CLOSE_FACTOR_OWNER_CHECK);
         }
 
         uint256 oldCloseFactorMantissa = closeFactorMantissa;
@@ -1136,53 +956,29 @@ contract Comptroller is
      * @param newCollateralFactorMantissa The new collateral factor, scaled by 1e18
      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
      */
-    function _setCollateralFactor(
-        BToken bToken,
-        uint256 newCollateralFactorMantissa
-    ) external returns (uint256) {
+    function setCollateralFactor(BToken bToken, uint256 newCollateralFactorMantissa) external returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return
-                fail(
-                    Error.UNAUTHORIZED,
-                    FailureInfo.SET_COLLATERAL_FACTOR_OWNER_CHECK
-                );
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_COLLATERAL_FACTOR_OWNER_CHECK);
         }
 
         // Verify market is listed
         Market storage market = markets[address(bToken)];
         if (!market.isListed) {
-            return
-                fail(
-                    Error.MARKET_NOT_LISTED,
-                    FailureInfo.SET_COLLATERAL_FACTOR_NO_EXISTS
-                );
+            return fail(Error.MARKET_NOT_LISTED, FailureInfo.SET_COLLATERAL_FACTOR_NO_EXISTS);
         }
 
-        Exp memory newCollateralFactorExp = Exp({
-            mantissa: newCollateralFactorMantissa
-        });
+        Exp memory newCollateralFactorExp = Exp({ mantissa: newCollateralFactorMantissa });
 
         // Check collateral factor <= 0.9
-        Exp memory highLimit = Exp({mantissa: collateralFactorMaxMantissa});
+        Exp memory highLimit = Exp({ mantissa: collateralFactorMaxMantissa });
         if (lessThanExp(highLimit, newCollateralFactorExp)) {
-            return
-                fail(
-                    Error.INVALID_COLLATERAL_FACTOR,
-                    FailureInfo.SET_COLLATERAL_FACTOR_VALIDATION
-                );
+            return fail(Error.INVALID_COLLATERAL_FACTOR, FailureInfo.SET_COLLATERAL_FACTOR_VALIDATION);
         }
 
         // If collateral factor != 0, fail if price == 0
-        if (
-            newCollateralFactorMantissa != 0 &&
-            oracle.getUnderlyingPrice(bToken) == 0
-        ) {
-            return
-                fail(
-                    Error.PRICE_ERROR,
-                    FailureInfo.SET_COLLATERAL_FACTOR_WITHOUT_PRICE
-                );
+        if (newCollateralFactorMantissa != 0 && oracle.getUnderlyingPrice(bToken) == 0) {
+            return fail(Error.PRICE_ERROR, FailureInfo.SET_COLLATERAL_FACTOR_WITHOUT_PRICE);
         }
 
         // Set market's collateral factor to new collateral factor, remember old value
@@ -1190,11 +986,7 @@ contract Comptroller is
         market.collateralFactorMantissa = newCollateralFactorMantissa;
 
         // Emit event with asset, old collateral factor, and new collateral factor
-        emit NewCollateralFactor(
-            bToken,
-            oldCollateralFactorMantissa,
-            newCollateralFactorMantissa
-        );
+        emit NewCollateralFactor(bToken, oldCollateralFactorMantissa, newCollateralFactorMantissa);
 
         return uint256(Error.NO_ERROR);
     }
@@ -1205,16 +997,10 @@ contract Comptroller is
      * @param newLiquidationIncentiveMantissa New liquidationIncentive scaled by 1e18
      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
      */
-    function _setLiquidationIncentive(
-        uint256 newLiquidationIncentiveMantissa
-    ) external returns (uint256) {
+    function setLiquidationIncentive(uint256 newLiquidationIncentiveMantissa) external returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return
-                fail(
-                    Error.UNAUTHORIZED,
-                    FailureInfo.SET_LIQUIDATION_INCENTIVE_OWNER_CHECK
-                );
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_LIQUIDATION_INCENTIVE_OWNER_CHECK);
         }
 
         // Save current value for use in log
@@ -1224,10 +1010,7 @@ contract Comptroller is
         liquidationIncentiveMantissa = newLiquidationIncentiveMantissa;
 
         // Emit event with old incentive, new incentive
-        emit NewLiquidationIncentive(
-            oldLiquidationIncentiveMantissa,
-            newLiquidationIncentiveMantissa
-        );
+        emit NewLiquidationIncentive(oldLiquidationIncentiveMantissa, newLiquidationIncentiveMantissa);
 
         return uint256(Error.NO_ERROR);
     }
@@ -1239,23 +1022,13 @@ contract Comptroller is
      * @param version The version of the market (token)
      * @return uint 0=success, otherwise a failure. (See enum Error for details)
      */
-    function _supportMarket(
-        BToken bToken,
-        Version version
-    ) external returns (uint256) {
+    function supportMarket(BToken bToken, Version version) external returns (uint256) {
         require(msg.sender == admin, "admin only");
-        require(
-            !isMarketListedOrDelisted(address(bToken)),
-            "market already listed or delisted"
-        );
+        require(!isMarketListedOrDelisted(address(bToken)), "market already listed or delisted");
 
         bToken.isBToken(); // Sanity check to make sure its really a BToken
 
-        markets[address(bToken)] = Market({
-            isListed: true,
-            collateralFactorMantissa: 0,
-            version: version
-        });
+        markets[address(bToken)] = Market({ isListed: true, collateralFactorMantissa: 0, version: version });
 
         _addMarketInternal(address(bToken));
 
@@ -1269,12 +1042,9 @@ contract Comptroller is
      * @param bToken The address of the market (token) to delist
      * @param force If True, hard delist the market by not adding to `isMarketDelisted`
      */
-    function _delistMarket(BToken bToken, bool force) external {
+    function delistMarket(BToken bToken, bool force) external {
         require(msg.sender == admin, "admin only");
-        require(
-            markets[address(bToken)].collateralFactorMantissa == 0,
-            "market has collateral"
-        );
+        require(markets[address(bToken)].collateralFactorMantissa == 0, "market has collateral");
         require(
             mintGuardianPaused[address(bToken)] &&
                 borrowGuardianPaused[address(bToken)] &&
@@ -1288,10 +1058,7 @@ contract Comptroller is
             isMarketDelisted[address(bToken)] = true;
         } else {
             // Hard delist.
-            require(
-                isMarketListedOrDelisted(address(bToken)),
-                "market not listed or soft delisted"
-            );
+            require(isMarketListedOrDelisted(address(bToken)), "market not listed or soft delisted");
         }
         delete markets[address(bToken)];
 
@@ -1315,28 +1082,21 @@ contract Comptroller is
     }
 
     /**
-     * @notice Set the given supply caps for the given bToken markets. Supplying that brings total supplies to or above supply cap will revert.
-     * @dev Admin or guardian function to set the supply caps. A supply cap of 0 corresponds to unlimited supplying. If the total borrows
-     *      already exceeded the cap, it will prevent anyone to borrow.
+     * @notice Set the given supply caps for the given bToken markets. Supplying that brings total supplies to
+     *     or above supply cap will revert.
+     * @dev Admin or guardian function to set the supply caps. A supply cap of 0 corresponds to unlimited supplying.
+     *     If the total borrows already exceeded the cap, it will prevent anyone to borrow.
      * @param bTokens The addresses of the markets (tokens) to change the supply caps for
-     * @param newSupplyCaps The new supply cap values in underlying to be set. A value of 0 corresponds to unlimited supplying.
+     * @param newSupplyCaps The new supply cap values in underlying to be set. A value of 0 corresponds
+     *     to unlimited supplying.
      */
-    function _setMarketSupplyCaps(
-        BToken[] calldata bTokens,
-        uint256[] calldata newSupplyCaps
-    ) external {
-        require(
-            msg.sender == admin || msg.sender == guardian,
-            "admin or guardian only"
-        );
+    function setMarketSupplyCaps(BToken[] calldata bTokens, uint256[] calldata newSupplyCaps) external {
+        require(msg.sender == admin || msg.sender == guardian, "admin or guardian only");
 
         uint256 numMarkets = bTokens.length;
         uint256 numSupplyCaps = newSupplyCaps.length;
 
-        require(
-            numMarkets != 0 && numMarkets == numSupplyCaps,
-            "invalid input"
-        );
+        require(numMarkets != 0 && numMarkets == numSupplyCaps, "invalid input");
 
         for (uint256 i = 0; i < numMarkets; ++i) {
             supplyCaps[address(bTokens[i])] = newSupplyCaps[i];
@@ -1345,28 +1105,21 @@ contract Comptroller is
     }
 
     /**
-     * @notice Set the given borrow caps for the given bToken markets. Borrowing that brings total borrows to or above borrow cap will revert.
-     * @dev Admin or guardian function to set the borrow caps. A borrow cap of 0 corresponds to unlimited borrowing. If the total supplies
-     *      already exceeded the cap, it will prevent anyone to mint.
+     * @notice Set the given borrow caps for the given bToken markets. Borrowing that brings total borrows to
+     *     or above borrow cap will revert.
+     * @dev Admin or guardian function to set the borrow caps. A borrow cap of 0 corresponds to unlimited borrowing.
+     *     If the total supplies already exceeded the cap, it will prevent anyone to mint.
      * @param bTokens The addresses of the markets (tokens) to change the borrow caps for
-     * @param newBorrowCaps The new borrow cap values in underlying to be set. A value of 0 corresponds to unlimited borrowing.
+     * @param newBorrowCaps The new borrow cap values in underlying to be set. A value of 0 corresponds to
+     *     unlimited borrowing.
      */
-    function _setMarketBorrowCaps(
-        BToken[] calldata bTokens,
-        uint256[] calldata newBorrowCaps
-    ) external {
-        require(
-            msg.sender == admin || msg.sender == guardian,
-            "admin or guardian only"
-        );
+    function setMarketBorrowCaps(BToken[] calldata bTokens, uint256[] calldata newBorrowCaps) external {
+        require(msg.sender == admin || msg.sender == guardian, "admin or guardian only");
 
         uint256 numMarkets = bTokens.length;
         uint256 numBorrowCaps = newBorrowCaps.length;
 
-        require(
-            numMarkets != 0 && numMarkets == numBorrowCaps,
-            "invalid input"
-        );
+        require(numMarkets != 0 && numMarkets == numBorrowCaps, "invalid input");
 
         for (uint256 i = 0; i < numMarkets; ++i) {
             borrowCaps[address(bTokens[i])] = newBorrowCaps[i];
@@ -1379,13 +1132,9 @@ contract Comptroller is
      * @param newGuardian The address of the new Guardian
      * @return uint 0=success, otherwise a failure. (See enum Error for details)
      */
-    function _setGuardian(address newGuardian) public returns (uint256) {
+    function setGuardian(address newGuardian) public returns (uint256) {
         if (msg.sender != admin) {
-            return
-                fail(
-                    Error.UNAUTHORIZED,
-                    FailureInfo.SET_PAUSE_GUARDIAN_OWNER_CHECK
-                );
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PAUSE_GUARDIAN_OWNER_CHECK);
         }
 
         // Save current value for inclusion in log
@@ -1405,13 +1154,9 @@ contract Comptroller is
      * @dev Removing the liquidity mining module address could cause the inconsistency in the LM module.
      * @param newLiquidityMining The address of the new liquidity mining module
      */
-    function _setLiquidityMining(address newLiquidityMining) external {
+    function setLiquidityMining(address newLiquidityMining) external {
         require(msg.sender == admin, "admin only");
-        require(
-            LiquidityMiningInterface(newLiquidityMining).comptroller() ==
-                address(this),
-            "mismatch comptroller"
-        );
+        require(LiquidityMiningInterface(newLiquidityMining).comptroller() == address(this), "mismatch comptroller");
 
         // Save current value for inclusion in log
         address oldLiquidityMining = liquidityMining;
@@ -1427,7 +1172,7 @@ contract Comptroller is
      * @notice Admin function to set the credit limit manager address
      * @param newCreditLimitManager The address of the new credit limit manager
      */
-    function _setCreditLimitManager(address newCreditLimitManager) external {
+    function setCreditLimitManager(address newCreditLimitManager) external {
         require(msg.sender == admin, "admin only");
 
         // Save current value for inclusion in log
@@ -1440,12 +1185,9 @@ contract Comptroller is
         emit NewCreditLimitManager(oldCreditLimitManager, creditLimitManager);
     }
 
-    function _setMintPaused(BToken bToken, bool state) public returns (bool) {
+    function setMintPaused(BToken bToken, bool state) public returns (bool) {
         require(isMarketListed(address(bToken)), "market not listed");
-        require(
-            msg.sender == guardian || msg.sender == admin,
-            "guardian or admin only"
-        );
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         mintGuardianPaused[address(bToken)] = state;
@@ -1453,12 +1195,9 @@ contract Comptroller is
         return state;
     }
 
-    function _setBorrowPaused(BToken bToken, bool state) public returns (bool) {
+    function setBorrowPaused(BToken bToken, bool state) public returns (bool) {
         require(isMarketListed(address(bToken)), "market not listed");
-        require(
-            msg.sender == guardian || msg.sender == admin,
-            "guardian or admin only"
-        );
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         borrowGuardianPaused[address(bToken)] = state;
@@ -1466,15 +1205,9 @@ contract Comptroller is
         return state;
     }
 
-    function _setFlashloanPaused(
-        BToken bToken,
-        bool state
-    ) public returns (bool) {
+    function setFlashloanPaused(BToken bToken, bool state) public returns (bool) {
         require(isMarketListed(address(bToken)), "market not listed");
-        require(
-            msg.sender == guardian || msg.sender == admin,
-            "guardian or admin only"
-        );
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         flashloanGuardianPaused[address(bToken)] = state;
@@ -1482,11 +1215,8 @@ contract Comptroller is
         return state;
     }
 
-    function _setTransferPaused(bool state) public returns (bool) {
-        require(
-            msg.sender == guardian || msg.sender == admin,
-            "guardian or admin only"
-        );
+    function setTransferPaused(bool state) public returns (bool) {
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         transferGuardianPaused = state;
@@ -1494,11 +1224,8 @@ contract Comptroller is
         return state;
     }
 
-    function _setSeizePaused(bool state) public returns (bool) {
-        require(
-            msg.sender == guardian || msg.sender == admin,
-            "guardian or admin only"
-        );
+    function setSeizePaused(bool state) public returns (bool) {
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         seizeGuardianPaused = state;
@@ -1506,7 +1233,7 @@ contract Comptroller is
         return state;
     }
 
-    function _become(Unitroller unitroller) public {
+    function become(Unitroller unitroller) public {
         require(msg.sender == unitroller.admin(), "unitroller admin only");
         require(unitroller._acceptImplementation() == 0, "unauthorized");
     }
@@ -1518,15 +1245,8 @@ contract Comptroller is
      * @param market The market
      * @param creditLimit The credit limit
      */
-    function _setCreditLimit(
-        address protocol,
-        address market,
-        uint256 creditLimit
-    ) public {
-        require(
-            msg.sender == admin || msg.sender == creditLimitManager,
-            "admin or credit limit manager only"
-        );
+    function setCreditLimit(address protocol, address market, uint256 creditLimit) public {
+        require(msg.sender == admin || msg.sender == creditLimitManager, "admin or credit limit manager only");
 
         _setCreditLimitInternal(protocol, market, creditLimit);
     }
@@ -1536,7 +1256,7 @@ contract Comptroller is
      * @param protocol The address of the protocol
      * @param market The market
      */
-    function _pauseCreditLimit(address protocol, address market) public {
+    function pauseCreditLimit(address protocol, address market) public {
         require(msg.sender == guardian, "guardian only");
 
         // We set the credit limit to a very small amount (1 Wei) to avoid the protocol becoming a normal account.
@@ -1544,11 +1264,7 @@ contract Comptroller is
         _setCreditLimitInternal(protocol, market, 1);
     }
 
-    function _setCreditLimitInternal(
-        address protocol,
-        address market,
-        uint256 creditLimit
-    ) internal {
+    function _setCreditLimitInternal(address protocol, address market, uint256 creditLimit) internal {
         require(isMarketListed(market), "market not listed");
 
         _creditLimits[protocol][market] = creditLimit;

@@ -2,16 +2,14 @@
 
 pragma solidity 0.8.22;
 
-interface IBErc20 {    
+interface IBErc20 {
     function decimals() external view returns (uint8);
 
     function underlying() external view returns (address);
 
     function balanceOf(address user) external view returns (uint256);
 
-    function borrowBalanceStored(
-        address account
-    ) external view returns (uint256);
+    function borrowBalanceStored(address account) external view returns (uint256);
 
     function exchangeRateStored() external view returns (uint256);
 

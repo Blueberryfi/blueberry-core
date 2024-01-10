@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/convex/IRewarder.sol";
 import "./MockERC20.sol";
-import "hardhat/console.sol";
+
 contract MockBooster {
     using SafeERC20 for IERC20;
 
@@ -19,7 +19,7 @@ contract MockBooster {
         bool shutdown;
     }
 
-    uint public constant REWARD_MULTIPLIER_DENOMINATOR = 10000;
+    uint256 public constant REWARD_MULTIPLIER_DENOMINATOR = 10000;
 
     //index(pid) -> pool
     PoolInfo[] public poolInfo;
@@ -58,11 +58,7 @@ contract MockBooster {
         return true;
     }
 
-    function deposit(
-        uint256 _pid,
-        uint256 _amount,
-        bool _stake
-    ) external returns (bool) {
+    function deposit(uint256 _pid, uint256 _amount, bool _stake) external returns (bool) {
         require(!isShutdown, "shutdown");
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
@@ -98,12 +94,7 @@ contract MockBooster {
     }
 
     //withdraw lp tokens
-    function _withdraw(
-        uint256 _pid,
-        uint256 _amount,
-        address _from,
-        address _to
-    ) internal {
+    function _withdraw(uint256 _pid, uint256 _amount, address _from, address _to) internal {
         PoolInfo storage pool = poolInfo[_pid];
         address lptoken = pool.lptoken;
 
@@ -116,7 +107,7 @@ contract MockBooster {
         IERC20(lptoken).safeTransfer(_to, _amount);
     }
 
-    function setRewardMultipliers(address rewarder, uint multiplier) external {
+    function setRewardMultipliers(address rewarder, uint256 multiplier) external {
         getRewardMultipliers[rewarder] = multiplier;
     }
 }

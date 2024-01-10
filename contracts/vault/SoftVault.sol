@@ -26,12 +26,7 @@ import "../libraries/UniversalERC20.sol";
 /// @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
 /// @dev SoftVault is communicating with bTokens to lend and borrow underlying tokens from/to Blueberry Money Market.
 ///      Underlying tokens can be ERC20 tokens listed by Blueberry team, such as USDC, USDT, DAI, WETH, ...
-contract SoftVault is
-    OwnableUpgradeable,
-    ERC20Upgradeable,
-    ReentrancyGuardUpgradeable,
-    ISoftVault
-{
+contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgradeable, ISoftVault {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
@@ -49,7 +44,7 @@ contract SoftVault is
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -74,8 +69,7 @@ contract SoftVault is
         __Ownable_init();
         __ERC20_init(_name, _symbol);
 
-        if (address(_bToken) == address(0) || address(_config) == address(0))
-            revert Errors.ZERO_ADDRESS();
+        if (address(_bToken) == address(0) || address(_config) == address(0)) revert Errors.ZERO_ADDRESS();
 
         IERC20Upgradeable _uToken = IERC20Upgradeable(_bToken.underlying());
         config = _config;
@@ -92,9 +86,7 @@ contract SoftVault is
     /// @dev Emits a {Deposited} event.
     /// @param amount Underlying token amount to deposit
     /// @return shareAmount same as bToken amount received
-    function deposit(
-        uint256 amount
-    ) external override nonReentrant returns (uint256 shareAmount) {
+    function deposit(uint256 amount) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
         uToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -102,8 +94,7 @@ contract SoftVault is
 
         uint256 cBalanceBefore = bToken.balanceOf(address(this));
         IERC20(address(uToken)).universalApprove(address(bToken), amount);
-        if (bToken.mint(uBalanceAfter - uBalanceBefore) != 0)
-            revert Errors.LEND_FAILED(amount);
+        if (bToken.mint(uBalanceAfter - uBalanceBefore) != 0) revert Errors.LEND_FAILED(amount);
         uint256 cBalanceAfter = bToken.balanceOf(address(this));
 
         shareAmount = cBalanceAfter - cBalanceBefore;
@@ -117,25 +108,19 @@ contract SoftVault is
     /// @dev It cuts vault withdraw fee when you withdraw within the vault withdraw window
     /// @param shareAmount Amount of bTokens to redeem
     /// @return withdrawAmount Amount of underlying assets withdrawn
-    function withdraw(
-        uint256 shareAmount
-    ) external override nonReentrant returns (uint256 withdrawAmount) {
+    function withdraw(uint256 shareAmount) external override nonReentrant returns (uint256 withdrawAmount) {
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
 
         _burn(msg.sender, shareAmount);
 
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        if (bToken.redeem(shareAmount) != 0)
-            revert Errors.REDEEM_FAILED(shareAmount);
+        if (bToken.redeem(shareAmount) != 0) revert Errors.REDEEM_FAILED(shareAmount);
         uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
         IERC20(address(uToken)).universalApprove(address(config.feeManager()), withdrawAmount);
 
-        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
-            address(uToken),
-            withdrawAmount
-        );
+        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(address(uToken), withdrawAmount);
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);

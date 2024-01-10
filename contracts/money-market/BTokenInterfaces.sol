@@ -29,12 +29,12 @@ contract BTokenStorage {
      * @notice Maximum borrow rate that can ever be applied (.0005% / block)
      */
 
-    uint256 internal constant borrowRateMaxMantissa = 0.0005e16;
+    uint256 internal constant _BORROW_RATE_MAX_MANTISSA = 0.0005e16;
 
     /**
      * @notice Maximum fraction of interest that can be set aside for reserves
      */
-    uint256 internal constant reserveFactorMaxMantissa = 1e18;
+    uint256 internal constant _RESERVE_FACTOR_MAX_MANTISSA = 1e18;
 
     /**
      * @notice Administrator for this contract
@@ -59,7 +59,7 @@ contract BTokenStorage {
     /**
      * @notice Initial exchange rate used when minting the first BTokens (used when totalSupply = 0)
      */
-    uint256 internal initialExchangeRateMantissa;
+    uint256 internal _initialExchangeRateMantissa;
 
     /**
      * @notice Fraction of interest currently set aside for reserves
@@ -94,12 +94,12 @@ contract BTokenStorage {
     /**
      * @notice Official record of token balances for each account
      */
-    mapping(address => uint256) internal accountTokens;
+    mapping(address => uint256) internal _accountTokens;
 
     /**
      * @notice Approved token transfer amounts on behalf of others
      */
-    mapping(address => mapping(address => uint256)) internal transferAllowances;
+    mapping(address => mapping(address => uint256)) internal _transferAllowances;
 
     /**
      * @notice Container for borrow balance information
@@ -114,7 +114,7 @@ contract BTokenStorage {
     /**
      * @notice Mapping of account addresses to outstanding borrow balances
      */
-    mapping(address => BorrowSnapshot) internal accountBorrows;
+    mapping(address => BorrowSnapshot) internal _accountBorrows;
 }
 
 contract BErc20Storage {
@@ -165,19 +165,14 @@ contract BTokenInterface is BTokenStorage {
     /**
      * @notice Indicator that this is a BToken contract (for inspection)
      */
-    bool public constant isBToken = true;
+    bool private constant _BTOKEN = true;
 
     /*** Market Events ***/
 
     /**
      * @notice Event emitted when interest is accrued
      */
-    event AccrueInterest(
-        uint256 cashPrior,
-        uint256 interestAccumulated,
-        uint256 borrowIndex,
-        uint256 totalBorrows
-    );
+    event AccrueInterest(uint256 cashPrior, uint256 interestAccumulated, uint256 borrowIndex, uint256 totalBorrows);
 
     /**
      * @notice Event emitted when tokens are minted
@@ -192,12 +187,7 @@ contract BTokenInterface is BTokenStorage {
     /**
      * @notice Event emitted when underlying is borrowed
      */
-    event Borrow(
-        address borrower,
-        uint256 borrowAmount,
-        uint256 accountBorrows,
-        uint256 totalBorrows
-    );
+    event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows);
 
     /**
      * @notice Event emitted when a borrow is repaid
@@ -236,44 +226,27 @@ contract BTokenInterface is BTokenStorage {
     /**
      * @notice Event emitted when comptroller is changed
      */
-    event NewComptroller(
-        ComptrollerInterface oldComptroller,
-        ComptrollerInterface newComptroller
-    );
+    event NewComptroller(ComptrollerInterface oldComptroller, ComptrollerInterface newComptroller);
 
     /**
      * @notice Event emitted when interestRateModel is changed
      */
-    event NewMarketInterestRateModel(
-        InterestRateModel oldInterestRateModel,
-        InterestRateModel newInterestRateModel
-    );
+    event NewMarketInterestRateModel(InterestRateModel oldInterestRateModel, InterestRateModel newInterestRateModel);
 
     /**
      * @notice Event emitted when the reserve factor is changed
      */
-    event NewReserveFactor(
-        uint256 oldReserveFactorMantissa,
-        uint256 newReserveFactorMantissa
-    );
+    event NewReserveFactor(uint256 oldReserveFactorMantissa, uint256 newReserveFactorMantissa);
 
     /**
      * @notice Event emitted when the reserves are added
      */
-    event ReservesAdded(
-        address benefactor,
-        uint256 addAmount,
-        uint256 newTotalReserves
-    );
+    event ReservesAdded(address benefactor, uint256 addAmount, uint256 newTotalReserves);
 
     /**
      * @notice Event emitted when the reserves are reduced
      */
-    event ReservesReduced(
-        address admin,
-        uint256 reduceAmount,
-        uint256 newTotalReserves
-    );
+    event ReservesReduced(address admin, uint256 reduceAmount, uint256 newTotalReserves);
 
     /**
      * @notice EIP20 Transfer event
@@ -283,11 +256,7 @@ contract BTokenInterface is BTokenStorage {
     /**
      * @notice EIP20 Approval event
      */
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 amount
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 amount);
 
     /**
      * @notice Failure event
@@ -298,32 +267,17 @@ contract BTokenInterface is BTokenStorage {
 
     function transfer(address dst, uint256 amount) external returns (bool);
 
-    function transferFrom(
-        address src,
-        address dst,
-        uint256 amount
-    ) external returns (bool);
+    function transferFrom(address src, address dst, uint256 amount) external returns (bool);
 
     function approve(address spender, uint256 amount) external returns (bool);
 
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
 
     function balanceOf(address owner) external view returns (uint256);
 
     function balanceOfUnderlying(address owner) external returns (uint256);
 
-    function getAccountSnapshot(address account)
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        );
+    function getAccountSnapshot(address account) external view returns (uint256, uint256, uint256, uint256);
 
     function borrowRatePerBlock() external view returns (uint256);
 
@@ -343,33 +297,23 @@ contract BTokenInterface is BTokenStorage {
 
     function accrueInterest() public returns (uint256);
 
-    function seize(
-        address liquidator,
-        address borrower,
-        uint256 seizeTokens
-    ) external returns (uint256);
+    function seize(address liquidator, address borrower, uint256 seizeTokens) external returns (uint256);
+
+    function isBToken() external view returns (bool);
 
     /*** Admin Functions ***/
 
-    function _setPendingAdmin(address payable newPendingAdmin)
-        external
-        returns (uint256);
+    function setPendingAdmin(address payable newPendingAdmin) external returns (uint256);
 
-    function _acceptAdmin() external returns (uint256);
+    function acceptAdmin() external returns (uint256);
 
-    function _setComptroller(ComptrollerInterface newComptroller)
-        public
-        returns (uint256);
+    function setComptroller(ComptrollerInterface newComptroller) public returns (uint256);
 
-    function _setReserveFactor(uint256 newReserveFactorMantissa)
-        external
-        returns (uint256);
+    function setReserveFactor(uint256 newReserveFactorMantissa) external returns (uint256);
 
-    function _reduceReserves(uint256 reduceAmount) external returns (uint256);
+    function reduceReserves(uint256 reduceAmount) external returns (uint256);
 
-    function _setInterestRateModel(InterestRateModel newInterestRateModel)
-        public
-        returns (uint256);
+    function setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint256);
 }
 
 contract BErc20Interface is BErc20Storage {
@@ -385,9 +329,7 @@ contract BErc20Interface is BErc20Storage {
 
     function repayBorrow(uint256 repayAmount) external returns (uint256);
 
-    function repayBorrowBehalf(address borrower, uint256 repayAmount)
-        external
-        returns (uint256);
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256);
 
     function liquidateBorrow(
         address borrower,
@@ -395,26 +337,21 @@ contract BErc20Interface is BErc20Storage {
         BTokenInterface bTokenCollateral
     ) external returns (uint256);
 
-    function _addReserves(uint256 addAmount) external returns (uint256);
+    function addReserves(uint256 addAmount) external returns (uint256);
 }
 
 contract BWrappedNativeInterface is BErc20Interface {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 1;
+    uint256 public constant FLASH_LOAN_FEE_BPS = 1;
 
     /*** Market Events ***/
 
     /**
      * @notice Event emitted when a flashloan occurred
      */
-    event Flashloan(
-        address indexed receiver,
-        uint256 amount,
-        uint256 totalFee,
-        uint256 reservesFee
-    );
+    event Flashloan(address indexed receiver, uint256 amount, uint256 totalFee, uint256 reservesFee);
 
     /*** User Interface ***/
 
@@ -422,18 +359,13 @@ contract BWrappedNativeInterface is BErc20Interface {
 
     function redeemNative(uint256 redeemTokens) external returns (uint256);
 
-    function redeemUnderlyingNative(uint256 redeemAmount)
-        external
-        returns (uint256);
+    function redeemUnderlyingNative(uint256 redeemAmount) external returns (uint256);
 
     function borrowNative(uint256 borrowAmount) external returns (uint256);
 
     function repayBorrowNative() external payable returns (uint256);
 
-    function repayBorrowBehalfNative(address borrower)
-        external
-        payable
-        returns (uint256);
+    function repayBorrowBehalfNative(address borrower) external payable returns (uint256);
 
     function liquidateBorrowNative(
         address borrower,
@@ -447,7 +379,7 @@ contract BWrappedNativeInterface is BErc20Interface {
         bytes calldata data
     ) external returns (bool);
 
-    function _addReservesNative() external payable returns (uint256);
+    function addReservesNative() external payable returns (uint256);
 
     function collateralCap() external view returns (uint256);
 
@@ -458,29 +390,21 @@ contract BCapableErc20Interface is BErc20Interface, BSupplyCapStorage {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 1;
+    uint256 public constant FLASH_LOAN_FEE_BPS = 1;
 
     /*** Market Events ***/
 
     /**
      * @notice Event emitted when a flashloan occurred
      */
-    event Flashloan(
-        address indexed receiver,
-        uint256 amount,
-        uint256 totalFee,
-        uint256 reservesFee
-    );
+    event Flashloan(address indexed receiver, uint256 amount, uint256 totalFee, uint256 reservesFee);
 
     /*** User Interface ***/
 
     function gulp() external;
 }
 
-contract BCollateralCapErc20Interface is
-    BCapableErc20Interface,
-    BCollateralCapStorage
-{
+contract BCollateralCapErc20Interface is BCapableErc20Interface, BCollateralCapStorage {
     /*** Admin Events ***/
 
     /**
@@ -508,17 +432,14 @@ contract BCollateralCapErc20Interface is
 
     /*** Admin Functions ***/
 
-    function _setCollateralCap(uint256 newCollateralCap) external;
+    function setCollateralCap(uint256 newCollateralCap) external;
 }
 
 contract BDelegatorInterface {
     /**
      * @notice Emitted when implementation is changed
      */
-    event NewImplementation(
-        address oldImplementation,
-        address newImplementation
-    );
+    event NewImplementation(address oldImplementation, address newImplementation);
 
     /**
      * @notice Called by the admin to update the implementation of the delegator
@@ -526,11 +447,7 @@ contract BDelegatorInterface {
      * @param allowResign Flag to indicate whether to call _resignImplementation on the old implementation
      * @param becomeImplementationData The encoded bytes data to be passed to _becomeImplementation
      */
-    function _setImplementation(
-        address implementation_,
-        bool allowResign,
-        bytes memory becomeImplementationData
-    ) public;
+    function setImplementation(address implementation_, bool allowResign, bytes memory becomeImplementationData) public;
 }
 
 contract BDelegateInterface {
@@ -539,12 +456,12 @@ contract BDelegateInterface {
      * @dev Should revert if any issues arise which make it unfit for delegation
      * @param data The encoded bytes data for any initialization
      */
-    function _becomeImplementation(bytes memory data) public;
+    function becomeImplementation(bytes memory data) public;
 
     /**
      * @notice Called by the delegator on a delegate to forfeit its responsibility
      */
-    function _resignImplementation() public;
+    function resignImplementation() public;
 }
 
 /*** External interface ***/
