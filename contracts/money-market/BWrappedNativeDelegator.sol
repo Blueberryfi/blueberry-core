@@ -7,7 +7,11 @@ import "./BTokenInterfaces.sol";
  * @notice BTokens which wrap an EIP-20 underlying and delegate to an implementation
  * @author Compound (Modified by Blueberry)
  */
-contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BDelegatorInterface {
+contract BWrappedNativeDelegator is
+    BTokenInterface,
+    BWrappedNativeInterface,
+    BDelegatorInterface
+{
     /**
      * @notice Construct a new money market
      * @param underlying_ The address of the underlying asset
@@ -37,7 +41,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
         admin = msg.sender;
 
         // First delegate gets to initialize the delegator (i.e. storage contract)
-        _delegateTo(
+        delegateTo(
             implementation_,
             abi.encodeWithSignature(
                 "initialize(address,address,address,uint256,string,string,uint8)",
@@ -52,7 +56,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
         );
 
         // New implementations always get set via the setter (post-initialize)
-        setImplementation(implementation_, false, becomeImplementationData);
+        _setImplementation(implementation_, false, becomeImplementationData);
 
         // Set the proper admin now that initialization is done
         admin = admin_;
@@ -64,22 +68,31 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param allowResign Flag to indicate whether to call _resignImplementation on the old implementation
      * @param becomeImplementationData The encoded bytes data to be passed to _becomeImplementation
      */
-    function setImplementation(
+    function _setImplementation(
         address implementation_,
         bool allowResign,
         bytes memory becomeImplementationData
     ) public {
-        // solhint-disable-next-line
-        require(msg.sender == admin, "BWrappedNativeDelegator::_setImplementation: Caller must be admin");
+        require(
+            msg.sender == admin,
+            "BWrappedNativeDelegator::_setImplementation: Caller must be admin"
+        );
 
         if (allowResign) {
-            delegateToImplementation(abi.encodeWithSignature("_resignImplementation()"));
+            delegateToImplementation(
+                abi.encodeWithSignature("_resignImplementation()")
+            );
         }
 
         address oldImplementation = implementation;
         implementation = implementation_;
 
-        delegateToImplementation(abi.encodeWithSignature("_becomeImplementation(bytes)", becomeImplementationData));
+        delegateToImplementation(
+            abi.encodeWithSignature(
+                "_becomeImplementation(bytes)",
+                becomeImplementationData
+            )
+        );
 
         emit NewImplementation(oldImplementation, implementation);
     }
@@ -92,7 +105,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function mint(uint256 mintAmount) external returns (uint256) {
         mintAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -101,7 +114,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mintNative() external payable returns (uint256) {
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -112,7 +125,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function redeem(uint256 redeemTokens) external returns (uint256) {
         redeemTokens; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -123,7 +136,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function redeemNative(uint256 redeemTokens) external returns (uint256) {
         redeemTokens; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -134,7 +147,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256) {
         redeemAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -143,9 +156,12 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemUnderlyingNative(uint256 redeemAmount) external returns (uint256) {
+    function redeemUnderlyingNative(uint256 redeemAmount)
+        external
+        returns (uint256)
+    {
         redeemAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -155,7 +171,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function borrow(uint256 borrowAmount) external returns (uint256) {
         borrowAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -165,7 +181,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function borrowNative(uint256 borrowAmount) external returns (uint256) {
         borrowAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -175,7 +191,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function repayBorrow(uint256 repayAmount) external returns (uint256) {
         repayAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -183,7 +199,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrowNative() external payable returns (uint256) {
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -192,10 +208,13 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
+    function repayBorrowBehalf(address borrower, uint256 repayAmount)
+        external
+        returns (uint256)
+    {
         borrower;
         repayAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -203,9 +222,13 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param borrower the account with the debt being payed off
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowBehalfNative(address borrower) external payable returns (uint256) {
+    function repayBorrowBehalfNative(address borrower)
+        external
+        payable
+        returns (uint256)
+    {
         borrower; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -224,7 +247,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
         borrower;
         repayAmount;
         bTokenCollateral; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -240,10 +263,9 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
     ) external payable returns (uint256) {
         borrower;
         bTokenCollateral; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
-    /* solhint-disable no-unused-vars */
     /**
      * @notice Flash loan funds to a given account.
      * @param receiver The receiver address for the funds
@@ -251,6 +273,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param data The other data
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
+
     function flashLoan(
         ERC3156FlashBorrowerInterface receiver,
         address initiator,
@@ -260,9 +283,8 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
         receiver;
         amount;
         data; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
-    /* solhint-enable no-unused-vars */
 
     /**
      * @dev BWrappedNative doesn't have the collateral cap functionality. Return the supply cap for
@@ -270,7 +292,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return the supply cap of this market
      */
     function collateralCap() external view returns (uint256) {
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -279,7 +301,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return the total supply of this market
      */
     function totalCollateralTokens() external view returns (uint256) {
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -291,7 +313,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
     function transfer(address dst, uint256 amount) external returns (bool) {
         dst;
         amount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -301,11 +323,15 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferFrom(address src, address dst, uint256 amount) external returns (bool) {
+    function transferFrom(
+        address src,
+        address dst,
+        uint256 amount
+    ) external returns (bool) {
         src;
         dst;
         amount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -319,7 +345,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
     function approve(address spender, uint256 amount) external returns (bool) {
         spender;
         amount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -328,10 +354,14 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param spender The address of the account which may transfer tokens
      * @return The number of tokens allowed to be spent (-1 means infinite)
      */
-    function allowance(address owner, address spender) external view returns (uint256) {
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256)
+    {
         owner;
         spender; // Shh
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -341,7 +371,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function balanceOf(address owner) external view returns (uint256) {
         owner; // Shh
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -352,7 +382,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function balanceOfUnderlying(address owner) external returns (uint256) {
         owner; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -361,9 +391,18 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param account Address of the account to snapshot
      * @return (possible error, token balance, borrow balance, exchange rate mantissa)
      */
-    function getAccountSnapshot(address account) external view returns (uint256, uint256, uint256, uint256) {
+    function getAccountSnapshot(address account)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
         account; // Shh
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -371,7 +410,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return The borrow interest rate per block, scaled by 1e18
      */
     function borrowRatePerBlock() external view returns (uint256) {
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -379,7 +418,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return The supply interest rate per block, scaled by 1e18
      */
     function supplyRatePerBlock() external view returns (uint256) {
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -387,18 +426,17 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return The total borrows with interest
      */
     function totalBorrowsCurrent() external returns (uint256) {
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
-     * @notice Accrue interest to updated borrowIndex and then calculate account's
-     *     borrow balance using the updated borrowIndex
+     * @notice Accrue interest to updated borrowIndex and then calculate account's borrow balance using the updated borrowIndex
      * @param account The address whose balance should be calculated after updating borrowIndex
      * @return The calculated balance
      */
     function borrowBalanceCurrent(address account) external returns (uint256) {
         account; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -406,9 +444,13 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param account The address whose balance should be calculated
      * @return The calculated balance
      */
-    function borrowBalanceStored(address account) public view returns (uint256) {
+    function borrowBalanceStored(address account)
+        public
+        view
+        returns (uint256)
+    {
         account; // Shh
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -416,7 +458,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return Calculated exchange rate scaled by 1e18
      */
     function exchangeRateCurrent() public returns (uint256) {
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -425,7 +467,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return Calculated exchange rate scaled by 1e18
      */
     function exchangeRateStored() public view returns (uint256) {
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -433,7 +475,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @return The quantity of underlying asset owned by this contract
      */
     function getCash() external view returns (uint256) {
-        _delegateToViewAndReturn();
+        delegateToViewAndReturn();
     }
 
     /**
@@ -442,7 +484,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      *      up to the current block and writes new checkpoint to storage.
      */
     function accrueInterest() public returns (uint256) {
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -454,26 +496,31 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param seizeTokens The number of bTokens to seize
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function seize(address liquidator, address borrower, uint256 seizeTokens) external returns (uint256) {
+    function seize(
+        address liquidator,
+        address borrower,
+        uint256 seizeTokens
+    ) external returns (uint256) {
         liquidator;
         borrower;
         seizeTokens; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /*** Admin Functions ***/
 
     /**
-     * @notice Begins transfer of admin rights. The newPendingAdmin must call `_acceptAdmin` to
-     *     finalize the transfer.
-     * @dev Admin function to begin change of admin. The newPendingAdmin must call `_acceptAdmin`
-     *     to finalize the transfer.
+     * @notice Begins transfer of admin rights. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
+     * @dev Admin function to begin change of admin. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
      * @param newPendingAdmin New pending admin.
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setPendingAdmin(address payable newPendingAdmin) external returns (uint256) {
+    function _setPendingAdmin(address payable newPendingAdmin)
+        external
+        returns (uint256)
+    {
         newPendingAdmin; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -481,9 +528,12 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @dev Admin function to set a new comptroller
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setComptroller(ComptrollerInterface newComptroller) public returns (uint256) {
+    function _setComptroller(ComptrollerInterface newComptroller)
+        public
+        returns (uint256)
+    {
         newComptroller; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -491,9 +541,12 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @dev Admin function to accrue interest and set a new reserve factor
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setReserveFactor(uint256 newReserveFactorMantissa) external returns (uint256) {
+    function _setReserveFactor(uint256 newReserveFactorMantissa)
+        external
+        returns (uint256)
+    {
         newReserveFactorMantissa; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -501,8 +554,8 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @dev Admin function for pending admin to accept role and update admin
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function acceptAdmin() external returns (uint256) {
-        _delegateAndReturn();
+    function _acceptAdmin() external returns (uint256) {
+        delegateAndReturn();
     }
 
     /**
@@ -510,17 +563,17 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param addAmount Amount of reserves to add
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function addReserves(uint256 addAmount) external returns (uint256) {
+    function _addReserves(uint256 addAmount) external returns (uint256) {
         addAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
      * @notice Accrues interest and adds reserves by transferring from admin
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function addReservesNative() external payable returns (uint256) {
-        _delegateAndReturn();
+    function _addReservesNative() external payable returns (uint256) {
+        delegateAndReturn();
     }
 
     /**
@@ -528,9 +581,9 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param reduceAmount Amount of reduction to reserves
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function reduceReserves(uint256 reduceAmount) external returns (uint256) {
+    function _reduceReserves(uint256 reduceAmount) external returns (uint256) {
         reduceAmount; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -539,9 +592,12 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param newInterestRateModel the new interest rate model to use
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint256) {
+    function _setInterestRateModel(InterestRateModel newInterestRateModel)
+        public
+        returns (uint256)
+    {
         newInterestRateModel; // Shh
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 
     /**
@@ -551,7 +607,10 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param data The raw data to delegatecall
      * @return The returned bytes from the delegatecall
      */
-    function _delegateTo(address callee, bytes memory data) internal returns (bytes memory) {
+    function delegateTo(address callee, bytes memory data)
+        internal
+        returns (bytes memory)
+    {
         (bool success, bytes memory returnData) = callee.delegatecall(data);
         assembly {
             if eq(success, 0) {
@@ -567,8 +626,11 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param data The raw data to delegatecall
      * @return The returned bytes from the delegatecall
      */
-    function delegateToImplementation(bytes memory data) public returns (bytes memory) {
-        return _delegateTo(implementation, data);
+    function delegateToImplementation(bytes memory data)
+        public
+        returns (bytes memory)
+    {
+        return delegateTo(implementation, data);
     }
 
     /**
@@ -578,7 +640,11 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      * @param data The raw data to delegatecall
      * @return The returned bytes from the delegatecall
      */
-    function delegateToViewImplementation(bytes memory data) public view returns (bytes memory) {
+    function delegateToViewImplementation(bytes memory data)
+        public
+        view
+        returns (bytes memory)
+    {
         (bool success, bytes memory returnData) = address(this).staticcall(
             abi.encodeWithSignature("delegateToImplementation(bytes)", data)
         );
@@ -590,7 +656,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
         return abi.decode(returnData, (bytes));
     }
 
-    function _delegateToViewAndReturn() private view returns (bytes memory) {
+    function delegateToViewAndReturn() private view returns (bytes memory) {
         (bool success, ) = address(this).staticcall(
             abi.encodeWithSignature("delegateToImplementation(bytes)", msg.data)
         );
@@ -609,7 +675,7 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
         }
     }
 
-    function _delegateAndReturn() private returns (bytes memory) {
+    function delegateAndReturn() private returns (bytes memory) {
         (bool success, ) = implementation.delegatecall(msg.data);
 
         assembly {
@@ -632,6 +698,6 @@ contract BWrappedNativeDelegator is BTokenInterface, BWrappedNativeInterface, BD
      */
     function() external payable {
         // delegate all other functions to current implementation
-        _delegateAndReturn();
+        delegateAndReturn();
     }
 }

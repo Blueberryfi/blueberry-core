@@ -126,15 +126,15 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   const comptroller = await deployComptroller();
   const bTokenAdmin = await deployBTokenAdmin(admin);
 
-  await unitroller.setPendingImplementation(comptroller.address);
-  await comptroller.become(unitroller.address);
+  await unitroller._setPendingImplementation(comptroller.address);
+  await comptroller._become(unitroller.address);
 
   const closeFactor = utils.parseEther('0.92');
   const liquidiationIncentive = utils.parseEther('1.08');
 
-  await comptroller.setCloseFactor(closeFactor);
-  await comptroller.setLiquidationIncentive(liquidiationIncentive);
-  await comptroller.setGuardian(admin);
+  await comptroller._setCloseFactor(closeFactor);
+  await comptroller._setLiquidationIncentive(liquidiationIncentive);
+  await comptroller._setGuardian(admin);
 
   const OracleProxy = await ethers.getContractFactory('PriceOracleProxy');
   // Blueberry core oracle address
@@ -142,7 +142,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   await oracle.deployed();
   console.log('PriceOracleProxy:', oracle.address);
 
-  await comptroller.setPriceOracle(oracle.address);
+  await comptroller._setPriceOracle(oracle.address);
 
   let baseRate = 0;
   let multiplier = utils.parseEther('0.2');
@@ -355,23 +355,23 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   // );
   // console.log("bCrvCvxCrv deployed at: ", bCrvCvxCrv.address);
 
-  await comptroller.supportMarket(bUSDC.address, 0);
-  await comptroller.supportMarket(bICHI.address, 0);
-  await comptroller.supportMarket(bCRV.address, 0);
-  await comptroller.supportMarket(bDAI.address, 0);
-  await comptroller.supportMarket(bMIM.address, 0);
-  await comptroller.supportMarket(bLINK.address, 0);
-  await comptroller.supportMarket(bOHM.address, 0);
-  await comptroller.supportMarket(bSUSHI.address, 0);
-  await comptroller.supportMarket(bBAL.address, 0);
-  //await comptroller.supportMarket(bALCX.address, 0);
-  await comptroller.supportMarket(bWETH.address, 0);
-  await comptroller.supportMarket(bWBTC.address, 0);
-  await comptroller.supportMarket(bWstETH.address, 0);
-  //await comptroller.supportMarket(bCrvStEth.address, 0);
-  // await comptroller.supportMarket(bCrvFrxEth.address, 0);
-  // await comptroller.supportMarket(bCrvMim3Crv.address, 0);
-  // await comptroller.supportMarket(bCrvCvxCrv.address, 0);
+  await comptroller._supportMarket(bUSDC.address, 0);
+  await comptroller._supportMarket(bICHI.address, 0);
+  await comptroller._supportMarket(bCRV.address, 0);
+  await comptroller._supportMarket(bDAI.address, 0);
+  await comptroller._supportMarket(bMIM.address, 0);
+  await comptroller._supportMarket(bLINK.address, 0);
+  await comptroller._supportMarket(bOHM.address, 0);
+  await comptroller._supportMarket(bSUSHI.address, 0);
+  await comptroller._supportMarket(bBAL.address, 0);
+  //await comptroller._supportMarket(bALCX.address, 0);
+  await comptroller._supportMarket(bWETH.address, 0);
+  await comptroller._supportMarket(bWBTC.address, 0);
+  await comptroller._supportMarket(bWstETH.address, 0);
+  //await comptroller._supportMarket(bCrvStEth.address, 0);
+  // await comptroller._supportMarket(bCrvFrxEth.address, 0);
+  // await comptroller._supportMarket(bCrvMim3Crv.address, 0);
+  // await comptroller._supportMarket(bCrvCvxCrv.address, 0);
 
   return {
     comptroller,

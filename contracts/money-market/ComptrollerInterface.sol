@@ -2,27 +2,55 @@ pragma solidity 0.5.16;
 
 contract ComptrollerInterface {
     /// @notice Indicator that this is a Comptroller contract (for inspection)
-    bool public constant IS_COMPTROLLER = true;
+    bool public constant isComptroller = true;
 
     /*** Assets You Are In ***/
 
-    function enterMarkets(address[] calldata bTokens) external returns (uint256[] memory);
+    function enterMarkets(address[] calldata bTokens)
+        external
+        returns (uint256[] memory);
 
     function exitMarket(address bToken) external returns (uint256);
 
     /*** Policy Hooks ***/
 
-    function mintAllowed(address bToken, address minter, uint256 mintAmount) external returns (uint256);
+    function mintAllowed(
+        address bToken,
+        address minter,
+        uint256 mintAmount
+    ) external returns (uint256);
 
-    function mintVerify(address bToken, address minter, uint256 mintAmount, uint256 mintTokens) external;
+    function mintVerify(
+        address bToken,
+        address minter,
+        uint256 mintAmount,
+        uint256 mintTokens
+    ) external;
 
-    function redeemAllowed(address bToken, address redeemer, uint256 redeemTokens) external returns (uint256);
+    function redeemAllowed(
+        address bToken,
+        address redeemer,
+        uint256 redeemTokens
+    ) external returns (uint256);
 
-    function redeemVerify(address bToken, address redeemer, uint256 redeemAmount, uint256 redeemTokens) external;
+    function redeemVerify(
+        address bToken,
+        address redeemer,
+        uint256 redeemAmount,
+        uint256 redeemTokens
+    ) external;
 
-    function borrowAllowed(address bToken, address borrower, uint256 borrowAmount) external returns (uint256);
+    function borrowAllowed(
+        address bToken,
+        address borrower,
+        uint256 borrowAmount
+    ) external returns (uint256);
 
-    function borrowVerify(address bToken, address borrower, uint256 borrowAmount) external;
+    function borrowVerify(
+        address bToken,
+        address borrower,
+        uint256 borrowAmount
+    ) external;
 
     function repayBorrowAllowed(
         address bToken,
@@ -79,7 +107,12 @@ contract ComptrollerInterface {
         uint256 transferTokens
     ) external returns (uint256);
 
-    function transferVerify(address bToken, address src, address dst, uint256 transferTokens) external;
+    function transferVerify(
+        address bToken,
+        address src,
+        address dst,
+        uint256 transferTokens
+    ) external;
 
     /*** Liquidity/Liquidation Calculations ***/
 

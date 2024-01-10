@@ -79,9 +79,10 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
      *  Liquidation / seizing / transfer can only be paused globally, not by market.
      */
     address public guardian;
+    bool public _mintGuardianPaused;
+    bool public _borrowGuardianPaused;
     bool public transferGuardianPaused;
     bool public seizeGuardianPaused;
-
     mapping(address => bool) public mintGuardianPaused;
     mapping(address => bool) public borrowGuardianPaused;
 
@@ -119,20 +120,16 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     /// @dev This storage is deprecated.
     mapping(address => uint256) public compAccrued;
 
-    /// @notice The borrowCapGuardian can set borrowCaps to any number for any market.
-    /// @dev Lowering the borrow cap could disable borrowing on the given market.
+    /// @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
     address public borrowCapGuardian;
 
-    /// @notice Borrow caps enforced by borrowAllowed for each bToken address.
-    /// @dev Defaults to zero which corresponds to unlimited borrowing.
+    /// @notice Borrow caps enforced by borrowAllowed for each bToken address. Defaults to zero which corresponds to unlimited borrowing.
     mapping(address => uint256) public borrowCaps;
 
-    /// @notice The supplyCapGuardian can set supplyCaps to any number for any market.
-    /// @dev Lowering the supply cap could disable supplying to the given market.
+    /// @notice The supplyCapGuardian can set supplyCaps to any number for any market. Lowering the supply cap could disable supplying to the given market.
     address public supplyCapGuardian;
 
-    /// @notice Supply caps enforced by mintAllowed for each bToken address.
-    /// @dev Defaults to zero which corresponds to unlimited supplying.
+    /// @notice Supply caps enforced by mintAllowed for each bToken address. Defaults to zero which corresponds to unlimited supplying.
     mapping(address => uint256) public supplyCaps;
 
     /// @notice creditLimits allowed specific protocols to borrow and repay without collateral.

@@ -121,7 +121,7 @@ describe('ShortLongSpell', () => {
     it('Check initial values', async () => {
       expect(await spell.bank()).to.eq(bank.address);
       expect(await spell.werc20()).to.eq(werc20.address);
-      expect(await spell.WETH()).to.eq(weth.address);
+      expect(await spell.weth()).to.eq(weth.address);
       expect(await spell.augustusSwapper()).to.eq(augustusSwapper.address);
       expect(await spell.tokenTransferProxy()).to.eq(tokenTransferProxy.address);
       expect(await spell.owner()).to.eq(owner.address);

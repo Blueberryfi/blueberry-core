@@ -560,12 +560,12 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   await bank.addBank(WBTC, wbtcSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
-  await comptroller.setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bCRV.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bWBTC.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bWstETH.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bWETH.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bCRV.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bWBTC.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bWstETH.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bWETH.address, utils.parseUnits('3000000'));
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits('500', 6));

@@ -5,7 +5,7 @@ import "./BToken.sol";
 import "./EIP20NonStandardInterface.sol";
 
 contract BTokenAdmin is Exponential {
-    uint256 public constant TIMELOCK = 2 days;
+    uint256 public constant timeLock = 2 days;
 
     /// @notice Admin address
     address payable public admin;
@@ -23,25 +23,48 @@ contract BTokenAdmin is Exponential {
     event SetAdmin(address indexed oldAdmin, address indexed newAdmin);
 
     /// @notice Emits when a new reserve manager is assigned
-    event SetReserveManager(address indexed oldReserveManager, address indexed newAdmin);
+    event SetReserveManager(
+        address indexed oldReserveManager,
+        address indexed newAdmin
+    );
 
     /// @notice Emits when a new bToken pending admin is queued
-    event PendingAdminQueued(address indexed bToken, address indexed newPendingAdmin, uint256 expiration);
+    event PendingAdminQueued(
+        address indexed bToken,
+        address indexed newPendingAdmin,
+        uint256 expiration
+    );
 
     /// @notice Emits when a new bToken pending admin is cleared
-    event PendingAdminCleared(address indexed bToken, address indexed newPendingAdmin);
+    event PendingAdminCleared(
+        address indexed bToken,
+        address indexed newPendingAdmin
+    );
 
     /// @notice Emits when a new bToken pending admin becomes active
-    event PendingAdminChanged(address indexed bToken, address indexed newPendingAdmin);
+    event PendingAdminChanged(
+        address indexed bToken,
+        address indexed newPendingAdmin
+    );
 
     /// @notice Emits when a new bToken implementation is queued
-    event ImplementationQueued(address indexed bToken, address indexed newImplementation, uint256 expiration);
+    event ImplementationQueued(
+        address indexed bToken,
+        address indexed newImplementation,
+        uint256 expiration
+    );
 
     /// @notice Emits when a new bToken implementation is cleared
-    event ImplementationCleared(address indexed bToken, address indexed newImplementation);
+    event ImplementationCleared(
+        address indexed bToken,
+        address indexed newImplementation
+    );
 
     /// @notice Emits when a new bToken implementation becomes active
-    event ImplementationChanged(address indexed bToken, address indexed newImplementation);
+    event ImplementationChanged(
+        address indexed bToken,
+        address indexed newImplementation
+    );
 
     /**
      * @dev Throws if called by any account other than the admin.
@@ -55,7 +78,10 @@ contract BTokenAdmin is Exponential {
      * @dev Throws if called by any account other than the reserve manager.
      */
     modifier onlyReserveManager() {
-        require(msg.sender == reserveManager, "only the reserve manager may call this function");
+        require(
+            msg.sender == reserveManager,
+            "only the reserve manager may call this function"
+        );
         _;
     }
 
@@ -83,10 +109,16 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param newPendingAdmin The new pending admin
      */
-    function queuePendingAdmin(address bToken, address payable newPendingAdmin) external onlyAdmin {
-        require(bToken != address(0) && newPendingAdmin != address(0), "invalid input");
+    function _queuePendingAdmin(address bToken, address payable newPendingAdmin)
+        external
+        onlyAdmin
+    {
+        require(
+            bToken != address(0) && newPendingAdmin != address(0),
+            "invalid input"
+        );
         require(adminQueue[bToken][newPendingAdmin] == 0, "already in queue");
-        uint256 expiration = _add(getBlockTimestamp(), TIMELOCK);
+        uint256 expiration = add_(getBlockTimestamp(), timeLock);
         adminQueue[bToken][newPendingAdmin] = expiration;
 
         emit PendingAdminQueued(bToken, newPendingAdmin, expiration);
@@ -97,7 +129,10 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param newPendingAdmin The new pending admin
      */
-    function clearPendingAdmin(address bToken, address payable newPendingAdmin) external onlyAdmin {
+    function _clearPendingAdmin(address bToken, address payable newPendingAdmin)
+        external
+        onlyAdmin
+    {
         adminQueue[bToken][newPendingAdmin] = 0;
 
         emit PendingAdminCleared(bToken, newPendingAdmin);
@@ -108,7 +143,10 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param newPendingAdmin The new pending admin
      */
-    function togglePendingAdmin(address bToken, address payable newPendingAdmin) external onlyAdmin returns (uint256) {
+    function _togglePendingAdmin(
+        address bToken,
+        address payable newPendingAdmin
+    ) external onlyAdmin returns (uint256) {
         uint256 result = adminQueue[bToken][newPendingAdmin];
         require(result != 0, "not in queue");
         require(result <= getBlockTimestamp(), "queue not expired");
@@ -117,15 +155,15 @@ contract BTokenAdmin is Exponential {
 
         emit PendingAdminChanged(bToken, newPendingAdmin);
 
-        return BTokenInterface(bToken).setPendingAdmin(newPendingAdmin);
+        return BTokenInterface(bToken)._setPendingAdmin(newPendingAdmin);
     }
 
     /**
      * @notice Accept bToken admin
      * @param bToken The bToken address
      */
-    function acceptAdmin(address bToken) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken).acceptAdmin();
+    function _acceptAdmin(address bToken) external onlyAdmin returns (uint256) {
+        return BTokenInterface(bToken)._acceptAdmin();
     }
 
     /**
@@ -133,8 +171,11 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param newComptroller The new comptroller address
      */
-    function setComptroller(address bToken, ComptrollerInterface newComptroller) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken).setComptroller(newComptroller);
+    function _setComptroller(
+        address bToken,
+        ComptrollerInterface newComptroller
+    ) external onlyAdmin returns (uint256) {
+        return BTokenInterface(bToken)._setComptroller(newComptroller);
     }
 
     /**
@@ -142,8 +183,13 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param newReserveFactorMantissa The new reserve factor
      */
-    function setReserveFactor(address bToken, uint256 newReserveFactorMantissa) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken).setReserveFactor(newReserveFactorMantissa);
+    function _setReserveFactor(address bToken, uint256 newReserveFactorMantissa)
+        external
+        onlyAdmin
+        returns (uint256)
+    {
+        return
+            BTokenInterface(bToken)._setReserveFactor(newReserveFactorMantissa);
     }
 
     /**
@@ -151,8 +197,12 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param reduceAmount The amount of reduction
      */
-    function reduceReserves(address bToken, uint256 reduceAmount) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken).reduceReserves(reduceAmount);
+    function _reduceReserves(address bToken, uint256 reduceAmount)
+        external
+        onlyAdmin
+        returns (uint256)
+    {
+        return BTokenInterface(bToken)._reduceReserves(reduceAmount);
     }
 
     /**
@@ -160,11 +210,12 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param newInterestRateModel The new IRM address
      */
-    function setInterestRateModel(
+    function _setInterestRateModel(
         address bToken,
         InterestRateModel newInterestRateModel
     ) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken).setInterestRateModel(newInterestRateModel);
+        return
+            BTokenInterface(bToken)._setInterestRateModel(newInterestRateModel);
     }
 
     /**
@@ -173,8 +224,13 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param newCollateralCap The new collateral cap
      */
-    function setCollateralCap(address bToken, uint256 newCollateralCap) external onlyAdmin {
-        BCollateralCapErc20Interface(bToken).setCollateralCap(newCollateralCap);
+    function _setCollateralCap(address bToken, uint256 newCollateralCap)
+        external
+        onlyAdmin
+    {
+        BCollateralCapErc20Interface(bToken)._setCollateralCap(
+            newCollateralCap
+        );
     }
 
     /**
@@ -182,10 +238,19 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param implementation The new pending implementation
      */
-    function queuePendingImplementation(address bToken, address implementation) external onlyAdmin {
-        require(bToken != address(0) && implementation != address(0), "invalid input");
-        require(implementationQueue[bToken][implementation] == 0, "already in queue");
-        uint256 expiration = _add(getBlockTimestamp(), TIMELOCK);
+    function _queuePendingImplementation(address bToken, address implementation)
+        external
+        onlyAdmin
+    {
+        require(
+            bToken != address(0) && implementation != address(0),
+            "invalid input"
+        );
+        require(
+            implementationQueue[bToken][implementation] == 0,
+            "already in queue"
+        );
+        uint256 expiration = add_(getBlockTimestamp(), timeLock);
         implementationQueue[bToken][implementation] = expiration;
 
         emit ImplementationQueued(bToken, implementation, expiration);
@@ -196,7 +261,10 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param implementation The new pending implementation
      */
-    function clearPendingImplementation(address bToken, address implementation) external onlyAdmin {
+    function _clearPendingImplementation(address bToken, address implementation)
+        external
+        onlyAdmin
+    {
         implementationQueue[bToken][implementation] = 0;
 
         emit ImplementationCleared(bToken, implementation);
@@ -209,7 +277,7 @@ contract BTokenAdmin is Exponential {
      * @param allowResign Allow old implementation to resign or not
      * @param becomeImplementationData The payload data
      */
-    function togglePendingImplementation(
+    function _togglePendingImplementation(
         address bToken,
         address implementation,
         bool allowResign,
@@ -223,7 +291,11 @@ contract BTokenAdmin is Exponential {
 
         emit ImplementationChanged(bToken, implementation);
 
-        BDelegatorInterface(bToken).setImplementation(implementation, allowResign, becomeImplementationData);
+        BDelegatorInterface(bToken)._setImplementation(
+            implementation,
+            allowResign,
+            becomeImplementationData
+        );
     }
 
     /**
@@ -231,8 +303,14 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      * @param reduceAmount The amount of reduction
      */
-    function extractReserves(address bToken, uint256 reduceAmount) external onlyReserveManager {
-        require(BTokenInterface(bToken).reduceReserves(reduceAmount) == 0, "failed to reduce reserves");
+    function extractReserves(address bToken, uint256 reduceAmount)
+        external
+        onlyReserveManager
+    {
+        require(
+            BTokenInterface(bToken)._reduceReserves(reduceAmount) == 0,
+            "failed to reduce reserves"
+        );
 
         address underlying = BErc20(bToken).underlying();
         _transferToken(underlying, reserveManager, reduceAmount);
@@ -243,7 +321,9 @@ contract BTokenAdmin is Exponential {
      * @param token The token address
      */
     function seize(address token) external onlyAdmin {
-        uint256 amount = EIP20NonStandardInterface(token).balanceOf(address(this));
+        uint256 amount = EIP20NonStandardInterface(token).balanceOf(
+            address(this)
+        );
         if (amount > 0) {
             _transferToken(token, admin, amount);
         }
@@ -261,7 +341,10 @@ contract BTokenAdmin is Exponential {
      * @notice Set the reserve manager
      * @param newReserveManager The new reserve manager
      */
-    function setReserveManager(address payable newReserveManager) external onlyAdmin {
+    function setReserveManager(address payable newReserveManager)
+        external
+        onlyAdmin
+    {
         address oldReserveManager = reserveManager;
         reserveManager = newReserveManager;
 
@@ -277,7 +360,11 @@ contract BTokenAdmin is Exponential {
         emit SetAdmin(oldAdmin, newAdmin);
     }
 
-    function _transferToken(address token, address payable to, uint256 amount) private {
+    function _transferToken(
+        address token,
+        address payable to,
+        uint256 amount
+    ) private {
         require(to != address(0), "receiver cannot be zero address");
 
         EIP20NonStandardInterface(token).transfer(to, amount);
@@ -299,8 +386,7 @@ contract BTokenAdmin is Exponential {
                     revert(0, 0) // This is a non-compliant ERC-20, revert.
                 }
                 returndatacopy(0, 0, 32) // Vyper compiler before 0.2.8 will not truncate RETURNDATASIZE.
-                // See here: https://github.com/vyperlang/vyper/security/advisories/GHSA-375m-5fvv-xq23
-                success := mload(0)
+                success := mload(0) // See here: https://github.com/vyperlang/vyper/security/advisories/GHSA-375m-5fvv-xq23
             }
         }
         require(success, "TOKEN_TRANSFER_OUT_FAILED");

@@ -341,9 +341,9 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
-  await comptroller.setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bICHI.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bICHI.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits('500', 6));

@@ -169,7 +169,7 @@ export const setupVaults = async (
     softVaults.push(softVault);
     bTokenList.push(bToken);
 
-    await bTokens.comptroller.setCreditLimit(bank.address, bToken.address, utils.parseEther('3000000'));
+    await bTokens.comptroller._setCreditLimit(bank.address, bToken.address, utils.parseEther('3000000'));
 
     const underlyingToken = <ERC20>await ethers.getContractAt('ERC20', await bToken.underlying());
     tokens.push(underlyingToken);

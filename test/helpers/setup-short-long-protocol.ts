@@ -459,12 +459,12 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await bank.addBank(WstETH, wstETHSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
-  await comptroller.setCreditLimit(bank.address, bUSDC.address, CREDIT_LIMIT);
-  await comptroller.setCreditLimit(bank.address, bCRV.address, CREDIT_LIMIT);
-  await comptroller.setCreditLimit(bank.address, bDAI.address, CREDIT_LIMIT);
-  await comptroller.setCreditLimit(bank.address, bLINK.address, CREDIT_LIMIT);
-  await comptroller.setCreditLimit(bank.address, bWBTC.address, CREDIT_LIMIT);
-  await comptroller.setCreditLimit(bank.address, bWstETH.address, CREDIT_LIMIT);
+  await comptroller._setCreditLimit(bank.address, bUSDC.address, CREDIT_LIMIT);
+  await comptroller._setCreditLimit(bank.address, bCRV.address, CREDIT_LIMIT);
+  await comptroller._setCreditLimit(bank.address, bDAI.address, CREDIT_LIMIT);
+  await comptroller._setCreditLimit(bank.address, bLINK.address, CREDIT_LIMIT);
+  await comptroller._setCreditLimit(bank.address, bWBTC.address, CREDIT_LIMIT);
+  await comptroller._setCreditLimit(bank.address, bWstETH.address, CREDIT_LIMIT);
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits(strategyDepositInUsd, 6));

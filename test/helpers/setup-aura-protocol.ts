@@ -343,9 +343,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
-  await comptroller.setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bCRV.address, utils.parseUnits('3000000'));
-  await comptroller.setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bCRV.address, utils.parseUnits('3000000'));
+  await comptroller._setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits('500', 6));

@@ -11,15 +11,13 @@ contract BCollateralCapErc20Delegate is BCollateralCapErc20 {
     /**
      * @notice Construct an empty delegate
      */
-    constructor() public {
-        // solhint-disable-previous-line no-empty-blocks
-    }
+    constructor() public {}
 
     /**
      * @notice Called by the delegator on a delegate to initialize it for duty
      * @param data The encoded bytes data for any initialization
      */
-    function becomeImplementation(bytes memory data) public {
+    function _becomeImplementation(bytes memory data) public {
         // Shh -- currently unused
         data;
 
@@ -31,19 +29,19 @@ contract BCollateralCapErc20Delegate is BCollateralCapErc20 {
         require(msg.sender == admin, "admin only");
 
         // Set internal cash when becoming implementation
-        internalCash = _getCashOnChain();
+        internalCash = getCashOnChain();
 
         // Set BToken version in comptroller
         ComptrollerInterfaceExtension(address(comptroller)).updateBTokenVersion(
-            address(this),
-            ComptrollerV1Storage.Version.COLLATERALCAP
-        );
+                address(this),
+                ComptrollerV1Storage.Version.COLLATERALCAP
+            );
     }
 
     /**
      * @notice Called by the delegator on a delegate to forfeit its responsibility
      */
-    function resignImplementation() public {
+    function _resignImplementation() public {
         // Shh -- we don't ever want this hook to be marked pure
         if (false) {
             implementation = address(0);

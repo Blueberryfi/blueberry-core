@@ -11,15 +11,13 @@ contract BWrappedNativeDelegate is BWrappedNative {
     /**
      * @notice Construct an empty delegate
      */
-    constructor() public {
-        // solhint-disable-previous-line no-empty-blocks
-    }
+    constructor() public {}
 
     /**
      * @notice Called by the delegator on a delegate to initialize it for duty
      * @param data The encoded bytes data for any initialization
      */
-    function becomeImplementation(bytes memory data) public {
+    function _becomeImplementation(bytes memory data) public {
         // Shh -- currently unused
         data;
 
@@ -32,9 +30,9 @@ contract BWrappedNativeDelegate is BWrappedNative {
 
         // Set BToken version in comptroller and convert native token to wrapped token.
         ComptrollerInterfaceExtension(address(comptroller)).updateBTokenVersion(
-            address(this),
-            ComptrollerV1Storage.Version.WRAPPEDNATIVE
-        );
+                address(this),
+                ComptrollerV1Storage.Version.WRAPPEDNATIVE
+            );
         uint256 balance = address(this).balance;
         if (balance > 0) {
             WrappedNativeInterface(underlying).deposit.value(balance)();
@@ -44,7 +42,7 @@ contract BWrappedNativeDelegate is BWrappedNative {
     /**
      * @notice Called by the delegator on a delegate to forfeit its responsibility
      */
-    function resignImplementation() public {
+    function _resignImplementation() public {
         // Shh -- we don't ever want this hook to be marked pure
         if (false) {
             implementation = address(0);
