@@ -3,7 +3,7 @@ import chai, { expect } from 'chai';
 import { BigNumber, utils, Contract } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import {
-  BlueBerryBank,
+  BlueberryBank,
   IchiSpell,
   IWETH,
   MockOracle,
@@ -51,7 +51,7 @@ describe('ICHI Angel Vaults Spell', () => {
   let mockOracle: MockOracle;
   let spell: IchiSpell;
   let wichi: WIchiFarm;
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let ichiFarm: MockIchiFarm;
   let ichiVault: MockIchiVault;
   let daiVault: MockIchiVault;

@@ -1,5 +1,5 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BlueBerryBank, MockOracle, WERC20, ERC20, ShortLongSpell, SoftVault } from '../../typechain-types';
+import { BlueberryBank, MockOracle, WERC20, ERC20, ShortLongSpell, SoftVault } from '../../typechain-types';
 import { ethers } from 'hardhat';
 import { ADDRESS } from '../../constant';
 import { ShortLongProtocol, evm_mine_blocks, fork, setupShortLongProtocol } from '../helpers';
@@ -28,7 +28,7 @@ describe('ShortLong Spell mainnet fork', () => {
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: ShortLongSpell;
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let protocol: ShortLongProtocol;
   let daiSoftVault: SoftVault;
 

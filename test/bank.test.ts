@@ -3,7 +3,7 @@ import chai, { expect } from 'chai';
 import { BigNumber, constants, utils, Contract } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import {
-  BlueBerryBank,
+  BlueberryBank,
   CoreOracle,
   IchiSpell,
   IWETH,
@@ -54,7 +54,7 @@ describe('Bank', () => {
   let oracle: CoreOracle;
   let spell: IchiSpell;
   let wichi: WIchiFarm;
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let config: ProtocolConfig;
   let feeManager: FeeManager;
   let usdcSoftVault: SoftVault;
@@ -97,28 +97,28 @@ describe('Bank', () => {
 
   describe('Constructor', () => {
     it('should revert Bank deployment when invalid args provided', async () => {
-      const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
+      const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
       await expect(
-        upgrades.deployProxy(BlueBerryBank, [ethers.constants.AddressZero, config.address], {
+        upgrades.deployProxy(BlueberryBank, [ethers.constants.AddressZero, config.address], {
           unsafeAllow: ['delegatecall'],
         })
-      ).to.be.revertedWithCustomError(BlueBerryBank, 'ZERO_ADDRESS');
+      ).to.be.revertedWithCustomError(BlueberryBank, 'ZERO_ADDRESS');
 
       await expect(
-        upgrades.deployProxy(BlueBerryBank, [oracle.address, ethers.constants.AddressZero], {
+        upgrades.deployProxy(BlueberryBank, [oracle.address, ethers.constants.AddressZero], {
           unsafeAllow: ['delegatecall'],
         })
-      ).to.be.revertedWithCustomError(BlueBerryBank, 'ZERO_ADDRESS');
+      ).to.be.revertedWithCustomError(BlueberryBank, 'ZERO_ADDRESS');
     });
     it('should initialize states on constructor', async () => {
-      const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-      const bank = <BlueBerryBank>(
-        await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
+      const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
+      const bank = <BlueberryBank>(
+        await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
       );
       await bank.deployed();
 
-      expect(await bank._GENERAL_LOCK()).to.be.equal(1);
-      expect(await bank._IN_EXEC_LOCK()).to.be.equal(1);
+      expect(await bank.GENERAL_LOCK()).to.be.equal(1);
+      expect(await bank.IN_EXEC_LOCK()).to.be.equal(1);
       expect(await bank.POSITION_ID()).to.be.equal(ethers.constants.MaxUint256);
       expect(await bank.SPELL()).to.be.equal('0x0000000000000000000000000000000000000001');
       expect(await bank.oracle()).to.be.equal(oracle.address);

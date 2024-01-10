@@ -12,8 +12,8 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./utils/BlueBerryConst.sol" as Constants;
-import "./utils/BlueBerryErrors.sol" as Errors;
+import "./utils/BlueberryConst.sol" as Constants;
+import "./utils/BlueberryErrors.sol" as Errors;
 import "./interfaces/IProtocolConfig.sol";
 
 /// @title ProtocolConfig

@@ -215,7 +215,7 @@ contract MockBaseRewardPool {
         _rewards = _rewards.add(queuedRewards);
 
         if (block.timestamp >= periodFinish) {
-            notifyRewardAmount(_rewards);
+            _notifyRewardAmount(_rewards);
             queuedRewards = 0;
             return true;
         }
@@ -228,7 +228,7 @@ contract MockBaseRewardPool {
 
         //uint256 queuedRatio = currentRewards.mul(1000).div(_rewards);
         if (queuedRatio < newRewardRatio) {
-            notifyRewardAmount(_rewards);
+            _notifyRewardAmount(_rewards);
             queuedRewards = 0;
         } else {
             queuedRewards = _rewards;

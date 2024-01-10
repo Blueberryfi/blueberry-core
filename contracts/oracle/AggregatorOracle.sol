@@ -13,7 +13,7 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./BaseOracleExt.sol";
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryErrors.sol" as Errors;
 import "../interfaces/IBaseOracle.sol";
 
 /// @title AggregatorOracle

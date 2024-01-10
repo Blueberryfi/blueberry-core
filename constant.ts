@@ -42,7 +42,7 @@ export enum CONTRACT_NAMES {
   IchiVaultOracle = 'IchiVaultOracle',
 
   // Protocol
-  BlueBerryBank = 'BlueBerryBank',
+  BlueberryBank = 'BlueberryBank',
   HardVault = 'HardVault',
   SoftVault = 'SoftVault',
   ProtocolConfig = 'ProtocolConfig',

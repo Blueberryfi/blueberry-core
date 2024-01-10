@@ -13,7 +13,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { UniversalERC20, IERC20 } from "../../libraries/UniversalERC20.sol";
 
-import "../../utils/BlueBerryErrors.sol" as Errors;
+import "../../utils/BlueberryErrors.sol" as Errors;
 
 import { ICvxBooster } from "../../interfaces/convex/ICvxBooster.sol";
 import { IRewarder } from "../../interfaces/convex/IRewarder.sol";

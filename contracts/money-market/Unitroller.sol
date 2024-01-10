@@ -38,7 +38,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
     /*** Admin Functions ***/
     function setPendingImplementation(address newPendingImplementation) public returns (uint256) {
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_IMPLEMENTATION_OWNER_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_IMPLEMENTATION_OWNER_CHECK);
         }
 
         address oldPendingImplementation = pendingComptrollerImplementation;
@@ -58,7 +58,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
     function acceptImplementation() public returns (uint256) {
         // Check caller is pendingImplementation and pendingImplementation ≠ address(0)
         if (msg.sender != pendingComptrollerImplementation || pendingComptrollerImplementation == address(0)) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_PENDING_IMPLEMENTATION_ADDRESS_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_PENDING_IMPLEMENTATION_ADDRESS_CHECK);
         }
 
         // Save current values for inclusion in log
@@ -86,7 +86,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
     function setPendingAdmin(address newPendingAdmin) public returns (uint256) {
         // Check caller = admin
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_ADMIN_OWNER_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_ADMIN_OWNER_CHECK);
         }
 
         // Save current value, if any, for inclusion in log
@@ -109,7 +109,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
     function acceptAdmin() public returns (uint256) {
         // Check caller is pendingAdmin and pendingAdmin ≠ address(0)
         if (msg.sender != pendingAdmin || msg.sender == address(0)) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_ADMIN_PENDING_ADMIN_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_ADMIN_PENDING_ADMIN_CHECK);
         }
 
         // Save current values for inclusion in log

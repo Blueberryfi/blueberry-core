@@ -16,7 +16,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20Metadat
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryErrors.sol" as Errors;
 import "../libraries/UniversalERC20.sol";
 import "../libraries/BBMath.sol";
 import "../interfaces/IWIchiFarm.sol";

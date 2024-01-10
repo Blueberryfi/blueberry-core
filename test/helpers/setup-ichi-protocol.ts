@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, utils, Contract } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import {
-  BlueBerryBank,
+  BlueberryBank,
   CoreOracle,
   IchiSpell,
   IWETH,
@@ -46,7 +46,7 @@ export interface Protocol {
   ichiOracle: IchiVaultOracle;
   oracle: CoreOracle;
   config: ProtocolConfig;
-  bank: BlueBerryBank;
+  bank: BlueberryBank;
   ichiSpell: IchiSpell;
   usdcSoftVault: SoftVault;
   ichiSoftVault: SoftVault;
@@ -87,7 +87,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   let config: ProtocolConfig;
   let feeManager: FeeManager;
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let usdcSoftVault: SoftVault;
   let ichiSoftVault: SoftVault;
   let daiSoftVault: SoftVault;
@@ -217,6 +217,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
       ichiOracle.address,
     ]
   );
+
   // Deploy Bank
   const Config = await ethers.getContractFactory('ProtocolConfig');
   config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address], {
@@ -232,9 +233,10 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await feeManager.deployed();
   await config.setFeeManager(feeManager.address);
 
-  const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-  bank = <BlueBerryBank>(
-    await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
+  const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
+
+  bank = <BlueberryBank>(
+    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
   );
   await bank.deployed();
 
@@ -281,12 +283,12 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiSpell.addStrategy(ichi_USDC_DAI_Vault.address, utils.parseUnits('10', 18), utils.parseUnits('2000', 18));
   await ichiSpell.setCollateralsMaxLTVs(0, [USDC, ICHI, DAI, wstETH, WETH], [30000, 30000, 30000, 30000, 30000]);
   await ichiSpell.setCollateralsMaxLTVs(1, [USDC, ICHI, DAI, wstETH, WETH], [30000, 30000, 30000, 30000, 30000]);
-
+  
   // Setup Bank
   await bank.whitelistSpells([ichiSpell.address], [true]);
   await bank.whitelistTokens([USDC, ICHI, DAI, wstETH, WETH], [true, true, true, true, true]);
   await bank.whitelistERC1155([werc20.address, wichi.address], true);
-
+  
   const bTokens = await deployBTokens(admin.address, oracle.address);
   comptroller = bTokens.comptroller;
   bUSDC = bTokens.bUSDC;
@@ -339,9 +341,9 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
-  await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
-  await comptroller._setCreditLimit(bank.address, bICHI.address, utils.parseUnits('3000000'));
-  await comptroller._setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
+  await comptroller.setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
+  await comptroller.setCreditLimit(bank.address, bICHI.address, utils.parseUnits('3000000'));
+  await comptroller.setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits('500', 6));

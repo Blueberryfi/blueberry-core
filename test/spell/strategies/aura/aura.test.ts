@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, BigNumberish, utils } from 'ethers';
 import {
-  BlueBerryBank,
+  BlueberryBank,
   IWETH,
   ERC20,
   WAuraPools,
@@ -39,7 +39,7 @@ describe('Aura Spell Strategy test', () => {
   let bob: SignerWithAddress;
   let treasury: SignerWithAddress;
 
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let oracle: CoreOracle;
   let spell: AuraSpell;
   let waura: WAuraPools;

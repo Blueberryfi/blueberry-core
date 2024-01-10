@@ -18,7 +18,7 @@ import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { FixedPointMathLib } from "../libraries/FixedPointMathLib.sol";
 
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryErrors.sol" as Errors;
 
 import { IWAuraPools } from "../interfaces/IWAuraPools.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";

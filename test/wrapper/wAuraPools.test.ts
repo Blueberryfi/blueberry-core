@@ -110,7 +110,7 @@ describe('wAuraPools', () => {
 
   describe('#initialize', () => {
     it('check initial values', async () => {
-      expect(await wAuraPools.AURA()).to.be.eq(aura.address);
+      expect(await wAuraPools.auraToken()).to.be.eq(aura.address);
       expect(await wAuraPools.auraBooster()).to.be.eq(booster.address);
       expect(await wAuraPools.escrowFactory()).to.be.eq(escrowFactory.address);
     });

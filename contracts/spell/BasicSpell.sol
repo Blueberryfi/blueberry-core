@@ -13,8 +13,8 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 
-import "../utils/BlueBerryConst.sol" as Constants;
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryConst.sol" as Constants;
+import "../utils/BlueberryErrors.sol" as Errors;
 import "../utils/ERC1155NaiveReceiver.sol";
 import "../interfaces/IBank.sol";
 import "../interfaces/IWERC20.sol";

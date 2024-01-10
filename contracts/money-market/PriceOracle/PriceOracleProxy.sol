@@ -13,7 +13,7 @@ contract PriceOracleProxy is PriceOracle {
     IBaseOracle public baseOracle;
 
     /**
-     * @param baseOracle_ The address of BlueBerry Core Oracle
+     * @param baseOracle_ The address of Blueberry Core Oracle
      */
     constructor(IBaseOracle baseOracle_) public {
         baseOracle = baseOracle_;

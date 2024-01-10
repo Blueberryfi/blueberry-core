@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20Metadat
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryErrors.sol" as Errors;
 import "../interfaces/ICoreOracle.sol";
 import "../interfaces/IERC20Wrapper.sol";
 

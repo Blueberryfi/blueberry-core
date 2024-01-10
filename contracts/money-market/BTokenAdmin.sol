@@ -86,7 +86,7 @@ contract BTokenAdmin is Exponential {
     function queuePendingAdmin(address bToken, address payable newPendingAdmin) external onlyAdmin {
         require(bToken != address(0) && newPendingAdmin != address(0), "invalid input");
         require(adminQueue[bToken][newPendingAdmin] == 0, "already in queue");
-        uint256 expiration = add_(getBlockTimestamp(), timeLock);
+        uint256 expiration = _add(getBlockTimestamp(), TIMELOCK);
         adminQueue[bToken][newPendingAdmin] = expiration;
 
         emit PendingAdminQueued(bToken, newPendingAdmin, expiration);
@@ -117,7 +117,7 @@ contract BTokenAdmin is Exponential {
 
         emit PendingAdminChanged(bToken, newPendingAdmin);
 
-        return BTokenInterface(bToken)._setPendingAdmin(newPendingAdmin);
+        return BTokenInterface(bToken).setPendingAdmin(newPendingAdmin);
     }
 
     /**
@@ -125,7 +125,7 @@ contract BTokenAdmin is Exponential {
      * @param bToken The bToken address
      */
     function acceptAdmin(address bToken) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken)._acceptAdmin();
+        return BTokenInterface(bToken).acceptAdmin();
     }
 
     /**
@@ -134,7 +134,7 @@ contract BTokenAdmin is Exponential {
      * @param newComptroller The new comptroller address
      */
     function setComptroller(address bToken, ComptrollerInterface newComptroller) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken)._setComptroller(newComptroller);
+        return BTokenInterface(bToken).setComptroller(newComptroller);
     }
 
     /**
@@ -143,7 +143,7 @@ contract BTokenAdmin is Exponential {
      * @param newReserveFactorMantissa The new reserve factor
      */
     function setReserveFactor(address bToken, uint256 newReserveFactorMantissa) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken)._setReserveFactor(newReserveFactorMantissa);
+        return BTokenInterface(bToken).setReserveFactor(newReserveFactorMantissa);
     }
 
     /**
@@ -152,7 +152,7 @@ contract BTokenAdmin is Exponential {
      * @param reduceAmount The amount of reduction
      */
     function reduceReserves(address bToken, uint256 reduceAmount) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken)._reduceReserves(reduceAmount);
+        return BTokenInterface(bToken).reduceReserves(reduceAmount);
     }
 
     /**
@@ -164,7 +164,7 @@ contract BTokenAdmin is Exponential {
         address bToken,
         InterestRateModel newInterestRateModel
     ) external onlyAdmin returns (uint256) {
-        return BTokenInterface(bToken)._setInterestRateModel(newInterestRateModel);
+        return BTokenInterface(bToken).setInterestRateModel(newInterestRateModel);
     }
 
     /**
@@ -174,7 +174,7 @@ contract BTokenAdmin is Exponential {
      * @param newCollateralCap The new collateral cap
      */
     function setCollateralCap(address bToken, uint256 newCollateralCap) external onlyAdmin {
-        BCollateralCapErc20Interface(bToken)._setCollateralCap(newCollateralCap);
+        BCollateralCapErc20Interface(bToken).setCollateralCap(newCollateralCap);
     }
 
     /**
@@ -185,7 +185,7 @@ contract BTokenAdmin is Exponential {
     function queuePendingImplementation(address bToken, address implementation) external onlyAdmin {
         require(bToken != address(0) && implementation != address(0), "invalid input");
         require(implementationQueue[bToken][implementation] == 0, "already in queue");
-        uint256 expiration = add_(getBlockTimestamp(), timeLock);
+        uint256 expiration = _add(getBlockTimestamp(), TIMELOCK);
         implementationQueue[bToken][implementation] = expiration;
 
         emit ImplementationQueued(bToken, implementation, expiration);
@@ -223,7 +223,7 @@ contract BTokenAdmin is Exponential {
 
         emit ImplementationChanged(bToken, implementation);
 
-        BDelegatorInterface(bToken)._setImplementation(implementation, allowResign, becomeImplementationData);
+        BDelegatorInterface(bToken).setImplementation(implementation, allowResign, becomeImplementationData);
     }
 
     /**
@@ -232,7 +232,7 @@ contract BTokenAdmin is Exponential {
      * @param reduceAmount The amount of reduction
      */
     function extractReserves(address bToken, uint256 reduceAmount) external onlyReserveManager {
-        require(BTokenInterface(bToken)._reduceReserves(reduceAmount) == 0, "failed to reduce reserves");
+        require(BTokenInterface(bToken).reduceReserves(reduceAmount) == 0, "failed to reduce reserves");
 
         address underlying = BErc20(bToken).underlying();
         _transferToken(underlying, reserveManager, reduceAmount);

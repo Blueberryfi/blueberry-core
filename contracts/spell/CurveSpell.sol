@@ -93,7 +93,7 @@ contract CurveSpell is BasicSpell {
             uint256 ethValue;
             uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(address(this));
             require(borrowBalance <= tokenBalance, "impossible");
-            if (borrowToken == WETH) {
+            if (borrowToken == weth) {
                 bool hasEth;
                 uint256 tokenLength = tokens.length;
                 for (uint256 i; i != tokenLength; ++i) {
@@ -112,7 +112,7 @@ contract CurveSpell is BasicSpell {
                 uint256[2] memory suppliedAmts;
 
                 for (uint256 i; i < 2; ++i) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == weth)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -122,7 +122,7 @@ contract CurveSpell is BasicSpell {
                 uint256[3] memory suppliedAmts;
 
                 for (uint256 i; i < 3; ++i) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == weth)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -132,7 +132,7 @@ contract CurveSpell is BasicSpell {
                 uint256[4] memory suppliedAmts;
 
                 for (uint256 i; i < 4; ++i) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == WETH)) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && borrowToken == weth)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -257,7 +257,7 @@ contract CurveSpell is BasicSpell {
         ICurvePool(pool).remove_liquidity_one_coin(amountPosRemove, int128(uint128(tokenIndex)), param.amountOutMin);
 
         if (tokens[uint128(tokenIndex)] == ETH) {
-            IWETH(WETH).deposit{ value: address(this).balance }();
+            IWETH(weth).deposit{ value: address(this).balance }();
         }
     }
 

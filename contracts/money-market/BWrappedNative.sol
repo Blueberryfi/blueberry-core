@@ -58,7 +58,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mint(uint256 mintAmount) external returns (uint256) {
-        (uint256 err, ) = mintInternal(mintAmount, false);
+        (uint256 err, ) = _mintInternal(mintAmount, false);
         require(err == 0, "mint failed");
     }
 
@@ -69,7 +69,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mintNative() external payable returns (uint256) {
-        (uint256 err, ) = mintInternal(msg.value, true);
+        (uint256 err, ) = _mintInternal(msg.value, true);
         require(err == 0, "mint native failed");
     }
 
@@ -81,7 +81,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint256 redeemTokens) external returns (uint256) {
-        require(redeemInternal(redeemTokens, false) == 0, "redeem failed");
+        require(_redeemInternal(redeemTokens, false) == 0, "redeem failed");
     }
 
     /**
@@ -92,7 +92,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemNative(uint256 redeemTokens) external returns (uint256) {
-        require(redeemInternal(redeemTokens, true) == 0, "redeem native failed");
+        require(_redeemInternal(redeemTokens, true) == 0, "redeem native failed");
     }
 
     /**
@@ -103,7 +103,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256) {
-        require(redeemUnderlyingInternal(redeemAmount, false) == 0, "redeem underlying failed");
+        require(_redeemUnderlyingInternal(redeemAmount, false) == 0, "redeem underlying failed");
     }
 
     /**
@@ -114,7 +114,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlyingNative(uint256 redeemAmount) external returns (uint256) {
-        require(redeemUnderlyingInternal(redeemAmount, true) == 0, "redeem underlying native failed");
+        require(_redeemUnderlyingInternal(redeemAmount, true) == 0, "redeem underlying native failed");
     }
 
     /**
@@ -125,7 +125,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function borrow(uint256 borrowAmount) external returns (uint256) {
-        require(borrowInternal(borrowAmount, false) == 0, "borrow failed");
+        require(_borrowInternal(borrowAmount, false) == 0, "borrow failed");
     }
 
     /**
@@ -136,7 +136,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function borrowNative(uint256 borrowAmount) external returns (uint256) {
-        require(borrowInternal(borrowAmount, true) == 0, "borrow native failed");
+        require(_borrowInternal(borrowAmount, true) == 0, "borrow native failed");
     }
 
     /**
@@ -147,7 +147,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrow(uint256 repayAmount) external returns (uint256) {
-        (uint256 err, ) = repayBorrowInternal(repayAmount, false);
+        (uint256 err, ) = _repayBorrowInternal(repayAmount, false);
         require(err == 0, "repay failed");
     }
 
@@ -158,7 +158,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrowNative() external payable returns (uint256) {
-        (uint256 err, ) = repayBorrowInternal(msg.value, true);
+        (uint256 err, ) = _repayBorrowInternal(msg.value, true);
         require(err == 0, "repay native failed");
     }
 
@@ -169,7 +169,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
-        (uint256 err, ) = repayBorrowBehalfInternal(borrower, repayAmount, false);
+        (uint256 err, ) = _repayBorrowBehalfInternal(borrower, repayAmount, false);
         require(err == 0, "repay behalf failed");
     }
 
@@ -179,7 +179,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrowBehalfNative(address borrower) external payable returns (uint256) {
-        (uint256 err, ) = repayBorrowBehalfInternal(borrower, msg.value, true);
+        (uint256 err, ) = _repayBorrowBehalfInternal(borrower, msg.value, true);
         require(err == 0, "repay behalf native failed");
     }
 
@@ -198,7 +198,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
         uint256 repayAmount,
         BTokenInterface bTokenCollateral
     ) external returns (uint256) {
-        (uint256 err, ) = liquidateBorrowInternal(borrower, repayAmount, bTokenCollateral, false);
+        (uint256 err, ) = _liquidateBorrowInternal(borrower, repayAmount, bTokenCollateral, false);
         require(err == 0, "liquidate borrow failed");
     }
 
@@ -215,7 +215,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
         address borrower,
         BTokenInterface bTokenCollateral
     ) external payable returns (uint256) {
-        (uint256 err, ) = liquidateBorrowInternal(borrower, msg.value, bTokenCollateral, true);
+        (uint256 err, ) = _liquidateBorrowInternal(borrower, msg.value, bTokenCollateral, true);
         require(err == 0, "liquidate borrow native failed");
     }
 
@@ -230,7 +230,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
             token == underlying &&
             ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, "")
         ) {
-            amount = getCashPrior();
+            amount = _getCashPrior();
         }
         return amount;
     }
@@ -276,17 +276,17 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
             ),
             "flashloan is paused"
         );
-        uint256 cashBefore = getCashPrior();
+        uint256 cashBefore = _getCashPrior();
         require(cashBefore >= amount, "insufficient cash");
 
         // 1. calculate fee, 1 bips = 1/10000
         uint256 totalFee = _flashFee(token, amount);
 
         // 2. transfer fund to receiver
-        doTransferOut(address(uint160(address(receiver))), amount, false);
+        _doTransferOut(address(uint160(address(receiver))), amount, false);
 
         // 3. update totalBorrows
-        totalBorrows = add_(totalBorrows, amount);
+        totalBorrows = _add(totalBorrows, amount);
 
         // 4. execute receiver's callback function
         require(
@@ -296,17 +296,17 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
         );
 
         // 5. take amount + fee from receiver, then check balance
-        uint256 repaymentAmount = add_(amount, totalFee);
+        uint256 repaymentAmount = _add(amount, totalFee);
 
-        doTransferIn(address(receiver), repaymentAmount, false);
+        _doTransferIn(address(receiver), repaymentAmount, false);
 
-        uint256 cashAfter = getCashPrior();
-        require(cashAfter == add_(cashBefore, totalFee), "inconsistent balance");
+        uint256 cashAfter = _getCashPrior();
+        require(cashAfter == _add(cashBefore, totalFee), "inconsistent balance");
 
         // 6. update totalReserves and totalBorrows
-        uint256 reservesFee = mul_ScalarTruncate(Exp({ mantissa: reserveFactorMantissa }), totalFee);
-        totalReserves = add_(totalReserves, reservesFee);
-        totalBorrows = sub_(totalBorrows, amount);
+        uint256 reservesFee = _mulScalarTruncate(Exp({ mantissa: reserveFactorMantissa }), totalFee);
+        totalReserves = _add(totalReserves, reservesFee);
+        totalBorrows = _sub(totalBorrows, amount);
 
         emit Flashloan(address(receiver), amount, totalFee, reservesFee);
         return true;
@@ -319,8 +319,8 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @param amount amount of token to borrow
      * @return The amount of `token` to be charged for the loan, on top of the returned principal.
      */
-    function _flashFee(address token, uint256 amount) internal view returns (uint256) {
-        return div_(mul_(amount, flashFeeBips), 10000);
+    function _flashFee(address token, uint256 amount) internal pure returns (uint256) {
+        return _div(_mul(amount, FLASH_LOAN_FEE_BPS), 10000);
     }
     /* solhint-enable no-unused-vars */
 
@@ -423,7 +423,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
 
             // Calculate the amount that was *actually* transferred
             uint256 balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
-            return sub_(balanceAfter, balanceBefore);
+            return _sub(balanceAfter, balanceBefore);
         }
     }
 
@@ -490,16 +490,16 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
         if (spender == src) {
             startingAllowance = uint256(-1);
         } else {
-            startingAllowance = transferAllowances[src][spender];
+            startingAllowance = _transferAllowances[src][spender];
         }
 
         /* Do the calculations, checking for {under,over}flow */
-        accountTokens[src] = sub_(accountTokens[src], tokens);
-        accountTokens[dst] = add_(accountTokens[dst], tokens);
+        _accountTokens[src] = _sub(_accountTokens[src], tokens);
+        _accountTokens[dst] = _add(_accountTokens[dst], tokens);
 
         /* Eat some of the allowance (if necessary) */
         if (startingAllowance != uint256(-1)) {
-            transferAllowances[src][spender] = sub_(startingAllowance, tokens);
+            _transferAllowances[src][spender] = _sub(startingAllowance, tokens);
         }
 
         /* We emit a Transfer event */
@@ -515,7 +515,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @param account The address of the account
      */
     function _getBTokenBalanceInternal(address account) internal view returns (uint256) {
-        return accountTokens[account];
+        return _accountTokens[account];
     }
 
     struct MintLocalVars {
@@ -546,11 +546,11 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
         }
 
         /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        require(accrualBlockNumber == _getBlockNumber(), "market is stale");
 
         MintLocalVars memory vars;
 
-        vars.exchangeRateMantissa = exchangeRateStoredInternal();
+        vars.exchangeRateMantissa = _exchangeRateStoredInternal();
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -564,21 +564,21 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
          *  in case of a fee. On success, the bToken holds an additional `actualMintAmount`
          *  of cash.
          */
-        vars.actualMintAmount = doTransferIn(minter, mintAmount, isNative);
+        vars.actualMintAmount = _doTransferIn(minter, mintAmount, isNative);
 
         /*
          * We get the current exchange rate and calculate the number of bTokens to be minted:
          *  mintTokens = actualMintAmount / exchangeRate
          */
-        vars.mintTokens = div_ScalarByExpTruncate(vars.actualMintAmount, Exp({ mantissa: vars.exchangeRateMantissa }));
+        vars.mintTokens = _divScalarByExpTruncate(vars.actualMintAmount, Exp({ mantissa: vars.exchangeRateMantissa }));
 
         /*
          * We calculate the new total supply of bTokens and minter token balance, checking for overflow:
          *  totalSupply = totalSupply + mintTokens
          *  accountTokens[minter] = accountTokens[minter] + mintTokens
          */
-        totalSupply = add_(totalSupply, vars.mintTokens);
-        accountTokens[minter] = add_(accountTokens[minter], vars.mintTokens);
+        totalSupply = _add(totalSupply, vars.mintTokens);
+        _accountTokens[minter] = _add(_accountTokens[minter], vars.mintTokens);
 
         /* We emit a Mint event, and a Transfer event */
         emit Mint(minter, vars.actualMintAmount, vars.mintTokens);
@@ -619,7 +619,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
         RedeemLocalVars memory vars;
 
         /* exchangeRate = invoke Exchange Rate Stored() */
-        vars.exchangeRateMantissa = exchangeRateStoredInternal();
+        vars.exchangeRateMantissa = _exchangeRateStoredInternal();
 
         /* If redeemTokensIn > 0: */
         if (redeemTokensIn > 0) {
@@ -629,14 +629,14 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
              *  redeemAmount = redeemTokensIn x exchangeRateCurrent
              */
             vars.redeemTokens = redeemTokensIn;
-            vars.redeemAmount = mul_ScalarTruncate(Exp({ mantissa: vars.exchangeRateMantissa }), redeemTokensIn);
+            vars.redeemAmount = _mulScalarTruncate(Exp({ mantissa: vars.exchangeRateMantissa }), redeemTokensIn);
         } else {
             /*
              * We get the current exchange rate and calculate the amount to be redeemed:
              *  redeemTokens = redeemAmountIn / exchangeRate
              *  redeemAmount = redeemAmountIn
              */
-            vars.redeemTokens = div_ScalarByExpTruncate(redeemAmountIn, Exp({ mantissa: vars.exchangeRateMantissa }));
+            vars.redeemTokens = _divScalarByExpTruncate(redeemAmountIn, Exp({ mantissa: vars.exchangeRateMantissa }));
             vars.redeemAmount = redeemAmountIn;
         }
 
@@ -652,18 +652,18 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
         }
 
         /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        require(accrualBlockNumber == _getBlockNumber(), "market is stale");
 
         /*
          * We calculate the new total supply and redeemer balance, checking for underflow:
          *  totalSupplyNew = totalSupply - redeemTokens
          *  accountTokensNew = accountTokens[redeemer] - redeemTokens
          */
-        vars.totalSupplyNew = sub_(totalSupply, vars.redeemTokens);
-        vars.accountTokensNew = sub_(accountTokens[redeemer], vars.redeemTokens);
+        vars.totalSupplyNew = _sub(totalSupply, vars.redeemTokens);
+        vars.accountTokensNew = _sub(_accountTokens[redeemer], vars.redeemTokens);
 
         /* Reverts if protocol has insufficient cash */
-        require(getCashPrior() >= vars.redeemAmount, "insufficient cash");
+        require(_getCashPrior() >= vars.redeemAmount, "insufficient cash");
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -671,7 +671,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
 
         /* We write previously calculated values into storage */
         totalSupply = vars.totalSupplyNew;
-        accountTokens[redeemer] = vars.accountTokensNew;
+        _accountTokens[redeemer] = vars.accountTokensNew;
 
         /*
          * We invoke doTransferOut for the redeemer and the redeemAmount.
@@ -679,7 +679,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
          *  On success, the bToken has redeemAmount less of cash.
          *  doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
          */
-        doTransferOut(redeemer, vars.redeemAmount, isNative);
+        _doTransferOut(redeemer, vars.redeemAmount, isNative);
 
         /* We emit a Transfer event, and a Redeem event */
         emit Transfer(redeemer, address(this), vars.redeemTokens);
@@ -730,8 +730,8 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
          *  borrowerTokensNew = accountTokens[borrower] - seizeTokens
          *  liquidatorTokensNew = accountTokens[liquidator] + seizeTokens
          */
-        accountTokens[borrower] = sub_(accountTokens[borrower], seizeTokens);
-        accountTokens[liquidator] = add_(accountTokens[liquidator], seizeTokens);
+        _accountTokens[borrower] = _sub(_accountTokens[borrower], seizeTokens);
+        _accountTokens[liquidator] = _add(_accountTokens[liquidator], seizeTokens);
 
         /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, seizeTokens);

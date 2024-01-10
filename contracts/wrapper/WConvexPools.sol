@@ -18,7 +18,7 @@ import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/t
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryErrors.sol" as Errors;
 import { IWConvexPools, ICvxBooster } from "../interfaces/IWConvexPools.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";

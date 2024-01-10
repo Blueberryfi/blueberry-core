@@ -31,7 +31,7 @@ contract BCollateralCapErc20Delegate is BCollateralCapErc20 {
         require(msg.sender == admin, "admin only");
 
         // Set internal cash when becoming implementation
-        internalCash = getCashOnChain();
+        internalCash = _getCashOnChain();
 
         // Set BToken version in comptroller
         ComptrollerInterfaceExtension(address(comptroller)).updateBTokenVersion(

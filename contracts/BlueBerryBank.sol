@@ -15,8 +15,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
-import "./utils/BlueBerryConst.sol" as Constants;
-import "./utils/BlueBerryErrors.sol" as Errors;
+import "./utils/BlueberryConst.sol" as Constants;
+import "./utils/BlueberryErrors.sol" as Errors;
 import "./utils/ERC1155NaiveReceiver.sol";
 import "./interfaces/IBank.sol";
 import "./interfaces/ICoreOracle.sol";
@@ -29,7 +29,7 @@ import "./libraries/UniversalERC20.sol";
 /// @title BlueberryBank
 /// @author BlueberryProtocol
 /// @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
-contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
+contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
@@ -194,7 +194,7 @@ contract BlueBerryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param ok Boolean indicating the desired whitelist status for the provided tokens.
     function whitelistERC1155(address[] memory tokens, bool ok) external onlyOwner {
         for (uint256 i = 0; i < tokens.length; ++i) {
-            address token = tokens[i + 1];
+            address token = tokens[i];
             if (token == address(0)) revert Errors.ZERO_ADDRESS();
             whitelistedWrappedTokens[token] = ok;
             emit SetWhitelistERC1155(token, ok);

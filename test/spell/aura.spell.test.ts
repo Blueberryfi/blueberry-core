@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
-  BlueBerryBank,
+  BlueberryBank,
   IWETH,
   MockOracle,
   WERC20,
@@ -59,7 +59,7 @@ describe('Aura Spell', () => {
   let volatileOracle: CurveVolatileOracle;
   let tricryptoOracle: CurveTricryptoOracle;
   let waura: WAuraPools;
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let protocol: AuraProtocol;
   let auraBooster: IAuraBooster;
   let auraRewarder: IRewarder;

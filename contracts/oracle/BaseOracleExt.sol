@@ -10,7 +10,7 @@
 
 pragma solidity 0.8.22;
 
-import "../utils/BlueBerryConst.sol" as Constants;
+import "../utils/BlueberryConst.sol" as Constants;
 
 abstract contract BaseOracleExt {
     /*//////////////////////////////////////////////////////////////////////////

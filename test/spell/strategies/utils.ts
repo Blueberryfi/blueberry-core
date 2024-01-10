@@ -9,7 +9,7 @@ import {
   SoftVault,
   HardVault,
   BErc20Delegator,
-  BlueBerryBank,
+  BlueberryBank,
   ERC20,
   FeeManager,
   StableBPTOracle,
@@ -131,7 +131,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
 };
 
 export const setupVaults = async (
-  bank: BlueBerryBank,
+  bank: BlueberryBank,
   oracle: CoreOracle,
   config: ProtocolConfig,
   signer: SignerWithAddress
@@ -169,7 +169,7 @@ export const setupVaults = async (
     softVaults.push(softVault);
     bTokenList.push(bToken);
 
-    await bTokens.comptroller._setCreditLimit(bank.address, bToken.address, utils.parseEther('3000000'));
+    await bTokens.comptroller.setCreditLimit(bank.address, bToken.address, utils.parseEther('3000000'));
 
     const underlyingToken = <ERC20>await ethers.getContractAt('ERC20', await bToken.underlying());
     tokens.push(underlyingToken);
@@ -211,10 +211,10 @@ export const setupBasicBank = async (): Promise<Protocol> => {
 
   const oracle = await setupOracles();
 
-  const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
+  const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
 
-  const bank = <BlueBerryBank>(
-    await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
+  const bank = <BlueberryBank>(
+    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
   );
 
   const vaults = await setupVaults(bank, oracle, config, admin);
@@ -276,7 +276,7 @@ export type Vaults = {
 };
 
 export type Protocol = {
-  bank: BlueBerryBank;
+  bank: BlueberryBank;
   oracle: CoreOracle;
   config: ProtocolConfig;
   feeManager: FeeManager;

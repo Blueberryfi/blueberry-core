@@ -1,5 +1,5 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BlueBerryBank, WERC20, ERC20, ShortLongSpell, SoftVault } from '../../../../typechain-types';
+import { BlueberryBank, WERC20, ERC20, ShortLongSpell, SoftVault } from '../../../../typechain-types';
 import { ethers } from 'hardhat';
 import { ADDRESS } from '../../../../constant';
 import {
@@ -38,7 +38,7 @@ describe('ShortLong Spell Test test', () => {
   let wstETH: ERC20;
   let werc20: WERC20;
   let spell: ShortLongSpell;
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let protocol: ShortLongProtocol;
   let daiSoftVault: SoftVault;
   let linkSoftVault: SoftVault;

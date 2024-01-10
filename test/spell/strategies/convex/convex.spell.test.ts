@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
-  BlueBerryBank,
+  BlueberryBank,
   IWETH,
   ERC20,
   ConvexSpell,
@@ -58,7 +58,7 @@ describe('Convex Spells Deploy', () => {
   let weth: IWETH;
   let spell: ConvexSpell;
   let wconvex: WConvexPools;
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let protocol: CvxProtocol;
   let cvxBooster: ICvxBooster;
   let crvRewarder1: IRewarder;

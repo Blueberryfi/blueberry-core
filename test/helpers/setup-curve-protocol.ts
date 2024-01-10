@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, utils, Contract } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import {
-  BlueBerryBank,
+  BlueberryBank,
   CoreOracle,
   IWETH,
   MockOracle,
@@ -43,7 +43,7 @@ export interface CrvProtocol {
   tricryptoOracle: CurveTricryptoOracle;
   oracle: CoreOracle;
   config: ProtocolConfig;
-  bank: BlueBerryBank;
+  bank: BlueberryBank;
   curveSpell: CurveSpell;
   usdcSoftVault: SoftVault;
   crvSoftVault: SoftVault;
@@ -85,7 +85,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
 
   let config: ProtocolConfig;
   let feeManager: FeeManager;
-  let bank: BlueBerryBank;
+  let bank: BlueberryBank;
   let usdcSoftVault: SoftVault;
   let crvSoftVault: SoftVault;
   let daiSoftVault: SoftVault;
@@ -238,9 +238,9 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   await feeManager.deployed();
   await config.setFeeManager(feeManager.address);
 
-  const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-  bank = <BlueBerryBank>(
-    await upgrades.deployProxy(BlueBerryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
+  const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
+  bank = <BlueberryBank>(
+    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
   );
   await bank.deployed();
 
@@ -332,9 +332,9 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
 
   // Whitelist bank contract on compound
-  await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
-  await comptroller._setCreditLimit(bank.address, bCRV.address, utils.parseUnits('3000000'));
-  await comptroller._setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
+  await comptroller.setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
+  await comptroller.setCreditLimit(bank.address, bCRV.address, utils.parseUnits('3000000'));
+  await comptroller.setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits('500', 6));

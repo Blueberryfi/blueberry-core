@@ -94,8 +94,8 @@ describe('WConvexPools', () => {
 
   describe('#initialize', () => {
     it('check initial values', async () => {
-      expect(await wConvexPools.CVX()).to.be.eq(cvx.address);
-      expect(await wConvexPools.cvxPools()).to.be.eq(booster.address);
+      expect(await wConvexPools.cvxToken()).to.be.eq(cvx.address);
+      expect(await wConvexPools.cvxBooster()).to.be.eq(booster.address);
     });
 
     it('should revert initializing twice', async () => {

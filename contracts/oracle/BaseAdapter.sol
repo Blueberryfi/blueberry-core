@@ -11,8 +11,8 @@
 pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/BlueBerryConst.sol" as Constants;
+import "../utils/BlueberryErrors.sol" as Errors;
+import "../utils/BlueberryConst.sol" as Constants;
 
 /// @title BaseAdapter
 /// @author BlueberryProtocol

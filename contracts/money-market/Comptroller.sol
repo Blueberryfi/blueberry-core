@@ -107,7 +107,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         for (uint256 i = 0; i < len; ++i) {
             BToken bToken = BToken(bTokens[i]);
 
-            results[i] = uint256(addToMarketInternal(bToken, msg.sender));
+            results[i] = uint256(_addToMarketInternal(bToken, msg.sender));
         }
 
         return results;
@@ -164,7 +164,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         require(amountOwed == 0, "nonzero borrow balance");
 
         /* Fail if the sender is not permitted to redeem all of their tokens */
-        require(redeemAllowedInternal(bTokenAddress, msg.sender, tokensHeld) == 0, "failed to exit market");
+        require(_redeemAllowedInternal(bTokenAddress, msg.sender, tokensHeld) == 0, "failed to exit market");
 
         Market storage marketToExit = markets[bTokenAddress];
 
@@ -269,10 +269,10 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             uint256 totalBorrows = BToken(bToken).totalBorrows();
             uint256 totalReserves = BToken(bToken).totalReserves();
             // totalSupplies = totalCash + totalBorrows - totalReserves
-            (MathError mathErr, uint256 totalSupplies) = addThenSubUInt(totalCash, totalBorrows, totalReserves);
+            (MathError mathErr, uint256 totalSupplies) = _addThenSubUInt(totalCash, totalBorrows, totalReserves);
             require(mathErr == MathError.NO_ERROR, "totalSupplies failed");
 
-            uint256 nextTotalSupplies = add_(totalSupplies, mintAmount);
+            uint256 nextTotalSupplies = _add(totalSupplies, mintAmount);
             require(nextTotalSupplies < supplyCap, "market supply cap reached");
         }
 
@@ -307,7 +307,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
     function redeemAllowed(address bToken, address redeemer, uint256 redeemTokens) external returns (uint256) {
-        return redeemAllowedInternal(bToken, redeemer, redeemTokens);
+        return _redeemAllowedInternal(bToken, redeemer, redeemTokens);
     }
 
     function _redeemAllowedInternal(
@@ -324,7 +324,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         }
 
         /* Otherwise, perform a hypothetical liquidity check to guard against shortfall */
-        (Error err, , uint256 shortfall) = getHypotheticalAccountLiquidityInternal(
+        (Error err, , uint256 shortfall) = _getHypotheticalAccountLiquidityInternal(
             redeemer,
             BToken(bToken),
             redeemTokens,
@@ -372,7 +372,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             require(msg.sender == bToken, "sender must be bToken");
 
             // attempt to add borrower to the market
-            require(addToMarketInternal(BToken(bToken), borrower) == Error.NO_ERROR, "failed to add market");
+            require(_addToMarketInternal(BToken(bToken), borrower) == Error.NO_ERROR, "failed to add market");
 
             // it should be impossible to break the important invariant
             assert(markets[bToken].accountMembership[borrower]);
@@ -384,7 +384,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         // Borrow cap of 0 corresponds to unlimited borrowing
         if (borrowCap != 0) {
             uint256 totalBorrows = BToken(bToken).totalBorrows();
-            uint256 nextTotalBorrows = add_(totalBorrows, borrowAmount);
+            uint256 nextTotalBorrows = _add(totalBorrows, borrowAmount);
             require(nextTotalBorrows < borrowCap, "market borrow cap reached");
         }
         uint256 creditLimit = _creditLimits[borrower][bToken];
@@ -392,9 +392,9 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         if (creditLimit > 0) {
             (uint256 oErr, , uint256 borrowBalance, ) = BToken(bToken).getAccountSnapshot(borrower);
             require(oErr == 0, "snapshot error");
-            require(creditLimit >= add_(borrowBalance, borrowAmount), "insufficient credit limit");
+            require(creditLimit >= _add(borrowBalance, borrowAmount), "insufficient credit limit");
         } else {
-            (Error err, , uint256 shortfall) = getHypotheticalAccountLiquidityInternal(
+            (Error err, , uint256 shortfall) = _getHypotheticalAccountLiquidityInternal(
                 borrower,
                 BToken(bToken),
                 0,
@@ -503,13 +503,13 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         );
 
         /* The borrower must have shortfall in order to be liquidatable */
-        (Error err, , uint256 shortfall) = getAccountLiquidityInternal(borrower);
+        (Error err, , uint256 shortfall) = _getAccountLiquidityInternal(borrower);
         require(err == Error.NO_ERROR, "failed to get account liquidity");
         require(shortfall > 0, "insufficient shortfall");
 
         /* The liquidator may not repay more than what is allowed by the closeFactor */
         uint256 borrowBalance = BToken(bTokenBorrowed).borrowBalanceStored(borrower);
-        uint256 maxClose = mul_ScalarTruncate(Exp({ mantissa: closeFactorMantissa }), borrowBalance);
+        uint256 maxClose = _mulScalarTruncate(Exp({ mantissa: closeFactorMantissa }), borrowBalance);
         if (repayAmount > maxClose) {
             return uint256(Error.TOO_MUCH_REPAY);
         }
@@ -630,7 +630,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
-        return redeemAllowedInternal(bToken, src, transferTokens);
+        return _redeemAllowedInternal(bToken, src, transferTokens);
     }
 
     /**
@@ -728,7 +728,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      *          account shortfall below collateral requirements)
      */
     function getAccountLiquidity(address account) public view returns (uint256, uint256, uint256) {
-        (Error err, uint256 liquidity, uint256 shortfall) = getHypotheticalAccountLiquidityInternal(
+        (Error err, uint256 liquidity, uint256 shortfall) = _getHypotheticalAccountLiquidityInternal(
             account,
             BToken(0),
             0,
@@ -745,7 +745,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      *          account shortfall below collateral requirements)
      */
     function _getAccountLiquidityInternal(address account) internal view returns (Error, uint256, uint256) {
-        return getHypotheticalAccountLiquidityInternal(account, BToken(0), 0, 0);
+        return _getHypotheticalAccountLiquidityInternal(account, BToken(0), 0, 0);
     }
 
     /**
@@ -764,7 +764,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         uint256 redeemTokens,
         uint256 borrowAmount
     ) public view returns (uint256, uint256, uint256) {
-        (Error err, uint256 liquidity, uint256 shortfall) = getHypotheticalAccountLiquidityInternal(
+        (Error err, uint256 liquidity, uint256 shortfall) = _getHypotheticalAccountLiquidityInternal(
             account,
             BToken(bTokenModify),
             redeemTokens,
@@ -827,13 +827,13 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             vars.oraclePrice = Exp({ mantissa: vars.oraclePriceMantissa });
 
             // Pre-compute a conversion factor from tokens -> ether (normalized price value)
-            vars.tokensToDenom = mul_(mul_(vars.collateralFactor, vars.exchangeRate), vars.oraclePrice);
+            vars.tokensToDenom = _mul(_mul(vars.collateralFactor, vars.exchangeRate), vars.oraclePrice);
 
             // sumCollateral += tokensToDenom * bTokenBalance
-            vars.sumCollateral = mul_ScalarTruncateAddUInt(vars.tokensToDenom, vars.bTokenBalance, vars.sumCollateral);
+            vars.sumCollateral = _mulScalarTruncateAddUInt(vars.tokensToDenom, vars.bTokenBalance, vars.sumCollateral);
 
             // sumBorrowPlusEffects += oraclePrice * borrowBalance
-            vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(
+            vars.sumBorrowPlusEffects = _mulScalarTruncateAddUInt(
                 vars.oraclePrice,
                 vars.borrowBalance,
                 vars.sumBorrowPlusEffects
@@ -843,7 +843,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             if (asset == bTokenModify) {
                 // redeem effect
                 // sumBorrowPlusEffects += tokensToDenom * redeemTokens
-                vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(
+                vars.sumBorrowPlusEffects = _mulScalarTruncateAddUInt(
                     vars.tokensToDenom,
                     redeemTokens,
                     vars.sumBorrowPlusEffects
@@ -851,7 +851,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
                 // borrow effect
                 // sumBorrowPlusEffects += oraclePrice * borrowAmount
-                vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(
+                vars.sumBorrowPlusEffects = _mulScalarTruncateAddUInt(
                     vars.oraclePrice,
                     borrowAmount,
                     vars.sumBorrowPlusEffects
@@ -892,16 +892,16 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
          *   = actualRepayAmount * (liquidationIncentive * priceBorrowed) / (priceCollateral * exchangeRate)
          */
         uint256 exchangeRateMantissa = BToken(bTokenCollateral).exchangeRateStored(); // Note: reverts on error
-        Exp memory numerator = mul_(
+        Exp memory numerator = _mul(
             Exp({ mantissa: liquidationIncentiveMantissa }),
             Exp({ mantissa: priceBorrowedMantissa })
         );
-        Exp memory denominator = mul_(
+        Exp memory denominator = _mul(
             Exp({ mantissa: priceCollateralMantissa }),
             Exp({ mantissa: exchangeRateMantissa })
         );
-        Exp memory ratio = div_(numerator, denominator);
-        uint256 seizeTokens = mul_ScalarTruncate(ratio, actualRepayAmount);
+        Exp memory ratio = _div(numerator, denominator);
+        uint256 seizeTokens = _mulScalarTruncate(ratio, actualRepayAmount);
 
         return (uint256(Error.NO_ERROR), seizeTokens);
     }
@@ -916,7 +916,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     function setPriceOracle(PriceOracle newOracle) public returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PRICE_ORACLE_OWNER_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.SET_PRICE_ORACLE_OWNER_CHECK);
         }
 
         // Track the old oracle for the comptroller
@@ -939,7 +939,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     function setCloseFactor(uint256 newCloseFactorMantissa) external returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_CLOSE_FACTOR_OWNER_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.SET_CLOSE_FACTOR_OWNER_CHECK);
         }
 
         uint256 oldCloseFactorMantissa = closeFactorMantissa;
@@ -959,26 +959,26 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     function setCollateralFactor(BToken bToken, uint256 newCollateralFactorMantissa) external returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_COLLATERAL_FACTOR_OWNER_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.SET_COLLATERAL_FACTOR_OWNER_CHECK);
         }
 
         // Verify market is listed
         Market storage market = markets[address(bToken)];
         if (!market.isListed) {
-            return fail(Error.MARKET_NOT_LISTED, FailureInfo.SET_COLLATERAL_FACTOR_NO_EXISTS);
+            return _fail(Error.MARKET_NOT_LISTED, FailureInfo.SET_COLLATERAL_FACTOR_NO_EXISTS);
         }
 
         Exp memory newCollateralFactorExp = Exp({ mantissa: newCollateralFactorMantissa });
 
         // Check collateral factor <= 0.9
-        Exp memory highLimit = Exp({ mantissa: collateralFactorMaxMantissa });
-        if (lessThanExp(highLimit, newCollateralFactorExp)) {
-            return fail(Error.INVALID_COLLATERAL_FACTOR, FailureInfo.SET_COLLATERAL_FACTOR_VALIDATION);
+        Exp memory highLimit = Exp({ mantissa: _COLLATERAL_FACTOR_MAX_MANTISSA });
+        if (_lessThanExp(highLimit, newCollateralFactorExp)) {
+            return _fail(Error.INVALID_COLLATERAL_FACTOR, FailureInfo.SET_COLLATERAL_FACTOR_VALIDATION);
         }
 
         // If collateral factor != 0, fail if price == 0
         if (newCollateralFactorMantissa != 0 && oracle.getUnderlyingPrice(bToken) == 0) {
-            return fail(Error.PRICE_ERROR, FailureInfo.SET_COLLATERAL_FACTOR_WITHOUT_PRICE);
+            return _fail(Error.PRICE_ERROR, FailureInfo.SET_COLLATERAL_FACTOR_WITHOUT_PRICE);
         }
 
         // Set market's collateral factor to new collateral factor, remember old value
@@ -1000,7 +1000,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     function setLiquidationIncentive(uint256 newLiquidationIncentiveMantissa) external returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_LIQUIDATION_INCENTIVE_OWNER_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.SET_LIQUIDATION_INCENTIVE_OWNER_CHECK);
         }
 
         // Save current value for use in log
@@ -1134,7 +1134,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      */
     function setGuardian(address newGuardian) public returns (uint256) {
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PAUSE_GUARDIAN_OWNER_CHECK);
+            return _fail(Error.UNAUTHORIZED, FailureInfo.SET_PAUSE_GUARDIAN_OWNER_CHECK);
         }
 
         // Save current value for inclusion in log
@@ -1235,7 +1235,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
     function become(Unitroller unitroller) public {
         require(msg.sender == unitroller.admin(), "unitroller admin only");
-        require(unitroller._acceptImplementation() == 0, "unauthorized");
+        require(unitroller.acceptImplementation() == 0, "unauthorized");
     }
 
     /**

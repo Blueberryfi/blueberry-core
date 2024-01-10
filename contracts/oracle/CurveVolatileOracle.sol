@@ -12,7 +12,7 @@ pragma solidity 0.8.22;
 
 import "./CurveBaseOracle.sol";
 import "../libraries/balancer-v2/FixedPoint.sol";
-import "../utils/BlueBerryConst.sol" as Constants;
+import "../utils/BlueberryConst.sol" as Constants;
 
 /// @author BlueberryProtocol
 /// @title Curve Volatile Oracle
@@ -58,7 +58,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
     /// @dev Internal implementation for setting the limiter
     function _setLimiter(address _crvLp, uint256 _lowerBound) internal {
         if (_lowerBound == 0 || !_checkCurrentValueInBounds(_crvLp, _lowerBound, _upperBound(_lowerBound)))
-            revert BlueBerryErrors.INCORRECT_LIMITS();
+            revert Errors.INCORRECT_LIMITS();
 
         lowerBound[_crvLp] = _lowerBound;
         emit NewLimiterParams(_lowerBound, _upperBound(_lowerBound));
@@ -118,7 +118,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
     /// @param value Value to be checked and bounded
     function _checkAndUpperBoundValue(address crvLp, uint256 value) internal view returns (uint256) {
         uint256 lb = lowerBound[crvLp];
-        if (value < lb) revert BlueBerryErrors.VALUE_OUT_OF_RANGE();
+        if (value < lb) revert Errors.VALUE_OUT_OF_RANGE();
 
         uint256 uBound = _upperBound(lb);
 

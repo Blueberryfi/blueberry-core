@@ -13,7 +13,7 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../utils/BlueBerryErrors.sol" as BlueBerryErrors;
+import "../utils/BlueberryErrors.sol" as Errors;
 import "./UsingBaseOracle.sol";
 import "../interfaces/ICurveOracle.sol";
 import "../interfaces/curve/ICurveRegistry.sol";
@@ -106,7 +106,7 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
             return (pool, ulTokens, virtualPrice);
         }
 
-        revert BlueBerryErrors.ORACLE_NOT_SUPPORT_LP(crvLp);
+        revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
 
     /// @dev Internal function to check for reentrancy issues with Curve pools.

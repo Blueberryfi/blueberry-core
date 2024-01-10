@@ -14,8 +14,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "./interfaces/IProtocolConfig.sol";
-import "./utils/BlueBerryConst.sol" as Constants;
-import "./utils/BlueBerryErrors.sol" as Errors;
+import "./utils/BlueberryConst.sol" as Constants;
+import "./utils/BlueberryErrors.sol" as Errors;
 
 /// @title FeeManager
 /// @author BlueberryProtocol

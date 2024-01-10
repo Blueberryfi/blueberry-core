@@ -123,7 +123,7 @@ contract ConvexSpell is BasicSpell {
             uint256 ethValue;
             uint256 tokenBalance = IERC20(borrowToken).balanceOf(address(this));
             require(borrowBalance <= tokenBalance, "impossible");
-            bool isBorrowTokenWeth = borrowToken == WETH;
+            bool isBorrowTokenWeth = borrowToken == weth;
             if (isBorrowTokenWeth) {
                 bool hasEth;
                 uint256 tokenLength = tokens.length;
@@ -328,7 +328,7 @@ contract ConvexSpell is BasicSpell {
         }
 
         if (tokens[uint128(tokenIndex)] == ETH) {
-            IWETH(WETH).deposit{ value: address(this).balance }();
+            IWETH(weth).deposit{ value: address(this).balance }();
         }
     }
 

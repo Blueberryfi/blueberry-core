@@ -13,7 +13,7 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "./UsingBaseOracle.sol";
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryErrors.sol" as Errors;
 
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/balancer-v2/IBalancerV2WeightedPool.sol";

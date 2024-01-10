@@ -49,7 +49,7 @@ contract CurveTricryptoOracle is CurveBaseOracle {
         if (tokens.length == 3) {
             return _lpPrice(virtualPrice, base.getPrice(tokens[0]), base.getPrice(tokens[1]), base.getPrice(tokens[2]));
         }
-        revert BlueBerryErrors.ORACLE_NOT_SUPPORT_LP(crvLp);
+        revert Errors.ORACLE_NOT_SUPPORT_LP(crvLp);
     }
 
     /// @dev Calculates the LP price using provided token prices and virtual price.

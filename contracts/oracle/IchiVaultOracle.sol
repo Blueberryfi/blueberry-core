@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./UsingBaseOracle.sol";
 import "./BaseOracleExt.sol";
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryErrors.sol" as Errors;
 import "../libraries/UniV3/UniV3WrappedLibContainer.sol";
 import "../interfaces/IBaseOracle.sol";
 import "../interfaces/ichi/IICHIVault.sol";
