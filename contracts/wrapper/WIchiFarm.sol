@@ -61,16 +61,16 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Initializes the contract with the given ICHI token addresses.
-    /// @param ichiV2_ Address of ICHI v2 token.
+    /// @param ichi_ Address of ICHI v2 token.
     /// @param ichiV1_ Address of legacy ICHI token.
     /// @param ichiFarm_ Address of ICHI farming contract.
-    function initialize(address ichiV2_, address ichiV1_, address ichiFarm_) external initializer {
-        if (address(ichiV2_) == address(0) || address(ichiV1_) == address(0) || address(ichiFarm_) == address(0))
+    function initialize(address ichi_, address ichiV1_, address ichiFarm_) external initializer {
+        if (address(ichi_) == address(0) || address(ichiV1_) == address(0) || address(ichiFarm_) == address(0))
             revert Errors.ZERO_ADDRESS();
         __ReentrancyGuard_init();
         __ERC1155_init("WIchiFarm");
-        ichiV2 = IIchiV2(ichiV2_);
-        ichiV1 = IERC20Upgradeable(ichiV1);
+        ichiV2 = IIchiV2(ichi_);
+        ichiV1 = IERC20Upgradeable(ichiV1_);
         ichiFarm = IIchiFarm(ichiFarm_);
     }
 

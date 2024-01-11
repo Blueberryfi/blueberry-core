@@ -34,12 +34,16 @@ contract IchiSpell is BasicSpell {
                                    PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
+    /// @dev Temporary state to store Uniswap V3 pool for swapping operations.
+    IUniswapV3Pool private SWAP_POOL;
+
     /// @dev Address of the Uniswap V3 router.
-    IUniswapV3Router private _uniV3Router;
+    IUniswapV3Router private uniV3Router;
+
     /// @dev Address of the ICHI farm wrapper.
     IWIchiFarm public wIchiFarm;
     /// @dev Address of the ICHI token.
-    address public ichiToken;
+    address public ichiV2;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -75,10 +79,10 @@ contract IchiSpell is BasicSpell {
         if (wichiFarm_ == address(0)) revert Errors.ZERO_ADDRESS();
 
         wIchiFarm = IWIchiFarm(wichiFarm_);
-        ichiToken = address(wIchiFarm.ichiV2());
+        ichiV2 = address(wIchiFarm.ichiV2());
         wIchiFarm.setApprovalForAll(address(bank_), true);
 
-        _uniV3Router = IUniswapV3Router(uniV3Router_);
+        uniV3Router = IUniswapV3Router(uniV3Router_);
     }
 
     /// @notice Adds a strategy to the contract.
@@ -108,7 +112,7 @@ contract IchiSpell is BasicSpell {
         bool isTokenA = vault.token0() == param.borrowToken;
         IERC20(param.borrowToken).universalApprove(address(vault), borrowBalance);
 
-        uint256 ichiVaultShare;
+        uint ichiVaultShare;
         if (isTokenA) {
             ichiVaultShare = vault.deposit(borrowBalance, 0, address(this));
         } else {
@@ -161,7 +165,7 @@ contract IchiSpell is BasicSpell {
                 if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
                 bank.takeCollateral(collSize);
                 wIchiFarm.burn(collId, collSize);
-                _doRefundRewards(ichiToken);
+                _doRefundRewards(ichiV2);
             }
         }
 
@@ -215,8 +219,8 @@ contract IchiSpell is BasicSpell {
                 sqrtPriceLimitX96: 0
             });
 
-            IERC20(params.tokenIn).universalApprove(address(_uniV3Router), amountIn);
-            _uniV3Router.exactInputSingle(params);
+            IERC20(params.tokenIn).universalApprove(address(uniV3Router), amountIn);
+            uniV3Router.exactInputSingle(params);
         }
 
         /// 5. Withdraw isolated collateral from Bank
@@ -264,12 +268,12 @@ contract IchiSpell is BasicSpell {
         /// 1. Take out collateral
         bank.takeCollateral(param.amountPosRemove);
         wIchiFarm.burn(collId, param.amountPosRemove);
-        _doRefundRewards(ichiToken);
+        _doRefundRewards(ichiV2);
 
         /// 2-8. Remove liquidity
         _withdraw(param);
 
         /// 9. Refund ichi token
-        _doRefund(ichiToken);
+        _doRefund(ichiV2);
     }
 }
