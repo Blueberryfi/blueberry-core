@@ -26,6 +26,7 @@ const WETH = ADDRESS.WETH;
 const DAI = ADDRESS.DAI;
 const WstETH = ADDRESS.wstETH;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('ShortLong Spell Test test', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;

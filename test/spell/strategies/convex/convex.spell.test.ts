@@ -39,14 +39,13 @@ const POOL_ID_FRXETH = ADDRESS.CVX_FraxEth_Id;
 const POOL_ID_MIM = ADDRESS.CVX_MIM_Id;
 const POOL_ID_CVXCRV = ADDRESS.CVX_CvxCrv_Id;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Convex Spells Deploy', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
 
   let dai: ERC20;
-  let usdc: ERC20;
-  let crv: ERC20;
   let wbtc: ERC20;
   let wstETH: ERC20;
   let link: ERC20;
@@ -77,8 +76,6 @@ describe('Convex Spells Deploy', () => {
     [admin, alice, treasury] = await ethers.getSigners();
 
     dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
-    usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
-    crv = <ERC20>await ethers.getContractAt('ERC20', CRV);
     wbtc = <ERC20>await ethers.getContractAt('ERC20', WBTC);
     wstETH = <ERC20>await ethers.getContractAt('ERC20', WstETH);
     link = <ERC20>await ethers.getContractAt('ERC20', LINK);

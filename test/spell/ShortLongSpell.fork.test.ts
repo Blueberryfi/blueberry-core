@@ -18,6 +18,7 @@ const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('ShortLong Spell mainnet fork', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;

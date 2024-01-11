@@ -15,6 +15,7 @@ chai.use(roughlyNear);
 
 const OneDay = 86400;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Chainlink Adapter Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;

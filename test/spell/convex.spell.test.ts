@@ -1,15 +1,10 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   BlueberryBank,
-  IWETH,
   MockOracle,
   WERC20,
-  WCurveGauge,
   ERC20,
-  CurveSpell,
   CurveStableOracle,
-  CurveVolatileOracle,
-  CurveTricryptoOracle,
   ConvexSpell,
   WConvexPools,
   ICvxBooster,
@@ -38,7 +33,6 @@ const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 const CVX = ADDRESS.CVX;
 const POOL_ID_1 = ADDRESS.CVX_3Crv_Id;
-const POOL_ID_2 = ADDRESS.CVX_FraxEth_Id;
 const POOL_ID_3 = ADDRESS.CVX_MIM_Id;
 
 describe('Convex Spell', () => {
@@ -47,23 +41,17 @@ describe('Convex Spell', () => {
   let treasury: SignerWithAddress;
 
   let usdc: ERC20;
-  let dai: ERC20;
   let crv: ERC20;
   let cvx: ERC20;
-  let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: ConvexSpell;
-  let volatileSpell: ConvexSpell;
   let stableOracle: CurveStableOracle;
-  let volatileOracle: CurveVolatileOracle;
-  let tricryptoOracle: CurveTricryptoOracle;
   let wconvex: WConvexPools;
   let bank: BlueberryBank;
   let protocol: CvxProtocol;
   let cvxBooster: ICvxBooster;
   let crvRewarder1: IRewarder;
-  let crvRewarder2: IRewarder;
   let config: ProtocolConfig;
 
   before(async () => {
@@ -71,28 +59,21 @@ describe('Convex Spell', () => {
     console.log('forked');
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
-    dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     crv = <ERC20>await ethers.getContractAt('ERC20', CRV);
     cvx = <ERC20>await ethers.getContractAt('ERC20', CVX);
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
-    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
     cvxBooster = <ICvxBooster>await ethers.getContractAt('ICvxBooster', ADDRESS.CVX_BOOSTER);
     const poolInfo1 = await cvxBooster.poolInfo(POOL_ID_1);
     crvRewarder1 = <IRewarder>await ethers.getContractAt('IRewarder', poolInfo1.crvRewards);
-    const poolInfo2 = await cvxBooster.poolInfo(POOL_ID_2);
-    crvRewarder2 = <IRewarder>await ethers.getContractAt('IRewarder', poolInfo2.crvRewards);
 
     protocol = await setupCvxProtocol();
 
     bank = protocol.bank;
     spell = protocol.convexSpell;
-    volatileSpell = protocol.convexSpellWithVolatileOracle;
     wconvex = protocol.wconvex;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
     stableOracle = protocol.stableOracle;
-    volatileOracle = protocol.volatileOracle;
-    tricryptoOracle = protocol.tricryptoOracle;
     config = protocol.config;
   });
 
@@ -529,7 +510,7 @@ describe('Convex Spell', () => {
       const positionId = (await bank.nextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
-      const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
+      await bank.callStatic.currentPositionDebt(positionId);
 
       const totalEarned = await crvRewarder1.earned(wconvex.address);
       console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));
@@ -539,8 +520,7 @@ describe('Convex Spell', () => {
 
       const rewardFeeRatio = await config.rewardFee();
 
-      const expectedAmounts = pendingRewardsInfo.rewards.map((reward, idx) => {
-        const rewardAmount = utils.parseUnits('10', 18);
+      const expectedAmounts = pendingRewardsInfo.rewards.map((reward) => {
         return (
           reward
             //await crv.transfer(spell.address, rewardAmount);
@@ -550,7 +530,7 @@ describe('Convex Spell', () => {
         );
       });
 
-      const swapDatas = await Promise.all(
+      await Promise.all(
         pendingRewardsInfo.tokens.map((token, idx) => {
           if (expectedAmounts[idx].gt(0)) {
             return getParaswapCalldata(token, USDC, expectedAmounts[idx], spell.address, 100);
@@ -563,7 +543,7 @@ describe('Convex Spell', () => {
       );
 
       const amountToSwap = utils.parseUnits('30', 18);
-      const swapData = (await getParaswapCalldata(CRV, USDC, amountToSwap, spell.address, 100)).data;
+      await getParaswapCalldata(CRV, USDC, amountToSwap, spell.address, 100);
 
       it('should be able to harvest on Convex 2', async () => {
         await evm_mine_blocks(1000);

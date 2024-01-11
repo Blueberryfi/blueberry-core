@@ -9,7 +9,6 @@ import {
   SoftVault,
   WERC20,
   ProtocolConfig,
-  IComptroller,
   ERC20,
   IUniswapV2Router02,
   HardVault,
@@ -24,7 +23,9 @@ import {
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from './money-market';
 import { impersonateAccount } from '.';
-import { mock } from 'node:test';
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable prefer-const */
 
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;

@@ -1,5 +1,5 @@
-import chai, { expect } from 'chai';
-import { BigNumber, constants, utils } from 'ethers';
+import { expect } from 'chai';
+import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
@@ -15,7 +15,7 @@ import {
   PoolEscrow,
   PoolEscrowFactory,
 } from '../../typechain-types';
-import { evm_increaseTime, evm_mine_blocks, generateRandomAddress } from '../helpers';
+import { generateRandomAddress } from '../helpers';
 
 describe('wAuraPools', () => {
   let alice: SignerWithAddress;
@@ -286,7 +286,7 @@ describe('wAuraPools', () => {
 
         const newTokenId = rewardPerToken;
 
-        const res = await wAuraPools.pendingRewards(newTokenId, auraMaxSupply);
+        await wAuraPools.pendingRewards(newTokenId, auraMaxSupply);
       });
 
       it('return 0 if cliff is equal or greater than totalCliffs (when supply is same as max)', async () => {
@@ -401,15 +401,7 @@ describe('wAuraPools', () => {
     it('receive rewards', async () => {
       const res = await wAuraPools.pendingRewards(tokenId, amount);
 
-      const beforeAliceBalance = await aura.balanceOf(alice.address);
       await wAuraPools.burn(tokenId, amount);
-
-      const expectedAuraRewards = newauraRewardPerToken
-        .sub(auraRewardPerToken)
-        .mul(amount)
-        .div(BigNumber.from(10).pow(8));
-
-      const expectedStashRewards = newExtraRewardPerToken.sub(extraRewardPerToken);
 
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
       expect(await aura.balanceOf(alice.address)).to.be.gte(res[1][1]);

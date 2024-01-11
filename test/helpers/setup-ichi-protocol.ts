@@ -12,7 +12,6 @@ import {
   WERC20,
   WIchiFarm,
   ProtocolConfig,
-  IComptroller,
   MockIchiVault,
   MockIchiFarm,
   ERC20,
@@ -26,6 +25,8 @@ import {
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from './money-market';
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable prefer-const */
 const WETH = ADDRESS.WETH;
 const wstETH = ADDRESS.wstETH;
 const USDC = ADDRESS.USDC;
@@ -33,7 +34,6 @@ const DAI = ADDRESS.DAI;
 const ICHI = ADDRESS.ICHI;
 const ICHIV1 = ADDRESS.ICHI_FARM;
 const UNI_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
-const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
 const ETH_PRICE = 1600;
 
 export interface Protocol {
@@ -283,12 +283,12 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiSpell.addStrategy(ichi_USDC_DAI_Vault.address, utils.parseUnits('10', 18), utils.parseUnits('2000', 18));
   await ichiSpell.setCollateralsMaxLTVs(0, [USDC, ICHI, DAI, wstETH, WETH], [30000, 30000, 30000, 30000, 30000]);
   await ichiSpell.setCollateralsMaxLTVs(1, [USDC, ICHI, DAI, wstETH, WETH], [30000, 30000, 30000, 30000, 30000]);
-  
+
   // Setup Bank
   await bank.whitelistSpells([ichiSpell.address], [true]);
   await bank.whitelistTokens([USDC, ICHI, DAI, wstETH, WETH], [true, true, true, true, true]);
   await bank.whitelistERC1155([werc20.address, wichi.address], true);
-  
+
   const bTokens = await deployBTokens(admin.address, oracle.address);
   comptroller = bTokens.comptroller;
   bUSDC = bTokens.bUSDC;

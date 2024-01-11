@@ -9,7 +9,8 @@ module.exports = {
       'mocha-no-only/mocha-no-only': ['error'],
       'padding-line-between-statements': 'error',
       'no-shadow': 'off',
-      '@typescript-eslint/no-shadow': ['error'],
+      '@typescript-eslint/no-shadow': 'off',
       'no-var': 'error',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   };

@@ -1,10 +1,11 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import chai, { expect } from 'chai';
+import { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { MockOracle, UniswapV3AdapterOracle } from '../../typechain-types';
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Uniswap V3 Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;

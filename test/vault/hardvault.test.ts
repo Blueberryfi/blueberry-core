@@ -14,10 +14,10 @@ chai.use(near);
 const USDC = ADDRESS.USDC;
 const WETH = ADDRESS.WETH;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('HardVault', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
-  let bank: SignerWithAddress;
   let treasury: SignerWithAddress;
 
   let usdc: ERC20;
@@ -26,7 +26,7 @@ describe('HardVault', () => {
   let config: ProtocolConfig;
 
   before(async () => {
-    [admin, alice, bank, treasury] = await ethers.getSigners();
+    [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC, admin);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 

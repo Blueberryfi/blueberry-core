@@ -1,5 +1,5 @@
 import chai, { expect } from 'chai';
-import { BigNumber, utils } from 'ethers';
+import { utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
@@ -16,6 +16,7 @@ chai.use(roughlyNear);
 
 const OneDay = 86400;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Curve LP Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;

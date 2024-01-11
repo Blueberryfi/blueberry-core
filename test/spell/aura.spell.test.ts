@@ -1,15 +1,9 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   BlueberryBank,
-  IWETH,
   MockOracle,
   WERC20,
-  WCurveGauge,
   ERC20,
-  CurveSpell,
-  CurveStableOracle,
-  CurveVolatileOracle,
-  CurveTricryptoOracle,
   WAuraPools,
   IAuraBooster,
   IRewarder,
@@ -35,11 +29,9 @@ const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 const BAL = ADDRESS.BAL;
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
-const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
 const AURA = ADDRESS.AURA;
 const POOL_ID = ADDRESS.AURA_UDU_POOL_ID;
-const WPOOL_ID = ADDRESS.AURA_WETH_AURA_ID;
 
 describe('Aura Spell', () => {
   let admin: SignerWithAddress;
@@ -47,17 +39,12 @@ describe('Aura Spell', () => {
   let treasury: SignerWithAddress;
 
   let usdc: ERC20;
-  let dai: ERC20;
   let crv: ERC20;
   let aura: ERC20;
   let bal: ERC20;
-  let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: AuraSpell;
-  let stableOracle: CurveStableOracle;
-  let volatileOracle: CurveVolatileOracle;
-  let tricryptoOracle: CurveTricryptoOracle;
   let waura: WAuraPools;
   let bank: BlueberryBank;
   let protocol: AuraProtocol;
@@ -70,12 +57,10 @@ describe('Aura Spell', () => {
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
-    dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     crv = <ERC20>await ethers.getContractAt('ERC20', CRV);
     aura = <ERC20>await ethers.getContractAt('ERC20', AURA);
     bal = <ERC20>await ethers.getContractAt('ERC20', BAL);
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
-    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
     auraBooster = <IAuraBooster>await ethers.getContractAt('IAuraBooster', ADDRESS.AURA_BOOSTER);
     const poolInfo = await auraBooster.poolInfo(ADDRESS.AURA_UDU_POOL_ID);
     auraRewarder = <IRewarder>await ethers.getContractAt('IRewarder', poolInfo.crvRewards);
@@ -86,9 +71,6 @@ describe('Aura Spell', () => {
     waura = protocol.waura;
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
-    stableOracle = protocol.stableOracle;
-    volatileOracle = protocol.volatileOracle;
-    tricryptoOracle = protocol.tricryptoOracle;
     config = protocol.config;
   });
 
@@ -263,7 +245,7 @@ describe('Aura Spell', () => {
         ])
       );
 
-      const txReceipt = await res.wait();
+      await res.wait();
 
       const bankInfo = await bank.getBankInfo(USDC);
       console.log('USDC Bank Info:', bankInfo);

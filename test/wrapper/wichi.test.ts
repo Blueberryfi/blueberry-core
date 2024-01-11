@@ -1,4 +1,4 @@
-import chai, { expect } from 'chai';
+import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS } from '../../constant';

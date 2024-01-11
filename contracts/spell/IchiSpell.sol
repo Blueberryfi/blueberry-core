@@ -34,11 +34,8 @@ contract IchiSpell is BasicSpell {
                                    PUBLIC STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Temporary state to store Uniswap V3 pool for swapping operations.
-    IUniswapV3Pool private SWAP_POOL;
-
     /// @dev Address of the Uniswap V3 router.
-    IUniswapV3Router private uniV3Router;
+    IUniswapV3Router private _uniV3Router;
 
     /// @dev Address of the ICHI farm wrapper.
     IWIchiFarm public wIchiFarm;
@@ -82,7 +79,7 @@ contract IchiSpell is BasicSpell {
         ichiV2 = address(wIchiFarm.ichiV2());
         wIchiFarm.setApprovalForAll(address(bank_), true);
 
-        uniV3Router = IUniswapV3Router(uniV3Router_);
+        _uniV3Router = IUniswapV3Router(uniV3Router_);
     }
 
     /// @notice Adds a strategy to the contract.
@@ -219,8 +216,8 @@ contract IchiSpell is BasicSpell {
                 sqrtPriceLimitX96: 0
             });
 
-            IERC20(params.tokenIn).universalApprove(address(uniV3Router), amountIn);
-            uniV3Router.exactInputSingle(params);
+            IERC20(params.tokenIn).universalApprove(address(_uniV3Router), amountIn);
+            _uniV3Router.exactInputSingle(params);
         }
 
         /// 5. Withdraw isolated collateral from Bank

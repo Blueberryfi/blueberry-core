@@ -6,10 +6,8 @@ import {
   BlueberryBank,
   CoreOracle,
   IchiSpell,
-  IWETH,
   SoftVault,
   MockOracle,
-  IchiVaultOracle,
   WERC20,
   WIchiFarm,
   ProtocolConfig,
@@ -18,7 +16,6 @@ import {
   MockIchiV2,
   MockIchiFarm,
   HardVault,
-  FeeManager,
 } from '../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../constant';
 import SpellABI from '../abi/IchiSpell.json';
@@ -42,24 +39,19 @@ const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
 describe('Bank', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
-  let treasury: SignerWithAddress;
 
   let usdc: ERC20;
   let ichi: MockIchiV2;
   let ichiV1: ERC20;
-  let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
-  let ichiOracle: IchiVaultOracle;
   let oracle: CoreOracle;
   let spell: IchiSpell;
   let wichi: WIchiFarm;
   let bank: BlueberryBank;
   let config: ProtocolConfig;
-  let feeManager: FeeManager;
   let usdcSoftVault: SoftVault;
   let ichiSoftVault: SoftVault;
-  let daiSoftVault: SoftVault;
   let hardVault: HardVault;
   let ichiFarm: MockIchiFarm;
   let ichiVault: MockIchiVault;
@@ -69,15 +61,13 @@ describe('Bank', () => {
   before(async () => {
     await fork();
 
-    [admin, alice, treasury] = await ethers.getSigners();
+    [admin, alice] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
     ichi = <MockIchiV2>await ethers.getContractAt('MockIchiV2', ICHI);
     ichiV1 = <ERC20>await ethers.getContractAt('ERC20', ICHIV1);
-    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
     protocol = await setupIchiProtocol();
     config = protocol.config;
-    feeManager = protocol.feeManager;
     bank = protocol.bank;
     spell = protocol.ichiSpell;
     ichiFarm = protocol.ichiFarm;
@@ -88,7 +78,6 @@ describe('Bank', () => {
     mockOracle = protocol.mockOracle;
     usdcSoftVault = protocol.usdcSoftVault;
     ichiSoftVault = protocol.ichiSoftVault;
-    daiSoftVault = protocol.daiSoftVault;
     hardVault = protocol.hardVault;
     bCRV = protocol.bCRV;
   });
@@ -429,7 +418,7 @@ describe('Bank', () => {
 
       const positionId = (await bank.nextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
         bank.execute(
@@ -471,7 +460,7 @@ describe('Bank', () => {
 
       const positionId = (await bank.nextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
       await mockOracle.setPrice(
         [ICHI],
@@ -527,7 +516,7 @@ describe('Bank', () => {
       await bank.whitelistTokens([USDC], [false]);
       const positionId = (await bank.nextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
         bank.execute(
@@ -992,7 +981,7 @@ describe('Bank', () => {
         );
         const positionId = (await bank.nextPositionId()).sub(1);
         const tick = await ichiVault.currentTick();
-        const sqrt = TickMath.getSqrtRatioAtTick(tick);
+        TickMath.getSqrtRatioAtTick(tick);
         await ichi.approve(bank.address, ethers.constants.MaxUint256);
 
         await mockOracle.setPrice(

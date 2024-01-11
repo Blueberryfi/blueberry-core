@@ -8,16 +8,16 @@ import { near } from './assertions/near';
 chai.use(roughlyNear);
 chai.use(near);
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Protocol Config', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
-  let bank: SignerWithAddress;
   let treasury: SignerWithAddress;
 
   let config: ProtocolConfig;
 
   before(async () => {
-    [admin, alice, bank, treasury] = await ethers.getSigners();
+    [admin, alice, treasury] = await ethers.getSigners();
   });
 
   beforeEach(async () => {

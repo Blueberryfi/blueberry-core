@@ -2,7 +2,7 @@ import chai, { assert } from 'chai';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { ChainlinkAdapterOracle, WERC20, StableBPTOracle, CoreOracle, WeightedBPTOracle } from '../../typechain-types';
+import { ChainlinkAdapterOracle, StableBPTOracle, CoreOracle, WeightedBPTOracle } from '../../typechain-types';
 
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';
@@ -13,13 +13,13 @@ chai.use(roughlyNear);
 
 const OneDay = 86400;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Balancer Stable Pool BPT Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
 
   let coreOracle: CoreOracle;
   let stableBPTOracle: StableBPTOracle;
-  let werc20: WERC20;
 
   before(async () => {
     await fork();

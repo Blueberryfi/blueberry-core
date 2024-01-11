@@ -13,8 +13,8 @@ chai.use(near);
 chai.use(roughlyNear);
 
 const OneDay = 86400;
-const DEVIATION = 500; // 5%
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Aggregator Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;

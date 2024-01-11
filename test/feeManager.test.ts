@@ -10,7 +10,6 @@ chai.use(near);
 
 describe('Fee Manager', () => {
   let admin: SignerWithAddress;
-  let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
 
   let mockToken: MockERC20;
@@ -18,7 +17,7 @@ describe('Fee Manager', () => {
   let feeManager: FeeManager;
 
   before(async () => {
-    [admin, alice, treasury] = await ethers.getSigners();
+    [admin, treasury] = await ethers.getSigners();
 
     const ProtocolConfig = await ethers.getContractFactory('ProtocolConfig');
     config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address], {

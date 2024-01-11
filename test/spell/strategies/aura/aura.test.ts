@@ -4,7 +4,6 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, BigNumberish, utils } from 'ethers';
 import {
   BlueberryBank,
-  IWETH,
   ERC20,
   WAuraPools,
   IAuraBooster,
@@ -16,37 +15,27 @@ import {
   IAuraStashToken,
   MockVirtualBalanceRewardPool,
 } from '../../../../typechain-types';
-import { ADDRESS, CONTRACT_NAMES } from '../../../../constant';
+import { ADDRESS } from '../../../../constant';
 import { setupStrategy, strategies } from './utils';
 import { getParaswapCalldataToBuy } from '../../../helpers/paraswap';
-import { addEthToContract, evm_mine_blocks, fork, setTokenBalance, setupAuraProtocol } from '../../../helpers';
+import { addEthToContract, evm_mine_blocks, fork, setTokenBalance } from '../../../helpers';
 import { getTokenAmountFromUSD } from '../utils';
 
-const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
-const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
-const BAL = ADDRESS.BAL;
-const WETH = ADDRESS.WETH;
-const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
-const CRV = ADDRESS.CRV;
 const AURA = ADDRESS.AURA;
-const POOL_ID = ADDRESS.AURA_OHM_ETH_POOL_ID;
-const WPOOL_ID = ADDRESS.AURA_WETH_AURA_ID;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Aura Spell Strategy test', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
-  let treasury: SignerWithAddress;
 
   let bank: BlueberryBank;
   let oracle: CoreOracle;
   let spell: AuraSpell;
   let waura: WAuraPools;
   let dai: ERC20;
-  let bal: ERC20;
   let aura: ERC20;
-  let weth: IWETH;
   let auraBooster: IAuraBooster;
   let auraRewarder: IRewarder;
   let config: ProtocolConfig;
@@ -64,7 +53,7 @@ describe('Aura Spell Strategy test', () => {
   before(async () => {
     await fork();
 
-    [admin, alice, treasury, bob] = await ethers.getSigners();
+    [admin, alice, bob] = await ethers.getSigners();
 
     const strat = await setupStrategy();
     bank = strat.protocol.bank;
@@ -77,8 +66,6 @@ describe('Aura Spell Strategy test', () => {
 
     dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     aura = <ERC20>await ethers.getContractAt('ERC20', AURA);
-    bal = <ERC20>await ethers.getContractAt('ERC20', BAL);
-    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, ADDRESS.WETH);
 
     await addEthToContract(admin, utils.parseEther('1'), auraBooster.address);
   });

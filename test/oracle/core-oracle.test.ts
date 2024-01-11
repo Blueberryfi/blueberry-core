@@ -11,6 +11,7 @@ import { roughlyNear } from '../assertions/roughlyNear';
 chai.use(near);
 chai.use(roughlyNear);
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Core Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;

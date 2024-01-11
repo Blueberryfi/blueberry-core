@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { ethers } from 'hardhat';
 import { OptimalRate, SwapSide, TransactionParams, constructSimpleSDK } from '@paraswap/sdk';
-import { BigNumber, BigNumberish, utils } from 'ethers';
+import { BigNumberish, utils } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { ERC20, IWETH } from '../../typechain-types';
@@ -65,7 +65,9 @@ export const faucetToken = async (
   try {
     await setTokenBalance(token, signer, utils.parseEther('100000'));
     return utils.parseEther('100000');
-  } catch {}
+  } catch (e) {
+    console.log(e);
+  }
 
   const priceRoute = await paraswapSdk.swap.getRate({
     srcToken: ADDRESS.ETH,

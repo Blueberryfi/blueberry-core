@@ -1,15 +1,12 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   BlueberryBank,
-  IWETH,
   MockOracle,
   WERC20,
   WCurveGauge,
   ERC20,
   CurveSpell,
   CurveStableOracle,
-  CurveVolatileOracle,
-  CurveTricryptoOracle,
   ProtocolConfig,
 } from '../../typechain-types';
 import { ethers, upgrades } from 'hardhat';
@@ -33,6 +30,7 @@ const GAUGE_ID = ADDRESS.CRV_GAUGE_3CrvId;
 const AUGUSTUS_SWAPPER = ADDRESS.AUGUSTUS_SWAPPER;
 const TOKEN_TRANSFER_PROXY = ADDRESS.TOKEN_TRANSFER_PROXY;
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 describe('Curve Spell', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
@@ -41,13 +39,10 @@ describe('Curve Spell', () => {
   let usdc: ERC20;
   let dai: ERC20;
   let crv: ERC20;
-  let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: CurveSpell;
   let stableOracle: CurveStableOracle;
-  let volatileOracle: CurveVolatileOracle;
-  let tricryptoOracle: CurveTricryptoOracle;
   let wgauge: WCurveGauge;
   let bank: BlueberryBank;
   let protocol: CrvProtocol;
@@ -60,7 +55,6 @@ describe('Curve Spell', () => {
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
     dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     crv = <ERC20>await ethers.getContractAt('ERC20', CRV);
-    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
     protocol = await setupCrvProtocol();
     bank = protocol.bank;
@@ -69,8 +63,6 @@ describe('Curve Spell', () => {
     werc20 = protocol.werc20;
     mockOracle = protocol.mockOracle;
     stableOracle = protocol.stableOracle;
-    volatileOracle = protocol.volatileOracle;
-    tricryptoOracle = protocol.tricryptoOracle;
     config = protocol.config;
   });
 

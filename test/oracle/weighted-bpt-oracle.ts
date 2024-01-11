@@ -1,5 +1,4 @@
 import chai, { assert } from 'chai';
-import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { ChainlinkAdapterOracle, CoreOracle, StableBPTOracle, WeightedBPTOracle } from '../../typechain-types';

@@ -5,7 +5,6 @@ import { ethers, upgrades } from 'hardhat';
 import {
   BlueberryBank,
   IchiSpell,
-  IWETH,
   MockOracle,
   WERC20,
   WIchiFarm,
@@ -35,7 +34,6 @@ const ICHIV1 = ADDRESS.ICHI_FARM;
 const UNI_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
 
 const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
-const ETH_PRICE = 1600;
 
 describe('ICHI Angel Vaults Spell', () => {
   let admin: SignerWithAddress;
@@ -46,7 +44,6 @@ describe('ICHI Angel Vaults Spell', () => {
   let dai: ERC20;
   let ichi: MockIchiV2;
   let ichiV1: ERC20;
-  let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: IchiSpell;
@@ -68,7 +65,6 @@ describe('ICHI Angel Vaults Spell', () => {
     dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     ichi = <MockIchiV2>await ethers.getContractAt('MockIchiV2', ICHI);
     ichiV1 = <ERC20>await ethers.getContractAt('ERC20', ICHIV1);
-    weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
     protocol = await setupIchiProtocol();
     bank = protocol.bank;
@@ -453,7 +449,7 @@ describe('ICHI Angel Vaults Spell', () => {
     });
     it('should revert when closing a position for non-existing strategy', async () => {
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
 
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
@@ -480,7 +476,7 @@ describe('ICHI Angel Vaults Spell', () => {
     });
     it('should revert when closing a position for non-existing collateral', async () => {
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
 
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
@@ -507,7 +503,7 @@ describe('ICHI Angel Vaults Spell', () => {
     });
     it('should revert when closing a position which repays nothing', async () => {
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
 
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
@@ -540,7 +536,7 @@ describe('ICHI Angel Vaults Spell', () => {
       await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
 
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
       await expect(
         bank.execute(
           positionId,
@@ -575,7 +571,7 @@ describe('ICHI Angel Vaults Spell', () => {
       await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
 
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
       await bank.execute(
         positionId,
         spell.address,
@@ -602,7 +598,7 @@ describe('ICHI Angel Vaults Spell', () => {
       await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
 
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
 
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
@@ -645,12 +641,11 @@ describe('ICHI Angel Vaults Spell', () => {
       await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
 
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
 
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeIchiBalance = await ichi.balanceOf(admin.address);
-      const positionInfo = await bank.getPositionInfo(positionId);
 
       const iface = new ethers.utils.Interface(SpellABI);
       await bank.execute(
@@ -867,7 +862,7 @@ describe('ICHI Angel Vaults Spell', () => {
     });
     it('should revert when closing a position for non-existing strategy', async () => {
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
 
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
@@ -894,7 +889,7 @@ describe('ICHI Angel Vaults Spell', () => {
     });
     it('should revert when closing a position for non-existing collateral', async () => {
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
 
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
       await expect(
@@ -998,7 +993,7 @@ describe('ICHI Angel Vaults Spell', () => {
       await usdc.transfer(spell.address, utils.parseUnits('10', 6)); // manually set rewards
 
       const tick = await ichiVault.currentTick();
-      const sqrt = TickMath.getSqrtRatioAtTick(tick);
+      TickMath.getSqrtRatioAtTick(tick);
 
       const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address);
       console.log('Pending Rewards:', pendingIchi);

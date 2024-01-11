@@ -1,5 +1,5 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import chai, { expect, util } from 'chai';
+import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';

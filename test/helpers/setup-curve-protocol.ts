@@ -9,7 +9,6 @@ import {
   SoftVault,
   WERC20,
   ProtocolConfig,
-  IComptroller,
   ERC20,
   IUniswapV2Router02,
   HardVault,
@@ -24,6 +23,9 @@ import {
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from './money-market';
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable prefer-const */
 
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;

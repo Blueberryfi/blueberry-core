@@ -1,5 +1,5 @@
 import chai, { expect } from 'chai';
-import { BigNumber, utils } from 'ethers';
+import { utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
@@ -14,6 +14,8 @@ chai.use(roughlyNear);
 
 const OneDay = 86400;
 const DEVIATION = 500; // 5%
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 describe('Aggregator Oracle', () => {
   let admin: SignerWithAddress;
