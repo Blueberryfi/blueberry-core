@@ -10,12 +10,13 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-import "./UsingBaseOracle.sol";
-import "../libraries/BBMath.sol";
-import "../interfaces/IBaseOracle.sol";
+import { BBMath } from "../libraries/BBMath.sol";
+
+import { UsingBaseOracle } from "./UsingBaseOracle.sol";
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 
 /// @author BlueberryProtocol
 /// @title Uniswap V2 Oracle

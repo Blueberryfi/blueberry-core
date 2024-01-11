@@ -10,7 +10,8 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+
 import "../utils/BlueberryErrors.sol" as Errors;
 import "../utils/BlueberryConst.sol" as Constants;
 
@@ -50,6 +51,7 @@ abstract contract BaseAdapter is Ownable {
             if (gaps[i] > Constants.MAX_TIME_GAP) revert Errors.TOO_LONG_DELAY(gaps[i]);
             if (gaps[i] < Constants.MIN_TIME_GAP) revert Errors.TOO_LOW_MEAN(gaps[i]);
             if (tokens[i] == address(0)) revert Errors.ZERO_ADDRESS();
+
             timeGaps[tokens[i]] = gaps[i];
             emit SetTimeGap(tokens[i], gaps[i]);
         }

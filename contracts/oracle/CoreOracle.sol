@@ -10,13 +10,17 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+/* solhint-disable max-line-length */
+import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+/* solhint-enable max-line-length */
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../interfaces/ICoreOracle.sol";
-import "../interfaces/IERC20Wrapper.sol";
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { ICoreOracle } from "../interfaces/ICoreOracle.sol";
+import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 
 /// @title CoreOracle
 /// @author BlueberryProtocol
@@ -83,8 +87,10 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     function _getPrice(address token) internal whenNotPaused returns (uint256) {
         address route = routes[token];
         if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
+
         uint256 px = IBaseOracle(route).getPrice(token);
         if (px == 0) revert Errors.PRICE_FAILED(token);
+
         return px;
     }
 
@@ -101,6 +107,7 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     function _isTokenSupported(address token) internal returns (bool) {
         address route = routes[token];
         if (route == address(0)) return false;
+
         try IBaseOracle(route).getPrice(token) returns (uint256 price) {
             return price != 0;
         } catch {

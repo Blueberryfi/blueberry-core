@@ -10,16 +10,17 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import "./UsingBaseOracle.sol";
-import "../interfaces/ICurveOracle.sol";
-import "../interfaces/curve/ICurveRegistry.sol";
-import "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
-import "../interfaces/curve/ICurveAddressProvider.sol";
-import "../interfaces/curve/ICurvePool.sol";
+
+import { UsingBaseOracle } from "./UsingBaseOracle.sol";
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { ICurveOracle } from "../interfaces/ICurveOracle.sol";
+import { ICurveRegistry } from "../interfaces/curve/ICurveRegistry.sol";
+import { ICurveCryptoSwapRegistry } from "../interfaces/curve/ICurveCryptoSwapRegistry.sol";
+import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
 
 /// @title Curve Base Oracle
 /// @author BlueberryProtocol
@@ -68,11 +69,12 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         if (pool != address(0)) {
             (uint256 n, ) = ICurveRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveRegistry(registry).get_coins(pool);
-            ulTokens = new address[](n);
 
+            ulTokens = new address[](n);
             for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
+
             virtualPrice = ICurveRegistry(registry).get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
         }
@@ -80,14 +82,16 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         /// 2. Attempt retrieval from CryptoSwap Curve registry.
         registry = addressProvider.get_address(5);
         pool = ICurveCryptoSwapRegistry(registry).get_pool_from_lp_token(crvLp);
+
         if (pool != address(0)) {
             uint256 n = ICurveCryptoSwapRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveCryptoSwapRegistry(registry).get_coins(pool);
-            ulTokens = new address[](n);
 
+            ulTokens = new address[](n);
             for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
+
             virtualPrice = ICurveCryptoSwapRegistry(registry).get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
         }
@@ -95,13 +99,16 @@ abstract contract CurveBaseOracle is UsingBaseOracle, ICurveOracle, Ownable {
         /// 3. Attempt retrieval from Meta Curve registry.
         registry = addressProvider.get_address(7);
         pool = ICurveCryptoSwapRegistry(registry).get_pool_from_lp_token(crvLp);
+
         if (pool != address(0)) {
             uint256 n = ICurveCryptoSwapRegistry(registry).get_n_coins(pool);
             address[8] memory coins = ICurveCryptoSwapRegistry(registry).get_coins(pool);
+
             ulTokens = new address[](n);
             for (uint256 i = 0; i < n; ++i) {
                 ulTokens[i] = coins[i];
             }
+
             virtualPrice = ICurveCryptoSwapRegistry(registry).get_virtual_price_from_lp_token(crvLp);
             return (pool, ulTokens, virtualPrice);
         }

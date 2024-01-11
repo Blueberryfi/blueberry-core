@@ -10,11 +10,13 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./utils/BlueberryConst.sol" as Constants;
 import "./utils/BlueberryErrors.sol" as Errors;
-import "./interfaces/IProtocolConfig.sol";
+
+import { IFeeManager } from "./interfaces/IFeeManager.sol";
+import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
 
 /// @title ProtocolConfig
 /// @author BlueberryProtocol
@@ -106,8 +108,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
     /// @param withdrawVaultFeeWindow_ Duration of the withdraw vault fee window
     function setWithdrawVaultFeeWindow(uint256 withdrawVaultFeeWindow_) external onlyOwner {
         /// Capped at 60 days
-        if (withdrawVaultFeeWindow_ > Constants.MAX_WITHDRAW_VAULT_FEE_WINDOW)
+        if (withdrawVaultFeeWindow_ > Constants.MAX_WITHDRAW_VAULT_FEE_WINDOW) {
             revert Errors.FEE_WINDOW_TOO_LONG(withdrawVaultFeeWindow_);
+        }
         withdrawVaultFeeWindow = withdrawVaultFeeWindow_;
     }
 
@@ -128,8 +131,9 @@ contract ProtocolConfig is OwnableUpgradeable, IProtocolConfig {
         uint256 blbStablePoolFeeRate_,
         uint256 blbIchiVaultFeeRate_
     ) external onlyOwner {
-        if ((treasuryFeeRate_ + blbStablePoolFeeRate_ + blbIchiVaultFeeRate_) != Constants.DENOMINATOR)
+        if ((treasuryFeeRate_ + blbStablePoolFeeRate_ + blbIchiVaultFeeRate_) != Constants.DENOMINATOR) {
             revert Errors.INVALID_FEE_DISTRIBUTION();
+        }
         treasuryFeeRate = treasuryFeeRate_;
         blbStablePoolFeeRate = blbStablePoolFeeRate_;
         blbIchiVaultFeeRate = blbIchiVaultFeeRate_;

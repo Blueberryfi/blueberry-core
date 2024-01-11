@@ -10,12 +10,18 @@
 
 pragma solidity 0.8.22;
 
-import "./BasicSpell.sol";
-import "../interfaces/ICurveOracle.sol";
-import "../interfaces/IWCurveGauge.sol";
-import "../interfaces/curve/ICurvePool.sol";
-import "../libraries/Paraswap/PSwapLib.sol";
-import "../libraries/UniversalERC20.sol";
+import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
+
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BasicSpell } from "./BasicSpell.sol";
+
+import { IBank } from "../interfaces/IBank.sol";
+import { ICurveOracle } from "../interfaces/ICurveOracle.sol";
+import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
+import { IWETH } from "../interfaces/IWETH.sol";
+import { IWCurveGauge } from "../interfaces/IWCurveGauge.sol";
 
 /**
  * @title CurveSpell
@@ -78,6 +84,7 @@ contract CurveSpell is BasicSpell {
         if (wCurveGauge.getLpFromGaugeId(param.farmingPoolId) != lp) {
             revert Errors.INCORRECT_LP(lp);
         }
+
         (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(lp);
 
         // 1. Deposit isolated collaterals on Blueberry Money Market
@@ -92,7 +99,11 @@ contract CurveSpell is BasicSpell {
             IERC20(borrowToken).universalApprove(pool, borrowBalance);
             uint256 ethValue;
             uint256 tokenBalance = IERC20(borrowToken).universalBalanceOf(address(this));
-            require(borrowBalance <= tokenBalance, "impossible");
+
+            if (borrowBalance > tokenBalance) {
+                revert Errors.INSUFFICIENT_COLLATERAL();
+            }
+
             if (borrowToken == weth) {
                 bool hasEth;
                 uint256 tokenLength = tokens.length;
@@ -151,20 +162,25 @@ contract CurveSpell is BasicSpell {
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
             (uint256 decodedGid, ) = wCurveGauge.decodeId(pos.collId);
+
             if (param.farmingPoolId != decodedGid) {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             }
+
             if (pos.collToken != address(wCurveGauge)) {
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
             }
+
             bank.takeCollateral(pos.collateralSize);
             wCurveGauge.burn(pos.collId, pos.collateralSize);
+
             _doRefundRewards(crvToken);
         }
 
         // 7. Deposit on Curve Gauge, Put wrapped collateral tokens on Blueberry Bank
         uint256 lpAmount = IERC20(lp).balanceOf(address(this));
         IERC20(lp).universalApprove(address(wCurveGauge), lpAmount);
+
         uint256 id = wCurveGauge.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wCurveGauge), id, lpAmount);
     }
@@ -179,9 +195,11 @@ contract CurveSpell is BasicSpell {
 
         address crvLp = strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
+
         if (pos.collToken != address(wCurveGauge)) {
             revert Errors.INCORRECT_COLTOKEN(pos.collToken);
         }
+
         if (wCurveGauge.getUnderlyingToken(pos.collId) != crvLp) {
             revert Errors.INCORRECT_UNDERLYING(crvLp);
         }

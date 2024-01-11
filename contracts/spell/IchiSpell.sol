@@ -10,16 +10,21 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import { IUniswapV3Pool } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
-import "./BasicSpell.sol";
-import "../interfaces/IWIchiFarm.sol";
-import "../interfaces/ichi/IICHIVault.sol";
-import "../interfaces/uniswap/IUniswapV3Router.sol";
-import "../libraries/UniversalERC20.sol";
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BasicSpell } from "./BasicSpell.sol";
+
+import { IBank } from "../interfaces/IBank.sol";
+import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
+import { IUniswapV3Router } from "../interfaces/uniswap/IUniswapV3Router.sol";
+import { IWIchiFarm } from "../interfaces/IWIchiFarm.sol";
 
 /// @title IchiSpell
 /// @author BlueberryProtocol
@@ -101,8 +106,10 @@ contract IchiSpell is BasicSpell {
 
         /// 2. Borrow specific amounts
         IICHIVault vault = IICHIVault(strategy.vault);
-        if (vault.token0() != param.borrowToken && vault.token1() != param.borrowToken)
+        if (vault.token0() != param.borrowToken && vault.token1() != param.borrowToken) {
             revert Errors.INCORRECT_DEBT(param.borrowToken);
+        }
+
         uint256 borrowBalance = _doBorrow(param.borrowToken, param.borrowAmount);
 
         /// 3. Add liquidity - Deposit on ICHI Vault
@@ -156,12 +163,15 @@ contract IchiSpell is BasicSpell {
             address posCollToken = pos.collToken;
             uint256 collId = pos.collId;
             uint256 collSize = pos.collateralSize;
+
             if (collSize > 0) {
                 (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
                 if (param.farmingPoolId != decodedPid) revert Errors.INCORRECT_PID(param.farmingPoolId);
                 if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
+
                 bank.takeCollateral(collSize);
                 wIchiFarm.burn(collId, collSize);
+
                 _doRefundRewards(ichiV2);
             }
         }
@@ -259,6 +269,7 @@ contract IchiSpell is BasicSpell {
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
+
         if (IWIchiFarm(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
         if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
 

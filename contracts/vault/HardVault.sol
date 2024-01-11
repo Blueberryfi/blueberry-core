@@ -10,15 +10,20 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+/* solhint-disable max-line-length */
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+/* solhint-enable max-line-length */
+
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../interfaces/IProtocolConfig.sol";
-import "../interfaces/IHardVault.sol";
-import "../libraries/UniversalERC20.sol";
+
+import { IHardVault } from "../interfaces/IHardVault.sol";
+import { IProtocolConfig } from "../interfaces/IProtocolConfig.sol";
 
 /// @title HardVault
 /// @notice The HardVault contract is used to lock LP tokens as collateral.

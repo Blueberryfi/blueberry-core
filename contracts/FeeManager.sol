@@ -10,12 +10,14 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "./interfaces/IProtocolConfig.sol";
 import "./utils/BlueberryConst.sol" as Constants;
 import "./utils/BlueberryErrors.sol" as Errors;
+
+import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
 
 /// @title FeeManager
 /// @author BlueberryProtocol

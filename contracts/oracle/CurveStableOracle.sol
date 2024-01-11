@@ -10,7 +10,11 @@
 
 pragma solidity 0.8.22;
 
-import "./CurveBaseOracle.sol";
+import { CurveBaseOracle } from "./CurveBaseOracle.sol";
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
+import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 
 /// @title Curve Stable Oracle
 /// @author BlueberryProtocol
@@ -34,6 +38,7 @@ contract CurveStableOracle is CurveBaseOracle {
     /// @param _numTokens The number of tokens in the pool.
     function _checkReentrant(address _pool, uint256 _numTokens) internal override {
         ICurvePool pool = ICurvePool(_pool);
+
         if (_numTokens == 2) {
             uint256[2] memory amounts;
             pool.remove_liquidity(0, amounts);

@@ -10,7 +10,7 @@
 
 pragma solidity 0.8.22;
 
-import "../interfaces/IBaseOracle.sol";
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 
 /// @title UsingBaseOracle
 /// @dev This contract serves as a base for other contracts that need access

@@ -10,18 +10,19 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
-import "./UsingBaseOracle.sol";
+import { FixedPoint } from "../libraries/balancer-v2/FixedPoint.sol";
+import { VaultReentrancyLib } from "../libraries/balancer-v2/VaultReentrancyLib.sol";
+
 import "../utils/BlueberryErrors.sol" as Errors;
 
-import "../interfaces/IBaseOracle.sol";
-import "../interfaces/balancer-v2/IBalancerV2StablePool.sol";
-import "../interfaces/balancer-v2/IRateProvider.sol";
-import "../interfaces/balancer-v2/IBalancerVault.sol";
+import { UsingBaseOracle } from "./UsingBaseOracle.sol";
 
-import "../libraries/FixedPointMathLib.sol";
-import "../libraries/balancer-v2/VaultReentrancyLib.sol";
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { IBalancerV2StablePool } from "../interfaces/balancer-v2/IBalancerV2StablePool.sol";
+import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
+import { IRateProvider } from "../interfaces/balancer-v2/IRateProvider.sol";
 
 /**
  * @title StableBPTOracle
@@ -29,7 +30,7 @@ import "../libraries/balancer-v2/VaultReentrancyLib.sol";
  * @notice Oracle contract which privides price feeds of Stable Balancer LP tokens
  */
 contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracle {
-    using FixedPointMathLib for uint256;
+    using FixedPoint for uint256;
 
     IBaseOracle public weightedPoolOracle;
     IBalancerVault private immutable _VAULT;
@@ -88,7 +89,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
 
         uint256 rate = pool.getRate();
 
-        return minPrice.mulWadDown(rate);
+        return minPrice.mulDown(rate);
     }
 
     /**
@@ -136,7 +137,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
 
         if (address(rateProvider) != address(0)) {
             uint256 rateProviderPrice = rateProvider.getRate();
-            minCandidatePrice = minCandidatePrice.divWadDown(rateProviderPrice);
+            minCandidatePrice = minCandidatePrice.divDown(rateProviderPrice);
         }
 
         return minCandidatePrice;

@@ -13,19 +13,23 @@ pragma solidity 0.8.22;
 /* solhint-disable max-line-length */
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { EnumerableSetUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
-import { SafeERC20Upgradeable, IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+/* solhint-enable max-line-length */
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import { IWConvexPools, ICvxBooster } from "../interfaces/IWConvexPools.sol";
+
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
-import { IRewarder } from "../interfaces/convex/IRewarder.sol";
 import { ICvxExtraRewarder } from "../interfaces/convex/ICvxExtraRewarder.sol";
 import { IConvex } from "../interfaces/convex/IConvex.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
+import { IRewarder } from "../interfaces/convex/IRewarder.sol";
+import { IWConvexPools, ICvxBooster } from "../interfaces/IWConvexPools.sol";
+
 /* solhint-enable max-line-length */
 
 /// @title WConvexPools
@@ -193,6 +197,7 @@ contract WConvexPools is
         (uint256 pid, uint256 stCrvPerShare) = decodeId(tokenId);
         (address lpToken, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(pid);
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
+
         uint256 _extraRewardsCount = extraRewardsLength(pid);
         tokens = new address[](_extraRewardsCount + 2);
         rewards = new uint256[](_extraRewardsCount + 2);
@@ -209,6 +214,7 @@ contract WConvexPools is
             address rewarder = getExtraRewarder(pid, i);
             uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
             tokens[i + 2] = IRewarder(rewarder).rewardToken();
+
             if (stRewardPerShare == 0) {
                 rewards[i + 2] = 0;
             } else {

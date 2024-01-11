@@ -31,6 +31,7 @@ import { IBalancerV2Pool } from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
+
 /* solhint-enable max-line-length */
 
 /**

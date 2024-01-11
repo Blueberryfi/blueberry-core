@@ -10,7 +10,13 @@
 
 pragma solidity 0.8.22;
 
-import "./CurveBaseOracle.sol";
+import { CurveBaseOracle } from "./CurveBaseOracle.sol";
+
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
+import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 
 /// @title Curve Volatile Oracle
 /// @author BlueberryProtocol

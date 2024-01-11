@@ -10,16 +10,18 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
-import "./UsingBaseOracle.sol";
+import { FixedPoint } from "../libraries//balancer-v2/FixedPoint.sol";
+import { VaultReentrancyLib } from "../libraries/balancer-v2/VaultReentrancyLib.sol";
+
 import "../utils/BlueberryErrors.sol" as Errors;
 
-import "../interfaces/IBaseOracle.sol";
-import "../interfaces/balancer-v2/IBalancerV2WeightedPool.sol";
-import "../interfaces/balancer-v2/IBalancerVault.sol";
-import "../libraries/balancer-v2/FixedPoint.sol";
-import "../libraries/balancer-v2/VaultReentrancyLib.sol";
+import { UsingBaseOracle } from "./UsingBaseOracle.sol";
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { IBalancerV2WeightedPool } from "../interfaces/balancer-v2/IBalancerV2WeightedPool.sol";
+import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
 
 /**
  * @title WeightedBPTOracle

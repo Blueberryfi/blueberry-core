@@ -10,13 +10,20 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "./BasicSpell.sol";
-import "../interfaces/IWAuraPools.sol";
-import "../interfaces/balancer-v2/IBalancerV2Pool.sol";
-import "../libraries/Paraswap/PSwapLib.sol";
-import "../libraries/UniversalERC20.sol";
+import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
+
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BasicSpell } from "./BasicSpell.sol";
+
+import { IBank } from "../interfaces/IBank.sol";
+import { IBalancerV2Pool } from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
+import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
+import { IWAuraPools } from "../interfaces/IWAuraPools.sol";
 
 /// @title AuraSpell
 /// @author BlueberryProtocol
@@ -164,14 +171,15 @@ contract AuraSpell is BasicSpell {
         {
             address lpToken = strategies[param.strategyId].vault;
             if (pos.collToken != address(wAuraPools)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-            if (wAuraPools.getUnderlyingToken(pos.collId) != lpToken) revert Errors.INCORRECT_UNDERLYING(lpToken);
+            if (wAuraPools.getUnderlyingToken(pos.collId) != lpToken) {
+                revert Errors.INCORRECT_UNDERLYING(lpToken);
+            }
 
             bank.takeCollateral(param.amountPosRemove);
 
             /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards
             {
                 (rewardTokens, ) = wAuraPools.burn(pos.collId, param.amountPosRemove);
-
                 /// 2. Swap each reward token for the debt token
                 _sellRewards(rewardTokens, expectedRewards, swapDatas);
             }

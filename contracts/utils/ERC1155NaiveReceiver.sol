@@ -10,7 +10,7 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
 /// @title ERC1155NaiveReceiver
 /// @notice A receiver contract that naively accepts all ERC1155 transfers.

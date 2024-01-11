@@ -10,12 +10,16 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import { AggregatorV3Interface } from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import "./BaseAdapter.sol";
-import "../interfaces/IBaseOracle.sol";
-import "../interfaces/chainlink/ISequencerUptimeFeed.sol";
+import "../utils/BlueberryConst.sol" as Constants;
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BaseAdapter } from "./BaseAdapter.sol";
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { ISequencerUptimeFeed } from "../interfaces/chainlink/ISequencerUptimeFeed.sol";
 
 /// @title Chainlink Adapter Oracle for L2 chains including Arb, Optimism, etc.
 /// @author BlueberryProtocol
@@ -58,7 +62,9 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /// @notice Constructs the ChainlinkAdapterOracleL2 and sets the L2 sequencer uptime feed.
     /// @param sequencerUptimeFeed_ The Chainlink L2 sequencer uptime feed source.
     constructor(ISequencerUptimeFeed sequencerUptimeFeed_) {
-        if (address(sequencerUptimeFeed_) == address(0)) revert Errors.ZERO_ADDRESS();
+        if (address(sequencerUptimeFeed_) == address(0)) {
+            revert Errors.ZERO_ADDRESS();
+        }
 
         sequencerUptimeFeed = sequencerUptimeFeed_;
     }
@@ -70,7 +76,9 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /// @notice Sets the Chainlink L2 sequencer uptime feed registry source.
     /// @param sequencerUptimeFeed_ Chainlink L2 sequencer uptime feed source.
     function setSequencerUptimeFeed(ISequencerUptimeFeed sequencerUptimeFeed_) external onlyOwner {
-        if (address(sequencerUptimeFeed_) == address(0)) revert Errors.ZERO_ADDRESS();
+        if (address(sequencerUptimeFeed_) == address(0)) {
+            revert Errors.ZERO_ADDRESS();
+        }
 
         sequencerUptimeFeed = sequencerUptimeFeed_;
         emit SetSequencerUptimeFeed(address(sequencerUptimeFeed_));
@@ -81,15 +89,12 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /// @param priceFeeds_ Corresponding list of Chainlink price feeds.
     function setPriceFeeds(address[] calldata tokens_, address[] calldata priceFeeds_) external onlyOwner {
         if (tokens_.length != priceFeeds_.length) revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 i = 0; i < tokens_.length; ) {
+        for (uint256 i = 0; i < tokens_.length; ++i) {
             if (tokens_[i] == address(0)) revert Errors.ZERO_ADDRESS();
             if (priceFeeds_[i] == address(0)) revert Errors.ZERO_ADDRESS();
-
             priceFeeds[tokens_[i]] = priceFeeds_[i];
+
             emit SetTokenPriceFeed(tokens_[i], priceFeeds_[i]);
-            unchecked {
-                ++i;
-            }
         }
     }
 

@@ -10,16 +10,23 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+/* solhint-disable max-line-length */
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+/* solhint-enable max-line-length */
+
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../libraries/UniversalERC20.sol";
-import "../interfaces/IERC20Wrapper.sol";
-import "../interfaces/IWCurveGauge.sol";
-import "../interfaces/curve/ILiquidityGauge.sol";
+
+import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
+import { ICurveRegistry } from "../interfaces/curve/ICurveRegistry.sol";
+import { ICurveGaugeController } from "../interfaces/curve/ICurveGaugeController.sol";
+import { ILiquidityGauge } from "../interfaces/curve/ILiquidityGauge.sol";
+import { IWCurveGauge } from "../interfaces/IWCurveGauge.sol";
 
 /*//////////////////////////////////////////////////////////////////////////
                                      INTERFACE
@@ -120,8 +127,8 @@ contract WCurveGauge is
         ILiquidityGauge gauge = ILiquidityGauge(gaugeController.gauges(gid));
         uint256 claimableCrv = gauge.claimable_tokens(address(this));
         uint256 supply = gauge.balanceOf(address(this));
-        uint256 enCrvPerShare = accCrvPerShares[gid] + ((claimableCrv * 1e18) / supply);
 
+        uint256 enCrvPerShare = accCrvPerShares[gid] + ((claimableCrv * 1e18) / supply);
         uint256 crvRewards = enCrvPerShare > stCrvPerShare ? ((enCrvPerShare - stCrvPerShare) * amount) / 1e18 : 0;
 
         tokens = new address[](1);
@@ -160,19 +167,26 @@ contract WCurveGauge is
         if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
         }
+
         (uint256 gid, uint256 stCrvPerShare) = decodeId(id);
         _burn(msg.sender, id, amount);
+
         ILiquidityGauge gauge = ILiquidityGauge(gaugeController.gauges(gid));
-        require(address(gauge) != address(0), "gauge not registered");
+
+        if (address(gauge) == address(0)) revert Errors.GAUGE_NOT_REGISTERED();
+
         _mintCrv(gauge, gid);
         gauge.withdraw(amount);
         IERC20Upgradeable(gauge.lp_token()).safeTransfer(msg.sender, amount);
+
         uint256 stCrv = (stCrvPerShare * amount) / 1e18;
         uint256 enCrv = (accCrvPerShares[gid] * amount) / 1e18;
+
         if (enCrv > stCrv) {
             rewards = enCrv - stCrv;
             crvToken.safeTransfer(msg.sender, rewards);
         }
+
         return rewards;
     }
 
@@ -183,8 +197,10 @@ contract WCurveGauge is
         uint256 balanceBefore = crvToken.balanceOf(address(this));
         ILiquidityGaugeMinter(gauge.minter()).mint(address(gauge));
         uint256 balanceAfter = crvToken.balanceOf(address(this));
+
         uint256 gain = balanceAfter - balanceBefore;
         uint256 supply = gauge.balanceOf(address(this));
+
         if (gain > 0 && supply > 0) {
             accCrvPerShares[gid] += (gain * 1e18) / supply;
         }

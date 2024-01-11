@@ -10,15 +10,19 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./UsingBaseOracle.sol";
-import "./BaseOracleExt.sol";
+import { UniV3WrappedLibContainer } from "../libraries/UniV3/UniV3WrappedLibContainer.sol";
+
+import "../utils/BlueberryConst.sol" as Constants;
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../libraries/UniV3/UniV3WrappedLibContainer.sol";
-import "../interfaces/IBaseOracle.sol";
-import "../interfaces/ichi/IICHIVault.sol";
+
+import { UsingBaseOracle } from "./UsingBaseOracle.sol";
+import { BaseOracleExt } from "./BaseOracleExt.sol";
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
 
 /// @author BlueberryProtocol
 /// @title Ichi Vault Oracle
@@ -93,7 +97,9 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
         uint32 twapPeriod = vault.twapPeriod();
         if (twapPeriod > Constants.MAX_TIME_GAP) revert Errors.TOO_LONG_DELAY(twapPeriod);
         if (twapPeriod < Constants.MIN_TIME_GAP) revert Errors.TOO_LOW_MEAN(twapPeriod);
+
         (int24 twapTick, ) = UniV3WrappedLibContainer.consult(vault.pool(), twapPeriod);
+
         return
             UniV3WrappedLibContainer.getQuoteAtTick(
                 twapTick,

@@ -207,6 +207,9 @@ error BAD_PID(uint256 pid);
 /// @notice Thrown when a mismatch in reward per share is detected.
 error BAD_REWARD_PER_SHARE(uint256 rewardPerShare);
 
+/// @notice Thrown when the curve gauge returns a zero address
+error GAUGE_NOT_REGISTERED();
+
 /*//////////////////////////////////////////////////////////////////////////
                                 BANK ERRORS
 //////////////////////////////////////////////////////////////////////////*/

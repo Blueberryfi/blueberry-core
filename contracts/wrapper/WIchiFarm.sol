@@ -10,19 +10,24 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+/* solhint-disable max-line-length */
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+/* solhint-enable max-line-length */
+
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../libraries/UniversalERC20.sol";
-import "../libraries/BBMath.sol";
-import "../interfaces/IWIchiFarm.sol";
-import "../interfaces/IERC20Wrapper.sol";
-import "../interfaces/ichi/IIchiV2.sol";
-import "../interfaces/ichi/IIchiFarm.sol";
+
+import { BBMath } from "../libraries/BBMath.sol";
+import { IWIchiFarm } from "../interfaces/IWIchiFarm.sol";
+import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
+import { IIchiV2 } from "../interfaces/ichi/IIchiV2.sol";
+import { IIchiFarm } from "../interfaces/ichi/IIchiFarm.sol";
 
 /// @title WIchiFarm
 /// @author BlueberryProtocol
@@ -67,8 +72,10 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
     function initialize(address ichi_, address ichiV1_, address ichiFarm_) external initializer {
         if (address(ichi_) == address(0) || address(ichiV1_) == address(0) || address(ichiFarm_) == address(0))
             revert Errors.ZERO_ADDRESS();
+
         __ReentrancyGuard_init();
         __ERC1155_init("WIchiFarm");
+
         ichiV2 = IIchiV2(ichi_);
         ichiV1 = IERC20Upgradeable(ichiV1_);
         ichiFarm = IIchiFarm(ichiFarm_);
@@ -84,6 +91,7 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
     function encodeId(uint256 pid, uint256 ichiPerShare) public pure returns (uint256 id) {
         if (pid >= (1 << 16)) revert Errors.BAD_PID(pid);
         if (ichiPerShare >= (1 << 240)) revert Errors.BAD_REWARD_PER_SHARE(ichiPerShare);
+
         return (pid << 240) | ichiPerShare;
     }
 
@@ -139,10 +147,13 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
 
         IERC20(lpToken).universalApprove(address(ichiFarm), amount);
         ichiFarm.deposit(pid, amount, address(this));
+
         (uint256 ichiPerShare, , ) = ichiFarm.poolInfo(pid);
+
         uint256 id = encodeId(pid, ichiPerShare);
         _validateTokenId(id);
         _mint(msg.sender, id, amount, "");
+
         return id;
     }
 

@@ -3,7 +3,6 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./MockERC20.sol";
-import "hardhat/console.sol";
 
 contract MockIchiV2 is MockERC20 {
     using SafeERC20 for IERC20;
@@ -30,10 +29,8 @@ contract MockIchiV2 is MockERC20 {
      * @param v1Amount The number of ICHI V1 tokens to be converted (using 9 decimals representation)
      */
     function convertToV2(uint256 v1Amount) external {
-        console.log("msg.sender", msg.sender);
         require(v1Amount > 0, "IchiV2.convertToV2: amount must be > 0");
-        console.log("allowance", IERC20(ichiV1).allowance(msg.sender, ichiV1));
-        console.log("amount", v1Amount);
+
         // convert 9 decimals ICHI V1 to 18 decimals ICHI V2
         uint256 v2Amount = v1Amount * _DECIMALS_DIFF;
 

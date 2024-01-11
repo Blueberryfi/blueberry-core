@@ -10,9 +10,15 @@
 
 pragma solidity 0.8.22;
 
-import "./CurveBaseOracle.sol";
-import "../libraries/balancer-v2/FixedPoint.sol";
+import { CurveBaseOracle } from "./CurveBaseOracle.sol";
+
+import { FixedPoint } from "../libraries/balancer-v2/FixedPoint.sol";
 import "../utils/BlueberryConst.sol" as Constants;
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
+import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 
 /// @author BlueberryProtocol
 /// @title Curve Volatile Oracle
@@ -57,8 +63,9 @@ contract CurveVolatileOracle is CurveBaseOracle {
 
     /// @dev Internal implementation for setting the limiter
     function _setLimiter(address _crvLp, uint256 _lowerBound) internal {
-        if (_lowerBound == 0 || !_checkCurrentValueInBounds(_crvLp, _lowerBound, _upperBound(_lowerBound)))
+        if (_lowerBound == 0 || !_checkCurrentValueInBounds(_crvLp, _lowerBound, _upperBound(_lowerBound))) {
             revert Errors.INCORRECT_LIMITS();
+        }
 
         lowerBound[_crvLp] = _lowerBound;
         emit NewLimiterParams(_lowerBound, _upperBound(_lowerBound));

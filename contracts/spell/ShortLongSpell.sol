@@ -10,15 +10,20 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "./BasicSpell.sol";
+import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
-import "../interfaces/ISoftVault.sol";
-import "../interfaces/IWERC20.sol";
-import "../libraries/Paraswap/PSwapLib.sol";
-import "../libraries/UniversalERC20.sol";
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BasicSpell } from "./BasicSpell.sol";
+
+import { IBank } from "../interfaces/IBank.sol";
+import { ISoftVault } from "../interfaces/ISoftVault.sol";
+import { IWERC20 } from "../interfaces/IWERC20.sol";
 
 /// @title Short/Long Spell
 /// @author BlueberryProtocol
@@ -93,8 +98,10 @@ contract ShortLongSpell is BasicSpell {
         uint256 dstTokenAmt = swapToken.balanceOf(address(this));
 
         address borrowToken = param.borrowToken;
-        if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, borrowToken, param.borrowAmount, swapData))
+        if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, borrowToken, param.borrowAmount, swapData)) {
             revert Errors.SWAP_FAILED(borrowToken);
+        }
+
         dstTokenAmt = swapToken.balanceOf(address(this)) - dstTokenAmt;
         if (dstTokenAmt == 0) revert Errors.SWAP_FAILED(borrowToken);
 
@@ -125,8 +132,9 @@ contract ShortLongSpell is BasicSpell {
         bytes calldata swapData
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         Strategy memory strategy = strategies[param.strategyId];
-        if (address(ISoftVault(strategy.vault).uToken()) == param.borrowToken)
+        if (address(ISoftVault(strategy.vault).uToken()) == param.borrowToken) {
             revert Errors.INCORRECT_LP(param.borrowToken);
+        }
 
         /// 1-3 Swap to strategy underlying token, deposit to softvault
         _deposit(param, swapData);
@@ -210,6 +218,7 @@ contract ShortLongSpell is BasicSpell {
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
+
         if (IWERC20(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
         if (posCollToken != address(werc20)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
 

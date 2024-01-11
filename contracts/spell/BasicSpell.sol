@@ -10,17 +10,22 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+/* solhint-disable max-line-length */
+import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+/* solhint-enable max-line-length */
+
+import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
 import "../utils/BlueberryConst.sol" as Constants;
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../utils/ERC1155NaiveReceiver.sol";
-import "../interfaces/IBank.sol";
-import "../interfaces/IWERC20.sol";
-import "../interfaces/IWETH.sol";
-import "../libraries/UniversalERC20.sol";
-import "../libraries/Paraswap/PSwapLib.sol";
+import { ERC1155NaiveReceiver } from "../utils/ERC1155NaiveReceiver.sol";
+
+import { IBank } from "../interfaces/IBank.sol";
+import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
+import { IWERC20 } from "../interfaces/IWERC20.sol";
+import { IWETH } from "../interfaces/IWETH.sol";
 
 /// @title BasicSpell
 /// @author BlueberryProtocol
@@ -170,8 +175,9 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) internal onlyInitializing {
-        if (address(bank_) == address(0) || address(werc20_) == address(0) || address(weth_) == address(0))
+        if (address(bank_) == address(0) || address(werc20_) == address(0) || address(weth_) == address(0)) {
             revert Errors.ZERO_ADDRESS();
+        }
 
         __Ownable_init();
 
@@ -183,6 +189,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
 
         IWERC20(werc20_).setApprovalForAll(address(bank_), true);
     }
+
     /* solhint-enable func-name-mixedcase */
 
     /// @notice Adds a new strategy to the list of available strategies.
@@ -195,7 +202,9 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
+
         strategies.push(Strategy({ vault: vault, minPositionSize: minPosSize, maxPositionSize: maxPosSize }));
+
         emit StrategyAdded(strategies.length - 1, vault, minPosSize, maxPosSize);
     }
 
@@ -211,8 +220,10 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     ) external existingStrategy(strategyId) onlyOwner {
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
+
         strategies[strategyId].minPositionSize = minPosSize;
         strategies[strategyId].maxPositionSize = maxPosSize;
+
         emit StrategyPosSizeUpdated(strategyId, minPosSize, maxPosSize);
     }
 
@@ -270,7 +281,9 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         IERC20 lpToken = IERC20(strategy.vault);
         uint256 lpBalance = lpToken.balanceOf(address(this));
         uint256 lpPrice = bank.oracle().getPrice(address(lpToken));
+
         addedPosSize = (lpPrice * lpBalance) / 10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
+
         // Check if position size is within bounds
         if (prevPosSize + addedPosSize > strategy.maxPositionSize) {
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);

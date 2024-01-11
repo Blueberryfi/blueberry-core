@@ -10,21 +10,26 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+import { BBMath } from "./libraries/BBMath.sol";
+import { UniversalERC20, IERC20 } from "./libraries/UniversalERC20.sol";
+
+import { ERC1155NaiveReceiver } from "./utils/ERC1155NaiveReceiver.sol";
 import "./utils/BlueberryConst.sol" as Constants;
 import "./utils/BlueberryErrors.sol" as Errors;
-import "./utils/ERC1155NaiveReceiver.sol";
-import "./interfaces/IBank.sol";
-import "./interfaces/ICoreOracle.sol";
-import "./interfaces/ISoftVault.sol";
-import "./interfaces/IHardVault.sol";
-import "./interfaces/money-market/IBErc20.sol";
-import "./libraries/BBMath.sol";
-import "./libraries/UniversalERC20.sol";
+
+import { IBank } from "./interfaces/IBank.sol";
+import { IBErc20 } from "./interfaces/money-market/IBErc20.sol";
+import { ICoreOracle } from "./interfaces/ICoreOracle.sol";
+import { IERC20Wrapper } from "./interfaces/IERC20Wrapper.sol";
+import { IFeeManager } from "./interfaces/IFeeManager.sol";
+import { IHardVault } from "./interfaces/IHardVault.sol";
+import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
+import { ISoftVault } from "./interfaces/ISoftVault.sol";
 
 /// @title BlueberryBank
 /// @author BlueberryProtocol
@@ -158,6 +163,7 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         }
         return positions[positionId].owner;
     }
+
     /* solhint-enable func-name-mixedcase */
 
     /// @dev Set the whitelist status for specific spells.
@@ -471,8 +477,9 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         /// Revert liquidation if the repayment hasn't been warmed up
         /// following the last state where repayments were paused.
-        if (block.timestamp < repayResumedTimestamp + Constants.LIQUIDATION_REPAY_WARM_UP_PERIOD)
+        if (block.timestamp < repayResumedTimestamp + Constants.LIQUIDATION_REPAY_WARM_UP_PERIOD) {
             revert Errors.REPAY_ALLOW_NOT_WARMED_UP();
+        }
 
         /// Repay the debt and get details of repayment.
         uint256 oldShare = pos.debtShare;
@@ -657,20 +664,27 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     function _repay(uint256 positionId, address token, uint256 amountCall) internal returns (uint256, uint256) {
         Bank storage bank = banks[token];
         Position storage pos = positions[positionId];
+
         if (pos.debtToken != token) revert Errors.INCORRECT_DEBT(token);
+
         uint256 totalShare = bank.totalShare;
         uint256 totalDebt = _borrowBalanceStored(token);
         uint256 oldShare = pos.debtShare;
         uint256 oldDebt = (oldShare * totalDebt).divCeil(totalShare);
+
         if (amountCall > oldDebt) {
             amountCall = oldDebt;
         }
+
         amountCall = _doERC20TransferIn(token, amountCall);
         uint256 paid = _doRepay(token, amountCall);
+
         if (paid > oldDebt) revert Errors.REPAY_EXCEEDS_DEBT(paid, oldDebt); /// prevent share overflow attack
+
         uint256 lessShare = paid == oldDebt ? oldShare : (paid * totalShare) / totalDebt;
         bank.totalShare -= lessShare;
         pos.debtShare -= lessShare;
+
         return (paid, lessShare);
     }
 
@@ -686,8 +700,12 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     ) external override inExec onlyWhitelistedERC1155(collToken) {
         Position storage pos = positions[POSITION_ID];
         if (pos.collToken != collToken || pos.collId != collId) {
-            if (!oracle.isWrappedTokenSupported(collToken, collId)) revert Errors.ORACLE_NOT_SUPPORT_WTOKEN(collToken);
+            if (!oracle.isWrappedTokenSupported(collToken, collId)) {
+                revert Errors.ORACLE_NOT_SUPPORT_WTOKEN(collToken);
+            }
+
             if (pos.collateralSize > 0) revert Errors.DIFF_COL_EXIST(pos.collToken);
+
             pos.collToken = collToken;
             pos.collId = collId;
         }
@@ -702,13 +720,15 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @return Returns the amount of collateral withdrawn.
     function takeCollateral(uint256 amount) external override inExec returns (uint256) {
         Position storage pos = positions[POSITION_ID];
+
         if (amount == type(uint256).max) {
             amount = pos.collateralSize;
         }
+
         pos.collateralSize -= amount;
         IERC1155Upgradeable(pos.collToken).safeTransferFrom(address(this), msg.sender, pos.collId, amount, "");
-        emit TakeCollateral(POSITION_ID, msg.sender, pos.collToken, pos.collId, amount);
 
+        emit TakeCollateral(POSITION_ID, msg.sender, pos.collToken, pos.collId, amount);
         return amount;
     }
 
@@ -735,9 +755,14 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// NOTE: The caller should ensure that the bToken's interest is updated up to the current block.
     function _doRepay(address token, uint256 amountCall) internal returns (uint256 repaidAmount) {
         address bToken = banks[token].bToken;
+
         IERC20(token).universalApprove(bToken, amountCall);
         uint256 beforeDebt = _borrowBalanceStored(token);
-        if (IBErc20(bToken).repayBorrow(amountCall) != 0) revert Errors.REPAY_FAILED(amountCall);
+
+        if (IBErc20(bToken).repayBorrow(amountCall) != 0) {
+            revert Errors.REPAY_FAILED(amountCall);
+        }
+
         uint256 newDebt = _borrowBalanceStored(token);
         repaidAmount = beforeDebt - newDebt;
     }
@@ -750,6 +775,7 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(address(this));
         IERC20Upgradeable(token).safeTransferFrom(msg.sender, address(this), amountCall);
         uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(address(this));
+
         return balanceAfter - balanceBefore;
     }
 
@@ -762,6 +788,7 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         uint256 balanceBefore = IERC1155Upgradeable(token).balanceOf(address(this), id);
         IERC1155Upgradeable(token).safeTransferFrom(msg.sender, address(this), id, amountCall, "");
         uint256 balanceAfter = IERC1155Upgradeable(token).balanceOf(address(this), id);
+
         return balanceAfter - balanceBefore;
     }
 

@@ -10,14 +10,22 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "./BasicSpell.sol";
-import "../interfaces/ICurveOracle.sol";
-import "../interfaces/ICurveZapDepositor.sol";
-import "../interfaces/IWConvexPools.sol";
-import "../interfaces/curve/ICurvePool.sol";
-import "../libraries/Paraswap/PSwapLib.sol";
-import "../libraries/UniversalERC20.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+
+import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
+
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BasicSpell } from "./BasicSpell.sol";
+
+import { IBank } from "../interfaces/IBank.sol";
+import { ICurveOracle } from "../interfaces/ICurveOracle.sol";
+import { ICurveZapDepositor } from "../interfaces/ICurveZapDepositor.sol";
+import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
+import { IWConvexPools } from "../interfaces/IWConvexPools.sol";
+import { IWETH } from "../interfaces/IWETH.sol";
 
 /// @title ConvexSpell
 /// @author BlueberryProtocol
@@ -122,7 +130,11 @@ contract ConvexSpell is BasicSpell {
             IERC20(borrowToken).universalApprove(pool, borrowBalance);
             uint256 ethValue;
             uint256 tokenBalance = IERC20(borrowToken).balanceOf(address(this));
-            require(borrowBalance <= tokenBalance, "impossible");
+
+            if (borrowBalance > tokenBalance) {
+                revert Errors.INSUFFICIENT_COLLATERAL();
+            }
+
             bool isBorrowTokenWeth = borrowToken == weth;
             if (isBorrowTokenWeth) {
                 bool hasEth;
@@ -133,6 +145,7 @@ contract ConvexSpell is BasicSpell {
                         break;
                     }
                 }
+
                 if (hasEth) {
                     IWETH(borrowToken).withdraw(tokenBalance);
                     ethValue = tokenBalance;
@@ -142,6 +155,7 @@ contract ConvexSpell is BasicSpell {
             if (tokens.length == 2) {
                 if (tokens[1] == THREE_CRV) {
                     uint256[4] memory suppliedAmts;
+
                     if (tokens[0] == borrowToken) {
                         suppliedAmts[0] = tokenBalance;
                     } else if (DAI == borrowToken) {
@@ -151,6 +165,7 @@ contract ConvexSpell is BasicSpell {
                     } else {
                         suppliedAmts[3] = tokenBalance;
                     }
+
                     IERC20(borrowToken).universalApprove(pool, 0);
                     IERC20(borrowToken).universalApprove(CURVE_ZAP_DEPOSITOR, borrowBalance);
 
@@ -175,6 +190,7 @@ contract ConvexSpell is BasicSpell {
                         break;
                     }
                 }
+
                 ICurvePool(pool).add_liquidity{ value: ethValue }(suppliedAmts, _minLPMint);
             } else if (tokens.length == 4) {
                 uint256[4] memory suppliedAmts;
@@ -199,16 +215,21 @@ contract ConvexSpell is BasicSpell {
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
             (uint256 pid, ) = wConvexPools.decodeId(pos.collId);
+
             if (param.farmingPoolId != pid) {
                 revert Errors.INCORRECT_PID(param.farmingPoolId);
             }
+
             if (pos.collToken != address(wConvexPools)) {
                 revert Errors.INCORRECT_COLTOKEN(pos.collToken);
             }
+
             bank.takeCollateral(pos.collateralSize);
+
             (address[] memory rewardTokens, ) = wConvexPools.burn(pos.collId, pos.collateralSize);
             // distribute multiple rewards to users
             uint256 tokensLength = rewardTokens.length;
+
             for (uint256 i; i < tokensLength; ++i) {
                 _doRefundRewards(rewardTokens[i]);
             }
@@ -217,6 +238,7 @@ contract ConvexSpell is BasicSpell {
         /// 7. Deposit on Convex Pool, Put wrapped collateral tokens on Blueberry Bank
         uint256 lpAmount = IERC20(lpToken).balanceOf(address(this));
         IERC20(lpToken).universalApprove(address(wConvexPools), lpAmount);
+
         uint256 id = wConvexPools.mint(param.farmingPoolId, lpAmount);
         bank.putCollateral(address(wConvexPools), id, lpAmount);
     }
@@ -232,9 +254,11 @@ contract ConvexSpell is BasicSpell {
     {
         address crvLp = strategies[closePosParam.param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
+
         if (pos.collToken != address(wConvexPools)) {
             revert Errors.INCORRECT_COLTOKEN(pos.collToken);
         }
+
         if (wConvexPools.getUnderlyingToken(pos.collId) != crvLp) {
             revert Errors.INCORRECT_UNDERLYING(crvLp);
         }
