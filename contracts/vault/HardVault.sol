@@ -68,16 +68,20 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
         _config = config;
     }
 
-    /// @dev Encodes a given ERC20 token address into a unique tokenId.
-    /// @param uToken Address of the ERC20 token.
-    /// @return TokenId representing the token.
+    /**
+     * @dev Encodes a given ERC20 token address into a unique tokenId.
+     * @param uToken Address of the ERC20 token.
+     * @return TokenId representing the token.
+     */
     function _encodeTokenId(address uToken) internal pure returns (uint256) {
         return uint256(uint160(uToken));
     }
 
-    /// @dev Decodes a given tokenId back into the ERC20 token address.
-    /// @param tokenId The tokenId to decode.
-    /// @return Address of the corresponding ERC20 token.
+    /**
+     * @dev Decodes a given tokenId back into the ERC20 token address.
+     * @param tokenId The tokenId to decode.
+     * @return Address of the corresponding ERC20 token.
+     */
     function _decodeTokenId(uint256 tokenId) internal pure returns (address) {
         return address(uint160(tokenId));
     }
