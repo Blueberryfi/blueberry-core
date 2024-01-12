@@ -70,7 +70,7 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
         uint256[] memory weights = pool.getNormalizedWeights();
 
         uint256 length = weights.length;
-        uint256 mult = PRICE_PRECISION;
+        uint256 mult = Constants.PRICE_PRECISION;
         uint256 invariant = pool.getInvariant();
 
         for (uint256 i; i < length; ++i) {

@@ -131,8 +131,10 @@ contract WCurveGauge is
         uint256 claimableCrv = gauge.claimable_tokens(address(this));
         uint256 supply = gauge.balanceOf(address(this));
 
-        uint256 enCrvPerShare = accCrvPerShares[gid] + ((claimableCrv * PRICE_PRECISION) / supply);
-        uint256 crvRewards = enCrvPerShare > stCrvPerShare ? ((enCrvPerShare - stCrvPerShare) * amount) / PRICE_PRECISION : 0;
+        uint256 enCrvPerShare = accCrvPerShares[gid] + ((claimableCrv * Constants.PRICE_PRECISION) / supply);
+        uint256 crvRewards = enCrvPerShare > stCrvPerShare
+            ? ((enCrvPerShare - stCrvPerShare) * amount) / Constants.PRICE_PRECISION
+            : 0;
 
         tokens = new address[](1);
         rewards = new uint256[](1);
@@ -182,8 +184,8 @@ contract WCurveGauge is
         gauge.withdraw(amount);
         IERC20Upgradeable(gauge.lp_token()).safeTransfer(msg.sender, amount);
 
-        uint256 stCrv = (stCrvPerShare * amount) / PRICE_PRECISION;
-        uint256 enCrv = (accCrvPerShares[gid] * amount) / PRICE_PRECISION;
+        uint256 stCrv = (stCrvPerShare * amount) / Constants.PRICE_PRECISION;
+        uint256 enCrv = (accCrvPerShares[gid] * amount) / Constants.PRICE_PRECISION;
 
         if (enCrv > stCrv) {
             rewards = enCrv - stCrv;
@@ -205,7 +207,7 @@ contract WCurveGauge is
         uint256 supply = gauge.balanceOf(address(this));
 
         if (gain > 0 && supply > 0) {
-            accCrvPerShares[gid] += (gain * PRICE_PRECISION) / supply;
+            accCrvPerShares[gid] += (gain * Constants.PRICE_PRECISION) / supply;
         }
     }
 

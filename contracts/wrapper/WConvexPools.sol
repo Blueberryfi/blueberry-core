@@ -341,10 +341,10 @@ contract WConvexPools is
         if (earned != 0) {
             uint256 cvxReward = _getCvxPendingReward(earned);
 
-            cvxPerShare += (cvxReward * PRICE_PRECISION) / currentDeposits;
+            cvxPerShare += (cvxReward * Constants.PRICE_PRECISION) / currentDeposits;
         }
 
-        return (cvxPerShare * amount) / PRICE_PRECISION;
+        return (cvxPerShare * amount) / Constants.PRICE_PRECISION;
     }
 
     function _setAccExtPerShare(uint256 tokenId, address rewarder) internal {
@@ -384,7 +384,7 @@ contract WConvexPools is
 
         _getExtraRewards(pid, escrow);
 
-        if (cvxReward > 0) cvxPerShareByPid[pid] += (cvxReward * PRICE_PRECISION) / currentDeposits;
+        if (cvxReward > 0) cvxPerShareByPid[pid] += (cvxReward * Constants.PRICE_PRECISION) / currentDeposits;
     }
 
     function _getExtraRewards(uint256 pid, address escrow) internal {

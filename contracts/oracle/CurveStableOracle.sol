@@ -68,7 +68,7 @@ contract CurveStableOracle is CurveBaseOracle {
         }
 
         // Calculate LP token price using the minimum underlying token price
-        return (minPrice * virtualPrice) / PRICE_PRECISION;
+        return (minPrice * virtualPrice) / Constants.PRICE_PRECISION;
     }
 
     /// @notice Fallback function to receive Ether.
