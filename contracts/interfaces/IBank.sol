@@ -49,6 +49,14 @@ interface IBank {
         address hardVault /// Address of the hard vault.
     );
 
+    /// @notice Emitted when a bank is modified by the owner.
+    event ModifyBank(
+        address token, /// The primary token associated with the bank.
+        address bToken, /// The corresponding bToken for the bank.
+        address softVault, /// Address of the soft vault.
+        address hardVault /// Address of the hard vault.
+    );
+
     /// @notice Emitted when the oracle's address is updated by the owner.
     event SetOracle(address oracle); /// New address of the oracle.
 

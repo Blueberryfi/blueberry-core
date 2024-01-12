@@ -52,6 +52,7 @@ describe('Bank', () => {
   let config: ProtocolConfig;
   let usdcSoftVault: SoftVault;
   let ichiSoftVault: SoftVault;
+  let wethSoftVault: SoftVault;
   let hardVault: HardVault;
   let ichiFarm: MockIchiFarm;
   let ichiVault: MockIchiVault;
@@ -78,6 +79,7 @@ describe('Bank', () => {
     mockOracle = protocol.mockOracle;
     usdcSoftVault = protocol.usdcSoftVault;
     ichiSoftVault = protocol.ichiSoftVault;
+    wethSoftVault = protocol.wethSoftVault;
     hardVault = protocol.hardVault;
     bCRV = protocol.bCRV;
   });
@@ -910,6 +912,29 @@ describe('Bank', () => {
           bank,
           'BANK_ALREADY_LISTED'
         );
+      });
+      it('should be able to modify bank', async () => {
+        await expect(
+          bank.connect(alice).modifyBank(0, USDC, usdcSoftVault.address, hardVault.address, 9000)
+        ).to.be.revertedWith('Ownable: caller is not the owner');
+        await expect(bank.modifyBank(0, ethers.constants.AddressZero, usdcSoftVault.address, hardVault.address, 9000))
+          .to.be.revertedWithCustomError(bank, 'TOKEN_NOT_WHITELISTED')
+          .withArgs(ethers.constants.AddressZero);
+        await expect(
+          bank.modifyBank(0, USDC, ethers.constants.AddressZero, hardVault.address, 9000)
+        ).to.be.revertedWithCustomError(bank, 'ZERO_ADDRESS');
+        await expect(
+          bank.modifyBank(0, USDC, usdcSoftVault.address, ethers.constants.AddressZero, 9000)
+        ).to.be.revertedWithCustomError(bank, 'ZERO_ADDRESS');
+        await expect(
+          bank.modifyBank(0, USDC, usdcSoftVault.address, hardVault.address, 7000)
+        ).to.be.revertedWithCustomError(bank, 'LIQ_THRESHOLD_TOO_LOW');
+        await expect(
+          bank.modifyBank(0, USDC, usdcSoftVault.address, hardVault.address, 12000)
+        ).to.be.revertedWithCustomError(bank, 'LIQ_THRESHOLD_TOO_HIGH');
+        await expect(
+          bank.modifyBank(4, USDC, wethSoftVault.address, hardVault.address, 9000)
+        ).to.be.revertedWithCustomError(bank, 'BANK_NOT_EXIST');
       });
       it('should be able to set bank status', async () => {
         await mockOracle.setPrice([ICHI], [BigNumber.from(10).pow(18).mul(5)]);

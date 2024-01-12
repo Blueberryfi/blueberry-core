@@ -204,6 +204,9 @@ error TOKEN_NOT_WHITELISTED(address token);
 /// @notice Thrown when a bank isn't listed for a given token.
 error BANK_NOT_LISTED(address token);
 
+/// @notice Thrown when a bank doesn't exist for an index.
+error BANK_NOT_EXIST(uint8 index);
+
 /// @notice Thrown when a bank is already listed for a given token.
 error BANK_ALREADY_LISTED();
 
