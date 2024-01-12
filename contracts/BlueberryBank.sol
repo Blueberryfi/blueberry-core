@@ -270,8 +270,6 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         Bank storage bank = banks[bankToken];
         address bToken = address(ISoftVault(softVault).bToken());
 
-        if (!bank.isListed) revert Errors.BANK_NOT_LISTED(token);
-
         bank.bToken = bToken;
         bank.softVault = softVault;
         bank.hardVault = hardVault;
