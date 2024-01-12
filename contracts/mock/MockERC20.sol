@@ -10,12 +10,8 @@ contract MockERC20 is ERC20 {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint8 decimal
-    ) ERC20(name, symbol) {
+
+    constructor(string memory name, string memory symbol, uint8 decimal) ERC20(name, symbol) {
         _decimals = decimal;
     }
 
@@ -31,15 +27,15 @@ contract MockERC20 is ERC20 {
         _mint(msg.sender, 100 * 10 ** _decimals);
     }
 
-    function mintWithAmount(uint amount) external {
+    function mintWithAmount(uint256 amount) external {
         _mint(msg.sender, amount);
     }
 
-    function mintTo(address to, uint amount) external {
+    function mintTo(address to, uint256 amount) external {
         _mint(to, amount);
     }
 
-    function burn(address from, uint amount) external {
+    function burn(address from, uint256 amount) external {
         _burn(from, amount);
     }
 }

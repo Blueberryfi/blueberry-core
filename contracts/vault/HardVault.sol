@@ -10,15 +10,20 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+/* solhint-disable max-line-length */
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+/* solhint-enable max-line-length */
 
-import "../utils/BlueBerryErrors.sol" as Errors;
-import "../interfaces/IProtocolConfig.sol";
-import "../interfaces/IHardVault.sol";
-import "../libraries/UniversalERC20.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
+
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { IHardVault } from "../interfaces/IHardVault.sol";
+import { IProtocolConfig } from "../interfaces/IProtocolConfig.sol";
 
 /// @title HardVault
 /// @notice The HardVault contract is used to lock LP tokens as collateral.
@@ -26,12 +31,7 @@ import "../libraries/UniversalERC20.sol";
 /// @dev The HardVault is an ERC1155 contract where each LP token is associated with a unique tokenId.
 ///      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
 ///      can be used as collateral in this vault.
-contract HardVault is
-    OwnableUpgradeable,
-    ERC1155Upgradeable,
-    ReentrancyGuardUpgradeable,
-    IHardVault
-{
+contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpgradeable, IHardVault {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
     /*//////////////////////////////////////////////////////////////////////////
@@ -49,26 +49,18 @@ contract HardVault is
     /// @param account Address of the user.
     /// @param amount Amount of ERC20 tokens deposited.
     /// @param shareAmount Amount of ERC1155 tokens minted.
-    event Deposited(
-        address indexed account,
-        uint256 amount,
-        uint256 shareAmount
-    );
+    event Deposited(address indexed account, uint256 amount, uint256 shareAmount);
 
     /// @dev Emitted when a user withdraws ERC20 tokens from the vault.
     /// @param account Address of the user.
     /// @param amount Amount of ERC20 tokens withdrawn.
     /// @param shareAmount Amount of ERC1155 tokens burned.
-    event Withdrawn(
-        address indexed account,
-        uint256 amount,
-        uint256 shareAmount
-    );
+    event Withdrawn(address indexed account, uint256 amount, uint256 shareAmount);
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -92,14 +84,14 @@ contract HardVault is
     /// @dev Encodes a given ERC20 token address into a unique tokenId.
     /// @param uToken Address of the ERC20 token.
     /// @return TokenId representing the token.
-    function _encodeTokenId(address uToken) internal pure returns (uint) {
+    function _encodeTokenId(address uToken) internal pure returns (uint256) {
         return uint256(uint160(uToken));
     }
 
     /// @dev Decodes a given tokenId back into the ERC20 token address.
     /// @param tokenId The tokenId to decode.
     /// @return Address of the corresponding ERC20 token.
-    function _decodeTokenId(uint tokenId) internal pure returns (address) {
+    function _decodeTokenId(uint256 tokenId) internal pure returns (address) {
         return address(uint160(tokenId));
     }
 
@@ -107,22 +99,16 @@ contract HardVault is
     /// @param token Address of the ERC20 token.
     /// @param user Address of the user.
     /// @return Balance of the user for the given token.
-    function balanceOfERC20(
-        address token,
-        address user
-    ) external view override returns (uint256) {
+    function balanceOfERC20(address token, address user) external view override returns (uint256) {
         return balanceOf(user, _encodeTokenId(token));
     }
 
     /// @notice Maps a tokenId to its underlying ERC20 token.
     /// @param tokenId The tokenId to resolve.
     /// @return token Address of the corresponding ERC20 token.
-    function getUnderlyingToken(
-        uint256 tokenId
-    ) external pure override returns (address token) {
+    function getUnderlyingToken(uint256 tokenId) external pure override returns (address token) {
         token = _decodeTokenId(tokenId);
-        if (_encodeTokenId(token) != tokenId)
-            revert Errors.INVALID_TOKEN_ID(tokenId);
+        if (_encodeTokenId(token) != tokenId) revert Errors.INVALID_TOKEN_ID(tokenId);
     }
 
     /// @notice Allows a user to deposit ERC20 tokens into the vault and mint corresponding ERC1155 tokens.
@@ -130,10 +116,7 @@ contract HardVault is
     /// @param token The ERC20 token to deposit.
     /// @param amount The amount of ERC20 tokens to deposit.
     /// @return shareAmount The amount of ERC1155 tokens minted in return.
-    function deposit(
-        address token,
-        uint256 amount
-    ) external override nonReentrant returns (uint256 shareAmount) {
+    function deposit(address token, uint256 amount) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         uint256 uBalanceBefore = uToken.balanceOf(address(this));
@@ -162,10 +145,7 @@ contract HardVault is
         /// Apply withdrawal fee if within the fee window (e.g., 2 months)
         IERC20(address(uToken)).universalApprove(address(config.feeManager()), shareAmount);
 
-        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(
-            address(uToken),
-            shareAmount
-        );
+        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(address(uToken), shareAmount);
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);

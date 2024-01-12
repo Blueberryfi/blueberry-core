@@ -10,9 +10,15 @@
 
 pragma solidity 0.8.22;
 
-import "./CurveBaseOracle.sol";
-import "../libraries/balancer-v2/FixedPoint.sol";
-import "../utils/BlueBerryConst.sol" as Constants;
+import { CurveBaseOracle } from "./CurveBaseOracle.sol";
+
+import { FixedPoint } from "../libraries/balancer-v2/FixedPoint.sol";
+import "../utils/BlueberryConst.sol" as Constants;
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
+import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 
 /// @author BlueberryProtocol
 /// @title Curve Volatile Oracle
@@ -24,8 +30,8 @@ contract CurveVolatileOracle is CurveBaseOracle {
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
 
-    uint16 constant PERCENTAGE_FACTOR = 1e4; /// 100% represented in fixed point format
-    uint256 constant RANGE_WIDTH = 200; // Represents a 2% range width
+    uint16 private constant _PERCENTAGE_FACTOR = 1e4; /// 100% represented in fixed point format
+    uint256 private constant _RANGE_WIDTH = 200; // Represents a 2% range width
 
     /// @dev The lower bound for the contract's token-to-underlying exchange rate.
     /// @notice Used to protect against LP token / share price manipulation.
@@ -37,14 +43,11 @@ contract CurveVolatileOracle is CurveBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @notice Constructor to set initial values for the Curve Volatile Oracle
     /// @param base_ Address of the base oracle
     /// @param addressProvider_ Address of the curve address provider
-    constructor(
-        IBaseOracle base_,
-        ICurveAddressProvider addressProvider_
-    ) CurveBaseOracle(base_, addressProvider_) {}
+    constructor(IBaseOracle base_, ICurveAddressProvider addressProvider_) CurveBaseOracle(base_, addressProvider_) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -54,23 +57,15 @@ contract CurveVolatileOracle is CurveBaseOracle {
     /// @param _crvLp The curve lp token
     /// @param _lowerBound The new lower bound (the upper bound is computed dynamically)
     ///                    from the lower bound
-    function setLimiter(
-        address _crvLp,
-        uint256 _lowerBound
-    ) external onlyOwner {
+    function setLimiter(address _crvLp, uint256 _lowerBound) external onlyOwner {
         _setLimiter(_crvLp, _lowerBound);
     }
 
     /// @dev Internal implementation for setting the limiter
     function _setLimiter(address _crvLp, uint256 _lowerBound) internal {
-        if (
-            _lowerBound == 0 ||
-            !_checkCurrentValueInBounds(
-                _crvLp,
-                _lowerBound,
-                _upperBound(_lowerBound)
-            )
-        ) revert BlueBerryErrors.INCORRECT_LIMITS();
+        if (_lowerBound == 0 || !_checkCurrentValueInBounds(_crvLp, _lowerBound, _upperBound(_lowerBound))) {
+            revert Errors.INCORRECT_LIMITS();
+        }
 
         lowerBound[_crvLp] = _lowerBound;
         emit NewLimiterParams(_lowerBound, _upperBound(_lowerBound));
@@ -81,7 +76,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
         address _crvLp,
         uint256 _lowerBound,
         uint256 __upperBound
-    ) internal returns (bool) {
+    ) internal view returns (bool) {
         (, , uint256 virtualPrice) = _getPoolInfo(_crvLp);
         if (virtualPrice < _lowerBound || virtualPrice > __upperBound) {
             return false;
@@ -119,9 +114,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
         /// Checks that virtual_price is within bounds
         virtualPrice = _checkAndUpperBoundValue(crvLp, virtualPrice);
 
-        uint256 answer = product.powDown(Constants.PRICE_PRECISION / nTokens).mulDown(
-            nTokens * virtualPrice
-        );
+        uint256 answer = product.powDown(Constants.PRICE_PRECISION / nTokens).mulDown(nTokens * virtualPrice);
 
         return (answer * Constants.CHAINLINK_PRICE_FEED_PRECISION) / Constants.PRICE_PRECISION;
     }
@@ -130,12 +123,9 @@ contract CurveVolatileOracle is CurveBaseOracle {
     /// @notice If the value is below the lowerBound, it reverts. Otherwise, it returns min(value, upperBound).
     /// @param crvLp The curve LP token address
     /// @param value Value to be checked and bounded
-    function _checkAndUpperBoundValue(
-        address crvLp,
-        uint256 value
-    ) internal view returns (uint256) {
+    function _checkAndUpperBoundValue(address crvLp, uint256 value) internal view returns (uint256) {
         uint256 lb = lowerBound[crvLp];
-        if (value < lb) revert BlueBerryErrors.VALUE_OUT_OF_RANGE();
+        if (value < lb) revert Errors.VALUE_OUT_OF_RANGE();
 
         uint256 uBound = _upperBound(lb);
 
@@ -144,6 +134,6 @@ contract CurveVolatileOracle is CurveBaseOracle {
 
     /// Computes the upper bound based on the provided lower bound
     function _upperBound(uint256 lb) internal pure returns (uint256) {
-        return (lb * (PERCENTAGE_FACTOR + RANGE_WIDTH)) / PERCENTAGE_FACTOR;
+        return (lb * (_PERCENTAGE_FACTOR + _RANGE_WIDTH)) / _PERCENTAGE_FACTOR;
     }
 }

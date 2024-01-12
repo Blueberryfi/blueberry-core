@@ -15,9 +15,7 @@ interface IDeposit {
 
     function totalSupply() external view returns (uint256);
 
-    function poolInfo(
-        uint256
-    ) external view returns (address, address, address, address, address, bool);
+    function poolInfo(uint256) external view returns (address, address, address, address, address, bool);
 
     function rewardClaimed(uint256, address, uint256) external;
 
@@ -31,11 +29,7 @@ interface IDeposit {
 
     function owner() external returns (address);
 
-    function deposit(
-        uint256 _pid,
-        uint256 _amount,
-        bool _stake
-    ) external returns (bool);
+    function deposit(uint256 _pid, uint256 _amount, bool _stake) external returns (bool);
 }
 
 contract MockVirtualBalanceRewardPool {
@@ -67,7 +61,7 @@ contract MockVirtualBalanceRewardPool {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /**
      * @param deposit_  Parent deposit pool e.g cvxCRV staking in BaseRewardPool
      * @param reward_   The rewards token e.g 3Crv
@@ -88,11 +82,11 @@ contract MockVirtualBalanceRewardPool {
         return Math.min(block.timestamp, periodFinish);
     }
 
-    function setRewardPerToken(uint _rewardPerToken) external {
+    function setRewardPerToken(uint256 _rewardPerToken) external {
         rewardPerToken = _rewardPerToken;
     }
 
-    function setReward(address user, uint amount) external {
+    function setReward(address user, uint256 amount) external {
         rewards[user] = amount;
     }
 
@@ -114,10 +108,7 @@ contract MockVirtualBalanceRewardPool {
      *          this updates the virtual balance of this user as this contract doesn't
      *          actually hold any staked tokens it just diributes reward tokens
      */
-    function stake(
-        address _account,
-        uint256 amount
-    ) external updateReward(_account) {
+    function stake(address _account, uint256 amount) external updateReward(_account) {
         require(msg.sender == address(deposits), "!authorized");
         // require(amount > 0, 'VirtualDepositRewardPool: Cannot stake 0');
         emit Staked(_account, amount);
@@ -127,10 +118,7 @@ contract MockVirtualBalanceRewardPool {
      * @notice  Withdraw stake and update reward, emit, call linked reward's stake
      * @dev     See stake
      */
-    function withdraw(
-        address _account,
-        uint256 amount
-    ) public updateReward(_account) {
+    function withdraw(address _account, uint256 amount) public updateReward(_account) {
         require(msg.sender == address(deposits), "!authorized");
         //require(amount > 0, 'VirtualDepositRewardPool : Cannot withdraw 0');
 
@@ -157,11 +145,7 @@ contract MockVirtualBalanceRewardPool {
     }
 
     function donate(uint256 _amount) external returns (bool) {
-        IERC20(rewardToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
+        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards.add(_amount);
     }
 
@@ -169,7 +153,7 @@ contract MockVirtualBalanceRewardPool {
         _rewards = _rewards.add(queuedRewards);
 
         if (block.timestamp >= periodFinish) {
-            notifyRewardAmount(_rewards);
+            _notifyRewardAmount(_rewards);
             queuedRewards = 0;
             return;
         }
@@ -180,16 +164,14 @@ contract MockVirtualBalanceRewardPool {
         uint256 currentAtNow = rewardRate * elapsedTime;
         uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
         if (queuedRatio < newRewardRatio) {
-            notifyRewardAmount(_rewards);
+            _notifyRewardAmount(_rewards);
             queuedRewards = 0;
         } else {
             queuedRewards = _rewards;
         }
     }
 
-    function notifyRewardAmount(
-        uint256 reward
-    ) internal updateReward(address(0)) {
+    function _notifyRewardAmount(uint256 reward) internal updateReward(address(0)) {
         historicalRewards = historicalRewards.add(reward);
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(duration);

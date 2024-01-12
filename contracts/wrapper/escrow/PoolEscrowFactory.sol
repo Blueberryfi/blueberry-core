@@ -9,12 +9,14 @@
 */
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "./PoolEscrow.sol";
-import "./interfaces/IPoolEscrow.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {LibClone} from "./utils/LibClone.sol";
+import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+
+import "../../utils/BlueberryErrors.sol" as Errors;
+import { LibClone } from "./utils/LibClone.sol";
+
+import { IPoolEscrow } from "./interfaces/IPoolEscrow.sol";
 
 contract PoolEscrowFactory is Initializable, Ownable {
     using SafeERC20 for IERC20;
@@ -48,10 +50,7 @@ contract PoolEscrowFactory is Initializable, Ownable {
 
     /// @dev used once wrapper contract has been deployed to avoid circular dependency
     /// @param _wrapper The address of the pool wrapper contract.
-    function initialize(
-        address _wrapper,
-        address _auraPools
-    ) public payable initializer onlyOwner {
+    function initialize(address _wrapper, address _auraPools) public payable initializer onlyOwner {
         if (_wrapper == address(0) || _auraPools == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
@@ -67,13 +66,7 @@ contract PoolEscrowFactory is Initializable, Ownable {
         address _lpToken
     ) external payable onlyWrapper returns (address _escrow) {
         _escrow = LibClone.clone(implementation);
-        IPoolEscrow(_escrow).initialize(
-            _pid,
-            wrapper,
-            auraPools,
-            _rewards,
-            _lpToken
-        );
+        IPoolEscrow(_escrow).initialize(_pid, wrapper, auraPools, _rewards, _lpToken);
         emit EscrowCreated(_escrow);
     }
 }

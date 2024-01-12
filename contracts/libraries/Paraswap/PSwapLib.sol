@@ -21,7 +21,7 @@ library PSwapLib {
         address augustusSwapper,
         address tokenTransferProxy,
         address fromToken,
-        uint fromAmount,
+        uint256 fromAmount,
         bytes calldata data
     ) internal returns (bool success) {
         _approve(IERC20(fromToken), tokenTransferProxy, fromAmount);

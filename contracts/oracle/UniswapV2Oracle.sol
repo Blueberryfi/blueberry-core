@@ -10,12 +10,13 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-import "./UsingBaseOracle.sol";
-import "../libraries/BBMath.sol";
-import "../interfaces/IBaseOracle.sol";
+import { BBMath } from "../libraries/BBMath.sol";
+
+import { UsingBaseOracle } from "./UsingBaseOracle.sol";
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 
 /// @author BlueberryProtocol
 /// @title Uniswap V2 Oracle
@@ -23,11 +24,10 @@ import "../interfaces/IBaseOracle.sol";
 /// @dev Implented Fair Lp Pricing
 ///      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
 contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
-    
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -50,9 +50,7 @@ contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
         uint256 px1 = base.getPrice(token1);
         uint256 t0Decimal = IERC20Metadata(token0).decimals();
         uint256 t1Decimal = IERC20Metadata(token1).decimals();
-        uint256 sqrtK = BBMath.sqrt(
-            r0 * r1 * 10 ** (36 - t0Decimal - t1Decimal)
-        );
+        uint256 sqrtK = BBMath.sqrt(r0 * r1 * 10 ** (36 - t0Decimal - t1Decimal));
 
         return (2 * sqrtK * BBMath.sqrt(px0 * px1)) / totalSupply;
     }

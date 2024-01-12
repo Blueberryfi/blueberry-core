@@ -26,20 +26,11 @@ contract MockStashToken is IAuraStashToken {
     }
 
     function name() external view returns (string memory) {
-        return
-            string(
-                abi.encodePacked(
-                    "Stash Token ",
-                    IERC20Metadata(baseToken).name()
-                )
-            );
+        return string(abi.encodePacked("Stash Token ", IERC20Metadata(baseToken).name()));
     }
 
     function symbol() external view returns (string memory) {
-        return
-            string(
-                abi.encodePacked("STASH-", IERC20Metadata(baseToken).symbol())
-            );
+        return string(abi.encodePacked("STASH-", IERC20Metadata(baseToken).symbol()));
     }
 
     function totalSupply() public view returns (uint256) {
@@ -47,10 +38,7 @@ contract MockStashToken is IAuraStashToken {
     }
 
     function mint(uint256 _amount) external {
-        require(
-            _totalSupply.add(_amount) < MAX_TOTAL_SUPPLY,
-            "totalSupply exceeded"
-        );
+        require(_totalSupply.add(_amount) < MAX_TOTAL_SUPPLY, "totalSupply exceeded");
 
         _totalSupply = _totalSupply.add(_amount);
         IERC20(baseToken).safeTransferFrom(msg.sender, address(this), _amount);

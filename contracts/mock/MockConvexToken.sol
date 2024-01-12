@@ -29,7 +29,7 @@ contract MockConvexToken is ERC20 {
         operator = _operator;
     }
 
-    function mintTestTokens(address to, uint amount) external {
+    function mintTestTokens(address to, uint256 amount) external {
         _mint(to, amount);
     }
 

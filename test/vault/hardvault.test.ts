@@ -1,19 +1,12 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ethers, upgrades } from "hardhat";
-import chai, { expect } from "chai";
-import {
-  ERC20,
-  FeeManager,
-  HardVault,
-  IUniswapV2Router02,
-  IWETH,
-  ProtocolConfig,
-} from "../../typechain-types";
-import { ADDRESS, CONTRACT_NAMES } from "../../constant";
-import { BigNumber, utils } from "ethers";
-import { roughlyNear } from "../assertions/roughlyNear";
-import { near } from "../assertions/near";
-import { evm_increaseTime } from "../helpers";
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ethers, upgrades } from 'hardhat';
+import chai, { expect } from 'chai';
+import { ERC20, FeeManager, HardVault, IUniswapV2Router02, IWETH, ProtocolConfig } from '../../typechain-types';
+import { ADDRESS, CONTRACT_NAMES } from '../../constant';
+import { BigNumber, utils } from 'ethers';
+import { roughlyNear } from '../assertions/roughlyNear';
+import { near } from '../assertions/near';
+import { evm_increaseTime } from '../helpers';
 
 chai.use(roughlyNear);
 chai.use(near);
@@ -21,10 +14,10 @@ chai.use(near);
 const USDC = ADDRESS.USDC;
 const WETH = ADDRESS.WETH;
 
-describe("HardVault", () => {
+/* eslint-disable @typescript-eslint/no-unused-vars */
+describe('HardVault', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
-  let bank: SignerWithAddress;
   let treasury: SignerWithAddress;
 
   let usdc: ERC20;
@@ -33,27 +26,19 @@ describe("HardVault", () => {
   let config: ProtocolConfig;
 
   before(async () => {
-    [admin, alice, bank, treasury] = await ethers.getSigners();
-    usdc = <ERC20>await ethers.getContractAt("ERC20", USDC, admin);
+    [admin, alice, treasury] = await ethers.getSigners();
+    usdc = <ERC20>await ethers.getContractAt('ERC20', USDC, admin);
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
-    const ProtocolConfig = await ethers.getContractFactory("ProtocolConfig");
-    config = <ProtocolConfig>await upgrades.deployProxy(
-      ProtocolConfig,
-      [treasury.address],
-      {
-        unsafeAllow: ["delegatecall"],
-      }
-    );
+    const ProtocolConfig = await ethers.getContractFactory('ProtocolConfig');
+    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address], {
+      unsafeAllow: ['delegatecall'],
+    });
 
-    const FeeManager = await ethers.getContractFactory("FeeManager");
-    const feeManager = <FeeManager>await upgrades.deployProxy(
-      FeeManager,
-      [config.address],
-      {
-        unsafeAllow: ["delegatecall"],
-      }
-    );
+    const FeeManager = await ethers.getContractFactory('FeeManager');
+    const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address], {
+      unsafeAllow: ['delegatecall'],
+    });
     await feeManager.deployed();
     await config.setFeeManager(feeManager.address);
     await config.startVaultWithdrawFee();
@@ -62,23 +47,20 @@ describe("HardVault", () => {
   beforeEach(async () => {
     const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
     vault = <HardVault>await upgrades.deployProxy(HardVault, [config.address], {
-      unsafeAllow: ["delegatecall"],
+      unsafeAllow: ['delegatecall'],
     });
     await vault.deployed();
 
     // deposit 50 eth -> 50 WETH
-    await weth.deposit({ value: utils.parseUnits("50") });
+    await weth.deposit({ value: utils.parseUnits('50') });
     await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
 
     // swap 50 weth -> usdc
     const uniV2Router = <IUniswapV2Router02>(
-      await ethers.getContractAt(
-        CONTRACT_NAMES.IUniswapV2Router02,
-        ADDRESS.UNI_V2_ROUTER
-      )
+      await ethers.getContractAt(CONTRACT_NAMES.IUniswapV2Router02, ADDRESS.UNI_V2_ROUTER)
     );
     await uniV2Router.swapExactTokensForTokens(
-      utils.parseUnits("50"),
+      utils.parseUnits('50'),
       0,
       [WETH, USDC],
       admin.address,
@@ -86,40 +68,32 @@ describe("HardVault", () => {
     );
   });
 
-  describe("Constructor", () => {
-    it("should revert when config address is invalid", async () => {
-      const HardVault = await ethers.getContractFactory(
-        CONTRACT_NAMES.HardVault
-      );
+  describe('Constructor', () => {
+    it('should revert when config address is invalid', async () => {
+      const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
       await expect(
         upgrades.deployProxy(HardVault, [ethers.constants.AddressZero], {
-          unsafeAllow: ["delegatecall"],
+          unsafeAllow: ['delegatecall'],
         })
-      ).to.be.revertedWithCustomError(HardVault, "ZERO_ADDRESS");
+      ).to.be.revertedWithCustomError(HardVault, 'ZERO_ADDRESS');
 
       expect(await vault.config()).to.be.equal(config.address);
     });
-    it("should revert initializing twice", async () => {
+    it('should revert initializing twice', async () => {
       await expect(vault.initialize(config.address)).to.be.revertedWith(
-        "Initializable: contract is already initialized"
+        'Initializable: contract is already initialized'
       );
     });
   });
-  describe("Deposit", () => {
-    const depositAmount = utils.parseUnits("100", 6);
+  describe('Deposit', () => {
+    const depositAmount = utils.parseUnits('100', 6);
     beforeEach(async () => {});
-    it("should revert if deposit amount is zero", async () => {
-      await expect(vault.deposit(USDC, 0)).to.be.revertedWithCustomError(
-        vault,
-        "ZERO_AMOUNT"
-      );
+    it('should revert if deposit amount is zero', async () => {
+      await expect(vault.deposit(USDC, 0)).to.be.revertedWithCustomError(vault, 'ZERO_AMOUNT');
     });
-    it("should be able to deposit underlying token on vault", async () => {
+    it('should be able to deposit underlying token on vault', async () => {
       await usdc.approve(vault.address, depositAmount);
-      await expect(vault.deposit(USDC, depositAmount)).to.be.emit(
-        vault,
-        "Deposited"
-      );
+      await expect(vault.deposit(USDC, depositAmount)).to.be.emit(vault, 'Deposited');
 
       expect(await usdc.balanceOf(vault.address)).to.be.equal(depositAmount);
 
@@ -129,8 +103,8 @@ describe("HardVault", () => {
     });
   });
 
-  describe("Withdraw", () => {
-    const depositAmount = utils.parseUnits("100", 6);
+  describe('Withdraw', () => {
+    const depositAmount = utils.parseUnits('100', 6);
     const tokenId = BigNumber.from(USDC);
 
     beforeEach(async () => {
@@ -138,21 +112,15 @@ describe("HardVault", () => {
       await vault.deposit(USDC, depositAmount);
     });
 
-    it("should revert if withdraw amount is zero", async () => {
-      await expect(vault.withdraw(USDC, 0)).to.be.revertedWithCustomError(
-        vault,
-        "ZERO_AMOUNT"
-      );
+    it('should revert if withdraw amount is zero', async () => {
+      await expect(vault.withdraw(USDC, 0)).to.be.revertedWithCustomError(vault, 'ZERO_AMOUNT');
     });
 
-    it("should cut withdraw fee when withdraw within withdraw fee window", async () => {
+    it('should cut withdraw fee when withdraw within withdraw fee window', async () => {
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const shareBalance = await vault.balanceOf(admin.address, tokenId);
 
-      await expect(vault.withdraw(USDC, shareBalance)).to.be.emit(
-        vault,
-        "Withdrawn"
-      );
+      await expect(vault.withdraw(USDC, shareBalance)).to.be.emit(vault, 'Withdrawn');
 
       expect(await vault.balanceOf(admin.address, tokenId)).to.be.equal(0);
 
@@ -162,31 +130,24 @@ describe("HardVault", () => {
       const treasuryBalance = await usdc.balanceOf(treasury.address);
       expect(treasuryBalance).to.be.near(fee);
 
-      expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.roughlyNear(
-        depositAmount.sub(fee)
-      );
+      expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.roughlyNear(depositAmount.sub(fee));
     });
-    it("should not cut fee after withdraw fee window", async () => {
+    it('should not cut fee after withdraw fee window', async () => {
       await evm_increaseTime(60 * 60 * 24 * 100);
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const shareBalance = await vault.balanceOf(admin.address, tokenId);
 
-      await expect(vault.withdraw(USDC, shareBalance)).to.be.emit(
-        vault,
-        "Withdrawn"
-      );
+      await expect(vault.withdraw(USDC, shareBalance)).to.be.emit(vault, 'Withdrawn');
 
       expect(await vault.balanceOf(admin.address, tokenId)).to.be.equal(0);
 
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
-      expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.equal(
-        depositAmount
-      );
+      expect(afterUSDCBalance.sub(beforeUSDCBalance)).to.be.equal(depositAmount);
     });
   });
 
-  describe("Utils", () => {
-    const depositAmount = utils.parseUnits("100", 6);
+  describe('Utils', () => {
+    const depositAmount = utils.parseUnits('100', 6);
     const tokenId = BigNumber.from(USDC);
 
     beforeEach(async () => {
@@ -194,16 +155,14 @@ describe("HardVault", () => {
       await vault.deposit(USDC, depositAmount);
     });
 
-    it("should return balance of underlying token", async () => {
-      expect(await vault.balanceOfERC20(USDC, admin.address)).to.be.equal(
-        depositAmount
-      );
+    it('should return balance of underlying token', async () => {
+      expect(await vault.balanceOfERC20(USDC, admin.address)).to.be.equal(depositAmount);
     });
-    it("should return token id from uToken address", async () => {
+    it('should return token id from uToken address', async () => {
       expect(await vault.getUnderlyingToken(tokenId)).to.be.equal(USDC);
 
       await expect(vault.getUnderlyingToken(ethers.constants.MaxUint256))
-        .to.be.revertedWithCustomError(vault, "INVALID_TOKEN_ID")
+        .to.be.revertedWithCustomError(vault, 'INVALID_TOKEN_ID')
         .withArgs(ethers.constants.MaxUint256);
     });
   });

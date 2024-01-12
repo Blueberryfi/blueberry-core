@@ -1,6 +1,6 @@
-import fs from "fs";
-import { ethers, network, upgrades } from "hardhat";
-import { ADDRESS, CONTRACT_NAMES } from "../../constant";
+import fs from 'fs';
+import { ethers, network, upgrades } from 'hardhat';
+import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import {
   AggregatorOracle,
   BandAdapterOracle,
@@ -8,9 +8,9 @@ import {
   CoreOracle,
   UniswapV3AdapterOracle,
   MockOracle,
-} from "../../typechain-types";
+} from '../../typechain-types';
 
-const deploymentPath = "./deployments";
+const deploymentPath = './deployments';
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
 
 function writeDeployments(deployment: any) {
@@ -26,19 +26,17 @@ async function main(): Promise<void> {
     : {};
 
   const [deployer] = await ethers.getSigners();
-  console.log("Deployer:", deployer.address);
+  console.log('Deployer:', deployer.address);
 
   // Mock Oracle
-  const MockOracle = await ethers.getContractFactory(
-    CONTRACT_NAMES.MockOracle
-  );
+  const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
   const mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
-  console.log("Mock Oracle Address:", mockOracle.address);
+  console.log('Mock Oracle Address:', mockOracle.address);
   deployment.MockOracle = mockOracle.address;
   writeDeployments(deployment);
 
-  console.log("Setting up mock prices");
+  console.log('Setting up mock prices');
   await mockOracle.setPrice(
     [
       ADDRESS.USDC,
@@ -55,30 +53,20 @@ async function main(): Promise<void> {
       ADDRESS.BAL,
     ],
     [
-      100000000,
-      100000000,
-      70000000,
-      98000000,
-      700000000,
-      2900000000000,
-      190000000000,
-      190000000000,
-      1000000000,
-      1400000000,
-      210000000000,
-      450000000,
+      100000000, 100000000, 70000000, 98000000, 700000000, 2900000000000, 190000000000, 190000000000, 1000000000,
+      1400000000, 210000000000, 450000000,
     ]
   );
 
   // Aggregator Oracle
-  const AggregatorOracle = await ethers.getContractFactory("AggregatorOracle");
+  const AggregatorOracle = await ethers.getContractFactory('AggregatorOracle');
   const aggregatorOracle = <AggregatorOracle>await AggregatorOracle.deploy();
   await aggregatorOracle.deployed();
-  console.log("Aggregator Oracle Address:", aggregatorOracle.address);
+  console.log('Aggregator Oracle Address:', aggregatorOracle.address);
   deployment.AggregatorOracle = aggregatorOracle.address;
   writeDeployments(deployment);
 
-  console.log("Setting up Primary Sources\nMax Price Deviation: 5%");
+  console.log('Setting up Primary Sources\nMax Price Deviation: 5%');
   await aggregatorOracle.setMultiPrimarySources(
     [
       ADDRESS.USDC,
@@ -111,28 +99,23 @@ async function main(): Promise<void> {
     ]
   );
 
-  console.log("Deploying UniV3WrappedLib...");
-  const LinkedLibFactory = await ethers.getContractFactory("UniV3WrappedLib");
+  console.log('Deploying UniV3WrappedLib...');
+  const LinkedLibFactory = await ethers.getContractFactory('UniV3WrappedLib');
   const LibInstance = await LinkedLibFactory.deploy();
   await LibInstance.deployed();
-  console.log("UniV3WrappedLib Address:", LibInstance.address);
+  console.log('UniV3WrappedLib Address:', LibInstance.address);
   deployment.UniV3WrappedLib = LibInstance.address;
   writeDeployments(deployment);
 
   // Uni V3 Adapter Oracle
-  const UniswapV3AdapterOracle = await ethers.getContractFactory(
-    "UniswapV3AdapterOracle",
-    {
-      libraries: {
-        UniV3WrappedLibContainer: LibInstance.address,
-      },
-    }
-  );
-  const uniV3Oracle = <UniswapV3AdapterOracle>(
-    await UniswapV3AdapterOracle.deploy(aggregatorOracle.address)
-  );
+  const UniswapV3AdapterOracle = await ethers.getContractFactory('UniswapV3AdapterOracle', {
+    libraries: {
+      UniV3WrappedLibContainer: LibInstance.address,
+    },
+  });
+  const uniV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(aggregatorOracle.address);
   await uniV3Oracle.deployed();
-  console.log("Uni V3 Oracle Address:", uniV3Oracle.address);
+  console.log('Uni V3 Oracle Address:', uniV3Oracle.address);
   deployment.UniswapV3AdapterOracle = uniV3Oracle.address;
   writeDeployments(deployment);
 
@@ -140,10 +123,10 @@ async function main(): Promise<void> {
   await uniV3Oracle.setTimeGap([ADDRESS.ICHI], [3600]); // 1 hours ago
 
   // Core Oracle
-  const CoreOracle = await ethers.getContractFactory("CoreOracle");
+  const CoreOracle = await ethers.getContractFactory('CoreOracle');
   const coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, []);
   await coreOracle.deployed();
-  console.log("Core Oracle Address:", coreOracle.address);
+  console.log('Core Oracle Address:', coreOracle.address);
   deployment.CoreOracle = coreOracle.address;
   writeDeployments(deployment);
 

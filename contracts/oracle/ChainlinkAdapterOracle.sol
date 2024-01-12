@@ -10,13 +10,17 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import "./BaseAdapter.sol";
-import "../interfaces/IBaseOracle.sol";
-import "../interfaces/IWstETH.sol";
-import "../interfaces/IAnkrETH.sol";
-import "../interfaces/chainlink/IFeedRegistry.sol";
+import { BaseAdapter } from "./BaseAdapter.sol";
+
+import "../utils/BlueberryConst.sol" as Constants;
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { IAnkrETH } from "../interfaces/IAnkrETH.sol";
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { IFeedRegistry } from "../interfaces/chainlink/IFeedRegistry.sol";
+import { IWstETH } from "../interfaces/IWstETH.sol";
 
 /// @title ChainlinkAdapterOracle for L1 Chains
 /// @author BlueberryProtocol
@@ -43,8 +47,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
 
     /// @dev ankrETH address
-    address public constant ANKRETH =
-        0xE95A203B1a91a908F9B9CE46459d101078c2c3cb;
+    address public constant ANKRETH = 0xE95A203B1a91a908F9B9CE46459d101078c2c3cb;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      EVENTS
@@ -57,10 +60,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     /// @notice Emitted when a token is remapped to its canonical form.
     /// @param token The original token address that's being remapped.
     /// @param remappedToken The canonical form of the token to which the original is remapped.
-    event SetTokenRemapping(
-        address indexed token,
-        address indexed remappedToken
-    );
+    event SetTokenRemapping(address indexed token, address indexed remappedToken);
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -90,12 +90,8 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     /// @param tokens_ The list of tokens to be remapped.
     /// @param remappedTokens_ The list of tokens to remap to.
     /// @dev Both arrays should have the same length. Can only be called by the contract owner.
-    function setTokenRemappings(
-        address[] calldata tokens_,
-        address[] calldata remappedTokens_
-    ) external onlyOwner {
-        if (remappedTokens_.length != tokens_.length)
-            revert Errors.INPUT_ARRAY_MISMATCH();
+    function setTokenRemappings(address[] calldata tokens_, address[] calldata remappedTokens_) external onlyOwner {
+        if (remappedTokens_.length != tokens_.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 i = 0; i < tokens_.length; ++i) {
             if (tokens_[i] == address(0)) revert Errors.ZERO_ADDRESS();
 
@@ -108,7 +104,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     ///         If the token has been remapped, it uses the canonical form for price querying.
     /// @param token_ Address of the token for which to fetch the price.
     /// @return price The USD price of the token, represented with 18 decimals.
-    function getPrice(address token_) external override returns (uint256) {
+    function getPrice(address token_) external view override returns (uint256) {
         /// remap token if possible
         address token = remappedTokens[token_];
         if (token == address(0)) token = token_;
@@ -118,30 +114,25 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
 
         /// Get token-USD price
         uint256 decimals = registry.decimals(token, USD);
-        (
-            uint80 roundID,
-            int256 answer,
-            ,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        ) = registry.latestRoundData(token, USD);
-        if (updatedAt < block.timestamp - maxDelayTime)
-            revert Errors.PRICE_OUTDATED(token_);
+        (uint80 roundID, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = registry.latestRoundData(
+            token,
+            USD
+        );
+
+        if (updatedAt < block.timestamp - maxDelayTime) revert Errors.PRICE_OUTDATED(token_);
         if (answer <= 0) revert Errors.PRICE_NEGATIVE(token_);
         if (answeredInRound < roundID) revert Errors.PRICE_OUTDATED(token_);
 
         if (token_ == WSTETH) {
             return
-                ((answer.toUint256() * Constants.PRICE_PRECISION) *
-                    IWstETH(WSTETH).stEthPerToken()) / 10 ** (18 + decimals);
+                ((answer.toUint256() * Constants.PRICE_PRECISION) * IWstETH(WSTETH).stEthPerToken()) /
+                10 ** (18 + decimals);
         } else if (token_ == ANKRETH) {
             return
                 ((answer.toUint256() * Constants.PRICE_PRECISION) *
-                    IAnkrETH(ANKRETH).sharesToBonds(1e18)) /
-                10 ** (18 + decimals);
+                    IAnkrETH(ANKRETH).sharesToBonds(Constants.PRICE_PRECISION)) / 10 ** (18 + decimals);
         }
 
-        return
-            (answer.toUint256() * Constants.PRICE_PRECISION) / 10 ** decimals;
+        return (answer.toUint256() * Constants.PRICE_PRECISION) / 10 ** decimals;
     }
 }

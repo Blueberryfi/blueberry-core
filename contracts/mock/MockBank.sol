@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.22;
 
-import "../BlueBerryBank.sol";
+import "../BlueberryBank.sol";
 
-contract MockBank is BlueBerryBank {
+contract MockBank is BlueberryBank {
     function createFakePosition(Position memory fakePosition) external {
         uint256 positionId = nextPositionId++;
         positions[positionId] = fakePosition;

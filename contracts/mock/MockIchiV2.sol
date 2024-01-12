@@ -11,15 +11,15 @@ contract MockIchiV2 is MockERC20 {
     address public ichiV1;
 
     // constant that represents 100%
-    uint256 constant PERCENT = 100;
+    uint256 constant _PERCENT = 100;
 
     // constant that represents difference in decimals between ICHI V1 and ICHI V2 tokens
-    uint256 constant DECIMALS_DIFF = 1e9;
+    uint256 constant _DECIMALS_DIFF = 1e9;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     constructor(address ichiV1_) MockERC20("ICHI", "ICHI", 18) {
         ichiV1 = ichiV1_;
     }
@@ -32,7 +32,7 @@ contract MockIchiV2 is MockERC20 {
         require(v1Amount > 0, "IchiV2.convertToV2: amount must be > 0");
 
         // convert 9 decimals ICHI V1 to 18 decimals ICHI V2
-        uint256 v2Amount = v1Amount * DECIMALS_DIFF;
+        uint256 v2Amount = v1Amount * _DECIMALS_DIFF;
 
         // transfer ICHI V1 tokens in
         IERC20(ichiV1).safeTransferFrom(msg.sender, address(this), v1Amount);

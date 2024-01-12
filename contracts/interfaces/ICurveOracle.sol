@@ -12,9 +12,5 @@ interface ICurveOracle is IBaseOracle {
     /// @return pool Address of the pool contract.
     /// @return coins A list of underlying tokens in the Curve liquidity pool.
     /// @return virtualPrice The current virtual price of the LP token for the given Curve liquidity pool.
-    function getPoolInfo(
-        address crvLp
-    )
-        external
-        returns (address pool, address[] memory coins, uint256 virtualPrice);
+    function getPoolInfo(address crvLp) external returns (address pool, address[] memory coins, uint256 virtualPrice);
 }

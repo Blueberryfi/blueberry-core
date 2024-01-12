@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.22;
 
-import {IAsset} from "./IAsset.sol";
+import { IAsset } from "./IAsset.sol";
 
 interface IBalancerVault {
     enum UserBalanceOpKind {
@@ -45,27 +45,13 @@ interface IBalancerVault {
         JoinPoolRequest memory request
     ) external payable;
 
-    function exitPool(
-        bytes32 poolId,
-        address sender,
-        address recipient,
-        ExitPoolRequest memory request
-    ) external;
+    function exitPool(bytes32 poolId, address sender, address recipient, ExitPoolRequest memory request) external;
 
     function getPoolTokens(
         bytes32 poolId
-    )
-        external
-        view
-        returns (
-            address[] memory tokens,
-            uint256[] memory balances,
-            uint256 lastChangedBlock
-        );
+    ) external view returns (address[] memory tokens, uint256[] memory balances, uint256 lastChangedBlock);
 
-    function getPool(
-        bytes32 pid
-    ) external view returns (address pool, uint256 poolType);
+    function getPool(bytes32 pid) external view returns (address pool, uint256 poolType);
 
     function manageUserBalance(UserBalanceOp[] memory ops) external;
 }

@@ -1,7 +1,7 @@
-import { ethers, network } from "hardhat";
-import dotenv from "dotenv";
-import { BigNumber, BigNumberish, Contract, Wallet, utils } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ethers, network } from 'hardhat';
+import dotenv from 'dotenv';
+import { BigNumber, BigNumberish, Contract, Wallet, utils } from 'ethers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 dotenv.config();
 
@@ -10,13 +10,13 @@ export const latestBlockNumber = async () => {
 };
 
 export const evm_increaseTime = async (seconds: number) => {
-  await ethers.provider.send("evm_increaseTime", [seconds]);
+  await ethers.provider.send('evm_increaseTime', [seconds]);
   await evm_mine_blocks(1);
 };
 
 export const evm_mine_blocks = async (n: number) => {
   for (let i = 0; i < n; i++) {
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
   }
 };
 
@@ -29,7 +29,7 @@ export const currentTime = async () => {
 export const fork = async (chainId: number = 1, blockNumber: number = 18695050) => {
   if (chainId === 1) {
     await network.provider.request({
-      method: "hardhat_reset",
+      method: 'hardhat_reset',
       params: [
         {
           forking: {
@@ -41,7 +41,7 @@ export const fork = async (chainId: number = 1, blockNumber: number = 18695050) 
     });
   } else if (chainId === 42161) {
     await network.provider.request({
-      method: "hardhat_reset",
+      method: 'hardhat_reset',
       params: [
         {
           forking: {
@@ -59,10 +59,7 @@ export const generateRandomAddress = () => {
 };
 
 export async function setBalance(address: string, balance: BigNumber) {
-  await network.provider.send("hardhat_setBalance", [
-    address,
-    dirtyFix(balance._hex),
-  ]);
+  await network.provider.send('hardhat_setBalance', [address, dirtyFix(balance._hex)]);
 }
 
 export async function mintToken(
@@ -73,24 +70,15 @@ export async function mintToken(
   const index = await bruteForceTokenBalanceSlotIndex(token.address);
 
   const slot = dirtyFix(
-    utils.keccak256(
-      encodeSlot(
-        ["address", "uint"],
-        [typeof account === "string" ? account : account.address, index]
-      )
-    )
+    utils.keccak256(encodeSlot(['address', 'uint'], [typeof account === 'string' ? account : account.address, index]))
   );
 
-  const prevAmount = await network.provider.send("eth_getStorageAt", [
-    token.address,
-    slot,
-    "latest",
-  ]);
+  const prevAmount = await network.provider.send('eth_getStorageAt', [token.address, slot, 'latest']);
 
-  await network.provider.send("hardhat_setStorageAt", [
+  await network.provider.send('hardhat_setStorageAt', [
     token.address,
     slot,
-    encodeSlot(["uint"], [dirtyFix(BigNumber.from(amount).add(prevAmount))]),
+    encodeSlot(['uint'], [dirtyFix(BigNumber.from(amount).add(prevAmount))]),
   ]);
 }
 
@@ -101,14 +89,12 @@ export async function setTokenBalance(
 ) {
   const index = await bruteForceTokenBalanceSlotIndex(token.address);
 
-  const slot = dirtyFix(
-    utils.keccak256(encodeSlot(["address", "uint"], [account.address, index]))
-  );
+  const slot = dirtyFix(utils.keccak256(encodeSlot(['address', 'uint'], [account.address, index])));
 
-  await network.provider.send("hardhat_setStorageAt", [
+  await network.provider.send('hardhat_setStorageAt', [
     token.address,
     slot,
-    encodeSlot(["uint"], [dirtyFix(BigNumber.from(newBalance))]),
+    encodeSlot(['uint'], [dirtyFix(BigNumber.from(newBalance))]),
   ]);
 }
 
@@ -117,64 +103,43 @@ function encodeSlot(types: string[], values: any[]) {
 }
 
 // source:  https://blog.euler.finance/brute-force-storage-layout-discovery-in-erc20-contracts-with-hardhat-7ff9342143ed
-async function bruteForceTokenBalanceSlotIndex(
-  tokenAddress: string
-): Promise<number> {
+async function bruteForceTokenBalanceSlotIndex(tokenAddress: string): Promise<number> {
   const account = ethers.constants.AddressZero;
 
-  const probeA = encodeSlot(["uint"], [1]);
-  const probeB = encodeSlot(["uint"], [2]);
+  const probeA = encodeSlot(['uint'], [1]);
+  const probeB = encodeSlot(['uint'], [2]);
 
-  const token = await ethers.getContractAt("ERC20", tokenAddress);
+  const token = await ethers.getContractAt('ERC20', tokenAddress);
 
   for (let i = 0; i < 100; i++) {
-    let probedSlot = utils.keccak256(
-      encodeSlot(["address", "uint"], [account, i])
-    ); // remove padding for JSON RPC
+    let probedSlot = utils.keccak256(encodeSlot(['address', 'uint'], [account, i])); // remove padding for JSON RPC
 
-    const prev = await network.provider.send("eth_getStorageAt", [
-      tokenAddress,
-      probedSlot,
-      "latest",
-    ]);
+    const prev = await network.provider.send('eth_getStorageAt', [tokenAddress, probedSlot, 'latest']);
 
-    while (probedSlot.startsWith("0x0"))
-      probedSlot = "0x" + probedSlot.slice(3);
+    while (probedSlot.startsWith('0x0')) probedSlot = '0x' + probedSlot.slice(3);
 
     // make sure the probe will change the slot value
     const probe = prev === probeA ? probeB : probeA;
 
-    await network.provider.send("hardhat_setStorageAt", [
-      tokenAddress,
-      probedSlot,
-      probe,
-    ]);
+    await network.provider.send('hardhat_setStorageAt', [tokenAddress, probedSlot, probe]);
 
     const balance = await token.balanceOf(account); // reset to previous value
-    await network.provider.send("hardhat_setStorageAt", [
-      tokenAddress,
-      probedSlot,
-      prev,
-    ]);
+    await network.provider.send('hardhat_setStorageAt', [tokenAddress, probedSlot, prev]);
 
     if (balance.eq(ethers.BigNumber.from(probe))) return i;
   }
-  throw "Balances slot not found!";
+  throw 'Balances slot not found!';
 }
 
 // WTF
 // https://github.com/nomiclabs/hardhat/issues/1585
 const dirtyFix = (s: string | BigNumber): string => {
-  return s.toString().replace(/0x0+/, "0x");
+  return s.toString().replace(/0x0+/, '0x');
 };
 
-export const addEthToContract = async (
-  signer: SignerWithAddress,
-  amount: BigNumberish,
-  to: string
-) => {
-  const MockEthSender = await ethers.getContractFactory("MockEthSender");
-  let ethSender = await MockEthSender.deploy();
+export const addEthToContract = async (signer: SignerWithAddress, amount: BigNumberish, to: string) => {
+  const MockEthSender = await ethers.getContractFactory('MockEthSender');
+  const ethSender = await MockEthSender.deploy();
 
   await signer.sendTransaction({
     from: signer.address,
@@ -187,22 +152,22 @@ export const addEthToContract = async (
 
 export const impersonateAccount = async (account: string) => {
   await network.provider.request({
-    method: "hardhat_impersonateAccount",
+    method: 'hardhat_impersonateAccount',
     params: [account],
   });
 };
 
 export const takeSnapshot = async (): Promise<number> => {
-  const snapshotId = await ethers.provider.send("evm_snapshot", []);
+  const snapshotId = await ethers.provider.send('evm_snapshot', []);
   return snapshotId;
 };
 
 export const revertToSnapshot = async (snapshotId: number) => {
-  await ethers.provider.send("evm_revert", [snapshotId]);
+  await ethers.provider.send('evm_revert', [snapshotId]);
 };
 
-export * from "./setup-ichi-protocol";
-export * from "./setup-curve-protocol";
-export * from "./setup-convex-protocol";
-export * from "./setup-aura-protocol";
-export * from "./setup-short-long-protocol";
+export * from './setup-ichi-protocol';
+export * from './setup-curve-protocol';
+export * from './setup-convex-protocol';
+export * from './setup-aura-protocol';
+export * from './setup-short-long-protocol';

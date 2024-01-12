@@ -4,7 +4,7 @@ pragma solidity 0.8.22;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../utils/BlueBerryErrors.sol" as Errors;
+import "../utils/BlueberryErrors.sol" as Errors;
 import "../interfaces/IBaseOracle.sol";
 
 contract MockOracle is IBaseOracle, Ownable {
@@ -15,7 +15,7 @@ contract MockOracle is IBaseOracle, Ownable {
 
     /// @dev Return the USD based price of the given input, multiplied by 10**18.
     /// @param token The ERC-20 token to check the value.
-    function getPrice(address token) external override returns (uint256) {
+    function getPrice(address token) external view override returns (uint256) {
         return prices[token];
     }
 

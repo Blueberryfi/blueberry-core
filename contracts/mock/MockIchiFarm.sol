@@ -25,14 +25,14 @@ contract MockIchiFarm is Ownable {
     }
 
     /// @dev Address of ICHI contract.
-    IERC20 private immutable ICHI;
+    IERC20 private immutable _ICHI;
 
     /// @notice Info of each IFV2 pool.
     PoolInfo[] public poolInfo;
     /// @notice Address of the LP token for each IFV2 pool.
     IERC20[] public lpToken;
     /// @dev List of all added LP tokens.
-    mapping(address => bool) private addedLPs;
+    mapping(address => bool) private _addedLPs;
 
     /// @notice Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
@@ -43,52 +43,28 @@ contract MockIchiFarm is Ownable {
     uint256 public ichiPerBlock;
 
     /// @dev Extra decimals for pool's accIchiPerShare attribute. Needed in order to accomodate different types of LPs.
-    uint256 private constant ACC_ICHI_PRECISION = 1e18;
+    uint256 private constant _ACC_ICHI_PRECISION = 1e18;
 
     /// @dev nonReentrant flag used to secure functions with external calls.
-    bool private nonReentrant;
+    bool private _nonReentrant;
 
-    event Deposit(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address indexed to
-    );
-    event Withdraw(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address indexed to
-    );
-    event EmergencyWithdraw(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address indexed to
-    );
+    event Deposit(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
+    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
     event Harvest(address indexed user, uint256 indexed pid, uint256 amount);
-    event LogPoolAddition(
-        uint256 indexed pid,
-        uint256 allocPoint,
-        IERC20 indexed lpToken
-    );
+    event LogPoolAddition(uint256 indexed pid, uint256 allocPoint, IERC20 indexed lpToken);
     event LogSetPool(uint256 indexed pid, uint256 allocPoint);
-    event LogUpdatePool(
-        uint256 indexed pid,
-        uint64 lastRewardBlock,
-        uint256 lpSupply,
-        uint256 accIchiPerShare
-    );
+    event LogUpdatePool(uint256 indexed pid, uint64 lastRewardBlock, uint256 lpSupply, uint256 accIchiPerShare);
     event SetIchiPerBlock(uint256 ichiPerBlock, bool withUpdate);
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @param _ichi The ICHI token contract address.
     /// @param _ichiPerBlock ICHI tokens created per block.
     constructor(IERC20 _ichi, uint256 _ichiPerBlock) {
-        ICHI = _ichi;
+        _ICHI = _ichi;
         ichiPerBlock = _ichiPerBlock;
         totalAllocPoint = 0;
     }
@@ -96,10 +72,7 @@ contract MockIchiFarm is Ownable {
     /// @notice Update number of ICHI tokens created per block. Can only be called by the owner.
     /// @param _ichiPerBlock ICHI tokens created per block.
     /// @param _withUpdate true if massUpdatePools should be triggered as well.
-    function setIchiPerBlock(uint256 _ichiPerBlock, bool _withUpdate)
-        external
-        onlyOwner
-    {
+    function setIchiPerBlock(uint256 _ichiPerBlock, bool _withUpdate) external onlyOwner {
         if (_withUpdate) {
             massUpdateAllPools();
         }
@@ -110,8 +83,8 @@ contract MockIchiFarm is Ownable {
     /// @notice Set the nonReentrant flag. Could be used to pause/resume the farm operations. Can only be called by the owner.
     /// @param _val nonReentrant flag value to be set.
     function setNonReentrant(bool _val) external onlyOwner returns (bool) {
-        nonReentrant = _val;
-        return nonReentrant;
+        _nonReentrant = _val;
+        return _nonReentrant;
     }
 
     /// @notice Returns the number of IFV2 pools.
@@ -136,21 +109,14 @@ contract MockIchiFarm is Ownable {
     /// @param allocPoint AP of the new pool.
     /// @param _lpToken Address of the LP ERC-20 token.
     function add(uint256 allocPoint, IERC20 _lpToken) external onlyOwner {
-        require(
-            !addedLPs[address(_lpToken)],
-            "ichiFarmV2::there is already a pool with this LP"
-        );
+        require(!_addedLPs[address(_lpToken)], "ichiFarmV2::there is already a pool with this LP");
         uint256 lastRewardBlock = block.number;
         totalAllocPoint += allocPoint;
         lpToken.push(_lpToken);
-        addedLPs[address(_lpToken)] = true;
+        _addedLPs[address(_lpToken)] = true;
 
         poolInfo.push(
-            PoolInfo({
-                allocPoint: uint64(allocPoint),
-                lastRewardBlock: uint64(lastRewardBlock),
-                accIchiPerShare: 0
-            })
+            PoolInfo({ allocPoint: uint64(allocPoint), lastRewardBlock: uint64(lastRewardBlock), accIchiPerShare: 0 })
         );
         emit LogPoolAddition(lpToken.length - 1, allocPoint, _lpToken);
     }
@@ -159,10 +125,7 @@ contract MockIchiFarm is Ownable {
     /// @param _pid The index of the pool. See `poolInfo`.
     /// @param _allocPoint New AP of the pool.
     function set(uint256 _pid, uint256 _allocPoint) external onlyOwner {
-        totalAllocPoint =
-            totalAllocPoint -
-            poolInfo[_pid].allocPoint +
-            _allocPoint;
+        totalAllocPoint = totalAllocPoint - poolInfo[_pid].allocPoint + _allocPoint;
         poolInfo[_pid].allocPoint = uint64(_allocPoint);
         emit LogSetPool(_pid, _allocPoint);
     }
@@ -171,32 +134,18 @@ contract MockIchiFarm is Ownable {
     /// @param _pid The index of the pool. See `poolInfo`.
     /// @param _user Address of user.
     /// @return pending ICHI reward for a given user.
-    function pendingIchi(uint256 _pid, address _user)
-        external
-        view
-        returns (uint256 pending)
-    {
+    function pendingIchi(uint256 _pid, address _user) external view returns (uint256 pending) {
         PoolInfo memory pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accIchiPerShare = pool.accIchiPerShare;
         uint256 lpSupply = lpToken[_pid].balanceOf(address(this));
-        if (
-            block.number > pool.lastRewardBlock &&
-            lpSupply > 0 &&
-            totalAllocPoint > 0
-        ) {
+        if (block.number > pool.lastRewardBlock && lpSupply > 0 && totalAllocPoint > 0) {
             uint256 blocks = block.number - pool.lastRewardBlock;
             accIchiPerShare +=
-                ((blocks *
-                    ichiPerBlock *
-                    pool.allocPoint *
-                    ACC_ICHI_PRECISION) / totalAllocPoint) /
+                ((blocks * ichiPerBlock * pool.allocPoint * _ACC_ICHI_PRECISION) / totalAllocPoint) /
                 lpSupply;
         }
-        pending =
-            (user.amount * accIchiPerShare) /
-            ACC_ICHI_PRECISION -
-            uint256(user.rewardDebt);
+        pending = (user.amount * accIchiPerShare) / _ACC_ICHI_PRECISION - uint256(user.rewardDebt);
     }
 
     /// @notice Update reward variables for all pools. Be careful of gas spending!
@@ -226,20 +175,12 @@ contract MockIchiFarm is Ownable {
             if (lpSupply > 0 && totalAllocPoint > 0) {
                 uint256 blocks = block.number - pool.lastRewardBlock;
                 pool.accIchiPerShare += uint128(
-                    ((blocks *
-                        ichiPerBlock *
-                        pool.allocPoint *
-                        ACC_ICHI_PRECISION) / totalAllocPoint) / lpSupply
+                    ((blocks * ichiPerBlock * pool.allocPoint * _ACC_ICHI_PRECISION) / totalAllocPoint) / lpSupply
                 );
             }
             pool.lastRewardBlock = uint64(block.number);
             poolInfo[pid] = pool;
-            emit LogUpdatePool(
-                pid,
-                pool.lastRewardBlock,
-                lpSupply,
-                pool.accIchiPerShare
-            );
+            emit LogUpdatePool(pid, pool.lastRewardBlock, lpSupply, pool.accIchiPerShare);
         }
     }
 
@@ -247,70 +188,56 @@ contract MockIchiFarm is Ownable {
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param amount LP token amount to deposit.
     /// @param to The receiver of `amount` deposit benefit.
-    function deposit(
-        uint256 pid,
-        uint256 amount,
-        address to
-    ) external {
-        require(!nonReentrant, "ichiFarmV2::nonReentrant - try again");
-        nonReentrant = true;
+    function deposit(uint256 pid, uint256 amount, address to) external {
+        require(!_nonReentrant, "ichiFarmV2::nonReentrant - try again");
+        _nonReentrant = true;
 
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][to];
 
         // Effects
         user.amount += amount;
-        user.rewardDebt += int256(
-            (amount * pool.accIchiPerShare) / ACC_ICHI_PRECISION
-        );
+        user.rewardDebt += int256((amount * pool.accIchiPerShare) / _ACC_ICHI_PRECISION);
 
         // Interactions
         lpToken[pid].safeTransferFrom(msg.sender, address(this), amount);
 
         emit Deposit(msg.sender, pid, amount, to);
-        nonReentrant = false;
+        _nonReentrant = false;
     }
 
     /// @notice Withdraw LP tokens from IFV2.
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param amount LP token amount to withdraw.
     /// @param to Receiver of the LP tokens.
-    function withdraw(
-        uint256 pid,
-        uint256 amount,
-        address to
-    ) external {
-        require(!nonReentrant, "ichiFarmV2::nonReentrant - try again");
-        nonReentrant = true;
+    function withdraw(uint256 pid, uint256 amount, address to) external {
+        require(!_nonReentrant, "ichiFarmV2::nonReentrant - try again");
+        _nonReentrant = true;
 
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
 
         // Effects
-        user.rewardDebt -= int256(
-            (amount * pool.accIchiPerShare) / ACC_ICHI_PRECISION
-        );
+        user.rewardDebt -= int256((amount * pool.accIchiPerShare) / _ACC_ICHI_PRECISION);
         user.amount -= amount;
 
         // Interactions
         lpToken[pid].safeTransfer(to, amount);
 
         emit Withdraw(msg.sender, pid, amount, to);
-        nonReentrant = false;
+        _nonReentrant = false;
     }
 
     /// @notice Harvest proceeds for transaction sender to `to`.
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param to Receiver of ICHI rewards.
     function harvest(uint256 pid, address to) external {
-        require(!nonReentrant, "ichiFarmV2::nonReentrant - try again");
-        nonReentrant = true;
+        require(!_nonReentrant, "ichiFarmV2::nonReentrant - try again");
+        _nonReentrant = true;
 
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
-        int256 accumulatedIchi = int256(
-            (user.amount * pool.accIchiPerShare) / ACC_ICHI_PRECISION
-        );
+        int256 accumulatedIchi = int256((user.amount * pool.accIchiPerShare) / _ACC_ICHI_PRECISION);
         uint256 _pendingIchi = uint256(accumulatedIchi - user.rewardDebt);
 
         // Effects
@@ -318,11 +245,11 @@ contract MockIchiFarm is Ownable {
 
         // Interactions
         if (_pendingIchi > 0) {
-            ICHI.safeTransfer(to, _pendingIchi);
+            _ICHI.safeTransfer(to, _pendingIchi);
         }
 
         emit Harvest(msg.sender, pid, _pendingIchi);
-        nonReentrant = false;
+        _nonReentrant = false;
     }
 
     /// @notice Withdraw without caring about rewards. EMERGENCY ONLY.

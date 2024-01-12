@@ -9,10 +9,7 @@ interface IICHIVaultFactory {
 
     event BaseFeeSplit(address indexed sender, uint256 baseFeeSplit);
 
-    event DeployICHIVaultFactory(
-        address indexed sender,
-        address uniswapV3Factory
-    );
+    event DeployICHIVaultFactory(address indexed sender, address uniswapV3Factory);
 
     event ICHIVaultCreated(
         address indexed sender,

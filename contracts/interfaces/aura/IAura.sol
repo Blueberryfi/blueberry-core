@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.22;
 
+/* solhint-disable func-name-mixedcase */
+
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 
 interface IAura is IERC20MetadataUpgradeable {
