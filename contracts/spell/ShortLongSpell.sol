@@ -94,7 +94,7 @@ contract ShortLongSpell is BasicSpell {
         _doBorrow(param.borrowToken, param.borrowAmount);
 
         /// 3. Swap borrowed token to strategy token
-        IERC20Upgradeable swapToken = ISoftVault(strategy.vault).uToken();
+        IERC20Upgradeable swapToken = ISoftVault(strategy.vault).getUToken();
         uint256 dstTokenAmt = swapToken.balanceOf(address(this));
 
         address borrowToken = param.borrowToken;
@@ -132,7 +132,7 @@ contract ShortLongSpell is BasicSpell {
         bytes calldata swapData
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         Strategy memory strategy = strategies[param.strategyId];
-        if (address(ISoftVault(strategy.vault).uToken()) == param.borrowToken) {
+        if (address(ISoftVault(strategy.vault).getUToken()) == param.borrowToken) {
             revert Errors.INCORRECT_LP(param.borrowToken);
         }
 
@@ -164,7 +164,7 @@ contract ShortLongSpell is BasicSpell {
 
         /// 3. Swap strategy token to isolated collateral token
         {
-            IERC20Upgradeable uToken = ISoftVault(strategy.vault).uToken();
+            IERC20Upgradeable uToken = ISoftVault(strategy.vault).getUToken();
             uint256 balanceBefore = uToken.balanceOf(address(this));
 
             if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, address(uToken), swapAmount, swapData))
