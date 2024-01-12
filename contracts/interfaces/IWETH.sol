@@ -6,7 +6,6 @@ pragma solidity 0.8.22;
 /// @notice This is the interface for the Wrapped Ether (WETH) contract.
 /// @dev WETH is an ERC20-compatible version of Ether, facilitating interactions in smart contracts.
 interface IWETH {
-    
     /// @notice Fetch the balance of `user` in terms of WETH.
     /// @param user The address of the account whose balance will be retrieved.
     /// @return The balance of the given user's address.

@@ -1,13 +1,36 @@
 {
+  "bracketSpacing": true,
+  "explicitTypes": "always",
+  "newline-before-return": true,
+  "no-duplicate-variable": [true, "check-parameters"],
+  "no-var-keyword": true,
+  "printWidth": 120,
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "useTabs": false,
+
   "overrides": [
     {
       "files": "*.sol",
       "options": {
-        "printWidth": 80,
-        "tabWidth": 4,
-        "useTabs": false,
         "singleQuote": false,
-        "bracketSpacing": false
+        "tabWidth": 4,
+        "max-line-length": ["error", 120],
+        "func-param-name-mixedcase": "error",
+        "modifier-name-mixedcase": "error",
+        "private-vars-leading-underscore": "error",
+        "reason-string": ["error", {"maxLength": 64}],
+        "func-visibility": ["error", {"ignoreConstructors": true}],
+        "compiler-version": ["off"],
+        "no-global-import": ["off"]
+      }
+    },
+    {
+      "files": "*.md",
+      "options": {
+        "printWidth": 80
       }
     }
   ]

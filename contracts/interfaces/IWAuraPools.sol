@@ -21,10 +21,9 @@ import "./aura/IAura.sol";
 
 /// @title IWAuraPools
 /// @notice Interface for interacting with Aura pools wrapped as ERC1155 tokens.
-/// @dev This allows users to interact with Balancer-based Aura pools, 
+/// @dev This allows users to interact with Balancer-based Aura pools,
 ///      staking liquidity pool tokens for rewards.
 interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
-
     struct StashTokenInfo {
         address stashToken;
         address rewarder;
@@ -34,15 +33,15 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
 
     /// @notice Get the AURA token's contract address.
     /// @return An IAura interface of the AURA token.
-    function AURA() external view returns (IAura);
+    function auraToken() external view returns (IAura);
 
     /// @notice Encode two uint values into a single uint.
-    function encodeId(uint, uint) external pure returns (uint);
+    function encodeId(uint256, uint256) external pure returns (uint256);
 
     /// @notice Decode an encoded ID into two separate uint values.
     /// @param id The encoded uint ID to decode.
     /// @return The two individual uint values decoded from the provided ID.
-    function decodeId(uint id) external pure returns (uint, uint);
+    function decodeId(uint256 id) external pure returns (uint256, uint256);
 
     /// @notice Fetch the pool tokens, balances and last changed block for a given Balancer Pool Token.
     /// @param bpt The address of the Balancer Pool Token.
@@ -51,14 +50,7 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @return lastChangedBlock The block number when the pool was last changed.
     function getPoolTokens(
         address bpt
-    )
-        external
-        view
-        returns (
-            address[] memory tokens,
-            uint256[] memory balances,
-            uint256 lastChangedBlock
-        );
+    ) external view returns (address[] memory tokens, uint256[] memory balances, uint256 lastChangedBlock);
 
     /// @notice Get the pool ID for a given Balancer Pool Token.
     /// @param bpt Address of the Balancer Pool Token.
@@ -87,20 +79,13 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     )
         external
         view
-        returns (
-            address lptoken,
-            address token,
-            address gauge,
-            address crvRewards,
-            address stash,
-            bool shutdown
-        );
+        returns (address lptoken, address token, address gauge, address crvRewards, address stash, bool shutdown);
 
     /// @notice Mint an ERC1155 token corresponding to a staked amount in a specific Aura pool.
     /// @param gid The pool ID representing the specific Aura pool.
     /// @param amount The amount of liquidity provider tokens to stake.
     /// @return id The ID of the newly minted ERC1155 token representing the staked position.
-    function mint(uint gid, uint amount) external returns (uint id);
+    function mint(uint256 gid, uint256 amount) external returns (uint256 id);
 
     /// @notice Burn an ERC1155 token to redeem staked liquidity provider tokens and any earned rewards.
     /// @param id The ID of the ERC1155 token representing the staked position.
@@ -108,9 +93,7 @@ interface IWAuraPools is IERC1155Upgradeable, IERC20Wrapper {
     /// @return rewardTokens An array of reward token addresses.
     /// @return rewards An array of reward amounts corresponding to the reward token addresses.
     function burn(
-        uint id,
-        uint amount
-    )
-        external
-        returns (address[] memory rewardTokens, uint256[] memory rewards);
+        uint256 id,
+        uint256 amount
+    ) external returns (address[] memory rewardTokens, uint256[] memory rewards);
 }

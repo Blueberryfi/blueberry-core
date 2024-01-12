@@ -1,11 +1,11 @@
-import { ethers, upgrades } from "hardhat";
-import { ADDRESS_GOERLI, CONTRACT_NAMES } from "../../constant";
-import { CoreOracle } from "../../typechain-types";
+import { ethers, upgrades } from 'hardhat';
+import { ADDRESS_GOERLI, CONTRACT_NAMES } from '../../constant';
+import { CoreOracle } from '../../typechain-types';
 import { deployment, writeDeployments } from '../../utils';
 
 async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
-  console.log("Deployer:", deployer.address);
+  console.log('Deployer:', deployer.address);
 
   // Set oracle configs
   // const oracle = <CoreOracle>await ethers.getContractAt(CONTRACT_NAMES.CoreOracle, deployment.CoreOracle);
@@ -14,7 +14,7 @@ async function main(): Promise<void> {
   await oracle.deployed();
 
   deployment.CoreOracle = oracle.address;
-  writeDeployments(deployment)
+  writeDeployments(deployment);
 
   await oracle.setRoutes(
     [
@@ -43,7 +43,7 @@ async function main(): Promise<void> {
       deployment.AggregatorOracle,
       deployment.AggregatorOracle,
     ]
-  )
+  );
 }
 
 main()

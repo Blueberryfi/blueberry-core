@@ -10,17 +10,22 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+/* solhint-disable max-line-length */
+import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+/* solhint-enable max-line-length */
 
-import "../utils/BlueBerryConst.sol" as Constants;
-import "../utils/BlueBerryErrors.sol" as Errors;
-import "../utils/ERC1155NaiveReceiver.sol";
-import "../interfaces/IBank.sol";
-import "../interfaces/IWERC20.sol";
-import "../interfaces/IWETH.sol";
-import "../libraries/UniversalERC20.sol";
-import "../libraries/Paraswap/PSwapLib.sol";
+import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
+
+import "../utils/BlueberryConst.sol" as Constants;
+import "../utils/BlueberryErrors.sol" as Errors;
+import { ERC1155NaiveReceiver } from "../utils/ERC1155NaiveReceiver.sol";
+
+import { IBank } from "../interfaces/IBank.sol";
+import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
+import { IWERC20 } from "../interfaces/IWERC20.sol";
+import { IWETH } from "../interfaces/IWETH.sol";
 
 /// @title BasicSpell
 /// @author BlueberryProtocol
@@ -90,7 +95,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// Reference to the WERC20 contract interface.
     IWERC20 public werc20;
     /// Address of the Wrapped Ether contract.
-    address public WETH;
+    address public weth;
     /// ETH address
     address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -114,32 +119,19 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param vault Address of the vault where assets are held.
     /// @param minPosSize Minimum size of the position in USD.
     /// @param maxPosSize Maximum size of the position in USD.
-    event StrategyAdded(
-        uint256 strategyId,
-        address vault,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    );
+    event StrategyAdded(uint256 strategyId, address vault, uint256 minPosSize, uint256 maxPosSize);
 
     /// @notice This event is emitted when a strategy's min/max position size is updated.
     /// @param strategyId Unique identifier for the strategy.
     /// @param minPosSize Minimum size of the position in USD.
     /// @param maxPosSize Maximum size of the position in USD.
-    event StrategyPosSizeUpdated(
-        uint256 strategyId,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    );
+    event StrategyPosSizeUpdated(uint256 strategyId, uint256 minPosSize, uint256 maxPosSize);
 
     /// @notice This event is emitted when a strategy's collateral max LTV is updated.
     /// @param strategyId Unique identifier for the strategy.
     /// @param collaterals Array of collateral token addresses.
     /// @param maxLTVs Array of maximum LTVs corresponding to the collaterals. (base 1e4)
-    event CollateralsMaxLTVSet(
-        uint256 strategyId,
-        address[] collaterals,
-        uint256[] maxLTVs
-    );
+    event CollateralsMaxLTVSet(uint256 strategyId, address[] collaterals, uint256[] maxLTVs);
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -169,7 +161,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-
+    /* solhint-disable func-name-mixedcase */
     /// @notice Initializes the contract and sets the deployer as the initial owner.
     /// @param bank_ The address of the bank contract.
     /// @param werc20_ The address of the wrapped ERC20 contract.
@@ -183,22 +175,22 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         address augustusSwapper_,
         address tokenTransferProxy_
     ) internal onlyInitializing {
-        if (
-            address(bank_) == address(0) ||
-            address(werc20_) == address(0) ||
-            address(weth_) == address(0)
-        ) revert Errors.ZERO_ADDRESS();
+        if (address(bank_) == address(0) || address(werc20_) == address(0) || address(weth_) == address(0)) {
+            revert Errors.ZERO_ADDRESS();
+        }
 
         __Ownable_init();
 
         bank = bank_;
         werc20 = IWERC20(werc20_);
-        WETH = weth_;
+        weth = weth_;
         augustusSwapper = augustusSwapper_;
         tokenTransferProxy = tokenTransferProxy_;
 
         IWERC20(werc20_).setApprovalForAll(address(bank_), true);
     }
+
+    /* solhint-enable func-name-mixedcase */
 
     /// @notice Adds a new strategy to the list of available strategies.
     /// @dev Internal function that appends to the strategies array.
@@ -206,27 +198,14 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param vault The address of the vault associated with this strategy.
     /// @param minPosSize The minimum position size (USD value) for this strategy. Value is based on 1e18.
     /// @param maxPosSize The maximum position size (USD value) for this strategy. Value is based on 1e18.
-    function _addStrategy(
-        address vault,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    ) internal {
+    function _addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) internal {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
-        strategies.push(
-            Strategy({
-                vault: vault,
-                minPositionSize: minPosSize,
-                maxPositionSize: maxPosSize
-            })
-        );
-        emit StrategyAdded(
-            strategies.length - 1,
-            vault,
-            minPosSize,
-            maxPosSize
-        );
+
+        strategies.push(Strategy({ vault: vault, minPositionSize: minPosSize, maxPositionSize: maxPosSize }));
+
+        emit StrategyAdded(strategies.length - 1, vault, minPosSize, maxPosSize);
     }
 
     /// @notice Update the position sizes for a specific strategy.
@@ -241,8 +220,10 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     ) external existingStrategy(strategyId) onlyOwner {
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
         if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
+
         strategies[strategyId].minPositionSize = minPosSize;
         strategies[strategyId].maxPositionSize = maxPosSize;
+
         emit StrategyPosSizeUpdated(strategyId, minPosSize, maxPosSize);
     }
 
@@ -259,7 +240,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         if (collaterals.length != maxLTVs.length || collaterals.length == 0) {
             revert Errors.INPUT_ARRAY_MISMATCH();
         }
-        
+
         for (uint256 i = 0; i < collaterals.length; ++i) {
             if (collaterals[i] == address(0)) revert Errors.ZERO_ADDRESS();
             if (maxLTVs[i] == 0) revert Errors.ZERO_AMOUNT();
@@ -278,11 +259,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         uint256 debtValue = bank.getDebtValue(positionId);
         uint256 uValue = bank.getIsolatedCollateralValue(positionId);
 
-        if (
-            debtValue >
-            (uValue * maxLTV[strategyId][pos.underlyingToken]) /
-                Constants.DENOMINATOR
-        ) {
+        if (debtValue > (uValue * maxLTV[strategyId][pos.underlyingToken]) / Constants.DENOMINATOR) {
             revert Errors.EXCEED_MAX_LTV();
         }
     }
@@ -296,11 +273,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         /// Get previous position size
         uint256 prevPosSize;
         if (pos.collToken != address(0)) {
-            prevPosSize = bank.oracle().getWrappedTokenValue(
-                pos.collToken,
-                pos.collId,
-                pos.collateralSize
-            );
+            prevPosSize = bank.oracle().getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
         }
 
         /// Get newly added position size
@@ -308,9 +281,9 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         IERC20 lpToken = IERC20(strategy.vault);
         uint256 lpBalance = lpToken.balanceOf(address(this));
         uint256 lpPrice = bank.oracle().getPrice(address(lpToken));
-        addedPosSize =
-            (lpPrice * lpBalance) /
-            10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
+
+        addedPosSize = (lpPrice * lpBalance) / 10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
+
         // Check if position size is within bounds
         if (prevPosSize + addedPosSize > strategy.maxPositionSize) {
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
@@ -372,19 +345,9 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param collToken Address of the isolated collateral token to be withdrawn.
     /// @param amount Amount of tokens to be withdrawn.
     /// @param swapData Paraswap calldata
-    function _swapCollToDebt(
-        address collToken,
-        uint256 amount,
-        bytes calldata swapData
-    ) internal {
+    function _swapCollToDebt(address collToken, uint256 amount, bytes calldata swapData) internal {
         if (amount > 0 && swapData.length != 0) {
-            PSwapLib.swap(
-                augustusSwapper,
-                tokenTransferProxy,
-                collToken,
-                amount,
-                swapData
-            );
+            PSwapLib.swap(augustusSwapper, tokenTransferProxy, collToken, amount, swapData);
         }
     }
 
@@ -393,16 +356,13 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param token Address of the token to be borrowed.
     /// @param amount Amount of tokens to borrow.
     /// @return borrowedAmount Actual amount of tokens borrowed.
-    function _doBorrow(
-        address token,
-        uint256 amount
-    ) internal returns (uint256 borrowedAmount) {
+    function _doBorrow(address token, uint256 amount) internal returns (uint256 borrowedAmount) {
         if (amount > 0) {
             bool isETH = IERC20(token).isETH();
-            
+
             if (isETH) {
-                borrowedAmount = bank.borrow(WETH, amount);
-                IWETH(WETH).withdraw(borrowedAmount);
+                borrowedAmount = bank.borrow(weth, amount);
+                IWETH(weth).withdraw(borrowedAmount);
             } else {
                 borrowedAmount = bank.borrow(token, amount);
             }
@@ -420,12 +380,12 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
             bool isETH = IERC20(token).isETH();
 
             if (isETH) {
-                IWETH(WETH).deposit{value: amount}();
-                t = WETH;
+                IWETH(weth).deposit{ value: amount }();
+                t = weth;
             } else {
                 t = token;
             }
-            
+
             IERC20(t).universalApprove(address(bank), amount);
             bank.repay(t, amount);
         }
@@ -441,11 +401,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         if (amount > 0) {
             IERC20(token).universalApprove(address(werc20), amount);
             werc20.mint(token, amount);
-            bank.putCollateral(
-                address(werc20),
-                uint256(uint160(token)),
-                amount
-            );
+            bank.putCollateral(address(werc20), uint256(uint160(token)), amount);
         }
     }
 
@@ -473,15 +429,10 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     /// @param strategyId The ID of the strategy being used.
     /// @param collToken Address of the isolated collateral token.
     /// @param collShareAmount Amount of isolated collateral to reduce.
-    function reducePosition(
-        uint256 strategyId,
-        address collToken,
-        uint256 collShareAmount
-    ) external {
+    function reducePosition(uint256 strategyId, address collToken, uint256 collShareAmount) external {
         /// Validate strategy id
         IBank.Position memory pos = bank.getCurrentPositionInfo();
-        address unwrappedCollToken = IERC20Wrapper(pos.collToken)
-            .getUnderlyingToken(pos.collId);
+        address unwrappedCollToken = IERC20Wrapper(pos.collToken).getUnderlyingToken(pos.collId);
         if (strategies[strategyId].vault != unwrappedCollToken) {
             revert Errors.INCORRECT_STRATEGY_ID(strategyId);
         }

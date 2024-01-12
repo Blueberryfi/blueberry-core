@@ -35,11 +35,7 @@ interface ICurvePool {
 
     function claim_admin_fees() external;
 
-    function get_dy(
-        uint256 i,
-        uint256 j,
-        uint256 dx
-    ) external view returns (uint256);
+    function get_dy(uint256 i, uint256 j, uint256 dx) external view returns (uint256);
 
     // 3crv pool specific functions
 

@@ -11,53 +11,30 @@ contract MockParaswap is IParaswap {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     constructor(address _transferTokenProxy) {
         tokenTransferProxy = MockParaswapTransferProxy(_transferTokenProxy);
     }
 
-    function multiSwap(
-        Utils.SellData calldata data
-    ) external payable returns (uint256) {}
+    function multiSwap(Utils.SellData calldata data) external payable returns (uint256) {}
 
-    function megaSwap(
-        Utils.MegaSwapSellData calldata data
-    ) external payable returns (uint256) {
-        tokenTransferProxy.safeTransferFrom(
-            msg.sender,
-            address(this),
-            data.fromToken,
-            data.fromAmount
-        );
+    function megaSwap(Utils.MegaSwapSellData calldata data) external payable returns (uint256) {
+        tokenTransferProxy.safeTransferFrom(msg.sender, address(this), data.fromToken, data.fromAmount);
     }
 
-    function protectedMultiSwap(
-        Utils.SellData calldata data
-    ) external payable returns (uint256) {}
+    function protectedMultiSwap(Utils.SellData calldata data) external payable returns (uint256) {}
 
-    function protectedMegaSwap(
-        Utils.MegaSwapSellData calldata data
-    ) external payable returns (uint256) {}
+    function protectedMegaSwap(Utils.MegaSwapSellData calldata data) external payable returns (uint256) {}
 
-    function protectedSimpleSwap(
-        Utils.SimpleData calldata data
-    ) external payable returns (uint256 receivedAmount) {}
+    function protectedSimpleSwap(Utils.SimpleData calldata data) external payable returns (uint256 receivedAmount) {}
 
-    function protectedSimpleBuy(
-        Utils.SimpleData calldata data
-    ) external payable {}
+    function protectedSimpleBuy(Utils.SimpleData calldata data) external payable {}
 
-    function simpleSwap(
-        Utils.SimpleData calldata data
-    ) external payable returns (uint256 receivedAmount) {}
+    function simpleSwap(Utils.SimpleData calldata data) external payable returns (uint256 receivedAmount) {}
 
     function simpleBuy(Utils.SimpleData calldata data) external payable {}
 
-    function swapOnUniswap(
-        uint256 amountIn,
-        uint256 amountOutMin,
-        address[] calldata path
-    ) external payable {}
+    function swapOnUniswap(uint256 amountIn, uint256 amountOutMin, address[] calldata path) external payable {}
 
     function swapOnUniswapFork(
         address factory,
@@ -67,11 +44,7 @@ contract MockParaswap is IParaswap {
         address[] calldata path
     ) external payable {}
 
-    function buyOnUniswap(
-        uint256 amountInMax,
-        uint256 amountOut,
-        address[] calldata path
-    ) external payable {}
+    function buyOnUniswap(uint256 amountInMax, uint256 amountOut, address[] calldata path) external payable {}
 
     function buyOnUniswapFork(
         address factory,

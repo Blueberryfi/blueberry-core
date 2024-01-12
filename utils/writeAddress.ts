@@ -1,7 +1,7 @@
 import fs from 'fs';
-import { network } from "hardhat";
+import { network } from 'hardhat';
 
-const deploymentPath = "./deployments";
+const deploymentPath = './deployments';
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;
 
 export const deployment = fs.existsSync(deploymentFilePath)

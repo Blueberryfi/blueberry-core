@@ -29,6 +29,7 @@ pragma solidity ^0.8.4;
 /// @dev Minimal ERC1967 proxy:
 /// An minimal ERC1967 proxy, intended to be upgraded with UUPS.
 /// This is NOT the same as ERC1967Factory's transparent proxy, which includes admin logic.
+// solhint-disable func-name-mixedcase
 library LibClone {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                       CUSTOM ERRORS                        */
@@ -50,10 +51,7 @@ library LibClone {
     }
 
     /// @dev Deploys a clone of `implementation`.
-    function clone(
-        uint256 value,
-        address implementation
-    ) internal returns (address instance) {
+    function clone(uint256 value, address implementation) internal returns (address instance) {
         /// @solidity memory-safe-assembly
         assembly {
             /**
@@ -126,10 +124,7 @@ library LibClone {
     }
 
     /// @dev Deploys a deterministic clone of `implementation` with `salt`.
-    function cloneDeterministic(
-        address implementation,
-        bytes32 salt
-    ) internal returns (address instance) {
+    function cloneDeterministic(address implementation, bytes32 salt) internal returns (address instance) {
         instance = cloneDeterministic(0, implementation, salt);
     }
 
@@ -155,9 +150,7 @@ library LibClone {
 
     /// @dev Returns the initialization code hash of the clone of `implementation`.
     /// Used for mining vanity addresses with create2crunch.
-    function initCodeHash(
-        address implementation
-    ) internal pure returns (bytes32 hash) {
+    function initCodeHash(address implementation) internal pure returns (bytes32 hash) {
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x21, 0x5af43d3d93803e602a57fd5bf3)
@@ -185,17 +178,12 @@ library LibClone {
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     /// @dev Deploys a PUSH0 clone of `implementation`.
-    function clone_PUSH0(
-        address implementation
-    ) internal returns (address instance) {
+    function clone_PUSH0(address implementation) internal returns (address instance) {
         instance = clone_PUSH0(0, implementation);
     }
 
     /// @dev Deploys a PUSH0 clone of `implementation`.
-    function clone_PUSH0(
-        uint256 value,
-        address implementation
-    ) internal returns (address instance) {
+    function clone_PUSH0(uint256 value, address implementation) internal returns (address instance) {
         /// @solidity memory-safe-assembly
         assembly {
             /**
@@ -269,10 +257,7 @@ library LibClone {
     }
 
     /// @dev Deploys a deterministic PUSH0 clone of `implementation` with `salt`.
-    function cloneDeterministic_PUSH0(
-        address implementation,
-        bytes32 salt
-    ) internal returns (address instance) {
+    function cloneDeterministic_PUSH0(address implementation, bytes32 salt) internal returns (address instance) {
         instance = cloneDeterministic_PUSH0(0, implementation, salt);
     }
 
@@ -298,9 +283,7 @@ library LibClone {
 
     /// @dev Returns the initialization code hash of the PUSH0 clone of `implementation`.
     /// Used for mining vanity addresses with create2crunch.
-    function initCodeHash_PUSH0(
-        address implementation
-    ) internal pure returns (bytes32 hash) {
+    function initCodeHash_PUSH0(address implementation) internal pure returns (bytes32 hash) {
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x24, 0x5af43d5f5f3e6029573d5ffd5b3d5ff3) // 16
@@ -331,19 +314,12 @@ library LibClone {
     // If the calldata is empty, it will emit a `ReceiveETH(uint256)` event and skip the `DELEGATECALL`.
 
     /// @dev Deploys a clone of `implementation` with immutable arguments encoded in `data`.
-    function clone(
-        address implementation,
-        bytes memory data
-    ) internal returns (address instance) {
+    function clone(address implementation, bytes memory data) internal returns (address instance) {
         instance = clone(0, implementation, data);
     }
 
     /// @dev Deploys a clone of `implementation` with immutable arguments encoded in `data`.
-    function clone(
-        uint256 value,
-        address implementation,
-        bytes memory data
-    ) internal returns (address instance) {
+    function clone(uint256 value, address implementation, bytes memory data) internal returns (address instance) {
         assembly {
             // Compute the boundaries of the data and cache the memory slots around it.
             let mBefore3 := mload(sub(data, 0x60))
@@ -440,26 +416,14 @@ library LibClone {
             mstore(data, 0x5af43d3d93803e606057fd5bf3) // Write the bytecode before the data.
             mstore(sub(data, 0x0d), implementation) // Write the address of the implementation.
             // Write the rest of the bytecode.
-            mstore(
-                sub(data, 0x21),
-                or(
-                    shl(0x48, extraLength),
-                    0x593da1005b363d3d373d3d3d3d610000806062363936013d73
-                )
-            )
+            mstore(sub(data, 0x21), or(shl(0x48, extraLength), 0x593da1005b363d3d373d3d3d3d610000806062363936013d73))
             // `keccak256("ReceiveETH(uint256)")`
-            mstore(
-                sub(data, 0x3a),
-                0x9e4ac34f21c619cefc926c8bd93b54bf5a39c7ab2127a895af1cc0691d7e3dff
-            )
+            mstore(sub(data, 0x3a), 0x9e4ac34f21c619cefc926c8bd93b54bf5a39c7ab2127a895af1cc0691d7e3dff)
             mstore(
                 // Do a out-of-gas revert if `extraLength` is too big. 0xffff - 0x62 + 0x01 = 0xff9e.
                 // The actual EVM limit may be smaller and may change over time.
                 sub(data, add(0x59, lt(extraLength, 0xff9e))),
-                or(
-                    shl(0x78, add(extraLength, 0x62)),
-                    0xfd6100003d81600a3d39f336602c57343d527f
-                )
+                or(shl(0x78, add(extraLength, 0x62)), 0xfd6100003d81600a3d39f336602c57343d527f)
             )
             mstore(dataEnd, shl(0xf0, extraLength))
 
@@ -511,35 +475,18 @@ library LibClone {
             mstore(data, 0x5af43d3d93803e606057fd5bf3) // Write the bytecode before the data.
             mstore(sub(data, 0x0d), implementation) // Write the address of the implementation.
             // Write the rest of the bytecode.
-            mstore(
-                sub(data, 0x21),
-                or(
-                    shl(0x48, extraLength),
-                    0x593da1005b363d3d373d3d3d3d610000806062363936013d73
-                )
-            )
+            mstore(sub(data, 0x21), or(shl(0x48, extraLength), 0x593da1005b363d3d373d3d3d3d610000806062363936013d73))
             // `keccak256("ReceiveETH(uint256)")`
-            mstore(
-                sub(data, 0x3a),
-                0x9e4ac34f21c619cefc926c8bd93b54bf5a39c7ab2127a895af1cc0691d7e3dff
-            )
+            mstore(sub(data, 0x3a), 0x9e4ac34f21c619cefc926c8bd93b54bf5a39c7ab2127a895af1cc0691d7e3dff)
             mstore(
                 // Do a out-of-gas revert if `extraLength` is too big. 0xffff - 0x62 + 0x01 = 0xff9e.
                 // The actual EVM limit may be smaller and may change over time.
                 sub(data, add(0x59, lt(extraLength, 0xff9e))),
-                or(
-                    shl(0x78, add(extraLength, 0x62)),
-                    0xfd6100003d81600a3d39f336602c57343d527f
-                )
+                or(shl(0x78, add(extraLength, 0x62)), 0xfd6100003d81600a3d39f336602c57343d527f)
             )
             mstore(dataEnd, shl(0xf0, extraLength))
 
-            instance := create2(
-                value,
-                sub(data, 0x4c),
-                add(extraLength, 0x6c),
-                salt
-            )
+            instance := create2(value, sub(data, 0x4c), add(extraLength, 0x6c), salt)
             if iszero(instance) {
                 mstore(0x00, 0x30116425) // `DeploymentFailed()`.
                 revert(0x1c, 0x04)
@@ -557,10 +504,7 @@ library LibClone {
     /// @dev Returns the initialization code hash of the clone of `implementation`
     /// using immutable arguments encoded in `data`.
     /// Used for mining vanity addresses with create2crunch.
-    function initCodeHash(
-        address implementation,
-        bytes memory data
-    ) internal pure returns (bytes32 hash) {
+    function initCodeHash(address implementation, bytes memory data) internal pure returns (bytes32 hash) {
         assembly {
             // Compute the boundaries of the data and cache the memory slots around it.
             let mBefore3 := mload(sub(data, 0x60))
@@ -572,11 +516,7 @@ library LibClone {
 
             // Do a out-of-gas revert if `dataLength` is too big. 0xffff - 0x02 - 0x62 = 0xff9b.
             // The actual EVM limit may be smaller and may change over time.
-            returndatacopy(
-                returndatasize(),
-                returndatasize(),
-                gt(dataLength, 0xff9b)
-            )
+            returndatacopy(returndatasize(), returndatasize(), gt(dataLength, 0xff9b))
 
             // +2 bytes for telling how much data there is appended to the call.
             let extraLength := add(dataLength, 2)
@@ -584,25 +524,10 @@ library LibClone {
             mstore(data, 0x5af43d3d93803e606057fd5bf3) // Write the bytecode before the data.
             mstore(sub(data, 0x0d), implementation) // Write the address of the implementation.
             // Write the rest of the bytecode.
-            mstore(
-                sub(data, 0x21),
-                or(
-                    shl(0x48, extraLength),
-                    0x593da1005b363d3d373d3d3d3d610000806062363936013d73
-                )
-            )
+            mstore(sub(data, 0x21), or(shl(0x48, extraLength), 0x593da1005b363d3d373d3d3d3d610000806062363936013d73))
             // `keccak256("ReceiveETH(uint256)")`
-            mstore(
-                sub(data, 0x3a),
-                0x9e4ac34f21c619cefc926c8bd93b54bf5a39c7ab2127a895af1cc0691d7e3dff
-            )
-            mstore(
-                sub(data, 0x5a),
-                or(
-                    shl(0x78, add(extraLength, 0x62)),
-                    0x6100003d81600a3d39f336602c57343d527f
-                )
-            )
+            mstore(sub(data, 0x3a), 0x9e4ac34f21c619cefc926c8bd93b54bf5a39c7ab2127a895af1cc0691d7e3dff)
+            mstore(sub(data, 0x5a), or(shl(0x78, add(extraLength, 0x62)), 0x6100003d81600a3d39f336602c57343d527f))
             mstore(dataEnd, shl(0xf0, extraLength))
 
             hash := keccak256(sub(data, 0x4c), add(extraLength, 0x6c))
@@ -637,17 +562,12 @@ library LibClone {
     // This is NOT the same as ERC1967Factory's transparent proxy, which includes admin logic.
 
     /// @dev Deploys a minimal ERC1967 proxy with `implementation`.
-    function deployERC1967(
-        address implementation
-    ) internal returns (address instance) {
+    function deployERC1967(address implementation) internal returns (address instance) {
         instance = deployERC1967(0, implementation);
     }
 
     /// @dev Deploys a minimal ERC1967 proxy with `implementation`.
-    function deployERC1967(
-        uint256 value,
-        address implementation
-    ) internal returns (address instance) {
+    function deployERC1967(uint256 value, address implementation) internal returns (address instance) {
         /// @solidity memory-safe-assembly
         assembly {
             /**
@@ -713,14 +633,8 @@ library LibClone {
              */
 
             let m := mload(0x40) // Cache the free memory pointer.
-            mstore(
-                0x60,
-                0xcc3735a920a3ca505d382bbc545af43d6000803e6038573d6000fd5b3d6000f3
-            )
-            mstore(
-                0x40,
-                0x5155f3363d3d373d3d363d7f360894a13ba1a3210667c828492db98dca3e2076
-            )
+            mstore(0x60, 0xcc3735a920a3ca505d382bbc545af43d6000803e6038573d6000fd5b3d6000f3)
+            mstore(0x40, 0x5155f3363d3d373d3d363d7f360894a13ba1a3210667c828492db98dca3e2076)
             mstore(0x20, 0x6009)
             mstore(0x1e, implementation)
             mstore(0x0a, 0x603d3d8160223d3973)
@@ -735,10 +649,7 @@ library LibClone {
     }
 
     /// @dev Deploys a deterministic minimal ERC1967 proxy with `implementation` and `salt`.
-    function deployDeterministicERC1967(
-        address implementation,
-        bytes32 salt
-    ) internal returns (address instance) {
+    function deployDeterministicERC1967(address implementation, bytes32 salt) internal returns (address instance) {
         instance = deployDeterministicERC1967(0, implementation, salt);
     }
 
@@ -751,14 +662,8 @@ library LibClone {
         /// @solidity memory-safe-assembly
         assembly {
             let m := mload(0x40) // Cache the free memory pointer.
-            mstore(
-                0x60,
-                0xcc3735a920a3ca505d382bbc545af43d6000803e6038573d6000fd5b3d6000f3
-            )
-            mstore(
-                0x40,
-                0x5155f3363d3d373d3d363d7f360894a13ba1a3210667c828492db98dca3e2076
-            )
+            mstore(0x60, 0xcc3735a920a3ca505d382bbc545af43d6000803e6038573d6000fd5b3d6000f3)
+            mstore(0x40, 0x5155f3363d3d373d3d363d7f360894a13ba1a3210667c828492db98dca3e2076)
             mstore(0x20, 0x6009)
             mstore(0x1e, implementation)
             mstore(0x0a, 0x603d3d8160223d3973)
@@ -775,20 +680,12 @@ library LibClone {
     /// @dev Returns the initialization code hash of the clone of `implementation`
     /// using immutable arguments encoded in `data`.
     /// Used for mining vanity addresses with create2crunch.
-    function initCodeHashERC1967(
-        address implementation
-    ) internal pure returns (bytes32 hash) {
+    function initCodeHashERC1967(address implementation) internal pure returns (bytes32 hash) {
         /// @solidity memory-safe-assembly
         assembly {
             let m := mload(0x40) // Cache the free memory pointer.
-            mstore(
-                0x60,
-                0xcc3735a920a3ca505d382bbc545af43d6000803e6038573d6000fd5b3d6000f3
-            )
-            mstore(
-                0x40,
-                0x5155f3363d3d373d3d363d7f360894a13ba1a3210667c828492db98dca3e2076
-            )
+            mstore(0x60, 0xcc3735a920a3ca505d382bbc545af43d6000803e6038573d6000fd5b3d6000f3)
+            mstore(0x40, 0x5155f3363d3d373d3d363d7f360894a13ba1a3210667c828492db98dca3e2076)
             mstore(0x20, 0x6009)
             mstore(0x1e, implementation)
             mstore(0x0a, 0x603d3d8160223d3973)
@@ -839,12 +736,7 @@ library LibClone {
         /// @solidity memory-safe-assembly
         assembly {
             // If the salt does not start with the zero address or `by`.
-            if iszero(
-                or(
-                    iszero(shr(96, salt)),
-                    eq(shr(96, shl(96, by)), shr(96, salt))
-                )
-            ) {
+            if iszero(or(iszero(shr(96, salt)), eq(shr(96, shl(96, by)), shr(96, salt)))) {
                 mstore(0x00, 0x0c4549ef) // `SaltDoesNotStartWith()`.
                 revert(0x1c, 0x04)
             }

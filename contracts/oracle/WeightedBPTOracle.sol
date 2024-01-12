@@ -10,16 +10,19 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
-import "./UsingBaseOracle.sol";
-import "../utils/BlueBerryErrors.sol" as Errors;
+import { FixedPoint } from "../libraries//balancer-v2/FixedPoint.sol";
+import { VaultReentrancyLib } from "../libraries/balancer-v2/VaultReentrancyLib.sol";
 
-import "../interfaces/IBaseOracle.sol";
-import "../interfaces/balancer-v2/IBalancerV2WeightedPool.sol";
-import "../interfaces/balancer-v2/IBalancerVault.sol";
-import "../libraries/balancer-v2/FixedPoint.sol";
-import "../libraries/balancer-v2/VaultReentrancyLib.sol";
+import "../utils/BlueberryErrors.sol" as Errors;
+import "../utils/BlueberryConst.sol" as Constants;
+
+import { UsingBaseOracle } from "./UsingBaseOracle.sol";
+
+import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { IBalancerV2WeightedPool } from "../interfaces/balancer-v2/IBalancerV2WeightedPool.sol";
+import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
 
 /**
  * @title WeightedBPTOracle
@@ -33,10 +36,11 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
     IBalancerVault public immutable VAULT;
 
     // Protects the oracle from being manipulated via read-only reentrancy
-    modifier balancerNonReentrant {
+    modifier balancerNonReentrant() {
         VaultReentrancyLib.ensureNotInVaultContext(VAULT);
         _;
     }
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -61,13 +65,12 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
         IBalancerV2WeightedPool pool = IBalancerV2WeightedPool(token);
 
-        (address[] memory tokens, , ) = VAULT
-            .getPoolTokens(pool.getPoolId());
+        (address[] memory tokens, , ) = VAULT.getPoolTokens(pool.getPoolId());
 
         uint256[] memory weights = pool.getNormalizedWeights();
 
         uint256 length = weights.length;
-        uint256 mult = 1e18;
+        uint256 mult = Constants.PRICE_PRECISION;
         uint256 invariant = pool.getInvariant();
 
         for (uint256 i; i < length; ++i) {
@@ -75,7 +78,7 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
             uint256 weight = weights[i];
             mult = mult.mulDown((price.divDown(weight)).powDown(weight));
         }
-        
+
         uint256 totalSupply = pool.totalSupply();
 
         return invariant.mulDown(mult).divDown(totalSupply);

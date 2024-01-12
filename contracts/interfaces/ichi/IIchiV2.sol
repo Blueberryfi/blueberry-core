@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.22;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol';
+/* solhint-disable func-name-mixedcase */
+
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol";
 
 interface IIchiV2 is IERC20Upgradeable, IERC20PermitUpgradeable {
     // EIP-20 token name for this token
@@ -36,10 +38,7 @@ interface IIchiV2 is IERC20Upgradeable, IERC20PermitUpgradeable {
     function delegates(address) external view returns (address);
 
     // A record of votes checkpoints for each account, by index
-    function checkpoints(address, uint32)
-        external
-        view
-        returns (uint32, uint96);
+    function checkpoints(address, uint32) external view returns (uint32, uint96);
 
     // The number of checkpoints for each account
     function numCheckpoints(address) external view returns (uint32);
@@ -57,32 +56,16 @@ interface IIchiV2 is IERC20Upgradeable, IERC20PermitUpgradeable {
     event MinterChanged(address minter, address newMinter);
 
     // An event thats emitted when an account changes its delegate
-    event DelegateChanged(
-        address indexed delegator,
-        address indexed fromDelegate,
-        address indexed toDelegate
-    );
+    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
 
     // An event thats emitted when a delegate account's vote balance changes
-    event DelegateVotesChanged(
-        address indexed delegate,
-        uint256 previousBalance,
-        uint256 newBalance
-    );
+    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
 
     // An event thats emitted when ICHI V1 tokens are converted into ICHI V2 tokens
-    event ConvertedToV2(
-        address indexed from,
-        uint256 amountIn,
-        uint256 amountOut
-    );
+    event ConvertedToV2(address indexed from, uint256 amountIn, uint256 amountOut);
 
     // An event thats emitted when ICHI V2 tokens are converted into ICHI V1 tokens
-    event ConvertedToV1(
-        address indexed from,
-        uint256 amountIn,
-        uint256 amountOut
-    );
+    event ConvertedToV1(address indexed from, uint256 amountIn, uint256 amountOut);
 
     // An event thats emitted when the conversion fee is changed
     event ConversionFeeChanged(address minter, uint256 fee);
@@ -133,14 +116,7 @@ interface IIchiV2 is IERC20Upgradeable, IERC20PermitUpgradeable {
      * @param r Half of the ECDSA signature pair
      * @param s Half of the ECDSA signature pair
      */
-    function delegateBySig(
-        address delegatee,
-        uint256 nonce,
-        uint256 expiry,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
+    function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external;
 
     /**
      * @notice Gets the current votes balance for `account`
@@ -156,8 +132,5 @@ interface IIchiV2 is IERC20Upgradeable, IERC20PermitUpgradeable {
      * @param blockNumber The block number to get the vote balance at
      * @return The number of votes the account had as of the given block
      */
-    function getPriorVotes(address account, uint256 blockNumber)
-        external
-        view
-        returns (uint96);
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
 }

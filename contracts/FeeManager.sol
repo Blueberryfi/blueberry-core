@@ -10,12 +10,14 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "./interfaces/IProtocolConfig.sol";
-import "./utils/BlueBerryConst.sol" as Constants;
-import "./utils/BlueBerryErrors.sol" as Errors;
+import "./utils/BlueberryConst.sol" as Constants;
+import "./utils/BlueberryErrors.sol" as Errors;
+
+import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
 
 /// @title FeeManager
 /// @author BlueberryProtocol
@@ -29,7 +31,7 @@ contract FeeManager is OwnableUpgradeable {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -53,22 +55,16 @@ contract FeeManager is OwnableUpgradeable {
     /// @param token Address of the underlying token.
     /// @param amount Amount of tokens being deposited.
     /// @return The net amount after deducting the fee.
-    function doCutDepositFee(
-        address token,
-        uint256 amount
-    ) external returns (uint256) {
+    function doCutDepositFee(address token, uint256 amount) external returns (uint256) {
         return _doCutFee(token, amount, config.depositFee());
     }
 
-    /// @notice Calculates and transfers withdrawal fee when redeeming 
+    /// @notice Calculates and transfers withdrawal fee when redeeming
     ///         isolated underlying tokens from Blueberry Money Market.
     /// @param token Address of the underlying token.
     /// @param amount Amount of tokens being withdrawn.
     /// @return The net amount after deducting the fee.
-    function doCutWithdrawFee(
-        address token,
-        uint256 amount
-    ) external returns (uint256) {
+    function doCutWithdrawFee(address token, uint256 amount) external returns (uint256) {
         return _doCutFee(token, amount, config.withdrawFee());
     }
 
@@ -76,10 +72,7 @@ contract FeeManager is OwnableUpgradeable {
     /// @param token Address of the reward token.
     /// @param amount Amount of rewards.
     /// @return The net rewards after deducting the fee.
-    function doCutRewardsFee(
-        address token,
-        uint256 amount
-    ) external returns (uint256) {
+    function doCutRewardsFee(address token, uint256 amount) external returns (uint256) {
         return _doCutFee(token, amount, config.rewardFee());
     }
 
@@ -87,16 +80,9 @@ contract FeeManager is OwnableUpgradeable {
     /// @param token Address of the underlying token.
     /// @param amount Amount of tokens being withdrawn.
     /// @return The net amount after deducting the fee if within the fee window, else returns the original amount.
-    function doCutVaultWithdrawFee(
-        address token,
-        uint256 amount
-    ) external returns (uint256) {
+    function doCutVaultWithdrawFee(address token, uint256 amount) external returns (uint256) {
         /// Calculate the fee if it's within the fee window, otherwise return the original amount.
-        if (
-            block.timestamp <
-            config.withdrawVaultFeeWindowStartTime() +
-                config.withdrawVaultFeeWindow()
-        ) {
+        if (block.timestamp < config.withdrawVaultFeeWindowStartTime() + config.withdrawVaultFeeWindow()) {
             return _doCutFee(token, amount, config.withdrawVaultFee());
         } else {
             return amount;
@@ -108,11 +94,7 @@ contract FeeManager is OwnableUpgradeable {
     /// @param amount Total amount from which the fee will be cut.
     /// @param feeRate Fee rate as a percentage (base 10000, so 100 means 1%).
     /// @return The net amount after deducting the fee.
-    function _doCutFee(
-        address token,
-        uint256 amount,
-        uint256 feeRate
-    ) internal returns (uint256) {
+    function _doCutFee(address token, uint256 amount, uint256 feeRate) internal returns (uint256) {
         address treasury = config.treasury();
         if (treasury == address(0)) revert Errors.NO_TREASURY_SET();
 
@@ -120,11 +102,7 @@ contract FeeManager is OwnableUpgradeable {
         uint256 fee = (amount * feeRate) / Constants.DENOMINATOR;
         /// Transfer the fee to the treasury if it's non-zero.
         if (fee > 0) {
-            IERC20Upgradeable(token).safeTransferFrom(
-                msg.sender,
-                treasury,
-                fee
-            );
+            IERC20Upgradeable(token).safeTransferFrom(msg.sender, treasury, fee);
         }
         return amount - fee; /// Return the net amount after deducting the fee.
     }

@@ -18,7 +18,7 @@ contract MockAuraToken is ERC20 {
     uint256 public constant INIT_MINT_AMOUNT = 5e25; // 50m
     uint256 public constant totalCliffs = 500;
     uint256 public immutable reductionPerCliff;
-    uint256 private manuallyMinted;
+    uint256 private _manuallyMinted;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -35,17 +35,17 @@ contract MockAuraToken is ERC20 {
         operator = _operator;
     }
 
-    function mintTestTokens(address to, uint amount) external {
+    function mintTestTokens(address to, uint256 amount) external {
         _mint(to, amount);
     }
 
-    function mintTestTokensManually(address to, uint amount) external {
-        manuallyMinted += amount;
+    function mintTestTokensManually(address to, uint256 amount) external {
+        _manuallyMinted += amount;
         _mint(to, amount);
     }
 
-    function totalSupply() public view override returns (uint) {
-        return super.totalSupply() - manuallyMinted;
+    function totalSupply() public view override returns (uint256) {
+        return super.totalSupply() - _manuallyMinted;
     }
 
     function mint(address _to, uint256 _amount) external {

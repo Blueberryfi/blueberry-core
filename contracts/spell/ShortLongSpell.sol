@@ -10,15 +10,20 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "./BasicSpell.sol";
+import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
+import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
-import "../interfaces/ISoftVault.sol";
-import "../interfaces/IWERC20.sol";
-import "../libraries/Paraswap/PSwapLib.sol";
-import "../libraries/UniversalERC20.sol";
+import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BasicSpell } from "./BasicSpell.sol";
+
+import { IBank } from "../interfaces/IBank.sol";
+import { ISoftVault } from "../interfaces/ISoftVault.sol";
+import { IWERC20 } from "../interfaces/IWERC20.sol";
 
 /// @title Short/Long Spell
 /// @author BlueberryProtocol
@@ -67,13 +72,7 @@ contract ShortLongSpell is BasicSpell {
         augustusSwapper = augustusSwapper_;
         tokenTransferProxy = tokenTransferProxy_;
 
-        __BasicSpell_init(
-            bank_,
-            werc20_,
-            weth_,
-            augustusSwapper_,
-            tokenTransferProxy_
-        );
+        __BasicSpell_init(bank_, werc20_, weth_, augustusSwapper_, tokenTransferProxy_);
     }
 
     /// @notice Internal function to swap token using paraswap assets
@@ -85,10 +84,7 @@ contract ShortLongSpell is BasicSpell {
     /// @dev params found in OpenPosParam struct in {BasicSpell}
     /// @param swapData Data for paraswap swap
     /// @dev swapData found in bytes struct in {PSwapLib}
-    function _deposit(
-        OpenPosParam calldata param,
-        bytes calldata swapData
-    ) internal {
+    function _deposit(OpenPosParam calldata param, bytes calldata swapData) internal {
         Strategy memory strategy = strategies[param.strategyId];
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
@@ -102,15 +98,10 @@ contract ShortLongSpell is BasicSpell {
         uint256 dstTokenAmt = swapToken.balanceOf(address(this));
 
         address borrowToken = param.borrowToken;
-        if (
-            !PSwapLib.swap(
-                augustusSwapper,
-                tokenTransferProxy,
-                borrowToken,
-                param.borrowAmount,
-                swapData
-            )
-        ) revert Errors.SWAP_FAILED(borrowToken);
+        if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, borrowToken, param.borrowAmount, swapData)) {
+            revert Errors.SWAP_FAILED(borrowToken);
+        }
+
         dstTokenAmt = swapToken.balanceOf(address(this)) - dstTokenAmt;
         if (dstTokenAmt == 0) revert Errors.SWAP_FAILED(borrowToken);
 
@@ -139,14 +130,11 @@ contract ShortLongSpell is BasicSpell {
     function openPosition(
         OpenPosParam calldata param,
         bytes calldata swapData
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         Strategy memory strategy = strategies[param.strategyId];
-        if (address(ISoftVault(strategy.vault).uToken()) == param.borrowToken)
+        if (address(ISoftVault(strategy.vault).uToken()) == param.borrowToken) {
             revert Errors.INCORRECT_LP(param.borrowToken);
+        }
 
         /// 1-3 Swap to strategy underlying token, deposit to softvault
         _deposit(param, swapData);
@@ -154,19 +142,13 @@ contract ShortLongSpell is BasicSpell {
         /// 4. Put collateral - strategy token
         address vault = strategies[param.strategyId].vault;
 
-        _doPutCollateral(
-            vault,
-            IERC20Upgradeable(ISoftVault(vault)).balanceOf(address(this))
-        );
+        _doPutCollateral(vault, IERC20Upgradeable(ISoftVault(vault)).balanceOf(address(this)));
     }
 
     /// @notice Internal utility function to handle the withdrawal of assets from SoftVault.
     /// @param param Parameters required for the withdrawal, described in the `ClosePosParam` struct.
     /// @param swapData Specific data needed for the ParaSwap swap.
-    function _withdraw(
-        ClosePosParam calldata param,
-        bytes calldata swapData
-    ) internal {
+    function _withdraw(ClosePosParam calldata param, bytes calldata swapData) internal {
         Strategy memory strategy = strategies[param.strategyId];
         ISoftVault vault = ISoftVault(strategy.vault);
         uint256 positionId = bank.POSITION_ID();
@@ -185,15 +167,8 @@ contract ShortLongSpell is BasicSpell {
             IERC20Upgradeable uToken = ISoftVault(strategy.vault).uToken();
             uint256 balanceBefore = uToken.balanceOf(address(this));
 
-            if (
-                !PSwapLib.swap(
-                    augustusSwapper,
-                    tokenTransferProxy,
-                    address(uToken),
-                    swapAmount,
-                    swapData
-                )
-            ) revert Errors.SWAP_FAILED(address(uToken));
+            if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, address(uToken), swapAmount, swapData))
+                revert Errors.SWAP_FAILED(address(uToken));
 
             if (uToken.balanceOf(address(this)) > balanceBefore - swapAmount) {
                 revert Errors.INCORRECT_LP(address(uToken));
@@ -236,24 +211,19 @@ contract ShortLongSpell is BasicSpell {
     function closePosition(
         ClosePosParam calldata param,
         bytes calldata swapData
-    )
-        external
-        existingStrategy(param.strategyId)
-        existingCollateral(param.strategyId, param.collToken)
-    {
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         Strategy memory strategy = strategies[param.strategyId];
 
         address vault = strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
-        if (IWERC20(posCollToken).getUnderlyingToken(collId) != vault)
-            revert Errors.INCORRECT_UNDERLYING(vault);
-        if (posCollToken != address(werc20))
-            revert Errors.INCORRECT_COLTOKEN(posCollToken);
+
+        if (IWERC20(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
+        if (posCollToken != address(werc20)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
 
         /// 1. Take out collateral
-        uint burnAmount = bank.takeCollateral(param.amountPosRemove);
+        uint256 burnAmount = bank.takeCollateral(param.amountPosRemove);
 
         werc20.burn(address(ISoftVault(strategy.vault)), burnAmount);
 
@@ -265,11 +235,7 @@ contract ShortLongSpell is BasicSpell {
     /// @param swapToken Address of token for given strategy
     /// @param minPosSize USD price of minimum position size for given strategy, based 1e18
     /// @param maxPosSize USD price of maximum position size for given strategy, based 1e18
-    function addStrategy(
-        address swapToken,
-        uint256 minPosSize,
-        uint256 maxPosSize
-    ) external onlyOwner {
+    function addStrategy(address swapToken, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(swapToken, minPosSize, maxPosSize);
     }
 }
