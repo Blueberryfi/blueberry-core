@@ -77,7 +77,7 @@ describe('HardVault', () => {
         })
       ).to.be.revertedWithCustomError(HardVault, 'ZERO_ADDRESS');
 
-      expect(await vault.config()).to.be.equal(config.address);
+      expect(await vault.getConfig()).to.be.equal(config.address);
     });
     it('should revert initializing twice', async () => {
       await expect(vault.initialize(config.address)).to.be.revertedWith(
