@@ -13,6 +13,7 @@ pragma solidity 0.8.22;
 import { CurveBaseOracle } from "./CurveBaseOracle.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
+import "../utils/BlueberryConst.sol" as Constants;
 
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
@@ -65,7 +66,7 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     /// @param p3 Price of the third token.
     /// @return The calculated LP price.
     function _lpPrice(uint256 virtualPrice, uint256 p1, uint256 p2, uint256 p3) internal pure returns (uint256) {
-        return (3 * virtualPrice * _cubicRoot(((p1 * p2) / 1e18) * p3)) / 1e18;
+        return (3 * virtualPrice * _cubicRoot(((p1 * p2) / PRICE_PRECISION) * p3)) / PRICE_PRECISION;
     }
 
     /// @dev Calculates the cubic root of the provided value using the Newton-Raphson method.
@@ -73,12 +74,12 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     /// @return The calculated cubic root.
 
     function _cubicRoot(uint256 x) internal pure returns (uint256) {
-        uint256 d = x / 1e18;
+        uint256 d = x / PRICE_PRECISION;
         for (uint256 i; i < 255; ++i) {
             uint256 dPrev = d;
-            d = (d * (2e18 + ((((x / d) * 1e18) / d) * 1e18) / d)) / (3e18);
+            d = (d * (2e18 + ((((x / d) * PRICE_PRECISION) / d) * PRICE_PRECISION) / d)) / (3e18);
             uint256 diff = (d > dPrev) ? d - dPrev : dPrev - d;
-            if (diff < 2 || diff * 1e18 < d) return d;
+            if (diff < 2 || diff * PRICE_PRECISION < d) return d;
         }
         revert("Did Not Converge");
     }

@@ -129,7 +129,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
                 10 ** (18 + decimals);
         } else if (token_ == ANKRETH) {
             return
-                ((answer.toUint256() * Constants.PRICE_PRECISION) * IAnkrETH(ANKRETH).sharesToBonds(1e18)) /
+                ((answer.toUint256() * Constants.PRICE_PRECISION) * IAnkrETH(ANKRETH).sharesToBonds(PRICE_PRECISION)) /
                 10 ** (18 + decimals);
         }
 

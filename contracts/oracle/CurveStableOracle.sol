@@ -12,6 +12,8 @@ pragma solidity 0.8.22;
 
 import { CurveBaseOracle } from "./CurveBaseOracle.sol";
 
+import "../utils/BlueberryConst.sol" as Constants;
+
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
 import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
@@ -66,7 +68,7 @@ contract CurveStableOracle is CurveBaseOracle {
         }
 
         // Calculate LP token price using the minimum underlying token price
-        return (minPrice * virtualPrice) / 1e18;
+        return (minPrice * virtualPrice) / PRICE_PRECISION;
     }
 
     /// @notice Fallback function to receive Ether.

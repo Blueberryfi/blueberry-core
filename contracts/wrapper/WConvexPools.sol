@@ -14,6 +14,9 @@ pragma solidity 0.8.22;
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { EnumerableSetUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
+import "../utils/BlueberryConst.sol" as Constants;
+
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -338,10 +341,10 @@ contract WConvexPools is
         if (earned != 0) {
             uint256 cvxReward = _getCvxPendingReward(earned);
 
-            cvxPerShare += (cvxReward * 1e18) / currentDeposits;
+            cvxPerShare += (cvxReward * PRICE_PRECISION) / currentDeposits;
         }
 
-        return (cvxPerShare * amount) / 1e18;
+        return (cvxPerShare * amount) / PRICE_PRECISION;
     }
 
     function _setAccExtPerShare(uint256 tokenId, address rewarder) internal {
@@ -381,7 +384,7 @@ contract WConvexPools is
 
         _getExtraRewards(pid, escrow);
 
-        if (cvxReward > 0) cvxPerShareByPid[pid] += (cvxReward * 1e18) / currentDeposits;
+        if (cvxReward > 0) cvxPerShareByPid[pid] += (cvxReward * PRICE_PRECISION) / currentDeposits;
     }
 
     function _getExtraRewards(uint256 pid, address escrow) internal {

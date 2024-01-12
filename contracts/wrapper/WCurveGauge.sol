@@ -13,6 +13,9 @@ pragma solidity 0.8.22;
 /* solhint-disable max-line-length */
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
+import "../utils/BlueberryConst.sol" as Constants;
+
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -128,8 +131,8 @@ contract WCurveGauge is
         uint256 claimableCrv = gauge.claimable_tokens(address(this));
         uint256 supply = gauge.balanceOf(address(this));
 
-        uint256 enCrvPerShare = accCrvPerShares[gid] + ((claimableCrv * 1e18) / supply);
-        uint256 crvRewards = enCrvPerShare > stCrvPerShare ? ((enCrvPerShare - stCrvPerShare) * amount) / 1e18 : 0;
+        uint256 enCrvPerShare = accCrvPerShares[gid] + ((claimableCrv * PRICE_PRECISION) / supply);
+        uint256 crvRewards = enCrvPerShare > stCrvPerShare ? ((enCrvPerShare - stCrvPerShare) * amount) / PRICE_PRECISION : 0;
 
         tokens = new address[](1);
         rewards = new uint256[](1);
@@ -179,8 +182,8 @@ contract WCurveGauge is
         gauge.withdraw(amount);
         IERC20Upgradeable(gauge.lp_token()).safeTransfer(msg.sender, amount);
 
-        uint256 stCrv = (stCrvPerShare * amount) / 1e18;
-        uint256 enCrv = (accCrvPerShares[gid] * amount) / 1e18;
+        uint256 stCrv = (stCrvPerShare * amount) / PRICE_PRECISION;
+        uint256 enCrv = (accCrvPerShares[gid] * amount) / PRICE_PRECISION;
 
         if (enCrv > stCrv) {
             rewards = enCrv - stCrv;
@@ -202,7 +205,7 @@ contract WCurveGauge is
         uint256 supply = gauge.balanceOf(address(this));
 
         if (gain > 0 && supply > 0) {
-            accCrvPerShares[gid] += (gain * 1e18) / supply;
+            accCrvPerShares[gid] += (gain * PRICE_PRECISION) / supply;
         }
     }
 
