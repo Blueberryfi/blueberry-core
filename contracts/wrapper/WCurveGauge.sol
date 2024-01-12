@@ -143,7 +143,7 @@ contract WCurveGauge is
     /// @return id The resulting ERC1155 token id.
     function mint(uint256 gid, uint256 amount) external nonReentrant returns (uint256) {
         ILiquidityGauge gauge = ILiquidityGauge(gaugeController.gauges(gid));
-        if (address(gauge) == address(0)) revert Errors.NO_GAUGE();
+        if (address(gauge) == address(0)) revert Errors.ZERO_ADDRESS();
 
         _mintCrv(gauge, gid);
         IERC20Upgradeable lpToken = IERC20Upgradeable(gauge.lp_token());
@@ -173,7 +173,7 @@ contract WCurveGauge is
 
         ILiquidityGauge gauge = ILiquidityGauge(gaugeController.gauges(gid));
 
-        if (address(gauge) == address(0)) revert Errors.GAUGE_NOT_REGISTERED();
+        if (address(gauge) == address(0)) revert Errors.ZERO_ADDRESS();
 
         _mintCrv(gauge, gid);
         gauge.withdraw(amount);

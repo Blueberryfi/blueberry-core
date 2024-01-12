@@ -41,9 +41,6 @@ error NO_MAX_DELAY(address token);
 /// @notice Thrown when the price information for a token is outdated.
 error PRICE_OUTDATED(address token);
 
-/// @notice Thrown when there's no symbol mapping for the token.
-error NO_SYM_MAPPING(address token);
-
 /// @notice Thrown when the price obtained is negative.
 error PRICE_NEGATIVE(address token);
 
@@ -114,15 +111,6 @@ error CRV_LP_ALREADY_REGISTERED(address lp);
 /// @notice Thrown when the caller isn't recognized as a bank.
 error NOT_BANK(address caller);
 
-/// @notice Thrown when refunding ETH encounters an issue.
-error REFUND_ETH_FAILED(uint256 balance);
-
-/// @notice Thrown when a transaction isn't initiated by WETH.
-error NOT_FROM_WETH(address from);
-
-/// @notice Thrown when the liquidity pool isn't whitelisted
-error LP_NOT_WHITELISTED(address lp);
-
 /// @notice Thrown when the collateral doesn't exist for a strategy.
 error COLLATERAL_NOT_EXIST(uint256 strategyId, address colToken);
 
@@ -155,25 +143,12 @@ error INCORRECT_COLTOKEN(address colToken);
 
 /// @notice Thrown when an incorrect underlying token is provided.
 error INCORRECT_UNDERLYING(address uToken);
+
+/// @notice Thrown when an incorrect debt token is provided.
 error INCORRECT_DEBT(address debtToken);
-error NOT_FROM_UNIV3(address sender);
+
+/// @notice Thrown when a swap fails.
 error SWAP_FAILED(address swapToken);
-
-/*//////////////////////////////////////////////////////////////////////////
-                            CURVE SPELL ERRORS
-//////////////////////////////////////////////////////////////////////////*/
-
-/// @notice Thrown when no gauge is present.
-error NO_GAUGE();
-
-/// @notice Thrown when a gauge already exists for the provided pid and gid.
-error EXISTING_GAUGE(uint256 pid, uint256 gid);
-
-/// @notice Thrown when no Curve pool is found for the given pid.
-error NO_CURVE_POOL(uint256 pid);
-
-/// @notice Thrown when no LP has been registered.
-error NO_LP_REGISTERED(address lp);
 
 /*//////////////////////////////////////////////////////////////////////////
                                 VAULT ERRORS
@@ -207,19 +182,12 @@ error BAD_PID(uint256 pid);
 /// @notice Thrown when a mismatch in reward per share is detected.
 error BAD_REWARD_PER_SHARE(uint256 rewardPerShare);
 
-/// @notice Thrown when the curve gauge returns a zero address
-error GAUGE_NOT_REGISTERED();
-
 /*//////////////////////////////////////////////////////////////////////////
                                 BANK ERRORS
 //////////////////////////////////////////////////////////////////////////*/
 
 /// @notice Thrown when a function is called without a required execution flag.
 error NOT_UNDER_EXECUTION();
-
-/// @notice Thrown when a transaction isn't initiated
-/// by an externally owned account (EOA).
-error NOT_EOA(address from);
 
 /// @notice Thrown when a transaction isn't initiated by the expected spell.
 error NOT_FROM_SPELL(address from);
@@ -294,9 +262,6 @@ error BORROW_ZERO_SHARE(uint256 borrowAmount);
                             CONFIGURATION ERRORS
 //////////////////////////////////////////////////////////////////////////*/
 
-/// @notice Thrown when slippage exceeds the allowed limit.
-error EXCEED_SLIPPAGE(uint256 ratio);
-
 /// @notice Thrown when a certain ratio is too high for an operation.
 error RATIO_TOO_HIGH(uint256 ratio);
 
@@ -315,9 +280,6 @@ error FEE_WINDOW_TOO_LONG(uint256 windowTime);
 /*//////////////////////////////////////////////////////////////////////////
                                 UTILITY ERRORS
 //////////////////////////////////////////////////////////////////////////*/
-
-/// @notice Thrown when a cast operation fails.
-error CAST();
 
 /// @notice Thrown when an operation has surpassed its deadline.
 error EXPIRED(uint256 deadline);
