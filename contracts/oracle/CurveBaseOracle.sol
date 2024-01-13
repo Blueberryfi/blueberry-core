@@ -32,7 +32,7 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle, Ownable {
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// Address provider for Curve-related contracts.
+    /// @dev Address provider for Curve-related contracts.
     ICurveAddressProvider private immutable _addressProvider;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -122,7 +122,7 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle, Ownable {
     }
 
     /**
-     * @dev Internal function to check for reentrancy within Curve pools.
+     * @notice Internal function to check for reentrancy within Curve pools.
      * @param pool The address of the Curve pool to check.
      * @param numTokens The number of tokens in the pool.
      */
