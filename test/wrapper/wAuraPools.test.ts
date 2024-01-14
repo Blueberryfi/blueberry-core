@@ -5,7 +5,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 import { CONTRACT_NAMES } from '../../constant';
 import {
-  WAuraPools,
+  WAuraBooster,
   MockAuraToken,
   MockBooster,
   MockERC20,
@@ -17,7 +17,7 @@ import {
 } from '../../typechain-types';
 import { generateRandomAddress } from '../helpers';
 
-describe('wAuraPools', () => {
+describe('wAuraBooster', () => {
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
 
@@ -30,7 +30,7 @@ describe('wAuraPools', () => {
   let aura: MockAuraToken;
   let booster: MockBooster;
   let auraRewarder: MockBaseRewardPool;
-  let wAuraPools: WAuraPools;
+  let wAuraBooster: WAuraBooster;
   let escrowBase: PoolEscrow;
   let escrowFactory: PoolEscrowFactory;
 
@@ -80,16 +80,16 @@ describe('wAuraPools', () => {
     const escrowFactoryFactory = await ethers.getContractFactory('PoolEscrowFactory');
     escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
 
-    const wAuraPoolsFactory = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
-    wAuraPools = <WAuraPools>await upgrades.deployProxy(
-      wAuraPoolsFactory,
-      [aura.address, booster.address, escrowFactory.address],
+    const wAuraBoosterFactory = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
+    wAuraBooster = <WAuraBooster>await upgrades.deployProxy(
+      wAuraBoosterFactory,
+      [aura.address, booster.address, escrowFactory.address, generateRandomAddress()],
       {
         unsafeAllow: ['delegatecall'],
       }
     );
 
-    escrowFactory.initialize(wAuraPools.address, booster.address);
+    escrowFactory.initialize(wAuraBooster.address, booster.address);
 
     await booster.addPool(
       lpToken.address,
@@ -100,25 +100,25 @@ describe('wAuraPools', () => {
     );
 
     await lpToken.mintWithAmount(utils.parseEther('10000000'));
-    await lpToken.approve(wAuraPools.address, utils.parseEther('10000000'));
+    await lpToken.approve(wAuraBooster.address, utils.parseEther('10000000'));
 
     await lpToken.connect(bob).mintWithAmount(utils.parseEther('10000000'));
-    await lpToken.connect(bob).approve(wAuraPools.address, utils.parseEther('10000000'));
+    await lpToken.connect(bob).approve(wAuraBooster.address, utils.parseEther('10000000'));
 
     await booster.setRewardMultipliers(auraRewarder.address, await booster.REWARD_MULTIPLIER_DENOMINATOR());
   });
 
   describe('#initialize', () => {
     it('check initial values', async () => {
-      expect(await wAuraPools.auraToken()).to.be.eq(aura.address);
-      expect(await wAuraPools.auraBooster()).to.be.eq(booster.address);
-      expect(await wAuraPools.escrowFactory()).to.be.eq(escrowFactory.address);
+      expect(await wAuraBooster.getAuraToken()).to.be.eq(aura.address);
+      expect(await wAuraBooster.getAuraBooster()).to.be.eq(booster.address);
+      expect(await wAuraBooster.getEscrowFactory()).to.be.eq(escrowFactory.address);
     });
 
     it('should revert initializing twice', async () => {
-      await expect(wAuraPools.initialize(aura.address, booster.address, escrowFactory.address)).to.be.revertedWith(
-        'Initializable: contract is already initialized'
-      );
+      await expect(
+        wAuraBooster.initialize(aura.address, booster.address, escrowFactory.address, generateRandomAddress())
+      ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });
 
@@ -128,22 +128,22 @@ describe('wAuraPools', () => {
       const auraPerShare = BigNumber.from(100);
 
       const id = pid.mul(BigNumber.from(2).pow(240)).add(auraPerShare);
-      expect(await wAuraPools.encodeId(pid, auraPerShare)).to.be.eq(id);
+      expect(await wAuraBooster.encodeId(pid, auraPerShare)).to.be.eq(id);
     });
 
     it('reverts if pid is equal or greater than 2 ^ 16', async () => {
       const pid = BigNumber.from(2).pow(16);
       const auraPerShare = BigNumber.from(100);
 
-      await expect(wAuraPools.encodeId(pid, auraPerShare)).to.be.revertedWithCustomError(wAuraPools, 'BAD_PID');
+      await expect(wAuraBooster.encodeId(pid, auraPerShare)).to.be.revertedWithCustomError(wAuraBooster, 'BAD_PID');
     });
 
     it('reverts if auraPerShare is equal or greater than 2 ^ 240', async () => {
       const pid = BigNumber.from(2).pow(2);
       const auraPerShare = BigNumber.from(2).pow(240);
 
-      await expect(wAuraPools.encodeId(pid, auraPerShare)).to.be.revertedWithCustomError(
-        wAuraPools,
+      await expect(wAuraBooster.encodeId(pid, auraPerShare)).to.be.revertedWithCustomError(
+        wAuraBooster,
         'BAD_REWARD_PER_SHARE'
       );
     });
@@ -155,7 +155,7 @@ describe('wAuraPools', () => {
       const auraPerShare = BigNumber.from(100);
 
       const id = pid.mul(BigNumber.from(2).pow(240)).add(auraPerShare);
-      const res = await wAuraPools.decodeId(id);
+      const res = await wAuraBooster.decodeId(id);
       expect(res[0]).to.be.eq(pid);
       expect(res[1]).to.be.eq(auraPerShare);
     });
@@ -179,7 +179,7 @@ describe('wAuraPools', () => {
       const auraPerShare = BigNumber.from(100);
 
       const id = pid.mul(BigNumber.from(2).pow(240)).add(auraPerShare);
-      expect(await wAuraPools.getUnderlyingToken(id)).to.be.eq(lptoken);
+      expect(await wAuraBooster.getUnderlyingToken(id)).to.be.eq(lptoken);
     });
   });
 
@@ -195,7 +195,7 @@ describe('wAuraPools', () => {
     });
 
     it('get pool info', async () => {
-      const res = await wAuraPools.getPoolInfoFromPoolId(1);
+      const res = await wAuraBooster.getPoolInfoFromPoolId(1);
       expect(res[0]).to.be.eq(lptoken);
       expect(res[1]).to.be.eq(token);
       expect(res[2]).to.be.eq(gauge);
@@ -213,11 +213,11 @@ describe('wAuraPools', () => {
 
     beforeEach(async () => {
       await auraRewarder.setRewardPerToken(auraPerShare);
-      await wAuraPools.mint(pid, amount);
+      await wAuraBooster.mint(pid, amount);
     });
 
     it('return zero at initial stage', async () => {
-      const res = await wAuraPools.pendingRewards(tokenId, amount);
+      const res = await wAuraBooster.pendingRewards(tokenId, amount);
 
       expect(res[0][0]).to.be.eq(rewardToken.address);
       expect(res[0][1]).to.be.eq(aura.address);
@@ -230,7 +230,7 @@ describe('wAuraPools', () => {
         const rewardPerToken = utils.parseEther('150');
         await auraRewarder.setRewardPerToken(rewardPerToken);
 
-        const res = await wAuraPools.pendingRewards(tokenId, amount);
+        const res = await wAuraBooster.pendingRewards(tokenId, amount);
         expect(res[1][0]).to.be.eq(rewardPerToken.sub(auraPerShare).mul(amount).div(BigNumber.from(10).pow(18)));
       });
 
@@ -238,7 +238,7 @@ describe('wAuraPools', () => {
         const rewardPerToken = utils.parseEther('50');
         await auraRewarder.setRewardPerToken(rewardPerToken);
 
-        const res = await wAuraPools.pendingRewards(tokenId, amount);
+        const res = await wAuraBooster.pendingRewards(tokenId, amount);
         expect(res[1][0]).to.be.eq(0);
       });
     });
@@ -254,7 +254,7 @@ describe('wAuraPools', () => {
       });
 
       it('return earned amount if AURA total supply is initial amount', async () => {
-        const res = await wAuraPools.pendingRewards(tokenId, amount);
+        const res = await wAuraBooster.pendingRewards(tokenId, amount);
 
         expect(res[1][0]).to.be.eq(reward0);
         expect(res[1][1]).to.be.eq(await getAuraMintAmount(reward0));
@@ -264,7 +264,7 @@ describe('wAuraPools', () => {
         const auraSupply = utils.parseEther('10000');
         await aura.mintTestTokens(stakingToken.address, auraSupply);
 
-        const res = await wAuraPools.pendingRewards(tokenId, amount);
+        const res = await wAuraBooster.pendingRewards(tokenId, amount);
         expect(res[1][0]).to.be.eq(reward0);
         expect(res[1][1]).to.be.eq(await getAuraMintAmount(reward0));
       });
@@ -276,9 +276,9 @@ describe('wAuraPools', () => {
         const auraMaxSupply = await aura.EMISSIONS_MAX_SUPPLY();
 
         await lpToken.mintWithAmount(auraMaxSupply);
-        await lpToken.approve(wAuraPools.address, auraMaxSupply);
+        await lpToken.approve(wAuraBooster.address, auraMaxSupply);
 
-        await wAuraPools.mint(pid, auraMaxSupply.sub(amount));
+        await wAuraBooster.mint(pid, auraMaxSupply.sub(amount));
 
         await auraRewarder.setRewardPerToken(utils.parseEther('200'));
 
@@ -286,14 +286,14 @@ describe('wAuraPools', () => {
 
         const newTokenId = rewardPerToken;
 
-        await wAuraPools.pendingRewards(newTokenId, auraMaxSupply);
+        await wAuraBooster.pendingRewards(newTokenId, auraMaxSupply);
       });
 
       it('return 0 if cliff is equal or greater than totalCliffs (when supply is same as max)', async () => {
         const auraMaxSupply = await aura.EMISSIONS_MAX_SUPPLY();
         await aura.mintTestTokens(stakingToken.address, auraMaxSupply);
 
-        const res = await wAuraPools.pendingRewards(tokenId, amount);
+        const res = await wAuraBooster.pendingRewards(tokenId, amount);
         expect(res[1][1]).to.be.eq(0);
       });
     });
@@ -312,10 +312,10 @@ describe('wAuraPools', () => {
       await extraRewarder.setRewardPerToken(extraRewardPerToken);
     });
 
-    it('deposit into auraPools', async () => {
-      await wAuraPools.mint(pid, amount);
+    it('deposit into AuraBooster', async () => {
+      await wAuraBooster.mint(pid, amount);
 
-      const escrowContract = await wAuraPools.getEscrow(pid);
+      const escrowContract = await wAuraBooster.getEscrow(pid);
 
       expect(await auraRewarder.balanceOf(escrowContract)).to.be.eq(amount);
       expect(await lpToken.balanceOf(escrowContract)).to.be.eq(0);
@@ -324,28 +324,28 @@ describe('wAuraPools', () => {
     });
 
     it('mint ERC1155 NFT', async () => {
-      await wAuraPools.connect(alice).mint(pid, amount);
-      await wAuraPools.connect(bob).mint(pid, amount2);
+      await wAuraBooster.connect(alice).mint(pid, amount);
+      await wAuraBooster.connect(bob).mint(pid, amount2);
 
-      expect(await wAuraPools.balanceOf(bob.address, tokenId)).to.be.eq(amount2);
-      expect(await wAuraPools.balanceOf(alice.address, tokenId)).to.be.eq(amount);
+      expect(await wAuraBooster.balanceOf(bob.address, tokenId)).to.be.eq(amount2);
+      expect(await wAuraBooster.balanceOf(alice.address, tokenId)).to.be.eq(amount);
     });
 
     it('sync extra reward info', async () => {
-      await wAuraPools.mint(pid, amount);
+      await wAuraBooster.mint(pid, amount);
 
-      expect(await wAuraPools.accExtPerShare(tokenId, extraRewarder.address)).to.be.eq(extraRewardPerToken);
+      expect(await wAuraBooster.getInitialTokenPerShare(tokenId, extraRewarder.address)).to.be.eq(extraRewardPerToken);
 
-      expect(await wAuraPools.extraRewardsLength(pid)).to.be.eq(1);
-      expect(await wAuraPools.getExtraRewarder(pid, 0)).to.be.eq(extraRewarder.address);
+      expect(await wAuraBooster.extraRewardsLength(pid)).to.be.eq(1);
+      expect(await wAuraBooster.getExtraRewarder(pid, 0)).to.be.eq(extraRewarder.address);
     });
 
     it('keep existing extra reward info when syncing', async () => {
-      await wAuraPools.mint(pid, amount);
+      await wAuraBooster.mint(pid, amount);
       await auraRewarder.setRewardPerToken(auraRewardPerToken.add(1));
-      await wAuraPools.mint(pid, amount);
-      expect(await wAuraPools.extraRewardsLength(pid)).to.be.eq(1);
-      expect(await wAuraPools.getExtraRewarder(pid, 0)).to.be.eq(extraRewarder.address);
+      await wAuraBooster.mint(pid, amount);
+      expect(await wAuraBooster.extraRewardsLength(pid)).to.be.eq(1);
+      expect(await wAuraBooster.getExtraRewarder(pid, 0)).to.be.eq(extraRewarder.address);
     });
   });
 
@@ -363,7 +363,7 @@ describe('wAuraPools', () => {
       await auraRewarder.setRewardPerToken(auraRewardPerToken);
       await extraRewarder.setRewardPerToken(extraRewardPerToken);
 
-      await wAuraPools.mint(pid, mintAmount);
+      await wAuraBooster.mint(pid, mintAmount);
 
       await rewardToken.mintTo(auraRewarder.address, utils.parseEther('10000000000'));
       await aura.mintTestTokens(extraRewarder.address, utils.parseEther('10000000000'));
@@ -371,19 +371,19 @@ describe('wAuraPools', () => {
       await auraRewarder.setRewardPerToken(newauraRewardPerToken);
       await extraRewarder.setRewardPerToken(newExtraRewardPerToken);
 
-      const escrowContract = await wAuraPools.getEscrow(pid);
+      const escrowContract = await wAuraBooster.getEscrow(pid);
 
-      const res = await wAuraPools.pendingRewards(tokenId, mintAmount);
+      const res = await wAuraBooster.pendingRewards(tokenId, mintAmount);
       await auraRewarder.setReward(escrowContract, res[1][0]);
       await extraRewarder.setReward(escrowContract, res[1][1]);
     });
 
-    it('withdraw from auraPools', async () => {
+    it('withdraw from AuraBooster', async () => {
       const balBefore = await lpToken.balanceOf(alice.address);
 
-      await wAuraPools.burn(tokenId, amount);
+      await wAuraBooster.burn(tokenId, amount);
 
-      const escrowContract = await wAuraPools.getEscrow(pid);
+      const escrowContract = await wAuraBooster.getEscrow(pid);
 
       expect(await auraRewarder.balanceOf(escrowContract)).to.be.eq(mintAmount.sub(amount));
       expect(await lpToken.balanceOf(escrowContract)).to.be.eq(0);
@@ -393,27 +393,27 @@ describe('wAuraPools', () => {
     });
 
     it('burn ERC1155 NFT', async () => {
-      await wAuraPools.burn(tokenId, amount);
+      await wAuraBooster.burn(tokenId, amount);
 
-      expect(await wAuraPools.balanceOf(alice.address, tokenId)).to.be.eq(mintAmount.sub(amount));
+      expect(await wAuraBooster.balanceOf(alice.address, tokenId)).to.be.eq(mintAmount.sub(amount));
     });
 
     it('receive rewards', async () => {
-      const res = await wAuraPools.pendingRewards(tokenId, amount);
+      const res = await wAuraBooster.pendingRewards(tokenId, amount);
 
-      await wAuraPools.burn(tokenId, amount);
+      await wAuraBooster.burn(tokenId, amount);
 
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
       expect(await aura.balanceOf(alice.address)).to.be.gte(res[1][1]);
     });
     it('claim extra reward manually due to extra info mismatch', async () => {
-      const res = await wAuraPools.pendingRewards(tokenId, amount);
+      const res = await wAuraBooster.pendingRewards(tokenId, amount);
       const beforeAliceBalance = await aura.balanceOf(alice.address);
       await auraRewarder.clearExtraRewards();
 
-      await extraRewarder.setReward(await wAuraPools.getEscrow(pid), utils.parseEther('2000'));
+      await extraRewarder.setReward(await wAuraBooster.getEscrow(pid), utils.parseEther('2000'));
 
-      await wAuraPools.burn(tokenId, amount);
+      await wAuraBooster.burn(tokenId, amount);
 
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
 
