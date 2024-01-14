@@ -382,7 +382,9 @@ describe('WConvexBooster', () => {
     it('sync extra reward info', async () => {
       await wConvexBooster.mint(pid, amount);
 
-      expect(await wConvexBooster.getInitialTokenPerShare(tokenId, extraRewarder.address)).to.be.eq(extraRewardPerToken);
+      expect(await wConvexBooster.getInitialTokenPerShare(tokenId, extraRewarder.address)).to.be.eq(
+        extraRewardPerToken
+      );
 
       expect(await wConvexBooster.extraRewardsLength(pid)).to.be.eq(1);
       expect(await wConvexBooster.getExtraRewarder(pid, 0)).to.be.eq(extraRewarder.address);

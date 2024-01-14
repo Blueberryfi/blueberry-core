@@ -101,9 +101,9 @@ contract ConvexSpell is BasicSpell {
 
     /**
      * @notice Adds a new strategy to the spell.
-     * @param crvLp Address of the Curve LP token for the strategy. 
-     * @param minPosSize Minimum position size in USD for the strategy (with 1e18 precision). 
-     * @param maxPosSize Maximum position size in USD for the strategy (with 1e18 precision). 
+     * @param crvLp Address of the Curve LP token for the strategy.
+     * @param minPosSize Minimum position size in USD for the strategy (with 1e18 precision).
+     * @param maxPosSize Maximum position size in USD for the strategy (with 1e18 precision).
      */
     function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
@@ -111,8 +111,8 @@ contract ConvexSpell is BasicSpell {
 
     /**
      * @notice Adds liquidity to a Curve pool with two underlying tokens and stakes in Curve gauge.
-     * @param param Struct containing all required parameters for opening a position. 
-     * @param minLPMint Minimum LP tokens expected to mint for slippage control. 
+     * @param param Struct containing all required parameters for opening a position.
+     * @param minLPMint Minimum LP tokens expected to mint for slippage control.
      */
     function openPositionFarm(
         OpenPosParam calldata param,
@@ -335,11 +335,11 @@ contract ConvexSpell is BasicSpell {
 
     /**
      * @notice Removes liquidity from a Curve pool for a given position.
-     * @param param Contains data required to close the position. 
-     * @param pos Data structure representing the current bank position. 
-     * @param crvLp Address of the Curve LP token. 
+     * @param param Contains data required to close the position.
+     * @param pos Data structure representing the current bank position.
+     * @param crvLp Address of the Curve LP token.
      * @param amountPosRemove Amount of LP tokens to be removed from the pool.
-     *        If set to max, will remove all available LP tokens. 
+     *        If set to max, will remove all available LP tokens.
      */
     function _removeLiquidity(
         ClosePosParam memory param,
