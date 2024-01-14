@@ -4,8 +4,10 @@ pragma solidity 0.8.22;
 
 /* solhint-disable func-name-mixedcase */
 
-/// @title ICurveZapDepositor
-/// @notice Interface for the Curve Zap Depositor contract.
+/**
+ * @title ICurveZapDepositor
+ * @notice Interface for the Curve Zap Depositor contract.
+ */
 interface ICurveZapDepositor {
     function add_liquidity(address pool, uint256[4] memory amounts, uint256 minMint) external;
 
