@@ -109,7 +109,7 @@ contract WAuraBooster is
             revert Errors.ZERO_ADDRESS();
         }
         __ReentrancyGuard_init();
-        __ERC1155_init("WauraBooster");
+        __ERC1155_init("wAuraBooster");
 
         _auraToken = IAura(aura);
         _escrowFactory = IPoolEscrowFactory(escrowFactory);
@@ -136,13 +136,11 @@ contract WAuraBooster is
     function mint(uint256 pid, uint256 amount) external nonReentrant returns (uint256 id) {
         (address lpToken, , , address auraRewarder, , ) = getPoolInfoFromPoolId(pid);
         /// Escrow deployment/get logic
-        address escrow;
+        address escrow = getEscrow(pid);
 
-        if (getEscrow(pid) == address(0)) {
+        if (escrow == address(0)) {
             escrow = _escrowFactory.createEscrow(pid, auraRewarder, lpToken);
             _escrows[pid] = escrow;
-        } else {
-            escrow = _escrows[pid];
         }
 
         IERC20Upgradeable(lpToken).safeTransferFrom(msg.sender, escrow, amount);

@@ -4,7 +4,7 @@ import {
   IWETH,
   ERC20,
   ConvexSpell,
-  WConvexPools,
+  WConvexBooster,
   ICvxBooster,
   IRewarder,
   ProtocolConfig,
@@ -56,7 +56,7 @@ describe('Convex Spells Deploy', () => {
   let crvCvxCrv: ERC20;
   let weth: IWETH;
   let spell: ConvexSpell;
-  let wconvex: WConvexPools;
+  let wconvex: WConvexBooster;
   let bank: BlueberryBank;
   let protocol: CvxProtocol;
   let cvxBooster: ICvxBooster;

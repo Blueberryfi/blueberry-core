@@ -98,7 +98,7 @@ interface IWAuraBooster is IERC1155Upgradeable, IERC20Wrapper {
     /// @notice Get the AURA Booster contract address.
     function getAuraBooster() external view returns (IAuraBooster);
 
-    /// @notice Get the AURA Booster contract address.
+    /// @notice Get the Pool Escrow Factory contract address.
     function getEscrowFactory() external view returns (IPoolEscrowFactory);
 
     /**
