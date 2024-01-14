@@ -20,7 +20,7 @@ export enum CONTRACT_NAMES {
   WIchiFarm = 'WIchiFarm',
   WCurveGauge = 'WCurveGauge',
   WConvexPools = 'WConvexPools',
-  WAuraPools = 'WAuraPools',
+  WAuraBooster = 'WAuraBooster',
   WStakingRewards = 'WStakingRewards',
   PoolEscrow = 'PoolEscrow',
   PoolEscrowFactory = 'PoolEscrowFactory',

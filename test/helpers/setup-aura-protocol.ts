@@ -17,7 +17,7 @@ import {
   CurveStableOracle,
   CurveVolatileOracle,
   CurveTricryptoOracle,
-  WAuraPools,
+  WAuraBooster,
   AuraSpell,
   Comptroller,
   PoolEscrow,
@@ -45,7 +45,7 @@ const ETH_PRICE = 1600;
 
 export interface AuraProtocol {
   werc20: WERC20;
-  waura: WAuraPools;
+  waura: WAuraBooster;
   mockOracle: MockOracle;
   stableOracle: CurveStableOracle;
   volatileOracle: CurveVolatileOracle;
@@ -84,7 +84,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   let crv: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
-  let waura: WAuraPools;
+  let waura: WAuraBooster;
   let mockOracle: MockOracle;
   let stableOracle: CurveStableOracle;
   let volatileOracle: CurveVolatileOracle;
@@ -275,10 +275,16 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
 
   await escrowFactory.deployed();
 
-  const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
-  waura = <WAuraPools>await upgrades.deployProxy(WAuraPools, [AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address], {
-    unsafeAllow: ['delegatecall'],
-  });
+  const balancerVault = await ethers.getContractAt('IBalancerVault', ADDRESS.BALANCER_VAULT);
+
+  const WAuraBooster = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
+  waura = <WAuraBooster>await upgrades.deployProxy(
+    WAuraBooster,
+    [AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address, balancerVault.address],
+    {
+      unsafeAllow: ['delegatecall'],
+    }
+  );
 
   escrowFactory.initialize(waura.address, ADDRESS.AURA_BOOSTER);
 

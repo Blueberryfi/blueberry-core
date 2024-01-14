@@ -4,7 +4,7 @@ import {
   MockOracle,
   WERC20,
   ERC20,
-  WAuraPools,
+  WAuraBooster,
   IAuraBooster,
   IRewarder,
   AuraSpell,
@@ -45,7 +45,7 @@ describe('Aura Spell', () => {
   let werc20: WERC20;
   let mockOracle: MockOracle;
   let spell: AuraSpell;
-  let waura: WAuraPools;
+  let waura: WAuraBooster;
   let bank: BlueberryBank;
   let protocol: AuraProtocol;
   let auraBooster: IAuraBooster;

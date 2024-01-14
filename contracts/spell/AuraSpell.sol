@@ -23,12 +23,14 @@ import { BasicSpell } from "./BasicSpell.sol";
 import { IBank } from "../interfaces/IBank.sol";
 import { IBalancerV2Pool } from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
-import { IWAuraPools } from "../interfaces/IWAuraPools.sol";
+import { IWAuraBooster } from "../interfaces/IWAuraBooster.sol";
 
-/// @title AuraSpell
-/// @author BlueberryProtocol
-/// @notice AuraSpell is the factory contract that
-///         defines how Blueberry Protocol interacts with Aura pools
+/**
+ * @title AuraSpell
+ * @author BlueberryProtocol
+ * @notice AuraSpell is the factory contract that
+ *         defines how Blueberry Protocol interacts with Aura pools
+ */
 contract AuraSpell is BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
@@ -38,47 +40,54 @@ contract AuraSpell is BasicSpell {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address to Wrapped Aura Pools
-    IWAuraPools public wAuraPools;
+    IWAuraBooster private _wAuraBooster;
     /// @dev Address of AURA token
-    address public auraToken;
+    address private _auraToken;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Initializes the contract with required parameters.
-    /// @param bank_ Reference to the Bank contract.
-    /// @param werc20_ Reference to the WERC20 contract.
-    /// @param weth_ Address of the wrapped Ether token.
-    /// @param wAuraPools_ Address of the wrapped Aura Pools contract.
-    /// @param augustusSwapper_ Address of the paraswap AugustusSwapper.
-    /// @param tokenTransferProxy_ Address of the paraswap TokenTransferProxy.
+    /**
+     * @notice Initializes the contract with required parameters.
+     * @param bank Reference to the Bank contract.
+     * @param werc20 Reference to the WERC20 contract.
+     * @param weth Address of the wrapped Ether token.
+     * @param wAuraPools Address of the wrapped Aura Pools contract.
+     * @param augustusSwapper Address of the paraswap AugustusSwapper.
+     * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     */
     function initialize(
-        IBank bank_,
-        address werc20_,
-        address weth_,
-        address wAuraPools_,
-        address augustusSwapper_,
-        address tokenTransferProxy_
+        IBank bank,
+        address werc20,
+        address weth,
+        address wAuraPools,
+        address augustusSwapper,
+        address tokenTransferProxy
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_, augustusSwapper_, tokenTransferProxy_);
-        if (wAuraPools_ == address(0)) revert Errors.ZERO_ADDRESS();
+        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
+        if (wAuraPools == address(0)) revert Errors.ZERO_ADDRESS();
 
-        wAuraPools = IWAuraPools(wAuraPools_);
-        auraToken = address(wAuraPools.auraToken());
-        IWAuraPools(wAuraPools_).setApprovalForAll(address(bank_), true);
+        _wAuraBooster = IWAuraBooster(wAuraPools);
+        _auraToken = address(IWAuraBooster(wAuraPools).getAuraToken());
+        IWAuraBooster(wAuraPools).setApprovalForAll(address(bank), true);
     }
 
-    /// @notice Allows the owner to add a new strategy.
-    /// @param bpt Address of the Balancer Pool Token.
-    /// @param minPosSize, USD price of minimum position size for given strategy, based 1e18
-    /// @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
+    /**
+     * @notice Allows the owner to add a new strategy.
+     * @param bpt Address of the Balancer Pool Token.
+     * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
+     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
+     */
     function addStrategy(address bpt, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(bpt, minPosSize, maxPosSize);
     }
 
-    /// @notice Adds liquidity to a Balancer pool and stakes the resultant tokens in Aura.
-    /// @param param Configuration for opening a position.
+    /**
+     * @notice Adds liquidity to a Balancer pool and stakes the resultant tokens in Aura.
+     * @param param Configuration for opening a position.
+     * @param minimumBPT The minimum amount of BPT tokens to receive from the join.
+     */
     function openPositionFarm(
         OpenPosParam calldata param,
         uint256 minimumBPT
@@ -86,7 +95,7 @@ contract AuraSpell is BasicSpell {
         /// Extract strategy details for the given strategy ID.
         Strategy memory strategy = strategies[param.strategyId];
         /// Fetch pool information based on provided farming pool ID.
-        (address lpToken, , , , , ) = wAuraPools.getPoolInfoFromPoolId(param.farmingPoolId);
+        (address lpToken, , , , , ) = _wAuraBooster.getPoolInfoFromPoolId(param.farmingPoolId);
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
@@ -98,9 +107,9 @@ contract AuraSpell is BasicSpell {
         /// 3. Add liquidity to the Balancer pool and receive BPT in return.
         {
             uint256 _minimumBPT = minimumBPT;
-            IBalancerVault vault = wAuraPools.getVault(lpToken);
+            IBalancerVault vault = _wAuraBooster.getVault();
 
-            (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
+            (address[] memory tokens, , ) = _wAuraBooster.getPoolTokens(lpToken);
             (uint256[] memory maxAmountsIn, uint256[] memory amountsIn) = _getJoinPoolParamsAndApprove(
                 address(vault),
                 tokens,
@@ -108,7 +117,7 @@ contract AuraSpell is BasicSpell {
             );
 
             vault.joinPool(
-                wAuraPools.getBPTPoolId(lpToken),
+                _wAuraBooster.getBPTPoolId(lpToken),
                 address(this),
                 address(this),
                 IBalancerVault.JoinPoolRequest({
@@ -129,14 +138,14 @@ contract AuraSpell is BasicSpell {
         /// 6. Withdraw existing collaterals and burn the associated tokens.
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
-            (uint256 pid, ) = wAuraPools.decodeId(pos.collId);
+            (uint256 pid, ) = _wAuraBooster.decodeId(pos.collId);
 
             if (param.farmingPoolId != pid) revert Errors.INCORRECT_PID(param.farmingPoolId);
-            if (pos.collToken != address(wAuraPools)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            if (pos.collToken != address(_wAuraBooster)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
 
             bank.takeCollateral(pos.collateralSize);
 
-            (address[] memory rewardTokens, ) = wAuraPools.burn(pos.collId, pos.collateralSize);
+            (address[] memory rewardTokens, ) = _wAuraBooster.burn(pos.collId, pos.collateralSize);
 
             // Distribute the multiple rewards to users.
             uint256 rewardTokensLength = rewardTokens.length;
@@ -147,17 +156,19 @@ contract AuraSpell is BasicSpell {
 
         /// 7. Deposit the tokens in the Aura pool and place the wrapped collateral tokens in the Blueberry Bank.
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
-        IERC20(lpToken).universalApprove(address(wAuraPools), lpAmount);
+        IERC20(lpToken).universalApprove(address(_wAuraBooster), lpAmount);
 
-        uint256 id = wAuraPools.mint(param.farmingPoolId, lpAmount);
+        uint256 id = _wAuraBooster.mint(param.farmingPoolId, lpAmount);
 
-        bank.putCollateral(address(wAuraPools), id, lpAmount);
+        bank.putCollateral(address(_wAuraBooster), id, lpAmount);
     }
 
-    /// @notice Closes a position from Balancer pool and exits the Aura farming.
-    /// @param param Parameters for closing the position
-    /// @param expectedRewards Expected reward amounts for each reward token
-    /// @param swapDatas Data required for swapping reward tokens to the debt token
+    /**
+     * @notice Closes a position from Balancer pool and exits the Aura farming.
+     * @param param Parameters for closing the position
+     * @param expectedRewards Expected reward amounts for each reward token
+     * @param swapDatas Data required for swapping reward tokens to the debt token
+     */
     function closePositionFarm(
         ClosePosParam calldata param,
         uint256[] calldata expectedRewards,
@@ -170,8 +181,8 @@ contract AuraSpell is BasicSpell {
         /// Ensure the position's collateral token matches the expected one
         {
             address lpToken = strategies[param.strategyId].vault;
-            if (pos.collToken != address(wAuraPools)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-            if (wAuraPools.getUnderlyingToken(pos.collId) != lpToken) {
+            if (pos.collToken != address(_wAuraBooster)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            if (_wAuraBooster.getUnderlyingToken(pos.collId) != lpToken) {
                 revert Errors.INCORRECT_UNDERLYING(lpToken);
             }
 
@@ -179,7 +190,7 @@ contract AuraSpell is BasicSpell {
 
             /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards
             {
-                (rewardTokens, ) = wAuraPools.burn(pos.collId, param.amountPosRemove);
+                (rewardTokens, ) = _wAuraBooster.burn(pos.collId, param.amountPosRemove);
                 /// 2. Swap each reward token for the debt token
                 _sellRewards(rewardTokens, expectedRewards, swapDatas);
             }
@@ -197,7 +208,7 @@ contract AuraSpell is BasicSpell {
                     uint256 borrowTokenIndex
                 ) = _getExitPoolParams(param, lpToken);
 
-                wAuraPools.getVault(lpToken).exitPool(
+                _wAuraBooster.getVault().exitPool(
                     IBalancerV2Pool(lpToken).getPoolId(),
                     address(this),
                     address(this),
@@ -235,12 +246,24 @@ contract AuraSpell is BasicSpell {
         _doRefund(param.collToken);
     }
 
-    /// @dev Calculate the parameters required for joining a Balancer pool.
-    /// @param vault Address of the Balancer vault
-    /// @param tokens List of tokens in the Balancer pool
-    /// @param lpToken The LP token for the Balancer pool
-    /// @return maxAmountsIn Maximum amounts to deposit for each token
-    /// @return amountsIn Amounts of each token to deposit
+    /// @notice Returns the address of the wrapped Aura Booster contract.
+    function getWAuraBooster() external view returns (IWAuraBooster) {
+        return _wAuraBooster;
+    }
+
+    /// @notice Returns the address of the AURA token.
+    function getAuraToken() external view returns (address) {
+        return _auraToken;
+    }
+
+    /**
+     * @notice Calculate the parameters required for joining a Balancer pool.
+     * @param vault Address of the Balancer vault
+     * @param tokens List of tokens in the Balancer pool
+     * @param lpToken The LP token for the Balancer pool
+     * @return maxAmountsIn Maximum amounts to deposit for each token
+     * @return amountsIn Amounts of each token to deposit
+     */
     function _getJoinPoolParamsAndApprove(
         address vault,
         address[] memory tokens,
@@ -273,19 +296,21 @@ contract AuraSpell is BasicSpell {
         return (maxAmountsIn, amountsIn);
     }
 
-    /// @dev Calculate the parameters required for exiting a Balancer pool.
-    /// @param param Close position param
-    /// @param lpToken The LP token for the Balancer pool
-    /// @return minAmountsOut Minimum amounts to receive for each token upon exiting
-    /// @return tokens List of tokens in the Balancer pool
-    /// @return exitTokenIndex Index of the borrowToken in the tokens list
+    /**
+     * @notice Calculate the parameters required for exiting a Balancer pool.
+     * @param param Close position param
+     * @param lpToken The LP token for the Balancer pool
+     * @return minAmountsOut Minimum amounts to receive for each token upon exiting
+     * @return tokens List of tokens in the Balancer pool
+     * @return exitTokenIndex Index of the borrowToken in the tokens list
+     */
     function _getExitPoolParams(
         ClosePosParam calldata param,
         address lpToken
     ) internal view returns (uint256[] memory, address[] memory, uint256) {
         address borrowToken = param.borrowToken;
         uint256 amountOutMin = param.amountOutMin;
-        (address[] memory tokens, , ) = wAuraPools.getPoolTokens(lpToken);
+        (address[] memory tokens, , ) = _wAuraBooster.getPoolTokens(lpToken);
 
         uint256 length = tokens.length;
         uint256[] memory minAmountsOut = new uint256[](length);
