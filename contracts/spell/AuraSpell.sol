@@ -40,7 +40,7 @@ contract AuraSpell is BasicSpell {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address to Wrapped Aura Pools
-    IWAuraBooster private _wAuraPools;
+    IWAuraBooster private _wAuraBooster;
     /// @dev Address of AURA token
     address private _auraToken;
 
@@ -68,7 +68,7 @@ contract AuraSpell is BasicSpell {
         __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
         if (wAuraPools == address(0)) revert Errors.ZERO_ADDRESS();
 
-        _wAuraPools = IWAuraBooster(wAuraPools);
+        _wAuraBooster = IWAuraBooster(wAuraPools);
         _auraToken = address(IWAuraBooster(wAuraPools).getAuraToken());
         IWAuraBooster(wAuraPools).setApprovalForAll(address(bank), true);
     }
@@ -95,7 +95,7 @@ contract AuraSpell is BasicSpell {
         /// Extract strategy details for the given strategy ID.
         Strategy memory strategy = strategies[param.strategyId];
         /// Fetch pool information based on provided farming pool ID.
-        (address lpToken, , , , , ) = _wAuraPools.getPoolInfoFromPoolId(param.farmingPoolId);
+        (address lpToken, , , , , ) = _wAuraBooster.getPoolInfoFromPoolId(param.farmingPoolId);
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
@@ -107,9 +107,9 @@ contract AuraSpell is BasicSpell {
         /// 3. Add liquidity to the Balancer pool and receive BPT in return.
         {
             uint256 _minimumBPT = minimumBPT;
-            IBalancerVault vault = _wAuraPools.getVault();
+            IBalancerVault vault = _wAuraBooster.getVault();
 
-            (address[] memory tokens, , ) = _wAuraPools.getPoolTokens(lpToken);
+            (address[] memory tokens, , ) = _wAuraBooster.getPoolTokens(lpToken);
             (uint256[] memory maxAmountsIn, uint256[] memory amountsIn) = _getJoinPoolParamsAndApprove(
                 address(vault),
                 tokens,
@@ -117,7 +117,7 @@ contract AuraSpell is BasicSpell {
             );
 
             vault.joinPool(
-                _wAuraPools.getBPTPoolId(lpToken),
+                _wAuraBooster.getBPTPoolId(lpToken),
                 address(this),
                 address(this),
                 IBalancerVault.JoinPoolRequest({
@@ -138,14 +138,14 @@ contract AuraSpell is BasicSpell {
         /// 6. Withdraw existing collaterals and burn the associated tokens.
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         if (pos.collateralSize > 0) {
-            (uint256 pid, ) = _wAuraPools.decodeId(pos.collId);
+            (uint256 pid, ) = _wAuraBooster.decodeId(pos.collId);
 
             if (param.farmingPoolId != pid) revert Errors.INCORRECT_PID(param.farmingPoolId);
-            if (pos.collToken != address(_wAuraPools)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            if (pos.collToken != address(_wAuraBooster)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
 
             bank.takeCollateral(pos.collateralSize);
 
-            (address[] memory rewardTokens, ) = _wAuraPools.burn(pos.collId, pos.collateralSize);
+            (address[] memory rewardTokens, ) = _wAuraBooster.burn(pos.collId, pos.collateralSize);
 
             // Distribute the multiple rewards to users.
             uint256 rewardTokensLength = rewardTokens.length;
@@ -156,11 +156,11 @@ contract AuraSpell is BasicSpell {
 
         /// 7. Deposit the tokens in the Aura pool and place the wrapped collateral tokens in the Blueberry Bank.
         uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
-        IERC20(lpToken).universalApprove(address(_wAuraPools), lpAmount);
+        IERC20(lpToken).universalApprove(address(_wAuraBooster), lpAmount);
 
-        uint256 id = _wAuraPools.mint(param.farmingPoolId, lpAmount);
+        uint256 id = _wAuraBooster.mint(param.farmingPoolId, lpAmount);
 
-        bank.putCollateral(address(_wAuraPools), id, lpAmount);
+        bank.putCollateral(address(_wAuraBooster), id, lpAmount);
     }
 
     /**
@@ -181,8 +181,8 @@ contract AuraSpell is BasicSpell {
         /// Ensure the position's collateral token matches the expected one
         {
             address lpToken = strategies[param.strategyId].vault;
-            if (pos.collToken != address(_wAuraPools)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-            if (_wAuraPools.getUnderlyingToken(pos.collId) != lpToken) {
+            if (pos.collToken != address(_wAuraBooster)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            if (_wAuraBooster.getUnderlyingToken(pos.collId) != lpToken) {
                 revert Errors.INCORRECT_UNDERLYING(lpToken);
             }
 
@@ -190,7 +190,7 @@ contract AuraSpell is BasicSpell {
 
             /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards
             {
-                (rewardTokens, ) = _wAuraPools.burn(pos.collId, param.amountPosRemove);
+                (rewardTokens, ) = _wAuraBooster.burn(pos.collId, param.amountPosRemove);
                 /// 2. Swap each reward token for the debt token
                 _sellRewards(rewardTokens, expectedRewards, swapDatas);
             }
@@ -208,7 +208,7 @@ contract AuraSpell is BasicSpell {
                     uint256 borrowTokenIndex
                 ) = _getExitPoolParams(param, lpToken);
 
-                _wAuraPools.getVault().exitPool(
+                _wAuraBooster.getVault().exitPool(
                     IBalancerV2Pool(lpToken).getPoolId(),
                     address(this),
                     address(this),
@@ -244,6 +244,16 @@ contract AuraSpell is BasicSpell {
         /// 8. Refund any remaining tokens to the owner
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
+    }
+
+    /// @notice Returns the address of the wrapped Aura Booster contract.
+    function getWAuraBooster() external view returns (IWAuraBooster) {
+        return _wAuraBooster;
+    }
+
+    /// @notice Returns the address of the AURA token.
+    function getAuraToken() external view returns (address) {
+        return _auraToken;
     }
 
     /**
@@ -300,7 +310,7 @@ contract AuraSpell is BasicSpell {
     ) internal view returns (uint256[] memory, address[] memory, uint256) {
         address borrowToken = param.borrowToken;
         uint256 amountOutMin = param.amountOutMin;
-        (address[] memory tokens, , ) = _wAuraPools.getPoolTokens(lpToken);
+        (address[] memory tokens, , ) = _wAuraBooster.getPoolTokens(lpToken);
 
         uint256 length = tokens.length;
         uint256[] memory minAmountsOut = new uint256[](length);
