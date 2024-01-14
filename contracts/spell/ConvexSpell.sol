@@ -56,15 +56,15 @@ contract ConvexSpell is BasicSpell {
     address private _cvxToken;
 
     /// @dev Curve Zap Depositor for USD metapools
-    address private constant CURVE_ZAP_DEPOSITOR = 0xA79828DF1850E8a3A3064576f380D90aECDD3359;
-    /// @dev THREE_CRV token address
-    address private constant THREE_CRV = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
-    /// @dev DAI token address
-    address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    /// @dev USDC token address
-    address private constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    /// @dev USDT token address
-    address private constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address private constant _CURVE_ZAP_DEPOSITOR = 0xA79828DF1850E8a3A3064576f380D90aECDD3359;
+    /// @dev _THREE_CRV token address
+    address private constant _THREE_CRV = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
+    /// @dev _DAI token address
+    address private constant _DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    /// @dev _USDC token address
+    address private constant _USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    /// @dev _USDT token address
+    address private constant _USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -163,23 +163,23 @@ contract ConvexSpell is BasicSpell {
             }
 
             if (tokens.length == 2) {
-                if (tokens[1] == THREE_CRV) {
+                if (tokens[1] == _THREE_CRV) {
                     uint256[4] memory suppliedAmts;
 
                     if (tokens[0] == borrowToken) {
                         suppliedAmts[0] = tokenBalance;
-                    } else if (DAI == borrowToken) {
+                    } else if (_DAI == borrowToken) {
                         suppliedAmts[1] = tokenBalance;
-                    } else if (USDC == borrowToken) {
+                    } else if (_USDC == borrowToken) {
                         suppliedAmts[2] = tokenBalance;
                     } else {
                         suppliedAmts[3] = tokenBalance;
                     }
 
                     IERC20(borrowToken).universalApprove(pool, 0);
-                    IERC20(borrowToken).universalApprove(CURVE_ZAP_DEPOSITOR, borrowBalance);
+                    IERC20(borrowToken).universalApprove(_CURVE_ZAP_DEPOSITOR, borrowBalance);
 
-                    ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).add_liquidity(pool, suppliedAmts, _minLPMint);
+                    ICurveZapDepositor(_CURVE_ZAP_DEPOSITOR).add_liquidity(pool, suppliedAmts, _minLPMint);
                 } else {
                     uint256[2] memory suppliedAmts;
 
@@ -328,6 +328,7 @@ contract ConvexSpell is BasicSpell {
         return _cvxToken;
     }
 
+    /// @notice Returns the address of the Cvx oracle.
     function getCrvOracle() public view returns (ICurveOracle) {
         return _crvOracle;
     }
@@ -362,19 +363,19 @@ contract ConvexSpell is BasicSpell {
             }
         }
 
-        if (len == 2 && tokens[1] == THREE_CRV) {
+        if (len == 2 && tokens[1] == _THREE_CRV) {
             int128 index;
             if (tokens[0] == param.borrowToken) {
                 index = 0;
-            } else if (DAI == param.borrowToken) {
+            } else if (_DAI == param.borrowToken) {
                 index = 1;
-            } else if (USDC == param.borrowToken) {
+            } else if (_USDC == param.borrowToken) {
                 index = 2;
             } else {
                 index = 3;
             }
-            IERC20(pool).universalApprove(CURVE_ZAP_DEPOSITOR, amountPosRemove);
-            ICurveZapDepositor(CURVE_ZAP_DEPOSITOR).remove_liquidity_one_coin(
+            IERC20(pool).universalApprove(_CURVE_ZAP_DEPOSITOR, amountPosRemove);
+            ICurveZapDepositor(_CURVE_ZAP_DEPOSITOR).remove_liquidity_one_coin(
                 pool,
                 amountPosRemove,
                 index,
@@ -399,9 +400,9 @@ contract ConvexSpell is BasicSpell {
     function _getMetaPoolTokens(address token) internal pure returns (address[] memory tokens) {
         tokens = new address[](4);
         tokens[0] = token;
-        tokens[1] = DAI;
-        tokens[2] = USDC;
-        tokens[3] = USDT;
+        tokens[1] = _DAI;
+        tokens[2] = _USDC;
+        tokens[3] = _USDT;
     }
 
     /**

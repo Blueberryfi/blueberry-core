@@ -87,7 +87,7 @@ contract WConvexBooster is
             revert Errors.ZERO_ADDRESS();
         }
         __ReentrancyGuard_init();
-        __ERC1155_init("WConvexBooster");
+        __ERC1155_init("wConvexBooster");
         _escrowFactory = IPoolEscrowFactory(escrowFactory);
         _cvxToken = IConvex(cvx);
         _cvxBooster = ICvxBooster(cvxBooster);
@@ -115,7 +115,7 @@ contract WConvexBooster is
         /// Escrow deployment/get logic
         address escrow = getEscrow(pid);
 
-        if (_escrows[pid] == address(0)) {
+        if (escrow == address(0)) {
             escrow = _escrowFactory.createEscrow(pid, cvxRewarder, lpToken);
             _escrows[pid] = escrow;
         }
