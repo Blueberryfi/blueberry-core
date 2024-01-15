@@ -324,7 +324,7 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @dev Get the current FeeManager interface from the configuration.
     /// @return An interface representing the current FeeManager.
     function feeManager() public view returns (IFeeManager) {
-        return config.feeManager();
+        return config.getFeeManager();
     }
 
     /// @dev Trigger interest accrual for a specific bank.
