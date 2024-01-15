@@ -121,7 +121,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
 
         ISequencerUptimeFeed sequencerUptimeFeed = getSequencerUptimeFeed();
-        
+
         /// 2. L2 sequencer status check (0 = up, 1 = down).
         (, int256 answer, uint256 startedAt, , ) = sequencerUptimeFeed.latestRoundData();
 
