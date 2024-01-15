@@ -154,7 +154,7 @@ contract WIchiFarm is IWIchiFarm, ERC1155Upgradeable, ReentrancyGuardUpgradeable
                 ichiV2.balanceOf(address(this)) >= rewards[0] ? rewards[0] : ichiV2.balanceOf(address(this))
             );
         }
-        
+
         emit Burned(id, amount, msg.sender);
 
         return rewards[0];
