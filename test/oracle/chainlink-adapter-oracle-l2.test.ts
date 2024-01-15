@@ -52,7 +52,7 @@ describe('Aggregator Oracle', () => {
       );
     });
     it('should set sequencer', async () => {
-      expect(await chainlinkAdapterOracle.sequencerUptimeFeed()).to.be.equal(ADDRESS.ChainlinkSequencerArb);
+      expect(await chainlinkAdapterOracle.getSequencerUptimeFeed()).to.be.equal(ADDRESS.ChainlinkSequencerArb);
     });
   });
 
@@ -70,7 +70,7 @@ describe('Aggregator Oracle', () => {
         .to.be.emit(chainlinkAdapterOracle, 'SetSequencerUptimeFeed')
         .withArgs(ADDRESS.ChainlinkSequencerArb);
 
-      expect(await chainlinkAdapterOracle.sequencerUptimeFeed()).to.be.equal(ADDRESS.ChainlinkSequencerArb);
+      expect(await chainlinkAdapterOracle.getSequencerUptimeFeed()).to.be.equal(ADDRESS.ChainlinkSequencerArb);
     });
 
     it('should be able to set price feeds', async () => {
@@ -104,7 +104,7 @@ describe('Aggregator Oracle', () => {
         'SetTokenPriceFeed'
       );
 
-      expect(await chainlinkAdapterOracle.priceFeeds(ADDRESS.USDC_ARB)).to.be.equal(ADDRESS.CHAINLINK_USDC_FEED);
+      expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.USDC_ARB)).to.be.equal(ADDRESS.CHAINLINK_USDC_FEED);
     });
   });
 
