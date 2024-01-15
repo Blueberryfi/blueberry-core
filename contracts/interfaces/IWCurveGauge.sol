@@ -9,7 +9,6 @@ import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC
 
 import { IERC20Wrapper } from "./IERC20Wrapper.sol";
 import { ICurveRegistry } from "./curve/ICurveRegistry.sol";
-import { ILiquidityGauge } from "./curve/ILiquidityGauge.sol";
 import { ICurveGaugeController } from "./curve/ICurveGaugeController.sol";
 
 /**
