@@ -91,7 +91,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
      */
     function setFeedRegistry(IFeedRegistry registry) external onlyOwner {
         if (address(registry) == address(0)) revert Errors.ZERO_ADDRESS();
-        registry = registry;
+        _registry = registry;
         emit SetRegistry(address(registry));
     }
 
