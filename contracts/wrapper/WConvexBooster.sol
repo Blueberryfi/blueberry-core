@@ -31,22 +31,24 @@ import { IConvex } from "../interfaces/convex/IConvex.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
-import { IWConvexPools, ICvxBooster } from "../interfaces/IWConvexPools.sol";
+import { IWConvexBooster, ICvxBooster } from "../interfaces/IWConvexBooster.sol";
 
 /* solhint-enable max-line-length */
 
-/// @title WConvexPools
-/// @author BlueberryProtocol
-/// @notice Wrapped Convex Pools is the wrapper of LP positions.
-/// @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank
-///      and do not generate yields. LP Tokens are identified by tokenIds
-///      encoded from lp token address.
-contract WConvexPools is
+/**
+ * @title WConvexBooster
+ * @author BlueberryProtocol
+ * @notice Wrapped Convex Booster is the wrapper of LP positions.
+ * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank
+ *     and do not generate yields. LP Tokens are identified by tokenIds
+ *    encoded from lp token address.
+ */
+contract WConvexBooster is
+    IERC20Wrapper,
+    IWConvexBooster,
     ERC1155Upgradeable,
     ReentrancyGuardUpgradeable,
-    OwnableUpgradeable,
-    IERC20Wrapper,
-    IWConvexPools
+    OwnableUpgradeable
 {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -56,42 +58,42 @@ contract WConvexPools is
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address to Convex Pools contract
-    ICvxBooster public cvxBooster;
+    ICvxBooster private _cvxBooster;
     /// @dev Address to CVX token
-    IConvex public cvxToken;
+    IConvex private _cvxToken;
     /// @dev Address of the escrow factory
-    IPoolEscrowFactory public escrowFactory;
-    /// @dev Mapping from token id to accExtPerShare
-    mapping(uint256 => mapping(address => uint256)) public accExtPerShare;
+    IPoolEscrowFactory private _escrowFactory;
+    /// @dev Mapping from token id to initialTokenPerShare
+    mapping(uint256 => mapping(address => uint256)) private _initialTokenPerShare;
     /// @dev CVX reward per share by pid
-    mapping(uint256 => uint256) public cvxPerShareByPid;
+    mapping(uint256 => uint256) private _cvxPerShareByPid;
     /// token id => cvxPerShareDebt;
-    mapping(uint256 => uint256) public cvxPerShareDebt;
+    mapping(uint256 => uint256) private _cvxPerShareDebt;
     /// @dev pid => last crv reward per token
-    mapping(uint256 => uint256) public lastCrvPerTokenByPid;
+    mapping(uint256 => uint256) private _lastCrvPerTokenByPid;
     /// @dev pid => escrow contract address
-    mapping(uint256 => address) public escrows;
+    mapping(uint256 => address) private _escrows;
     /// @dev pid => A set of extra rewarders
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private _extraRewards;
 
-    /// @dev Initialize the smart contract references.
-    /// @param cvx_ Address of the CVX token.
-    /// @param cvxPools_ Address of the Convex Pools.
-    function initialize(address cvx_, address cvxPools_, address escrowFactory_) external initializer {
-        if (cvx_ == address(0) || cvxPools_ == address(0) || escrowFactory_ == address(0)) {
+    /**
+     * @notice Initializes contract with dependencies.
+     * @param cvx Address of the CVX token.
+     * @param cvxBooster Address of the Convex Booster.
+     * @param escrowFactory Address of the escrow factory.
+     */
+    function initialize(address cvx, address cvxBooster, address escrowFactory) external initializer {
+        if (cvx == address(0) || cvxBooster == address(0) || escrowFactory == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
         __ReentrancyGuard_init();
-        __ERC1155_init("WConvexPools");
-        escrowFactory = IPoolEscrowFactory(escrowFactory_);
-        cvxToken = IConvex(cvx_);
-        cvxBooster = ICvxBooster(cvxPools_);
+        __ERC1155_init("wConvexBooster");
+        _escrowFactory = IPoolEscrowFactory(escrowFactory);
+        _cvxToken = IConvex(cvx);
+        _cvxBooster = ICvxBooster(cvxBooster);
     }
 
-    /// @notice Encode pid and cvxPerShare into an ERC1155 token id.
-    /// @param pid Pool id which is the first 16 bits.
-    /// @param cvxPerShare CVX amount per share, which should be multiplied by 1e18 and is the last 240 bits.
-    /// @return id The encoded token id.
+    /// @notice IWConvexBooster
     function encodeId(uint256 pid, uint256 cvxPerShare) public pure returns (uint256 id) {
         if (pid >= (1 << 16)) revert Errors.BAD_PID(pid);
         if (cvxPerShare >= (1 << 240)) {
@@ -100,30 +102,22 @@ contract WConvexPools is
         return (pid << 240) | cvxPerShare;
     }
 
-    /// @notice Decode an ERC1155 token id into its pid and cvxPerShare components.
-    /// @param id Token id.
-    /// @return pid The decoded pool id.
-    /// @return cvxPerShare The decoded CVX amount per share.
+    /// @notice IWConvexBooster
     function decodeId(uint256 id) public pure returns (uint256 pid, uint256 cvxPerShare) {
         pid = id >> 240; // Extract the first 16 bits
         cvxPerShare = id & ((1 << 240) - 1); // Extract the last 240 bits
     }
 
-    /// Mints ERC1155 token for the given LP token
-    /// @param pid Convex Pool id
-    /// @param amount Token amount to wrap
-    /// @return id The minted token ID
+    /// @notice IWConvexBooster
     function mint(uint256 pid, uint256 amount) external nonReentrant returns (uint256 id) {
         (address lpToken, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(pid);
 
         /// Escrow deployment/get logic
-        address escrow;
+        address escrow = getEscrow(pid);
 
-        if (escrows[pid] == address(0)) {
-            escrow = escrowFactory.createEscrow(pid, cvxRewarder, lpToken);
-            escrows[pid] = escrow;
-        } else {
-            escrow = escrows[pid];
+        if (escrow == address(0)) {
+            escrow = _escrowFactory.createEscrow(pid, cvxRewarder, lpToken);
+            _escrows[pid] = escrow;
         }
 
         IERC20Upgradeable(lpToken).safeTransferFrom(msg.sender, escrow, amount);
@@ -145,18 +139,16 @@ contract WConvexPools is
             bool mismatchFound = _syncExtraRewards(pid, id, extraRewarder);
 
             if (!mismatchFound) {
-                _setAccExtPerShare(id, extraRewarder);
+                _setInitialTokenPerShare(id, extraRewarder);
             }
         }
 
-        cvxPerShareDebt[id] = cvxPerShareByPid[pid];
+        _cvxPerShareDebt[id] = _cvxPerShareByPid[pid];
+
+        emit Minted(pid, amount, msg.sender);
     }
 
-    /// Burns ERC1155 token to redeem ERC20 token back and harvest rewards
-    /// @param id Token id to burn
-    /// @param amount Token amount to burn
-    /// @return rewardTokens The array of reward token addresses
-    /// @return rewards The array of harvested reward amounts
+    /// @notice IWConvexBooster
     function burn(
         uint256 id,
         uint256 amount
@@ -186,18 +178,16 @@ contract WConvexPools is
 
             IPoolEscrow(escrow).transferToken(_rewardToken, msg.sender, rewards[i]);
         }
+
+        emit Burned(id, amount, msg.sender);
     }
 
-    /// Returns pending rewards from the farming pool
-    /// @param tokenId Token Id
-    /// @param amount Amount of share
-    /// @return tokens An array of token addresses for rewards
-    /// @return rewards An array of pending rewards corresponding to the tokens
+    /// @notice IWConvexBooster
     function pendingRewards(
         uint256 tokenId,
         uint256 amount
     ) public view override returns (address[] memory tokens, uint256[] memory rewards) {
-        (uint256 pid, uint256 stCrvPerShare) = decodeId(tokenId);
+        (uint256 pid, uint256 originalCrvPerShare) = decodeId(tokenId);
         (address lpToken, , , address cvxRewarder, , ) = getPoolInfoFromPoolId(pid);
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
 
@@ -207,15 +197,15 @@ contract WConvexPools is
 
         /// CRV reward
         tokens[0] = IRewarder(cvxRewarder).rewardToken();
-        rewards[0] = _getPendingReward(stCrvPerShare, cvxRewarder, amount, lpDecimals);
+        rewards[0] = _getPendingReward(originalCrvPerShare, cvxRewarder, amount, lpDecimals);
 
         /// CVX reward
-        tokens[1] = address(cvxToken);
-        rewards[1] = _getAllocatedCVX(pid, stCrvPerShare, amount);
+        tokens[1] = address(_cvxToken);
+        rewards[1] = _calcAllocatedCVX(pid, originalCrvPerShare, amount);
 
         for (uint256 i; i < _extraRewardsCount; ++i) {
             address rewarder = getExtraRewarder(pid, i);
-            uint256 stRewardPerShare = accExtPerShare[tokenId][rewarder];
+            uint256 stRewardPerShare = _initialTokenPerShare[tokenId][rewarder];
             tokens[i + 2] = IRewarder(rewarder).rewardToken();
 
             if (stRewardPerShare == 0) {
@@ -231,29 +221,33 @@ contract WConvexPools is
         }
     }
 
-    /// @notice Fetch the underlying ERC20 token of the given ERC1155 token id.
-    /// @param id Token id.
-    /// @return uToken Address of the underlying ERC20 token.
+    /// @inheritdoc IWConvexBooster
+    function getCvxBooster() public view override returns (ICvxBooster) {
+        return _cvxBooster;
+    }
+
+    /// @inheritdoc IWConvexBooster
+    function getCvxToken() public view override returns (IConvex) {
+        return _cvxToken;
+    }
+
+    /// @inheritdoc IWConvexBooster
+    function getEscrowFactory() public view override returns (IPoolEscrowFactory) {
+        return _escrowFactory;
+    }
+
+    /// @notice IERC20Wrapper
     function getUnderlyingToken(uint256 id) external view override returns (address uToken) {
         (uint256 pid, ) = decodeId(id);
         (uToken, , , , , ) = getPoolInfoFromPoolId(pid);
     }
 
-    /// @notice Gets the escrow contract address for a given PID
-    /// @param pid The pool ID
-    /// @return escrowAddress Escrow associated with the given PID
-    function getEscrow(uint256 pid) public view returns (address escrowAddress) {
-        return escrows[pid];
+    /// @notice IWConvexBooster
+    function getEscrow(uint256 pid) public view override returns (address escrowAddress) {
+        return _escrows[pid];
     }
 
-    /// @notice Fetch pool information from the Convex Booster.
-    /// @param pid Convex pool id.
-    /// @return lptoken Address of the liquidity provider token.
-    /// @return token Address of the reward token.
-    /// @return gauge Address of the gauge contract.
-    /// @return crvRewards Address of the Curve rewards contract.
-    /// @return stash Address of the stash contract.
-    /// @return shutdown Indicates if the pool is shutdown.
+    /// @notice IWConvexBooster
     function getPoolInfoFromPoolId(
         uint256 pid
     )
@@ -261,24 +255,31 @@ contract WConvexPools is
         view
         returns (address lptoken, address token, address gauge, address crvRewards, address stash, bool shutdown)
     {
-        return cvxBooster.poolInfo(pid);
+        return getCvxBooster().poolInfo(pid);
     }
 
-    /// @notice Get the full set of extra rewards.
-    /// @return An array containing the addresses of extra reward tokens.
+    /// @notice IWConvexBooster
     function extraRewardsLength(uint256 pid) public view returns (uint256) {
         return _extraRewards[pid].length();
     }
 
+    /// @notice IWConvexBooster
     function getExtraRewarder(uint256 pid, uint256 index) public view returns (address) {
         return _extraRewards[pid].at(index);
     }
 
-    /// @notice Get pending reward amount
-    /// @param stRewardPerShare reward per share
-    /// @param rewarder Address of rewarder contract
-    /// @param amount lp amount
-    /// @param lpDecimals lp decimals
+    /// @notice IWConvexBooster
+    function getInitialTokenPerShare(uint256 tokenId, address token) external view override returns (uint256) {
+        return _initialTokenPerShare[tokenId][token];
+    }
+
+    /**
+     * @notice Gets pending reward amount
+     * @param stRewardPerShare Get pending reward amount
+     * @param rewarder Address of rewarder contract
+     * @param amount lp amount
+     * @param lpDecimals lp decimals
+     */
     function _getPendingReward(
         uint256 stRewardPerShare,
         address rewarder,
@@ -290,11 +291,16 @@ contract WConvexPools is
         rewards = (share * amount) / (10 ** lpDecimals);
     }
 
-    /// Calculates the CVX pending reward based on CRV reward
-    /// @param crvAmount Amount of CRV reward
-    /// @return mintAmount The pending CVX reward
+    /**
+     * @notice Calculates the CVX pending reward based on CRV reward
+     * @param crvAmount Amount of CRV reward
+     * @return mintAmount The pending CVX reward
+     */
     function _getCvxPendingReward(uint256 crvAmount) internal view returns (uint256 mintAmount) {
         if (crvAmount == 0) return 0;
+
+        IConvex cvxToken = getCvxToken();
+
         /// CVX token mint logic
         uint256 totalCliffs = cvxToken.totalCliffs();
         uint256 totalSupply = cvxToken.totalSupply();
@@ -317,12 +323,18 @@ contract WConvexPools is
         }
     }
 
-    function _getAllocatedCVX(
+    /**
+     * @notice Calculate the amount of AURA allocated for a given LP amount.
+     * @param pid The pool ID representing the specific Aura pool.
+     * @param originalCrvPerShare The cached value of AURA per share at the time of opening the position.
+     * @param amount Amount of LP tokens to calculate the AURA allocation for.
+     */
+    function _calcAllocatedCVX(
         uint256 pid,
-        uint256 stCrvPerShare,
+        uint256 originalCrvPerShare,
         uint256 amount
     ) internal view returns (uint256 mintAmount) {
-        address escrow = escrows[pid];
+        address escrow = getEscrow(pid);
 
         (address lpToken, , , address crvRewarder, , ) = getPoolInfoFromPoolId(pid);
         uint256 currentDeposits = IRewarder(crvRewarder).balanceOf(address(escrow));
@@ -331,9 +343,9 @@ contract WConvexPools is
             return 0;
         }
 
-        uint256 cvxPerShare = cvxPerShareByPid[pid] - cvxPerShareDebt[encodeId(pid, stCrvPerShare)];
+        uint256 cvxPerShare = _cvxPerShareByPid[pid] - _cvxPerShareDebt[encodeId(pid, originalCrvPerShare)];
 
-        uint256 lastCrvPerToken = lastCrvPerTokenByPid[pid];
+        uint256 lastCrvPerToken = _lastCrvPerTokenByPid[pid];
 
         uint256 lpDecimals = IERC20MetadataUpgradeable(lpToken).decimals();
         uint256 earned = _getPendingReward(lastCrvPerToken, crvRewarder, currentDeposits, lpDecimals);
@@ -347,31 +359,46 @@ contract WConvexPools is
         return (cvxPerShare * amount) / Constants.PRICE_PRECISION;
     }
 
-    function _setAccExtPerShare(uint256 tokenId, address rewarder) internal {
-        uint256 rewardPerToken = IRewarder(rewarder).rewardPerToken();
-        accExtPerShare[tokenId][rewarder] = rewardPerToken == 0 ? type(uint).max : rewardPerToken;
+    /**
+     * @notice Sets the initial token per share for a given token ID and rewarder.
+     * @param tokenId The ID of the ERC1155 token representing the staked position.
+     * @param extraRewarder The address of the extra rewarder to set the initial token per share for.
+     */
+    function _setInitialTokenPerShare(uint256 tokenId, address extraRewarder) internal {
+        uint256 rewardPerToken = IRewarder(extraRewarder).rewardPerToken();
+        _initialTokenPerShare[tokenId][extraRewarder] = rewardPerToken == 0 ? type(uint).max : rewardPerToken;
     }
 
+    /**
+     * @notice Checks if an extra reward has been synced for a given poolId or not.
+     * @dev If the extra rewarder has not been synced yet, it will be added to the set
+     * @param pid The pool ID representing the specific Convex pool..
+     * @param tokenId The ID of the ERC1155 token representing the staked position.
+     * @param rewarder The address of the extra rewarder to sync.
+     */
     function _syncExtraRewards(uint256 pid, uint256 tokenId, address rewarder) internal returns (bool mismatchFound) {
         EnumerableSetUpgradeable.AddressSet storage rewards = _extraRewards[pid];
         if (!rewards.contains(rewarder)) {
             rewards.add(rewarder);
-            _setAccExtPerShare(tokenId, rewarder);
+            _setInitialTokenPerShare(tokenId, rewarder);
             return true;
         }
         return false;
     }
 
-    /// @notice Private function to update convex rewards
-    /// @param pid The ID of the Convex pool.
-    /// @dev Claims rewards and updates cvxPerShareByPid accordingly
+    /**
+     * @notice Private function to update convex rewards
+     * @dev Claims rewards and updates cvxPerShareByPid accordingly
+     * @param pid The ID of the Convex pool.
+     */
     function _updateCvxReward(uint256 pid) private {
-        address escrow = escrows[pid];
+        IConvex cvxToken = getCvxToken();
+        address escrow = getEscrow(pid);
 
         (, , , address crvRewarder, , ) = getPoolInfoFromPoolId(pid);
         uint256 currentDeposits = IRewarder(crvRewarder).balanceOf(escrow);
 
-        lastCrvPerTokenByPid[pid] = IRewarder(crvRewarder).rewardPerToken();
+        _lastCrvPerTokenByPid[pid] = IRewarder(crvRewarder).rewardPerToken();
 
         if (currentDeposits == 0) return;
 
@@ -382,12 +409,17 @@ contract WConvexPools is
 
         uint256 cvxReward = cvxToken.balanceOf(escrow) - cvxBalBefore;
 
-        _getExtraRewards(pid, escrow);
+        _claimExtraRewards(pid, escrow);
 
-        if (cvxReward > 0) cvxPerShareByPid[pid] += (cvxReward * Constants.PRICE_PRECISION) / currentDeposits;
+        if (cvxReward > 0) _cvxPerShareByPid[pid] += (cvxReward * Constants.PRICE_PRECISION) / currentDeposits;
     }
 
-    function _getExtraRewards(uint256 pid, address escrow) internal {
+    /**
+     * @notice Claims extra rewards for a given pool ID.
+     * @param pid The pool ID representing the specific Aura pool.
+     * @param escrow Address of the escrow contract.
+     */
+    function _claimExtraRewards(uint256 pid, address escrow) internal {
         uint256 currentExtraRewardsCount = _extraRewards[pid].length();
         for (uint256 i; i < currentExtraRewardsCount; ++i) {
             address extraRewarder = _extraRewards[pid].at(i);
