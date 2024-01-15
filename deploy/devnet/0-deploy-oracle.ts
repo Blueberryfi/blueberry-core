@@ -1,14 +1,7 @@
 import fs from 'fs';
 import { ethers, network, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import {
-  AggregatorOracle,
-  BandAdapterOracle,
-  ChainlinkAdapterOracle,
-  CoreOracle,
-  UniswapV3AdapterOracle,
-  MockOracle,
-} from '../../typechain-types';
+import { AggregatorOracle, CoreOracle, UniswapV3AdapterOracle, MockOracle } from '../../typechain-types';
 
 const deploymentPath = './deployments';
 const deploymentFilePath = `${deploymentPath}/${network.name}.json`;

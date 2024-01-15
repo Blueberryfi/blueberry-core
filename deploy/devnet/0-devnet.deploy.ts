@@ -3,15 +3,15 @@ import { ethers, upgrades, network } from 'hardhat';
 import { utils } from 'ethers';
 import { ADDRESS, ADDRESS_DEV, CONTRACT_NAMES } from '../../constant';
 import {
-  BlueBerryBank,
+  BlueberryBank,
   CoreOracle,
   IchiVaultOracle,
   IchiSpell,
   AuraSpell,
-  WAuraPools,
+  WAuraBooster,
   CurveStableOracle,
   ConvexSpell,
-  WConvexPools,
+  WConvexBooster,
   CurveSpell,
   WCurveGauge,
   ShortLongSpell,
@@ -111,8 +111,8 @@ async function main(): Promise<void> {
 
   // Bank
   console.log('Deploying Bank...');
-  const BlueBerryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueBerryBank);
-  const bank = <BlueBerryBank>await upgrades.deployProxy(BlueBerryBank, [coreOracle.address, config.address]);
+  const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
+  const bank = <BlueberryBank>await upgrades.deployProxy(BlueberryBank, [coreOracle.address, config.address]);
   await bank.deployed();
   console.log('Bank Address:', bank.address);
   deployment.Bank = bank.address;
@@ -237,22 +237,22 @@ async function main(): Promise<void> {
   deployment.WIchiFarm = wichiFarm.address;
   writeDeployments(deployment);
 
-  console.log('Deploying WAuraPools...');
-  const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
-  const waura = <WAuraPools>(
-    await upgrades.deployProxy(WAuraPools, [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, ADDRESS.STASH_AURA])
+  console.log('Deploying WAuraBooster...');
+  const WAuraBooster = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
+  const waura = <WAuraBooster>(
+    await upgrades.deployProxy(WAuraBooster, [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, ADDRESS.STASH_AURA])
   );
   await waura.deployed();
-  console.log('WAuraPools Address:', waura.address);
-  deployment.WAuraPools = waura.address;
+  console.log('WAuraBooster Address:', waura.address);
+  deployment.WAuraBooster = waura.address;
   writeDeployments(deployment);
 
-  console.log('Deploying WConvexPools...');
-  const WConvexPools = await ethers.getContractFactory(CONTRACT_NAMES.WConvexPools);
-  const wconvex = <WConvexPools>await upgrades.deployProxy(WConvexPools, [ADDRESS.CVX, ADDRESS.CVX_BOOSTER]);
+  console.log('Deploying WConvexBooster...');
+  const WConvexBooster = await ethers.getContractFactory(CONTRACT_NAMES.WConvexBooster);
+  const wconvex = <WConvexBooster>await upgrades.deployProxy(WConvexBooster, [ADDRESS.CVX, ADDRESS.CVX_BOOSTER]);
   await wconvex.deployed();
-  console.log('WConvexPools Address:', wconvex.address);
-  deployment.WConvexPools = wconvex.address;
+  console.log('WConvexBooster Address:', wconvex.address);
+  deployment.WConvexBooster = wconvex.address;
   writeDeployments(deployment);
 
   console.log('Deploying WCurveGauge...');
@@ -435,9 +435,6 @@ async function main(): Promise<void> {
     [ADDRESS.WBTC, ADDRESS.ETH, ADDRESS.DAI, ADDRESS.LINK, ADDRESS.BAL_ETH_BASKET],
     [70000, 70000, 70000, 70000, 70000]
   );
-
-  await auraSpell.addStrategy(ADDRESS.BAL_OHM_ETH, utils.parseUnits('5000', 18), utils.parseUnits('2500000', 18));
-  await auraSpell.setCollateralsMaxLTVs(2, [ADDRESS.OHM, ADDRESS.ETH, ADDRESS.BAL_OHM_ETH], [70000, 70000, 70000]);
 
   await auraSpell.addStrategy(ADDRESS.BAL_AURA_STABLE, utils.parseUnits('5000', 18), utils.parseUnits('2500000', 18));
   await auraSpell.setCollateralsMaxLTVs(
