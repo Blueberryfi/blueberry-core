@@ -829,6 +829,6 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param token The underlying token of the vault to be checked.
     /// @return bool True if it's a Soft Vault, False if it's a Hard Vault.
     function _isSoftVault(address token) internal view returns (bool) {
-        return address(ISoftVault(banks[token].softVault).getUToken()) == token;
+        return address(ISoftVault(banks[token].softVault).getUnderlyingToken()) == token;
     }
 }
