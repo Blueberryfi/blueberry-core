@@ -24,45 +24,53 @@ import { BaseOracleExt } from "./BaseOracleExt.sol";
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
 
-/// @author BlueberryProtocol
-/// @title Ichi Vault Oracle
-/// @notice Oracle contract provides price feeds of Ichi Vault tokens
-/// @dev The logic of this oracle is using legacy & traditional mathematics of Uniswap V2 Lp Oracle.
-///      Base token prices are fetched from Chainlink or Band Protocol.
-///      To prevent flashloan price manipulations, it compares spot & twap prices from Uni V3 Pool.
+/**
+ * @title Ichi Vault Oracle
+ * @author BlueberryProtocol
+ * @notice Oracle contract provides price feeds of Ichi Vault tokens
+ * @dev The logic of this oracle is using legacy & traditional mathematics of Uniswap V2 Lp Oracle.
+ *      Base token prices are fetched from Chainlink or Band Protocol.
+ *      To prevent flashloan price manipulations, it compares spot & twap prices from Uni V3 Pool.
+ */
 contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt {
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// Mapping to keep track of the maximum price deviation allowed for each token
-    mapping(address => uint256) public maxPriceDeviations;
+    /// @dev Mapping to keep track of the maximum price deviation allowed for each token
+    mapping(address => uint256) private _maxPriceDeviations;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Constructs a new instance of the contract.
-    /// @param _base The base oracle instance.
-    constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
+    /**
+     * @notice Constructs a new instance of the contract.
+     * @param base The base oracle instance.
+     */
+    constructor(IBaseOracle base) UsingBaseOracle(base) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       EVENTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Event emitted when the maximum price deviation for a token is set or updated.
-    /// @param token The address of the token.
-    /// @param maxPriceDeviation The new maximum price deviation (in 1e18 format).
+    /**
+     * @notice Event emitted when the maximum price deviation for a token is set or updated.
+     * @param token The address of the token.
+     * @param maxPriceDeviation The new maximum price deviation (in 1e18 format).
+     */
     event SetPriceDeviation(address indexed token, uint256 maxPriceDeviation);
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Set price deviations for given token
-    /// @dev Input token is the underlying token of ICHI Vaults which is token0 or token1 of Uni V3 Pool
-    /// @param token Token to price deviation
-    /// @param maxPriceDeviation Max price deviation (in 1e18) of price feeds
+    /**
+     * @notice Set price deviations for given token
+     * @dev Input token is the underlying token of ICHI Vaults which is token0 or token1 of Uni V3 Pool
+     * @param token Token to price deviation
+     * @param maxPriceDeviation Max price deviation (in 1e18) of price feeds
+     */
     function setPriceDeviation(address token, uint256 maxPriceDeviation) external onlyOwner {
         /// Validate inputs
         if (token == address(0)) revert Errors.ZERO_ADDRESS();
@@ -70,15 +78,16 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
             revert Errors.OUT_OF_DEVIATION_CAP(maxPriceDeviation);
         }
 
-        maxPriceDeviations[token] = maxPriceDeviation;
+        _maxPriceDeviations[token] = maxPriceDeviation;
 
         emit SetPriceDeviation(token, maxPriceDeviation);
     }
 
-    /// @notice Get token0 spot price quoted in token1
-    /// @dev Returns token0 price of 1e18 amount
-    /// @param vault ICHI Vault address
-    /// @return price spot price of token0 quoted in token1
+    /**
+     * @notice Get token0 spot price quoted in token1
+     * @param vault ICHI Vault address
+     * @return price spot price of token0 quoted in token1
+     */
     function spotPrice0InToken1(IICHIVault vault) public view returns (uint256) {
         return
             UniV3WrappedLibContainer.getQuoteAtTick(
@@ -89,10 +98,11 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
             );
     }
 
-    /// @notice Get token0 twap price quoted in token1
-    /// @dev Returns token0 price of 1e18 amount
-    /// @param vault ICHI Vault address
-    /// @return price spot price of token0 quoted in token1
+    /**
+     * @notice Get token0 twap price quoted in token1
+     * @param vault ICHI Vault address
+     * @return price spot price of token0 quoted in token1
+     */
     function twapPrice0InToken1(IICHIVault vault) public view returns (uint256) {
         uint32 twapPeriod = vault.twapPeriod();
         if (twapPeriod > Constants.MAX_TIME_GAP) revert Errors.TOO_LONG_DELAY(twapPeriod);
@@ -109,9 +119,7 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
             );
     }
 
-    /// @notice Return vault token price in USD, with 18 decimals of precision.
-    /// @param token The vault token to get the price of.
-    /// @return price USD price of token in 18 decimal
+    /// @inheritdoc IBaseOracle
     function getPrice(address token) external override returns (uint256) {
         IICHIVault vault = IICHIVault(token);
         uint256 totalSupply = vault.totalSupply();
@@ -123,7 +131,7 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
         /// Check price manipulations on Uni V3 pool by flashloan attack
         uint256 spotPrice = spotPrice0InToken1(vault);
         uint256 twapPrice = twapPrice0InToken1(vault);
-        uint256 maxPriceDeviation = maxPriceDeviations[token0];
+        uint256 maxPriceDeviation = _maxPriceDeviations[token0];
         if (!_isValidPrices(spotPrice, twapPrice, maxPriceDeviation)) revert Errors.EXCEED_DEVIATION();
 
         /// Total reserve / total supply
@@ -136,5 +144,14 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
         uint256 totalReserve = (r0 * px0) / 10 ** t0Decimal + (r1 * px1) / 10 ** t1Decimal;
 
         return (totalReserve * 10 ** vault.decimals()) / totalSupply;
+    }
+
+    /**
+     * @notice Fetches the max price deviation for a given token.
+     * @param token Token address
+     * @return The max price deviation (in 1e18 format).
+     */
+    function getMaxPriceDeviation(address token) external view returns (uint256) {
+        return _maxPriceDeviations[token];
     }
 }

@@ -302,7 +302,7 @@ describe('Ichi Vault Oracle', () => {
 
       // Swap $10K USDC to ICHI on Uni V3
       console.log('=== Swap $10K USDC to ICHI (Reverted) ===');
-      console.log('Price Deviation Config:', await ichiOracle.maxPriceDeviations(ICHI));
+      console.log('Price Deviation Config:', await ichiOracle.getMaxPriceDeviation(ICHI));
       await swapRouter.exactInputSingle({
         tokenIn: USDC,
         tokenOut: ICHI,
