@@ -77,7 +77,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     /// @inheritdoc IBaseOracle
     function getPrice(address token) external override returns (uint256) {
         /// Maximum cap of timeGap is 2 days(172,800), safe to convert
-        uint32 secondsAgo = timeGaps[token].toUint32();
+        uint32 secondsAgo = _timeGaps[token].toUint32();
         if (secondsAgo == 0) revert Errors.NO_MEAN(token);
 
         address stablePool = getStablePool(token);
@@ -98,7 +98,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
             stablecoin
         );
 
-        return (quoteTokenAmountForStable * base.getPrice(stablecoin)) / 10 ** stableDecimals;
+        return (quoteTokenAmountForStable * _base.getPrice(stablecoin)) / 10 ** stableDecimals;
     }
 
     /**

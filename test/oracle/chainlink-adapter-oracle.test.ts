@@ -89,7 +89,7 @@ describe('Chainlink Adapter Oracle', () => {
         'SetTimeGap'
       );
 
-      expect(await chainlinkAdapterOracle.timeGaps(ADDRESS.USDC)).to.be.equal(OneDay);
+      expect(await chainlinkAdapterOracle.getTimeGap(ADDRESS.USDC)).to.be.equal(OneDay);
     });
     it('should be able to set setTokenRemappings', async () => {
       await expect(

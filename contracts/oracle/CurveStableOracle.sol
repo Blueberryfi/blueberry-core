@@ -46,7 +46,7 @@ contract CurveStableOracle is CurveBaseOracle {
 
         uint256 minPrice = type(uint256).max;
         for (uint256 i = 0; i < tokens.length; ++i) {
-            uint256 tokenPrice = base.getPrice(tokens[i]);
+            uint256 tokenPrice = _base.getPrice(tokens[i]);
             if (tokenPrice < minPrice) minPrice = tokenPrice;
         }
 

@@ -62,7 +62,7 @@ describe('Core Oracle', () => {
 
       await expect(coreOracle.setRoutes([ADDRESS.USDC], [mockOracle.address])).to.be.emit(coreOracle, 'SetRoute');
 
-      const route = await coreOracle.routes(ADDRESS.USDC);
+      const route = await coreOracle.getRoute(ADDRESS.USDC);
       expect(route).to.be.equal(mockOracle.address);
     });
     it('should revert initializing twice', async () => {

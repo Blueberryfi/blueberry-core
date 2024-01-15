@@ -63,6 +63,8 @@ contract CurveVolatileOracle is CurveBaseOracle {
 
         uint256 nTokens = tokens.length;
 
+        IBaseOracle base = getBaseOracle();
+
         uint256 px0 = base.getPrice(tokens[0]);
         uint256 px1 = base.getPrice(tokens[1]);
 

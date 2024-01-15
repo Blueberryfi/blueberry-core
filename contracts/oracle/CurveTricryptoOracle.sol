@@ -45,6 +45,8 @@ contract CurveTricryptoOracle is CurveBaseOracle {
         (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
         _checkReentrant(pool, tokens.length);
 
+        IBaseOracle base = getBaseOracle();
+
         /// Check if the token list length is 3 (tricrypto)
         if (tokens.length == 3) {
             return _lpPrice(virtualPrice, base.getPrice(tokens[0]), base.getPrice(tokens[1]), base.getPrice(tokens[2]));

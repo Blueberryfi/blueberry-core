@@ -117,7 +117,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /// @inheritdoc IBaseOracle
     function getPrice(address token) external view override returns (uint256) {
         /// 1. Check for the maximum acceptable delay time.
-        uint256 maxDelayTime = timeGaps[token];
+        uint256 maxDelayTime = _timeGaps[token];
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
 
         ISequencerUptimeFeed sequencerUptimeFeed = getSequencerUptimeFeed();

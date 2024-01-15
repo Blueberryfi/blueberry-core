@@ -117,7 +117,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         address remappedToken = _remappedTokens[token];
         if (remappedToken == address(0)) remappedToken = token;
 
-        uint256 maxDelayTime = timeGaps[remappedToken];
+        uint256 maxDelayTime = _timeGaps[remappedToken];
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
 
         IFeedRegistry registry = getFeedRegistry();
