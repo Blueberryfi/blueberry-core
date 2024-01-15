@@ -10,7 +10,7 @@ import { IFeeManager } from "./IFeeManager.sol";
  * @notice Interface for the Protocol Configuration,
  *         encapsulating various fees and related configuration parameters.
  * @dev This interface defines methods to retrieve fees
- *      and related parameters that govern the behavior of the protocol. 
+ *      and related parameters that govern the behavior of the protocol.
  */
 interface IProtocolConfig {
     /**
@@ -84,7 +84,7 @@ interface IProtocolConfig {
      * @return The fee rate for $BLB-ICHI vault withdrawals.
      */
     function getBlbIchiVaultFeeRate() external view returns (uint256);
-    
+
     /**
      * @notice Get the fee rate applied for withdrawals from the $BLB-ICHI vault.
      * @return The fee rate for $BLB-ICHI vault withdrawals.
