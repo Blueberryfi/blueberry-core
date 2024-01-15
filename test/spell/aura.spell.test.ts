@@ -250,7 +250,7 @@ describe('Aura Spell', () => {
       const bankInfo = await bank.getBankInfo(USDC);
       console.log('USDC Bank Info:', bankInfo);
 
-      const pos = await bank.positions(positionId);
+      const pos = await bank.getPositionInfo(positionId);
       console.log('Position Info:', pos);
       console.log('Position Value:', await bank.callStatic.getPositionValue(1));
 
@@ -269,7 +269,7 @@ describe('Aura Spell', () => {
     it('should be able to get multiple rewards', async () => {
       let positionId = await bank.getNextPositionId();
       positionId = positionId.sub(1);
-      const position = await bank.positions(positionId);
+      const position = await bank.getPositionInfo(positionId);
 
       const beforeSenderBalBalance = await bal.balanceOf(admin.address);
       const beforeTreasuryAuraBalance = await aura.balanceOf(admin.address);
@@ -409,7 +409,7 @@ describe('Aura Spell', () => {
     it('should be able to close portion of position without withdrawing isolated collaterals', async () => {
       await evm_mine_blocks(1000);
       const positionId = (await bank.getNextPositionId()).sub(1);
-      const position = await bank.positions(positionId);
+      const position = await bank.getPositionInfo(positionId);
 
       const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
 
@@ -470,7 +470,7 @@ describe('Aura Spell', () => {
     it('should be able to harvest on Aura', async () => {
       await evm_mine_blocks(1000);
       const positionId = (await bank.getNextPositionId()).sub(1);
-      const position = await bank.positions(positionId);
+      const position = await bank.getPositionInfo(positionId);
 
       const totalEarned = await auraRewarder.earned(waura.address);
       console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));

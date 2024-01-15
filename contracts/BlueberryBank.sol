@@ -51,27 +51,27 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
     address private constant _NO_ADDRESS = address(1);
 
     /* solhint-disable var-name-mixedcase */
-    uint256 private _GENERAL_LOCK; // TEMPORARY: re-entrancy lock guard.
-    uint256 private _IN_EXEC_LOCK; // TEMPORARY: exec lock guard.
-    uint256 private _POSITION_ID; // TEMPORARY: position ID currently under execution.
-    address private _SPELL; // TEMPORARY: spell currently under execution.
+    uint256 private _GENERAL_LOCK; /// @dev TEMPORARY: re-entrancy lock guard.
+    uint256 private _IN_EXEC_LOCK; /// @dev TEMPORARY: exec lock guard.
+    uint256 private _POSITION_ID; /// @dev TEMPORARY: position ID currently under execution.
+    address private _SPELL; /// @dev TEMPORARY: spell currently under execution.
     /* solhint-enable var-name-mixedcase */
 
     IProtocolConfig private _config; /// @dev The protocol _config address.
     ICoreOracle private _oracle; /// @dev The main _oracle address.
 
-    uint256 internal _nextPositionId; /// Next available position ID, starting from 1 (see initialize).
-    uint256 internal _bankStatus; /// Each bit stores certain bank status, e.g. borrow allowed, repay allowed
-    uint256 internal _repayResumedTimestamp; /// Timestamp that repay is allowed or resumed
+    uint256 internal _nextPositionId; /// @dev Next available position ID, starting from 1 (see initialize).
+    uint256 internal _bankStatus; /// @dev Each bit stores certain bank status, e.g. borrow allowed, repay allowed
+    uint256 internal _repayResumedTimestamp; /// @dev Timestamp that repay is allowed or resumed
 
-    address[] internal _allBanks; /// The list of all listed banks.
-    mapping(address => Bank) internal _banks; /// Mapping from token to bank data.
-    mapping(address => bool) internal _bTokenInBank; /// Mapping from bToken to its existence in bank.
-    mapping(uint256 => Position) internal _positions; /// Mapping from position ID to position data.
+    address[] internal _allBanks; /// @dev The list of all listed banks.
+    mapping(address => Bank) internal _banks; /// @dev Mapping from token to bank data.
+    mapping(address => bool) internal _bTokenInBank; /// @dev Mapping from bToken to its existence in bank.
+    mapping(uint256 => Position) internal _positions; /// @dev Mapping from position ID to position data.
 
-    mapping(address => bool) private _whitelistedTokens; /// Mapping from token to whitelist status
-    mapping(address => bool) private _whitelistedWrappedTokens; /// Mapping from token to whitelist status
-    mapping(address => bool) private _whitelistedSpells; /// Mapping from spell to whitelist status
+    mapping(address => bool) private _whitelistedTokens; /// @dev Mapping from token to whitelist status
+    mapping(address => bool) private _whitelistedWrappedTokens; /// @dev Mapping from token to whitelist status
+    mapping(address => bool) private _whitelistedSpells; /// @dev Mapping from spell to whitelist status
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS

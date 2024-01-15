@@ -677,7 +677,7 @@ describe('Convex Spells Deploy', () => {
     const bankInfo = await bank.getBankInfo(borrowToken);
     console.log('Bank Info:', bankInfo);
 
-    const pos = await bank.positions(positionId);
+    const pos = await bank.getPositionInfo(positionId);
     console.log('Position Info:', pos);
     console.log('Position Value:', await bank.callStatic.getPositionValue(positionId));
     expect(pos.owner).to.be.equal(admin.address);
@@ -701,7 +701,7 @@ describe('Convex Spells Deploy', () => {
   ) {
     await evm_mine_blocks(1000);
 
-    const position = await bank.positions(positionId);
+    const position = await bank.getPositionInfo(positionId);
 
     const totalEarned = await crvRewarder.earned(wconvex.address);
     console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));

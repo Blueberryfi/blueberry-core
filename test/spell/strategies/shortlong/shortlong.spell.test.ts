@@ -476,7 +476,7 @@ describe('ShortLong Spell Test test', () => {
     const bankInfo = await bank.getBankInfo(DAI);
     console.log('DAI Bank Info:', bankInfo);
 
-    const pos = await bank.positions(positionId);
+    const pos = await bank.getPositionInfo(positionId);
     console.log('Position Info:', pos);
     console.log('Position Value:', await bank.callStatic.getPositionValue(positionId));
     expect(pos.owner).to.be.equal(admin.address);
@@ -500,7 +500,7 @@ describe('ShortLong Spell Test test', () => {
     collTokenContract: any
   ) {
     await evm_mine_blocks(10000);
-    const position = await bank.positions(positionId);
+    const position = await bank.getPositionInfo(positionId);
 
     const swapAmount = await softVault.callStatic.withdraw(position.collateralSize);
 
