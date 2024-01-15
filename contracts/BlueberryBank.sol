@@ -51,10 +51,10 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
     address private constant _NO_ADDRESS = address(1);
 
     /* solhint-disable var-name-mixedcase */
-    uint256 private _GENERAL_LOCK; /// @dev TEMPORARY: re-entrancy lock guard.
-    uint256 private _IN_EXEC_LOCK; /// @dev TEMPORARY: exec lock guard.
-    uint256 private _POSITION_ID; /// @dev TEMPORARY: position ID currently under execution.
-    address private _SPELL; /// @dev TEMPORARY: spell currently under execution.
+    uint256 private _GENERAL_LOCK; // TEMPORARY: re-entrancy lock guard.
+    uint256 private _IN_EXEC_LOCK; // TEMPORARY: exec lock guard.
+    uint256 private _POSITION_ID; // TEMPORARY: position ID currently under execution.
+    address private _SPELL; // TEMPORARY: spell currently under execution.
     /* solhint-enable var-name-mixedcase */
 
     IProtocolConfig private _config; /// @dev The protocol _config address.
@@ -510,7 +510,7 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
 
     /// @inheritdoc IBank
     function getFeeManager() public view override returns (IFeeManager) {
-        return _config.feeManager();
+        return _config.getFeeManager();
     }
 
     /// @inheritdoc IBank

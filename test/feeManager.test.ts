@@ -58,7 +58,7 @@ describe('Fee Manager', () => {
     await mockToken.approve(feeManager.address, beforeBalance);
 
     await feeManager.doCutRewardsFee(mockToken.address, beforeBalance);
-    const rewardsFee = await config.rewardFee();
+    const rewardsFee = await config.getRewardFee();
 
     const afterBalance = await mockToken.balanceOf(admin.address);
     expect(afterBalance).to.be.equal(beforeBalance.sub(beforeBalance.mul(rewardsFee).div(10000)));

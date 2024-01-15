@@ -41,17 +41,17 @@ describe('Protocol Config', () => {
         })
       ).to.be.revertedWithCustomError(ProtocolConfig, 'ZERO_ADDRESS');
 
-      expect(await config.treasury()).to.be.equal(treasury.address);
+      expect(await config.getTreasury()).to.be.equal(treasury.address);
     });
     it('should set initial states on constructor', async () => {
-      expect(await config.depositFee()).to.be.equal(50);
-      expect(await config.withdrawFee()).to.be.equal(50);
-      expect(await config.treasuryFeeRate()).to.be.equal(3000);
-      expect(await config.blbStablePoolFeeRate()).to.be.equal(3500);
-      expect(await config.blbIchiVaultFeeRate()).to.be.equal(3500);
-      expect(await config.withdrawVaultFee()).to.be.equal(100);
-      expect(await config.withdrawVaultFeeWindow()).to.be.equal(60 * 60 * 24 * 60);
-      expect(await config.withdrawVaultFeeWindowStartTime()).to.be.equal(0);
+      expect(await config.getDepositFee()).to.be.equal(50);
+      expect(await config.getWithdrawFee()).to.be.equal(50);
+      expect(await config.getTreasuryFeeRate()).to.be.equal(3000);
+      expect(await config.getBlbStablePoolFeeRate()).to.be.equal(3500);
+      expect(await config.getBlbIchiVaultFeeRate()).to.be.equal(3500);
+      expect(await config.getWithdrawVaultFee()).to.be.equal(100);
+      expect(await config.getWithdrawVaultFeeWindow()).to.be.equal(60 * 60 * 24 * 60);
+      expect(await config.getWithdrawVaultFeeWindowStartTime()).to.be.equal(0);
     });
   });
 
@@ -72,7 +72,7 @@ describe('Protocol Config', () => {
       .withArgs(60 * 60 * 24 * 90);
 
     await config.setWithdrawVaultFeeWindow(60);
-    expect(await config.withdrawVaultFeeWindow()).to.be.equal(60);
+    expect(await config.getWithdrawVaultFeeWindow()).to.be.equal(60);
   });
 
   it('owner should be able to set deposit fee', async () => {
@@ -80,7 +80,7 @@ describe('Protocol Config', () => {
     await expect(config.setDepositFee(2500)).to.be.revertedWithCustomError(config, 'RATIO_TOO_HIGH').withArgs(2500);
 
     await config.setDepositFee(100);
-    expect(await config.depositFee()).to.be.equal(100);
+    expect(await config.getDepositFee()).to.be.equal(100);
   });
 
   it('owner should be able to set withdraw fee', async () => {
@@ -88,7 +88,7 @@ describe('Protocol Config', () => {
     await expect(config.setWithdrawFee(2500)).to.be.revertedWithCustomError(config, 'RATIO_TOO_HIGH').withArgs(2500);
 
     await config.setWithdrawFee(100);
-    expect(await config.withdrawFee()).to.be.equal(100);
+    expect(await config.getWithdrawFee()).to.be.equal(100);
   });
 
   it('owner should be able to set rewards fee', async () => {
@@ -96,7 +96,7 @@ describe('Protocol Config', () => {
     await expect(config.setRewardFee(2500)).to.be.revertedWithCustomError(config, 'RATIO_TOO_HIGH').withArgs(2500);
 
     await config.setRewardFee(100);
-    expect(await config.rewardFee()).to.be.equal(100);
+    expect(await config.getRewardFee()).to.be.equal(100);
   });
 
   it('owner should be able to set fee distribution rates', async () => {
@@ -109,9 +109,9 @@ describe('Protocol Config', () => {
     );
 
     await config.setFeeDistribution(3000, 4000, 3000);
-    expect(await config.treasuryFeeRate()).to.be.equal(3000);
-    expect(await config.blbStablePoolFeeRate()).to.be.equal(4000);
-    expect(await config.blbIchiVaultFeeRate()).to.be.equal(3000);
+    expect(await config.getTreasuryFeeRate()).to.be.equal(3000);
+    expect(await config.getBlbStablePoolFeeRate()).to.be.equal(4000);
+    expect(await config.getBlbIchiVaultFeeRate()).to.be.equal(3000);
   });
 
   it('owner should be able to set treasury wallet', async () => {
@@ -124,7 +124,7 @@ describe('Protocol Config', () => {
     );
 
     await config.setTreasuryWallet(treasury.address);
-    expect(await config.treasury()).to.be.equal(treasury.address);
+    expect(await config.getTreasury()).to.be.equal(treasury.address);
   });
 
   it('owner should be able to set fee manager', async () => {
@@ -137,7 +137,7 @@ describe('Protocol Config', () => {
     );
 
     await config.setFeeManager(treasury.address);
-    expect(await config.feeManager()).to.be.equal(treasury.address);
+    expect(await config.getFeeManager()).to.be.equal(treasury.address);
   });
 
   it('owner should be able to set BLB/USDC ichi vault', async () => {
@@ -150,7 +150,7 @@ describe('Protocol Config', () => {
     );
 
     await config.setBlbUsdcIchiVault(treasury.address);
-    expect(await config.blbUsdcIchiVault()).to.be.equal(treasury.address);
+    expect(await config.getBlbUsdcIchiVault()).to.be.equal(treasury.address);
   });
 
   it('owner should be able to set BLB stable pool', async () => {
@@ -163,6 +163,6 @@ describe('Protocol Config', () => {
     );
 
     await config.setBlbStabilityPool(treasury.address);
-    expect(await config.blbStabilityPool()).to.be.equal(treasury.address);
+    expect(await config.getBlbStabilityPool()).to.be.equal(treasury.address);
   });
 });
