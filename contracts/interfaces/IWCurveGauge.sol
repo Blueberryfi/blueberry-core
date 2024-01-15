@@ -81,7 +81,7 @@ interface IWCurveGauge is IERC1155Upgradeable, IERC20Wrapper {
      * @return The total amount of Crv received per share for the provided gauge ID.
      */
     function getAccumulatedCrvPerShare(uint256 gid) external view returns (uint256);
-    
+
     /**
      * @notice Fetch the liquidity provider (LP) token address associated with a specific gauge ID.
      * @param gid The gauge ID.

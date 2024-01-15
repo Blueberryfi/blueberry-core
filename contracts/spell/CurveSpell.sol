@@ -85,7 +85,7 @@ contract CurveSpell is BasicSpell {
      * @notice Add liquidity to Curve pool with 2 underlying tokens, with staking to Curve gauge
      * @param minLPMint Desired LP token amount (slippage control)
      */
-     function openPositionFarm(
+    function openPositionFarm(
         OpenPosParam calldata param,
         uint256 minLPMint
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
@@ -186,7 +186,6 @@ contract CurveSpell is BasicSpell {
 
                 _doRefundRewards(_crvToken);
             }
-        
 
             // 7. Deposit on Curve Gauge, Put wrapped collateral tokens on Blueberry Bank
             uint256 lpAmount = IERC20(lp).balanceOf(address(this));
@@ -224,7 +223,7 @@ contract CurveSpell is BasicSpell {
             if (wCurveGauge.getUnderlyingToken(pos.collId) != crvLp) {
                 revert Errors.INCORRECT_UNDERLYING(crvLp);
             }
-            
+
             // 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
             bank.takeCollateral(param.amountPosRemove);
             wCurveGauge.burn(pos.collId, param.amountPosRemove);
