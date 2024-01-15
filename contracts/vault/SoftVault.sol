@@ -62,7 +62,6 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc ISoftVault
     function initialize(
         IProtocolConfig config,
         IBErc20 bToken,
@@ -133,7 +132,7 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
     }
 
     /// @inheritdoc ISoftVault
-    function getUToken() external view override returns (IERC20Upgradeable) {
+    function getUnderlyingToken() external view override returns (IERC20Upgradeable) {
         return _uToken;
     }
 

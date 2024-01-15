@@ -39,12 +39,6 @@ interface IHardVault is IERC1155Upgradeable {
     //////////////////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Initializes the HardVault contract with protocol configuration.
-     * @param config Address of the protocol configuration.
-     */
-    function initialize(IProtocolConfig config) external;
-
-    /**
      * @notice Retrieves the underlying ERC-20 token address corresponding to a specific ERC-1155 token ID.
      * @param tokenId The ERC-1155 token ID to fetch the underlying ERC-20 token for.
      * @return Address of the underlying ERC-20 token associated with the provided token ID.
@@ -57,7 +51,7 @@ interface IHardVault is IERC1155Upgradeable {
      * @param user Address of the user to query the balance for.
      * @return Balance of the underlying ERC-20 token for the given user.
      */
-    function balanceOfERC20(address uToken, address user) external view returns (uint256);
+    function balanceOfToken(address uToken, address user) external view returns (uint256);
 
     /**
      * @notice Deposit a certain amount of ERC-20 tokens to receive an equivalent amount of ERC-1155 representations.

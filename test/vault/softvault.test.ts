@@ -99,7 +99,7 @@ describe('SoftVault', () => {
       ).to.be.revertedWithCustomError(SoftVault, 'ZERO_ADDRESS');
     });
     it('should set bToken along with uToken in constructor', async () => {
-      expect(await vault.getUToken()).to.be.equal(USDC);
+      expect(await vault.getUnderlyingToken()).to.be.equal(USDC);
       expect(await vault.getBToken()).to.be.equal(BUSDC);
     });
     it('should revert initializing twice', async () => {

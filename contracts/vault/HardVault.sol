@@ -58,7 +58,6 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @inheritdoc IHardVault
     function initialize(IProtocolConfig config) external initializer {
         __ReentrancyGuard_init();
         __Ownable_init();
@@ -87,7 +86,7 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
     }
 
     /// @inheritdoc IHardVault
-    function balanceOfERC20(address token, address user) external view override returns (uint256) {
+    function balanceOfToken(address token, address user) external view override returns (uint256) {
         return balanceOf(user, _encodeTokenId(token));
     }
 

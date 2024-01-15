@@ -39,15 +39,6 @@ interface ISoftVault is IERC20Upgradeable {
     //////////////////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Initializes the contract
-     * @param config Address of protocol configuration
-     * @param bToken Address of bToken
-     * @param name ERC20 name for the SoftVault token
-     * @param symbol ERC20 symbol for the SoftVault token
-     */
-    function initialize(IProtocolConfig config, IBErc20 bToken, string memory name, string memory symbol) external;
-
-    /**
      * @notice Get the corresponding Blueberry Money Market bToken for this vault.
      * @return A Blueberry Money Market bToken interface.
      */
@@ -57,7 +48,7 @@ interface ISoftVault is IERC20Upgradeable {
      * @notice Get the underlying ERC20 token for this vault.
      * @return An ERC20 interface of the underlying token.
      */
-    function getUToken() external view returns (IERC20Upgradeable);
+    function getUnderlyingToken() external view returns (IERC20Upgradeable);
 
     /**
      * @notice Retrieves the protocol configuration for this vault.
