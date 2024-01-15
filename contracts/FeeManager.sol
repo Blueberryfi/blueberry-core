@@ -56,7 +56,7 @@ contract FeeManager is OwnableUpgradeable {
     /// @param amount Amount of tokens being deposited.
     /// @return The net amount after deducting the fee.
     function doCutDepositFee(address token, uint256 amount) external returns (uint256) {
-        return _doCutFee(token, amount, config.depositFee());
+        return _doCutFee(token, amount, config.getDepositFee());
     }
 
     /// @notice Calculates and transfers withdrawal fee when redeeming
@@ -65,7 +65,7 @@ contract FeeManager is OwnableUpgradeable {
     /// @param amount Amount of tokens being withdrawn.
     /// @return The net amount after deducting the fee.
     function doCutWithdrawFee(address token, uint256 amount) external returns (uint256) {
-        return _doCutFee(token, amount, config.withdrawFee());
+        return _doCutFee(token, amount, config.getWithdrawFee());
     }
 
     /// @notice Calculates and transfers the performance fee from the rewards generated from the leveraged position.
@@ -73,7 +73,7 @@ contract FeeManager is OwnableUpgradeable {
     /// @param amount Amount of rewards.
     /// @return The net rewards after deducting the fee.
     function doCutRewardsFee(address token, uint256 amount) external returns (uint256) {
-        return _doCutFee(token, amount, config.rewardFee());
+        return _doCutFee(token, amount, config.getRewardFee());
     }
 
     /// @notice Cut vault withdraw fee when perform withdraw from Blueberry Money Market within the given window
@@ -82,8 +82,8 @@ contract FeeManager is OwnableUpgradeable {
     /// @return The net amount after deducting the fee if within the fee window, else returns the original amount.
     function doCutVaultWithdrawFee(address token, uint256 amount) external returns (uint256) {
         /// Calculate the fee if it's within the fee window, otherwise return the original amount.
-        if (block.timestamp < config.withdrawVaultFeeWindowStartTime() + config.withdrawVaultFeeWindow()) {
-            return _doCutFee(token, amount, config.withdrawVaultFee());
+        if (block.timestamp < config.getWithdrawVaultFeeWindowStartTime() + config.getWithdrawVaultFeeWindow()) {
+            return _doCutFee(token, amount, config.getWithdrawVaultFee());
         } else {
             return amount;
         }
@@ -95,7 +95,7 @@ contract FeeManager is OwnableUpgradeable {
     /// @param feeRate Fee rate as a percentage (base 10000, so 100 means 1%).
     /// @return The net amount after deducting the fee.
     function _doCutFee(address token, uint256 amount, uint256 feeRate) internal returns (uint256) {
-        address treasury = config.treasury();
+        address treasury = config.getTreasury();
         if (treasury == address(0)) revert Errors.NO_TREASURY_SET();
 
         /// Calculate the fee based on the provided rate.

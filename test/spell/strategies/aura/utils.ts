@@ -1,6 +1,6 @@
 import { ethers, upgrades } from 'hardhat';
 import { utils } from 'ethers';
-import { WERC20, WAuraPools, AuraSpell, IAuraBooster } from '../../../../typechain-types';
+import { WERC20, WAuraBooster, AuraSpell, IAuraBooster } from '../../../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../../../constant';
 import { StrategyInfo, setupBasicBank } from '../utils';
 
@@ -25,10 +25,10 @@ export const setupStrategy = async () => {
   const escrowFactory_Factory = await ethers.getContractFactory(CONTRACT_NAMES.PoolEscrowFactory);
   const escrowFactory = await escrowFactory_Factory.deploy(escrow.address);
 
-  const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
-  const waura = <WAuraPools>await upgrades.deployProxy(
-    WAuraPools,
-    [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address],
+  const WAuraBooster = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
+  const waura = <WAuraBooster>await upgrades.deployProxy(
+    WAuraBooster,
+    [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address, ADDRESS.BALANCER_VAULT],
     {
       unsafeAllow: ['delegatecall'],
     }

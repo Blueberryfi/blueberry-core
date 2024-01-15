@@ -4,7 +4,7 @@ import {
   IWETH,
   ERC20,
   ConvexSpell,
-  WConvexPools,
+  WConvexBooster,
   ICvxBooster,
   IRewarder,
   ProtocolConfig,
@@ -56,7 +56,7 @@ describe('Convex Spells Deploy', () => {
   let crvCvxCrv: ERC20;
   let weth: IWETH;
   let spell: ConvexSpell;
-  let wconvex: WConvexPools;
+  let wconvex: WConvexBooster;
   let bank: BlueberryBank;
   let protocol: CvxProtocol;
   let cvxBooster: ICvxBooster;
@@ -709,7 +709,7 @@ describe('Convex Spells Deploy', () => {
     const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
     console.log('Pending Rewards', pendingRewardsInfo);
 
-    const rewardFeeRatio = await config.rewardFee();
+    const rewardFeeRatio = await config.getRewardFee();
 
     const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
       reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)

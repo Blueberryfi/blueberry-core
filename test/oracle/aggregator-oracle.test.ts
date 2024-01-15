@@ -94,9 +94,9 @@ describe('Aggregator Oracle', () => {
         'SetPrimarySources'
       );
 
-      expect(await aggregatorOracle.maxPriceDeviations(ADDRESS.UNI)).to.be.equal(DEVIATION);
-      expect(await aggregatorOracle.primarySourceCount(ADDRESS.UNI)).to.be.equal(1);
-      expect(await aggregatorOracle.primarySources(ADDRESS.UNI, 0)).to.be.equal(chainlinkOracle.address);
+      expect(await aggregatorOracle.getMaxPriceDeviation(ADDRESS.UNI)).to.be.equal(DEVIATION);
+      expect(await aggregatorOracle.getPrimarySourceCount(ADDRESS.UNI)).to.be.equal(1);
+      expect(await aggregatorOracle.getPrimarySource(ADDRESS.UNI, 0)).to.be.equal(chainlinkOracle.address);
     });
     it('should be able to set multiple primary sources', async () => {
       await expect(
@@ -133,9 +133,9 @@ describe('Aggregator Oracle', () => {
         )
       ).to.be.emit(aggregatorOracle, 'SetPrimarySources');
 
-      expect(await aggregatorOracle.maxPriceDeviations(ADDRESS.UNI)).to.be.equal(DEVIATION);
-      expect(await aggregatorOracle.primarySourceCount(ADDRESS.UNI)).to.be.equal(1);
-      expect(await aggregatorOracle.primarySources(ADDRESS.UNI, 0)).to.be.equal(chainlinkOracle.address);
+      expect(await aggregatorOracle.getMaxPriceDeviation(ADDRESS.UNI)).to.be.equal(DEVIATION);
+      expect(await aggregatorOracle.getPrimarySourceCount(ADDRESS.UNI)).to.be.equal(1);
+      expect(await aggregatorOracle.getPrimarySource(ADDRESS.UNI, 0)).to.be.equal(chainlinkOracle.address);
     });
   });
 

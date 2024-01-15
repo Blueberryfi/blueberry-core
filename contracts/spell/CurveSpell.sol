@@ -27,39 +27,48 @@ import { IWCurveGauge } from "../interfaces/IWCurveGauge.sol";
  * @title CurveSpell
  * @author BlueberryProtocol
  * @notice CurveSpell is the factory contract that
- * defines how Blueberry Protocol interacts with Curve pools
+ *     defines how Blueberry Protocol interacts with Curve pools
  */
 contract CurveSpell is BasicSpell {
     using UniversalERC20 for IERC20;
 
     /// @dev address of Wrapped Curve Gauge
-    IWCurveGauge public wCurveGauge;
+    IWCurveGauge private _wCurveGauge;
     /// @dev address of CurveOracle
-    ICurveOracle public crvOracle;
+    ICurveOracle private _crvOracle;
     /// @dev address of CRV token
-    address public crvToken;
+    address private _crvToken;
 
+    /**
+     * @notice Initializes the contract with required parameters.
+     * @param bank Reference to the Bank contract.
+     * @param werc20 Reference to the WERC20 contract.
+     * @param weth Address of the wrapped Ether token.
+     * @param wCurveGauge Address of the wrapped Curve Gauge contract.
+     * @param augustusSwapper Address of the paraswap AugustusSwapper.
+     * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     */
     function initialize(
-        IBank bank_,
-        address werc20_,
-        address weth_,
-        address wCurveGauge_,
-        address crvOracle_,
-        address augustusSwapper_,
-        address tokenTransferProxy_
+        IBank bank,
+        address werc20,
+        address weth,
+        address wCurveGauge,
+        address crvOracle,
+        address augustusSwapper,
+        address tokenTransferProxy
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_, augustusSwapper_, tokenTransferProxy_);
-        if (wCurveGauge_ == address(0) || crvOracle_ == address(0)) {
+        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
+        if (wCurveGauge == address(0) || crvOracle == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
 
-        wCurveGauge = IWCurveGauge(wCurveGauge_);
-        crvToken = address(wCurveGauge.crvToken());
-        crvOracle = ICurveOracle(crvOracle_);
-        IWCurveGauge(wCurveGauge_).setApprovalForAll(address(bank_), true);
+        _wCurveGauge = IWCurveGauge(wCurveGauge);
+        _crvToken = address(IWCurveGauge(wCurveGauge).getCrvToken());
+        _crvOracle = ICurveOracle(crvOracle);
+        IWCurveGauge(wCurveGauge).setApprovalForAll(address(bank), true);
 
-        augustusSwapper = augustusSwapper_;
-        tokenTransferProxy = tokenTransferProxy_;
+        augustusSwapper = augustusSwapper;
+        tokenTransferProxy = tokenTransferProxy;
     }
 
     /**
@@ -81,11 +90,12 @@ contract CurveSpell is BasicSpell {
         uint256 minLPMint
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         address lp = strategies[param.strategyId].vault;
-        if (wCurveGauge.getLpFromGaugeId(param.farmingPoolId) != lp) {
+
+        if (_wCurveGauge.getLpFromGaugeId(param.farmingPoolId) != lp) {
             revert Errors.INCORRECT_LP(lp);
         }
 
-        (address pool, address[] memory tokens, ) = crvOracle.getPoolInfo(lp);
+        (address pool, address[] memory tokens, ) = _crvOracle.getPoolInfo(lp);
 
         // 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
@@ -158,33 +168,41 @@ contract CurveSpell is BasicSpell {
         // 5. Validate Max Pos Size
         _validatePosSize(param.strategyId);
 
-        // 6. Take out collateral and burn
-        IBank.Position memory pos = bank.getCurrentPositionInfo();
-        if (pos.collateralSize > 0) {
-            (uint256 decodedGid, ) = wCurveGauge.decodeId(pos.collId);
+        {
+            IWCurveGauge wCurveGauge = getWCurveGauge();
+            // 6. Take out collateral and burn
+            IBank.Position memory pos = bank.getCurrentPositionInfo();
+            if (pos.collateralSize > 0) {
+                if (param.farmingPoolId != _getGaugeId(pos.collId)) {
+                    revert Errors.INCORRECT_PID(param.farmingPoolId);
+                }
 
-            if (param.farmingPoolId != decodedGid) {
-                revert Errors.INCORRECT_PID(param.farmingPoolId);
+                if (pos.collToken != address(wCurveGauge)) {
+                    revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+                }
+
+                bank.takeCollateral(pos.collateralSize);
+                wCurveGauge.burn(pos.collId, pos.collateralSize);
+
+                _doRefundRewards(_crvToken);
             }
 
-            if (pos.collToken != address(wCurveGauge)) {
-                revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-            }
+            // 7. Deposit on Curve Gauge, Put wrapped collateral tokens on Blueberry Bank
+            uint256 lpAmount = IERC20(lp).balanceOf(address(this));
+            IERC20(lp).universalApprove(address(wCurveGauge), lpAmount);
 
-            bank.takeCollateral(pos.collateralSize);
-            wCurveGauge.burn(pos.collId, pos.collateralSize);
-
-            _doRefundRewards(crvToken);
+            uint256 id = wCurveGauge.mint(param.farmingPoolId, lpAmount);
+            bank.putCollateral(address(wCurveGauge), id, lpAmount);
         }
-
-        // 7. Deposit on Curve Gauge, Put wrapped collateral tokens on Blueberry Bank
-        uint256 lpAmount = IERC20(lp).balanceOf(address(this));
-        IERC20(lp).universalApprove(address(wCurveGauge), lpAmount);
-
-        uint256 id = wCurveGauge.mint(param.farmingPoolId, lpAmount);
-        bank.putCollateral(address(wCurveGauge), id, lpAmount);
     }
 
+    /**
+     * @notice Closes a position from a Curve Gauge
+     * @param param Parameters for closing the position
+     * @param amounts Expected reward amounts for each reward token
+     * @param swapDatas Data required for swapping reward tokens to the debt token
+     * @param deadline Deadline for the transaction to be executed
+     */
     function closePositionFarm(
         ClosePosParam calldata param,
         uint256[] calldata amounts,
@@ -192,42 +210,42 @@ contract CurveSpell is BasicSpell {
         uint256 deadline
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         if (block.timestamp > deadline) revert Errors.EXPIRED(deadline);
-
-        address crvLp = strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
-
-        if (pos.collToken != address(wCurveGauge)) {
-            revert Errors.INCORRECT_COLTOKEN(pos.collToken);
-        }
-
-        if (wCurveGauge.getUnderlyingToken(pos.collId) != crvLp) {
-            revert Errors.INCORRECT_UNDERLYING(crvLp);
-        }
-
-        // 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
-        bank.takeCollateral(param.amountPosRemove);
-        wCurveGauge.burn(pos.collId, param.amountPosRemove);
+        address crvLp = strategies[param.strategyId].vault;
 
         {
-            // 2. Swap rewards tokens to debt token
-            _swapOnParaswap(crvToken, amounts[0], swapDatas[0]);
+            IWCurveGauge wCurveGauge = getWCurveGauge();
+
+            if (pos.collToken != address(wCurveGauge)) {
+                revert Errors.INCORRECT_COLTOKEN(pos.collToken);
+            }
+
+            if (wCurveGauge.getUnderlyingToken(pos.collId) != crvLp) {
+                revert Errors.INCORRECT_UNDERLYING(crvLp);
+            }
+
+            // 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
+            bank.takeCollateral(param.amountPosRemove);
+            wCurveGauge.burn(pos.collId, param.amountPosRemove);
         }
+        address crvToken = getCrvToken();
+
+        // 2. Swap rewards tokens to debt token
+        _swapOnParaswap(crvToken, amounts[0], swapDatas[0]);
 
         {
             address[] memory tokens;
-            {
-                address pool;
-                (pool, tokens, ) = crvOracle.getPoolInfo(crvLp);
+            address pool;
+            (pool, tokens, ) = _crvOracle.getPoolInfo(crvLp);
 
-                // 3. Calculate actual amount to remove
-                uint256 amountPosRemove = param.amountPosRemove;
-                if (amountPosRemove == type(uint256).max) {
-                    amountPosRemove = IERC20(crvLp).balanceOf(address(this));
-                }
-
-                // 4. Remove liquidity
-                _removeLiquidity(param, pool, tokens, pos, amountPosRemove);
+            // 3. Calculate actual amount to remove
+            uint256 amountPosRemove = param.amountPosRemove;
+            if (amountPosRemove == type(uint256).max) {
+                amountPosRemove = IERC20(crvLp).balanceOf(address(this));
             }
+
+            // 4. Remove liquidity
+            _removeLiquidity(param, pool, tokens, pos, amountPosRemove);
         }
 
         // 5. Withdraw isolated collateral from Bank
@@ -254,6 +272,29 @@ contract CurveSpell is BasicSpell {
         _doRefund(crvToken);
     }
 
+    /// @notice Returns the Wrapped Curve Gauge contract address.
+    function getWCurveGauge() public view returns (IWCurveGauge) {
+        return _wCurveGauge;
+    }
+
+    /// @notice Returns the address of the Crv token.
+    function getCrvToken() public view returns (address) {
+        return _crvToken;
+    }
+
+    /// @notice Returns the address of the Curve Oracle.
+    function getCurveOracle() external view returns (ICurveOracle) {
+        return _crvOracle;
+    }
+
+    /**
+     * @notice Removes liquidity from a Curve pool.
+     * @param param Parameters required for closing a position.
+     * @param pool The Curve pool address.
+     * @param tokens Array of token addresses in the Curve pool.
+     * @param pos Position struct containing information about the current position.
+     * @param amountPosRemove Amount of LP tokens to burn to remove a position.
+     */
     function _removeLiquidity(
         ClosePosParam memory param,
         address pool,
@@ -279,6 +320,12 @@ contract CurveSpell is BasicSpell {
         }
     }
 
+    /**
+     * @notice Swaps token on Paraswap and refunds the rest amount to owner.
+     * @param token Token to swap for
+     * @param amount Amount of token to swap for
+     * @param swapData Call data for the swap
+     */
     function _swapOnParaswap(address token, uint256 amount, bytes calldata swapData) internal {
         if (amount == 0) return;
         if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, token, amount, swapData)) {
@@ -287,5 +334,13 @@ contract CurveSpell is BasicSpell {
 
         // Refund rest amount to owner
         _doRefund(token);
+    }
+
+    /**
+     * @notice Returns the gauge ID from an ERC1155 token ID.
+     * @param tokenId The ID of the ERC1155 token representing the staked position.
+     */
+    function _getGaugeId(uint256 tokenId) internal view returns (uint256 gid) {
+        (gid, ) = _wCurveGauge.decodeId(tokenId);
     }
 }

@@ -161,7 +161,7 @@ describe('SoftVault', () => {
 
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
-      const feeRate = await config.withdrawVaultFee();
+      const feeRate = await config.getWithdrawVaultFee();
       const fee = depositAmount.mul(feeRate).div(10000);
       expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.near(fee);
 

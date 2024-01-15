@@ -5,7 +5,7 @@ import { BigNumber, BigNumberish, utils } from 'ethers';
 import {
   BlueberryBank,
   ERC20,
-  WAuraPools,
+  WAuraBooster,
   IAuraBooster,
   AuraSpell,
   CoreOracle,
@@ -33,7 +33,7 @@ describe('Aura Spell Strategy test', () => {
   let bank: BlueberryBank;
   let oracle: CoreOracle;
   let spell: AuraSpell;
-  let waura: WAuraPools;
+  let waura: WAuraBooster;
   let dai: ERC20;
   let aura: ERC20;
   let auraBooster: IAuraBooster;
@@ -62,7 +62,7 @@ describe('Aura Spell Strategy test', () => {
     waura = strat.waura;
     config = strat.protocol.config;
     auraBooster = strat.auraBooster;
-    rewardFeePct = await config.rewardFee();
+    rewardFeePct = await config.getRewardFee();
 
     dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     aura = <ERC20>await ethers.getContractAt('ERC20', AURA);

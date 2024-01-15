@@ -126,9 +126,9 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
         uint256 uBalanceAfter = underlyingToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
-        IERC20(address(underlyingToken)).universalApprove(address(config.feeManager()), withdrawAmount);
+        IERC20(address(underlyingToken)).universalApprove(address(config.getFeeManager()), withdrawAmount);
 
-        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(address(underlyingToken), withdrawAmount);
+        withdrawAmount = config.getFeeManager().doCutVaultWithdrawFee(address(underlyingToken), withdrawAmount);
         underlyingToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);

@@ -125,7 +125,7 @@ describe('HardVault', () => {
       expect(await vault.balanceOf(admin.address, tokenId)).to.be.equal(0);
 
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
-      const feeRate = await config.withdrawVaultFee();
+      const feeRate = await config.getWithdrawVaultFee();
       const fee = depositAmount.mul(feeRate).div(10000);
       const treasuryBalance = await usdc.balanceOf(treasury.address);
       expect(treasuryBalance).to.be.near(fee);
