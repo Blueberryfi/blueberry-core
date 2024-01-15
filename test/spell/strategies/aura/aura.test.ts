@@ -395,7 +395,7 @@ describe('Aura Spell Strategy test', () => {
               ])
             );
 
-            const positionId = (await bank.nextPositionId()).sub(1);
+            const positionId = (await bank.getNextPositionId()).sub(1);
 
             return positionId;
           };

@@ -151,7 +151,7 @@ contract ShortLongSpell is BasicSpell {
     function _withdraw(ClosePosParam calldata param, bytes calldata swapData) internal {
         Strategy memory strategy = strategies[param.strategyId];
         ISoftVault vault = ISoftVault(strategy.vault);
-        uint256 positionId = bank.POSITION_ID();
+        uint256 positionId = bank.getPositionId();
 
         /// 1. Calculate actual amount to remove
         uint256 amountPosRemove = param.amountPosRemove;

@@ -265,7 +265,7 @@ contract IchiSpell is BasicSpell {
         /// 1. Compute repay amount if MAX_INT is supplied (max debt)
         uint256 amountRepay = param.amountRepay;
         if (amountRepay == type(uint256).max) {
-            amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
+            amountRepay = bank.currentPositionDebt(bank.getPositionId());
         }
 
         /// 2. Calculate actual amount to remove

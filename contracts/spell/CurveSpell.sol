@@ -259,7 +259,7 @@ contract CurveSpell is BasicSpell {
             // Compute repay amount if MAX_INT is supplied (max debt)
             uint256 amountRepay = param.amountRepay;
             if (amountRepay == type(uint256).max) {
-                amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
+                amountRepay = bank.currentPositionDebt(bank.getPositionId());
             }
             _doRepay(param.borrowToken, amountRepay);
         }

@@ -146,7 +146,7 @@ describe('ShortLong Spell mainnet fork', () => {
     });
 
     it('should be able to farm DAI', async () => {
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
       const swapData = await getParaswapCalldata(CRV, DAI, borrowAmount, spell.address, 100);
 
@@ -260,7 +260,7 @@ describe('ShortLong Spell mainnet fork', () => {
 
     it('should be able to close position partially', async () => {
       await evm_mine_blocks(10000);
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
       const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
@@ -318,7 +318,7 @@ describe('ShortLong Spell mainnet fork', () => {
 
     it('should fail to close position', async () => {
       await evm_mine_blocks(10000);
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
       const swapAmount = (await daiSoftVault.callStatic.withdraw(position.collateralSize)).div(2);
@@ -363,7 +363,7 @@ describe('ShortLong Spell mainnet fork', () => {
 
     it('should be able to close position', async () => {
       await evm_mine_blocks(10000);
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
       const swapAmount = await daiSoftVault.callStatic.withdraw(position.collateralSize);

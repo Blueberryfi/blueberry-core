@@ -305,7 +305,7 @@ contract ConvexSpell is BasicSpell {
             /// Compute repay amount if MAX_INT is supplied (max debt)
             uint256 amountRepay = closePosParam.param.amountRepay;
             if (amountRepay == type(uint256).max) {
-                amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
+                amountRepay = bank.currentPositionDebt(bank.getPositionId());
             }
             _doRepay(closePosParam.param.borrowToken, amountRepay);
         }

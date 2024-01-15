@@ -227,7 +227,7 @@ describe('Aura Spell', () => {
     });
 
     it('should be able to farm USDC on Aura', async () => {
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       const res = await bank.execute(
         0,
@@ -267,7 +267,7 @@ describe('Aura Spell', () => {
     });
 
     it('should be able to get multiple rewards', async () => {
-      let positionId = await bank.nextPositionId();
+      let positionId = await bank.getNextPositionId();
       positionId = positionId.sub(1);
       const position = await bank.positions(positionId);
 
@@ -331,7 +331,7 @@ describe('Aura Spell', () => {
     });
     // TODO: Find another USDC curve pool
     // it("should revert increasing existing position when diff pos param given", async () => {
-    //   const positionId = (await bank.nextPositionId()).sub(1);
+    //   const positionId = (await bank.getNextPositionId()).sub(1);
     //   await expect(
     //     bank.execute(
     //       positionId,
@@ -349,7 +349,7 @@ describe('Aura Spell', () => {
     // })
 
     it('should fail to close position for non-existing strategy', async () => {
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
 
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
@@ -378,7 +378,7 @@ describe('Aura Spell', () => {
     });
 
     it('should fail to close position for non-existing collateral', async () => {
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
 
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
@@ -408,7 +408,7 @@ describe('Aura Spell', () => {
 
     it('should be able to close portion of position without withdrawing isolated collaterals', async () => {
       await evm_mine_blocks(1000);
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
       const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
@@ -469,7 +469,7 @@ describe('Aura Spell', () => {
 
     it('should be able to harvest on Aura', async () => {
       await evm_mine_blocks(1000);
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const position = await bank.positions(positionId);
 
       const totalEarned = await auraRewarder.earned(waura.address);
