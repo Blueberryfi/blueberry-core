@@ -22,19 +22,20 @@ import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICoreOracle } from "../interfaces/ICoreOracle.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 
-/// @title CoreOracle
-/// @author BlueberryProtocol
-/// @notice This oracle contract provides reliable price feeds to the Bank contract.
-/// It maintains a registry of routes pointing to price feed sources.
-/// The price feed sources can be aggregators, liquidity pool oracles, or any other
-/// custom oracles that conform to the `IBaseOracle` interface.
+/**
+ * @title CoreOracle
+ * @notice This oracle contract provides reliable price feeds to the Bank contract.
+ * @dev It maintains a registry of routes pointing to price feed sources.
+ *      The price feed sources can be aggregators, liquidity pool oracles, or any other
+ *      custom oracles that conform to the `IBaseOracle` interface.
+ */
 contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Mapping from token to oracle routes. => Aggregator | LP Oracle | AdapterOracle ...
-    mapping(address => address) public routes;
+    mapping(address => address) private _routes;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -55,97 +56,51 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
     }
 
     /// @notice Pauses the contract.
-    /// This function can only be called by the owner.
     function pause() external onlyOwner {
         _pause();
     }
 
     /// @notice Unpauses the contract.
-    /// This function can only be called by the owner.
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /// @notice Register oracle routes for specific tokens.
-    /// @param tokens Array of token addresses.
-    /// @param oracleRoutes Array of oracle addresses corresponding to each token.
+    /**
+     * @notice Register oracle routes for specific tokens.
+     * @param tokens Array of token addresses.
+     * @param oracleRoutes Array of oracle addresses corresponding to each token.
+     */
     function setRoutes(address[] calldata tokens, address[] calldata oracleRoutes) external onlyOwner {
-        if (tokens.length != oracleRoutes.length) revert Errors.INPUT_ARRAY_MISMATCH();
-        for (uint256 i = 0; i < tokens.length; ++i) {
+        uint256 tokenLength = tokens.length;
+        if (tokenLength != oracleRoutes.length) revert Errors.INPUT_ARRAY_MISMATCH();
+
+        for (uint256 i = 0; i < tokenLength; ++i) {
             address token = tokens[i];
             address route = oracleRoutes[i];
             if (token == address(0) || route == address(0)) revert Errors.ZERO_ADDRESS();
 
-            routes[token] = route;
+            _routes[token] = route;
             emit SetRoute(token, route);
         }
     }
 
-    /// @dev Fetches the price of the given token in USD with 18 decimals precision.
-    /// @param token ERC-20 token address.
-    /// @return price Price of the token.
-    function _getPrice(address token) internal whenNotPaused returns (uint256) {
-        address route = routes[token];
-        if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
-
-        uint256 px = IBaseOracle(route).getPrice(token);
-        if (px == 0) revert Errors.PRICE_FAILED(token);
-
-        return px;
-    }
-
-    /// @notice Fetches the price of the given token in USD with 18 decimals precision.
-    /// @param token ERC-20 token address.
-    /// @return price Price of the token.
+    /// @inheritdoc IBaseOracle
     function getPrice(address token) external override returns (uint256) {
         return _getPrice(token);
     }
 
-    /// @dev Checks if the oracle supports the given ERC20 token.
-    /// @param token ERC20 token address to check.
-    /// @return bool True if supported, false otherwise.
-    function _isTokenSupported(address token) internal returns (bool) {
-        address route = routes[token];
-        if (route == address(0)) return false;
-
-        try IBaseOracle(route).getPrice(token) returns (uint256 price) {
-            return price != 0;
-        } catch {
-            return false;
-        }
-    }
-
-    /// @notice Checks if the oracle supports the given ERC20 token.
-    /// @param token ERC20 token address to check.
-    /// @return bool True if supported, false otherwise.
+    /// @inheritdoc ICoreOracle
     function isTokenSupported(address token) external override returns (bool) {
         return _isTokenSupported(token);
     }
 
-    /// @notice Determines if the oracle supports the underlying token of a given wrapped token.
-    /// @dev This is specific to the Blueberry protocol's ERC1155 wrappers (e.g., WERC20).
-    /// @param token ERC1155 token address.
-    /// @param tokenId ERC1155 token ID.
-    /// @return bool True if the underlying token is supported, false otherwise
+    /// @inheritdoc ICoreOracle
     function isWrappedTokenSupported(address token, uint256 tokenId) external override returns (bool) {
         address uToken = IERC20Wrapper(token).getUnderlyingToken(tokenId);
         return _isTokenSupported(uToken);
     }
 
-    /// @dev Fetches the USD value of the specified amount of a token.
-    /// @param token ERC20 token address.
-    /// @param amount Amount of the token.
-    /// @return value USD value of the token amount.
-    function _getTokenValue(address token, uint256 amount) internal returns (uint256 value) {
-        uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
-        value = (_getPrice(token) * amount) / 10 ** decimals;
-    }
-
-    /// @notice Calculates the USD value of wrapped ERC1155 tokens.
-    /// @param token ERC1155 Wrapper token address.
-    /// @param id ERC1155 token ID.
-    /// @param amount Token amount (assumed to be in 1e18 format).
-    /// @return positionValue The USD value of the wrapped token.
+    /// @inheritdoc ICoreOracle
     function getWrappedTokenValue(
         address token,
         uint256 id,
@@ -155,11 +110,42 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
         positionValue = _getTokenValue(uToken, amount);
     }
 
-    /// @notice Fetches the USD value of the specified amount of a token.
-    /// @param token ERC20 token address.
-    /// @param amount Amount of the token.
-    /// @return value USD value of the token amount.
+    /// @inheritdoc ICoreOracle
     function getTokenValue(address token, uint256 amount) external override returns (uint256) {
         return _getTokenValue(token, amount);
+    }
+
+    /// @inheritdoc ICoreOracle
+    function getRoute(address token) external view returns (address) {
+        return _routes[token];
+    }
+
+    /// @notice logic for `getPrice`
+    function _getPrice(address token) internal whenNotPaused returns (uint256) {
+        address route = _routes[token];
+        if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
+
+        uint256 px = IBaseOracle(route).getPrice(token);
+        if (px == 0) revert Errors.PRICE_FAILED(token);
+
+        return px;
+    }
+
+    /// @notice logic for `isTokenSupported` and `isWrappedTokenSupported`
+    function _isTokenSupported(address token) internal returns (bool) {
+        address route = _routes[token];
+        if (route == address(0)) return false;
+
+        try IBaseOracle(route).getPrice(token) returns (uint256 price) {
+            return price != 0;
+        } catch {
+            return false;
+        }
+    }
+
+    /// @notice logic for `getTokenValue` and `getWrappedTokenValue`
+    function _getTokenValue(address token, uint256 amount) internal returns (uint256 value) {
+        uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
+        value = (_getPrice(token) * amount) / 10 ** decimals;
     }
 }

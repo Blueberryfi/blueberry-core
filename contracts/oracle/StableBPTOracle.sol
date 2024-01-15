@@ -150,7 +150,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
      * @param token Address of the token to fetch the price for.
      */
     function _getMarketPrice(address token) internal returns (uint256) {
-        try base.getPrice(token) returns (uint256 price) {
+        try _base.getPrice(token) returns (uint256 price) {
             return price;
         } catch {
             try weightedPoolOracle.getPrice(token) returns (uint256 price) {

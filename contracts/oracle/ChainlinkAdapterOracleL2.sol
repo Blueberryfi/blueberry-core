@@ -104,7 +104,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /// @dev Fetches the price from the Chainlink price feed, checks sequencer status, and verifies price validity.
     function getPrice(address token_) external view override returns (uint256) {
         /// 1. Check for the maximum acceptable delay time.
-        uint256 maxDelayTime = timeGaps[token_];
+        uint256 maxDelayTime = _timeGaps[token_];
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token_);
 
         /// 2. L2 sequencer status check (0 = up, 1 = down).

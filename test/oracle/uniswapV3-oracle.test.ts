@@ -91,7 +91,7 @@ describe('Uniswap V3 Oracle', () => {
         'SetTimeGap'
       );
 
-      expect(await uniswapV3Oracle.timeGaps(ADDRESS.UNI)).to.be.equal(3600);
+      expect(await uniswapV3Oracle.getTimeGap(ADDRESS.UNI)).to.be.equal(3600);
     });
   });
 

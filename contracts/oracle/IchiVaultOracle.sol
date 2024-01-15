@@ -126,6 +126,8 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
         uint256 maxPriceDeviation = maxPriceDeviations[token0];
         if (!_isValidPrices(spotPrice, twapPrice, maxPriceDeviation)) revert Errors.EXCEED_DEVIATION();
 
+        IBaseOracle base = getBaseOracle();
+
         /// Total reserve / total supply
         (uint256 r0, uint256 r1) = vault.getTotalAmounts();
         uint256 px0 = base.getPrice(address(token0));
