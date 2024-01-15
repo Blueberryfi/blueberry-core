@@ -17,7 +17,7 @@ import {
   CurveStableOracle,
   CurveVolatileOracle,
   CurveTricryptoOracle,
-  WConvexPools,
+  WConvexBooster,
   ConvexSpell,
   Comptroller,
   PoolEscrow,
@@ -56,7 +56,7 @@ const LINK_PRICE = 7;
 
 export interface CvxProtocol {
   werc20: WERC20;
-  wconvex: WConvexPools;
+  wconvex: WConvexBooster;
   mockOracle: MockOracle;
   stableOracle: CurveStableOracle;
   volatileOracle: CurveVolatileOracle;
@@ -97,7 +97,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   let crv: ERC20;
   let weth: IWETH;
   let werc20: WERC20;
-  let wconvex: WConvexPools;
+  let wconvex: WConvexBooster;
   let mockOracle: MockOracle;
   let stableOracle: CurveStableOracle;
   let volatileOracle: CurveVolatileOracle;
@@ -378,10 +378,10 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
 
   await escrowFactory.deployed();
 
-  const WConvexPoolsFactory = await ethers.getContractFactory(CONTRACT_NAMES.WConvexPools);
+  const WConvexBoosterFactory = await ethers.getContractFactory(CONTRACT_NAMES.WConvexBooster);
 
-  wconvex = <WConvexPools>await upgrades.deployProxy(
-    WConvexPoolsFactory,
+  wconvex = <WConvexBooster>await upgrades.deployProxy(
+    WConvexBoosterFactory,
     [CVX, ADDRESS.CVX_BOOSTER, escrowFactory.address],
     {
       unsafeAllow: ['delegatecall'],

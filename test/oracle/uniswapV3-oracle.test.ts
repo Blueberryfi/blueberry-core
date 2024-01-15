@@ -66,7 +66,7 @@ describe('Uniswap V3 Oracle', () => {
         uniswapV3Oracle.setStablePools([ADDRESS.UNI, ADDRESS.ICHI], [ADDRESS.UNI_V3_UNI_USDC, ADDRESS.UNI_V3_ICHI_USDC])
       ).to.be.emit(uniswapV3Oracle, 'SetPoolStable');
 
-      const stablePool = await uniswapV3Oracle.stablePools(ADDRESS.UNI);
+      const stablePool = await uniswapV3Oracle.getStablePool(ADDRESS.UNI);
       expect(stablePool).to.be.equal(ADDRESS.UNI_V3_UNI_USDC);
     });
     it('should be able to set times ago', async () => {

@@ -18,25 +18,25 @@ import { BBMath } from "../libraries/BBMath.sol";
 import { UsingBaseOracle } from "./UsingBaseOracle.sol";
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 
-/// @author BlueberryProtocol
-/// @title Uniswap V2 Oracle
-/// @notice Oracle contract which privides price feeds of Uni V2 Lp tokens
-/// @dev Implented Fair Lp Pricing
-///      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
-contract UniswapV2Oracle is UsingBaseOracle, IBaseOracle {
+/**
+ *  @author BlueberryProtocol
+ *  @title Uniswap V2 Oracle
+ *  @notice Oracle contract which privides price feeds of Uni V2 Lp tokens
+ *  @dev Implented Fair Lp Pricing
+ *      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
+ */
+contract UniswapV2Oracle is IBaseOracle, UsingBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    constructor(IBaseOracle _base) UsingBaseOracle(_base) {}
+    constructor(IBaseOracle base) UsingBaseOracle(base) {}
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Return the USD based price of the given input, multiplied by 10**18.
-    /// @dev Fair LP Price Formula => Price = 2 * (sqrt(r0 x r1) x sqrt(p0 x p1)) / total supply
-    /// @param pair The Uniswap pair to check the value.
+    /// @inheritdoc IBaseOracle
     function getPrice(address pair) external override returns (uint256) {
         IUniswapV2Pair pool = IUniswapV2Pair(pair);
         uint256 totalSupply = pool.totalSupply();

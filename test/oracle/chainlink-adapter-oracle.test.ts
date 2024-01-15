@@ -47,7 +47,7 @@ describe('Chainlink Adapter Oracle', () => {
       );
     });
     it('should set feed registry', async () => {
-      expect(await chainlinkAdapterOracle.registry()).to.be.equal(ADDRESS.ChainlinkRegistry);
+      expect(await chainlinkAdapterOracle.getFeedRegistry()).to.be.equal(ADDRESS.ChainlinkRegistry);
     });
   });
   describe('Owner', () => {
@@ -65,7 +65,7 @@ describe('Chainlink Adapter Oracle', () => {
         .to.be.emit(chainlinkAdapterOracle, 'SetRegistry')
         .withArgs(ADDRESS.ChainlinkRegistry);
 
-      expect(await chainlinkAdapterOracle.registry()).to.be.equal(ADDRESS.ChainlinkRegistry);
+      expect(await chainlinkAdapterOracle.getFeedRegistry()).to.be.equal(ADDRESS.ChainlinkRegistry);
     });
     it('should be able to set maxDelayTimes', async () => {
       await expect(
@@ -114,7 +114,7 @@ describe('Chainlink Adapter Oracle', () => {
         'SetTokenRemapping'
       );
 
-      expect(await chainlinkAdapterOracle.remappedTokens(ADDRESS.USDC)).to.be.equal(ADDRESS.USDC);
+      expect(await chainlinkAdapterOracle.getTokenRemapping(ADDRESS.USDC)).to.be.equal(ADDRESS.USDC);
     });
   });
 

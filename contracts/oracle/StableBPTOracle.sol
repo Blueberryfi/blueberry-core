@@ -32,7 +32,9 @@ import { IRateProvider } from "../interfaces/balancer-v2/IRateProvider.sol";
 contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracle {
     using FixedPoint for uint256;
 
-    IBaseOracle public weightedPoolOracle;
+    /// @dev Address of the weighted pool oracle
+    IBaseOracle private _weightedPoolOracle;
+    /// @dev Address of the Balancer Vault
     IBalancerVault private immutable _VAULT;
 
     // Protects the oracle from being manipulated via read-only reentrancy
@@ -45,6 +47,12 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Constructs a new instance of the contract.
+     * @param vault Instance of the Balancer V2 Vault
+     * @param base The base oracle instance.
+     * @param owner Address of the owner of the contract.
+     */
     constructor(IBalancerVault vault, IBaseOracle base, address owner) UsingBaseOracle(base) Ownable2StepUpgradeable() {
         _VAULT = vault;
         _transferOwnership(owner);
@@ -54,10 +62,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Return the USD value of given Balancer Lp, with 18 decimals of precision.
-     * @param token The ERC-20 token to check the value.
-     */
+    /// @inheritdoc IBaseOracle
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
         uint256 minPrice;
         IBalancerV2StablePool pool = IBalancerV2StablePool(token);
@@ -100,13 +105,19 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
     function setWeightedPoolOracle(address oracle) external onlyOwner {
         if (oracle == address(0)) revert Errors.ZERO_ADDRESS();
 
-        weightedPoolOracle = IBaseOracle(oracle);
+        _weightedPoolOracle = IBaseOracle(oracle);
+    }
+
+    /// @notice Returns the weighted pool oracle address
+    function getWeightedPoolOracle() external view returns (address) {
+        return address(_weightedPoolOracle);
     }
 
     /**
      * @notice Returns the minimum price of a given array of tokens
      * @param tokens An array of tokens within the pool
      * @param rateProviders An array of rate providers associated with the tokens in the pool
+     * @return The minimum price of the given array of tokens
      */
     function _getTokensMinPrice(address[] memory tokens, address[] memory rateProviders) internal returns (uint256) {
         uint256 minPrice;
@@ -131,6 +142,7 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
      * @notice Returns the price of a given token
      * @param rateProvider The rate provider associated with the token
      * @param minCandidate The token to calculate the minimum price for
+     * @return The price of the given token
      */
     function _calculateMinCandidatePrice(IRateProvider rateProvider, address minCandidate) internal returns (uint256) {
         uint256 minCandidatePrice = _getMarketPrice(minCandidate);
@@ -148,12 +160,13 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
      * @dev If the token is not supported by the base oracle, we assume that it is a nested pool
      *    and we will try to get the price from the weighted pool oracle or recursively
      * @param token Address of the token to fetch the price for.
+     * @return The Market price of the given token
      */
     function _getMarketPrice(address token) internal returns (uint256) {
         try _base.getPrice(token) returns (uint256 price) {
             return price;
         } catch {
-            try weightedPoolOracle.getPrice(token) returns (uint256 price) {
+            try _weightedPoolOracle.getPrice(token) returns (uint256 price) {
                 return price;
             } catch {
                 return getPrice(token);
