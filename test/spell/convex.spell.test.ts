@@ -401,7 +401,7 @@ describe('Convex Spell', () => {
       const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
       console.log('Pending Rewards', pendingRewardsInfo);
 
-      const rewardFeeRatio = await config.rewardFee();
+      const rewardFeeRatio = await config.getRewardFee();
 
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
         reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)
@@ -518,7 +518,7 @@ describe('Convex Spell', () => {
       const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
       console.log('Pending Rewards', pendingRewardsInfo);
 
-      const rewardFeeRatio = await config.rewardFee();
+      const rewardFeeRatio = await config.getRewardFee();
 
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward) => {
         return (
@@ -557,7 +557,7 @@ describe('Convex Spell', () => {
         const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
         console.log('Pending Rewards', pendingRewardsInfo);
 
-        const rewardFeeRatio = await config.rewardFee();
+        const rewardFeeRatio = await config.getRewardFee();
 
         const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
           reward.mul(BigNumber.from(10000).sub(rewardFeeRatio)).div(10000)

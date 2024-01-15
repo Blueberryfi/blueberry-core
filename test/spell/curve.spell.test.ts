@@ -423,7 +423,7 @@ describe('Curve Spell', () => {
       const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
 
-      const rewardFeeRatio = await config.rewardFee();
+      const rewardFeeRatio = await config.getRewardFee();
 
       const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
       const swapData = await getParaswapCalldata(CRV, USDC, expectedAmount, spell.address, 100);
@@ -463,7 +463,7 @@ describe('Curve Spell', () => {
       const positionId = (await bank.nextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
 
-      const rewardFeeRatio = await config.rewardFee();
+      const rewardFeeRatio = await config.getRewardFee();
 
       const expectedAmount = amount.sub(amount.mul(rewardFeeRatio).div(10000));
       const swapData = await getParaswapCalldata(CRV, USDC, expectedAmount, spell.address, 100);

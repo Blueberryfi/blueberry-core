@@ -143,9 +143,9 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
         _burn(msg.sender, _encodeTokenId(token), shareAmount);
 
         /// Apply withdrawal fee if within the fee window (e.g., 2 months)
-        IERC20(address(uToken)).universalApprove(address(config.feeManager()), shareAmount);
+        IERC20(address(uToken)).universalApprove(address(config.getFeeManager()), shareAmount);
 
-        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(address(uToken), shareAmount);
+        withdrawAmount = config.getFeeManager().doCutVaultWithdrawFee(address(uToken), shareAmount);
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);
