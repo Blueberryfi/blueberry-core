@@ -418,7 +418,7 @@ describe('Aura Spell', () => {
 
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
 
-      const rewardFeeRatio = await config.rewardFee();
+      const rewardFeeRatio = await config.getRewardFee();
 
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
         reward.sub(reward.mul(rewardFeeRatio).div(10000))
@@ -477,7 +477,7 @@ describe('Aura Spell', () => {
 
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
 
-      const rewardFeeRatio = await config.rewardFee();
+      const rewardFeeRatio = await config.getRewardFee();
 
       const expectedAmounts = pendingRewardsInfo.rewards.map((reward) =>
         reward.sub(reward.mul(rewardFeeRatio).div(10000))

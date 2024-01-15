@@ -62,7 +62,7 @@ describe('Aura Spell Strategy test', () => {
     waura = strat.waura;
     config = strat.protocol.config;
     auraBooster = strat.auraBooster;
-    rewardFeePct = await config.rewardFee();
+    rewardFeePct = await config.getRewardFee();
 
     dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     aura = <ERC20>await ethers.getContractAt('ERC20', AURA);
