@@ -230,7 +230,7 @@ contract ShortLongSpell is BasicSpell {
         IWERC20 werc20 = getWrappedERC20();
         Strategy memory strategy = _strategies[param.strategyId];
 
-        address vault = _strategies[param.strategyId].vault;
+        address vault = strategy.vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
@@ -241,7 +241,7 @@ contract ShortLongSpell is BasicSpell {
         /// 1. Take out collateral
         uint256 burnAmount = bank.takeCollateral(param.amountPosRemove);
 
-        werc20.burn(address(ISoftVault(strategy.vault)), burnAmount);
+        werc20.burn(vault, burnAmount);
 
         /// 2-7. Remove liquidity
         _withdraw(param, swapData);
