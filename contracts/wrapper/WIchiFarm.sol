@@ -11,7 +11,6 @@
 pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
-import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
@@ -22,6 +21,8 @@ import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/O
 import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BaseWrapper } from "./BaseWrapper.sol";
 
 import { BBMath } from "../libraries/BBMath.sol";
 import { IWIchiFarm } from "../interfaces/IWIchiFarm.sol";
@@ -37,7 +38,7 @@ import { IIchiFarm } from "../interfaces/ichi/IIchiFarm.sol";
  *      At the same time, Underlying LPs will be deposited to ICHI farming pools and generate yields
  *      LP Tokens are identified by tokenIds encoded from lp token address and accPerShare of deposited time
  */
-contract WIchiFarm is IWIchiFarm, ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, OwnableUpgradeable {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeERC20Upgradeable for IIchiV2;
@@ -202,15 +203,5 @@ contract WIchiFarm is IWIchiFarm, ERC1155Upgradeable, ReentrancyGuardUpgradeable
     function getUnderlyingToken(uint256 id) external view override returns (address) {
         (uint256 pid, ) = decodeId(id);
         return _ichiFarm.lpToken(pid);
-    }
-
-    /**
-     * @notice Verifies that the provided token id is unique and has not been minted yet
-     * @param id The token id to validate
-     */
-    function _validateTokenId(uint256 id) internal view {
-        if (balanceOf(msg.sender, id) != 0) {
-            revert Errors.DUPLICATE_TOKEN_ID(id);
-        }
     }
 }

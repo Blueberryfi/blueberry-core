@@ -25,11 +25,13 @@ import { IBank } from "../interfaces/IBank.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 
-/// @title Short/Long Spell
-/// @author BlueberryProtocol
-/// @notice Short/Long Spell is the factory contract that
-///         defines how Blueberry Protocol interacts for leveraging
-///         an asset either long or short
+/**
+ * @title Short/Long Spell
+ * @author BlueberryProtocol
+ * @notice Short/Long Spell is the factory contract that
+ *          defines how Blueberry Protocol interacts for leveraging
+ *          an asset either long or short
+ */
 contract ShortLongSpell is BasicSpell {
     using SafeCast for uint256;
     using SafeCast for int256;
@@ -53,39 +55,43 @@ contract ShortLongSpell is BasicSpell {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Initializes the contract
-    /// @param bank_ The bank interface
-    /// @param werc20_ Wrapped ERC20 interface
-    /// @param weth_ Wrapped Ether address
-    /// @param augustusSwapper_ Augustus Swapper address
-    /// @param tokenTransferProxy_ Token Transfer Proxy address
+    /**
+     * @notice Initializes the contract
+     * @param bank The bank interface
+     * @param werc20 Wrapped ERC20 interface
+     * @param weth Wrapped Ether address
+     * @param augustusSwapper Augustus Swapper address
+     * @param tokenTransferProxy Token Transfer Proxy address
+     */
     function initialize(
-        IBank bank_,
-        address werc20_,
-        address weth_,
-        address augustusSwapper_,
-        address tokenTransferProxy_
+        IBank bank,
+        address werc20,
+        address weth,
+        address augustusSwapper,
+        address tokenTransferProxy
     ) external initializer {
-        if (augustusSwapper_ == address(0)) revert Errors.ZERO_ADDRESS();
-        if (tokenTransferProxy_ == address(0)) revert Errors.ZERO_ADDRESS();
+        if (augustusSwapper == address(0)) revert Errors.ZERO_ADDRESS();
+        if (tokenTransferProxy == address(0)) revert Errors.ZERO_ADDRESS();
 
-        augustusSwapper = augustusSwapper_;
-        tokenTransferProxy = tokenTransferProxy_;
+        _augustusSwapper = augustusSwapper;
+        _tokenTransferProxy = tokenTransferProxy;
 
-        __BasicSpell_init(bank_, werc20_, weth_, augustusSwapper_, tokenTransferProxy_);
+        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
     }
 
-    /// @notice Internal function to swap token using paraswap assets
-    /// @dev Deposit isolated underlying to Blueberry Money Market,
-    ///      Borrow tokens from Blueberry Money Market,
-    ///      Swap borrowed token to another token
-    ///      Then deposit swapped token to softvault,
-    /// @param param Parameters for opening position
-    /// @dev params found in OpenPosParam struct in {BasicSpell}
-    /// @param swapData Data for paraswap swap
-    /// @dev swapData found in bytes struct in {PSwapLib}
+    /**
+     * @notice Internal function to swap token using paraswap assets
+     * @dev Deposit isolated underlying to Blueberry Money Market,
+     *      Borrow tokens from Blueberry Money Market,
+     *      Swap borrowed token to another token
+     *      Then deposit swapped token to softvault,
+     * @param param Parameters for opening position
+     * @dev params found in OpenPosParam struct in {BasicSpell}
+     * @param swapData Data for paraswap swap
+     * @dev swapData found in bytes struct in {PSwapLib}
+     */
     function _deposit(OpenPosParam calldata param, bytes calldata swapData) internal {
-        Strategy memory strategy = strategies[param.strategyId];
+        Strategy memory strategy = _strategies[param.strategyId];
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
@@ -98,7 +104,7 @@ contract ShortLongSpell is BasicSpell {
         uint256 dstTokenAmt = swapToken.balanceOf(address(this));
 
         address borrowToken = param.borrowToken;
-        if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, borrowToken, param.borrowAmount, swapData)) {
+        if (!PSwapLib.swap(_augustusSwapper, _tokenTransferProxy, borrowToken, param.borrowAmount, swapData)) {
             revert Errors.SWAP_FAILED(borrowToken);
         }
 
@@ -116,22 +122,24 @@ contract ShortLongSpell is BasicSpell {
         _validatePosSize(param.strategyId);
     }
 
-    /// @notice Opens a position using provided parameters and swap data.
-    /// @dev This function first deposits an isolated underlying asset to Blueberry Money Market,
-    /// then borrows tokens from it. The borrowed tokens are swapped for another token using
-    /// ParaSwap and the resulting tokens are deposited into the softvault.
-    ///
-    /// Pre-conditions:
-    /// - Strategy for `param.strategyId` must exist.
-    /// - Collateral for `param.strategyId` and `param.collToken` must exist.
-    ///
-    /// @param param Parameters required to open the position, described in the `OpenPosParam` struct from {BasicSpell}.
-    /// @param swapData Specific data needed for the ParaSwap swap, structured in the `bytes` format from {PSwapLib}.
+    /**
+     * @notice Opens a position using provided parameters and swap data.
+     * @dev This function first deposits an isolated underlying asset to Blueberry Money Market,
+     * then borrows tokens from it. The borrowed tokens are swapped for another token using
+     * ParaSwap and the resulting tokens are deposited into the softvault.
+     *
+     * Pre-conditions:
+     * - Strategy for `param.strategyId` must exist.
+     * - Collateral for `param.strategyId` and `param.collToken` must exist.
+     *
+     * @param param Parameters required to open the position, described in the `OpenPosParam` struct from {BasicSpell}.
+     * @param swapData Specific data needed for the ParaSwap swap, structured in the `bytes` format from {PSwapLib}.
+     */
     function openPosition(
         OpenPosParam calldata param,
         bytes calldata swapData
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        Strategy memory strategy = strategies[param.strategyId];
+        Strategy memory strategy = _strategies[param.strategyId];
         if (address(ISoftVault(strategy.vault).uToken()) == param.borrowToken) {
             revert Errors.INCORRECT_LP(param.borrowToken);
         }
@@ -140,17 +148,21 @@ contract ShortLongSpell is BasicSpell {
         _deposit(param, swapData);
 
         /// 4. Put collateral - strategy token
-        address vault = strategies[param.strategyId].vault;
+        address vault = _strategies[param.strategyId].vault;
 
         _doPutCollateral(vault, IERC20Upgradeable(ISoftVault(vault)).balanceOf(address(this)));
     }
 
-    /// @notice Internal utility function to handle the withdrawal of assets from SoftVault.
-    /// @param param Parameters required for the withdrawal, described in the `ClosePosParam` struct.
-    /// @param swapData Specific data needed for the ParaSwap swap.
+    /**
+     * @notice Internal utility function to handle the withdrawal of assets from SoftVault.
+     * @param param Parameters required for the withdrawal, described in the `ClosePosParam` struct.
+     * @param swapData Specific data needed for the ParaSwap swap.
+     */
     function _withdraw(ClosePosParam calldata param, bytes calldata swapData) internal {
-        Strategy memory strategy = strategies[param.strategyId];
+        Strategy memory strategy = _strategies[param.strategyId];
         ISoftVault vault = ISoftVault(strategy.vault);
+        IBank bank = getBank();
+
         uint256 positionId = bank.POSITION_ID();
 
         /// 1. Calculate actual amount to remove
@@ -167,7 +179,7 @@ contract ShortLongSpell is BasicSpell {
             IERC20Upgradeable uToken = ISoftVault(strategy.vault).uToken();
             uint256 balanceBefore = uToken.balanceOf(address(this));
 
-            if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, address(uToken), swapAmount, swapData))
+            if (!PSwapLib.swap(_augustusSwapper, _tokenTransferProxy, address(uToken), swapAmount, swapData))
                 revert Errors.SWAP_FAILED(address(uToken));
 
             if (uToken.balanceOf(address(this)) > balanceBefore - swapAmount) {
@@ -197,24 +209,28 @@ contract ShortLongSpell is BasicSpell {
         _doRefund(param.collToken);
     }
 
-    /// @notice Externally callable function to close a position using provided parameters and swap data.
-    /// @dev This function is a higher-level action that internally calls `_withdraw` to manage the closing
-    /// of a position. It ensures the given strategy and collateral exist, and then carries out the required
-    /// operations to close the position.
-    ///
-    /// Pre-conditions:
-    /// - Strategy for `param.strategyId` must exist.
-    /// - Collateral for `param.strategyId` and `param.collToken` must exist.
-    ///
-    /// @param param Parameters required to close the position, described in the `ClosePosParam` struct.
-    /// @param swapData Specific data needed for the ParaSwap swap.
+    /**
+     * @notice Externally callable function to close a position using provided parameters and swap data.
+     * @dev This function is a higher-level action that internally calls `_withdraw` to manage the closing
+     * of a position. It ensures the given strategy and collateral exist, and then carries out the required
+     * operations to close the position.
+     *
+     * Pre-conditions:
+     * - Strategy for `param.strategyId` must exist.
+     * - Collateral for `param.strategyId` and `param.collToken` must exist.
+     *
+     * @param param Parameters required to close the position, described in the `ClosePosParam` struct.
+     * @param swapData Specific data needed for the ParaSwap swap.
+     */
     function closePosition(
         ClosePosParam calldata param,
         bytes calldata swapData
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        Strategy memory strategy = strategies[param.strategyId];
+        IBank bank = getBank();
+        IWERC20 werc20 = getWrappedERC20();
+        Strategy memory strategy = _strategies[param.strategyId];
 
-        address vault = strategies[param.strategyId].vault;
+        address vault = _strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
@@ -231,10 +247,12 @@ contract ShortLongSpell is BasicSpell {
         _withdraw(param, swapData);
     }
 
-    /// @notice Add strategy to the spell
-    /// @param swapToken Address of token for given strategy
-    /// @param minPosSize USD price of minimum position size for given strategy, based 1e18
-    /// @param maxPosSize USD price of maximum position size for given strategy, based 1e18
+    /**
+     * @notice Add strategy to the spell
+     * @param swapToken Address of token for given strategy
+     * @param minPosSize USD price of minimum position size for given strategy, based 1e18
+     * @param maxPosSize USD price of maximum position size for given strategy, based 1e18
+     */
     function addStrategy(address swapToken, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(swapToken, minPosSize, maxPosSize);
     }
