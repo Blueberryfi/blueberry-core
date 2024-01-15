@@ -45,7 +45,7 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
     /// @dev address of bToken for underlying token
     IBErc20 private _bToken;
     /// @dev address of underlying token
-    IERC20Upgradeable private _uToken;
+    IERC20Upgradeable private _underlyingToken;
     /// @dev address of protocol config
     IProtocolConfig private _config;
 
@@ -77,7 +77,7 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
         IERC20Upgradeable uToken = IERC20Upgradeable(bToken.underlying());
         _config = config;
         _bToken = bToken;
-        _uToken = uToken;
+        _underlyingToken = uToken;
     }
 
     /*
@@ -92,14 +92,18 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
     /// @inheritdoc ISoftVault
     function deposit(uint256 amount) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
-        uint256 uBalanceBefore = _uToken.balanceOf(address(this));
-        _uToken.safeTransferFrom(msg.sender, address(this), amount);
-        uint256 uBalanceAfter = _uToken.balanceOf(address(this));
 
-        uint256 cBalanceBefore = _bToken.balanceOf(address(this));
-        IERC20(address(_uToken)).universalApprove(address(_bToken), amount);
-        if (_bToken.mint(uBalanceAfter - uBalanceBefore) != 0) revert Errors.LEND_FAILED(amount);
-        uint256 cBalanceAfter = _bToken.balanceOf(address(this));
+        IBErc20 bToken = _bToken;
+        IERC20Upgradeable underlyingToken = _underlyingToken;
+
+        uint256 uBalanceBefore = underlyingToken.balanceOf(address(this));
+        underlyingToken.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 uBalanceAfter = underlyingToken.balanceOf(address(this));
+
+        uint256 cBalanceBefore = bToken.balanceOf(address(this));
+        IERC20(address(underlyingToken)).universalApprove(address(bToken), amount);
+        if (bToken.mint(uBalanceAfter - uBalanceBefore) != 0) revert Errors.LEND_FAILED(amount);
+        uint256 cBalanceAfter = bToken.balanceOf(address(this));
 
         shareAmount = cBalanceAfter - cBalanceBefore;
         _mint(msg.sender, shareAmount);
@@ -111,17 +115,21 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
     function withdraw(uint256 shareAmount) external override nonReentrant returns (uint256 withdrawAmount) {
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
 
+        IBErc20 bToken = _bToken;
+        IERC20Upgradeable underlyingToken = _underlyingToken;
+        IProtocolConfig config = _config;
+
         _burn(msg.sender, shareAmount);
 
-        uint256 uBalanceBefore = _uToken.balanceOf(address(this));
-        if (_bToken.redeem(shareAmount) != 0) revert Errors.REDEEM_FAILED(shareAmount);
-        uint256 uBalanceAfter = _uToken.balanceOf(address(this));
+        uint256 uBalanceBefore = underlyingToken.balanceOf(address(this));
+        if (bToken.redeem(shareAmount) != 0) revert Errors.REDEEM_FAILED(shareAmount);
+        uint256 uBalanceAfter = underlyingToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
-        IERC20(address(_uToken)).universalApprove(address(_config.feeManager()), withdrawAmount);
+        IERC20(address(underlyingToken)).universalApprove(address(config.feeManager()), withdrawAmount);
 
-        withdrawAmount = _config.feeManager().doCutVaultWithdrawFee(address(_uToken), withdrawAmount);
-        _uToken.safeTransfer(msg.sender, withdrawAmount);
+        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(address(underlyingToken), withdrawAmount);
+        underlyingToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);
     }
@@ -133,7 +141,7 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
 
     /// @inheritdoc ISoftVault
     function getUnderlyingToken() external view override returns (IERC20Upgradeable) {
-        return _uToken;
+        return _underlyingToken;
     }
 
     /// @inheritdoc ISoftVault

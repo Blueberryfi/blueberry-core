@@ -99,12 +99,14 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
     /// @inheritdoc IHardVault
     function deposit(address token, uint256 amount) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
-        IERC20Upgradeable uToken = IERC20Upgradeable(token);
-        uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        uToken.safeTransferFrom(msg.sender, address(this), amount);
-        uint256 uBalanceAfter = uToken.balanceOf(address(this));
 
-        shareAmount = uBalanceAfter - uBalanceBefore;
+        IERC20Upgradeable underlyingToken = IERC20Upgradeable(token);
+
+        uint256 underlyingBalanceBefore = underlyingToken.balanceOf(address(this));
+        underlyingToken.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 underlyingBalanceAfter = underlyingToken.balanceOf(address(this));
+
+        shareAmount = underlyingBalanceAfter - underlyingBalanceBefore;
         _mint(msg.sender, uint256(uint160(token)), shareAmount, "");
 
         emit Deposited(msg.sender, amount, shareAmount);
@@ -116,13 +118,16 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
         uint256 shareAmount
     ) external override nonReentrant returns (uint256 withdrawAmount) {
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
+
+        IProtocolConfig config = _config;
+
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         _burn(msg.sender, _encodeTokenId(token), shareAmount);
 
         /// Apply withdrawal fee if within the fee window (e.g., 2 months)
-        IERC20(address(uToken)).universalApprove(address(_config.feeManager()), shareAmount);
+        IERC20(address(uToken)).universalApprove(address(config.feeManager()), shareAmount);
 
-        withdrawAmount = _config.feeManager().doCutVaultWithdrawFee(address(uToken), shareAmount);
+        withdrawAmount = config.feeManager().doCutVaultWithdrawFee(address(uToken), shareAmount);
         uToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);
