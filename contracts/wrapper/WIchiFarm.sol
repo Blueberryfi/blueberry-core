@@ -29,13 +29,15 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IIchiV2 } from "../interfaces/ichi/IIchiV2.sol";
 import { IIchiFarm } from "../interfaces/ichi/IIchiFarm.sol";
 
-/// @title WIchiFarm
-/// @author BlueberryProtocol
-/// @notice Wrapped IchiFarm is the wrapper of ICHI MasterChef
-/// @dev Leveraged ICHI Lp Tokens will be wrapped here and be held in BlueberryBank.
-///      At the same time, Underlying LPs will be deposited to ICHI farming pools and generate yields
-///      LP Tokens are identified by tokenIds encoded from lp token address and accPerShare of deposited time
-contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable, IERC20Wrapper, IWIchiFarm {
+/**
+ * @title WIchiFarm
+ * @author BlueberryProtocol
+ * @notice Wrapped IchiFarm is the wrapper of ICHI MasterChef
+ * @dev Leveraged ICHI Lp Tokens will be wrapped here and be held in BlueberryBank.
+ *      At the same time, Underlying LPs will be deposited to ICHI farming pools and generate yields
+ *      LP Tokens are identified by tokenIds encoded from lp token address and accPerShare of deposited time
+ */
+contract WIchiFarm is IWIchiFarm, ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeERC20Upgradeable for IIchiV2;
@@ -46,11 +48,11 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev address of legacy ICHI token
-    IERC20Upgradeable public ichiV1;
+    IERC20Upgradeable private _ichiV1;
     /// @dev address of ICHI v2
-    IIchiV2 public ichiV2;
+    IIchiV2 private _ichiV2;
     /// @dev address of ICHI farming contract
-    IIchiFarm public ichiFarm;
+    IIchiFarm private _ichiFarm;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -65,29 +67,25 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the contract with the given ICHI token addresses.
-    /// @param ichi_ Address of ICHI v2 token.
-    /// @param ichiV1_ Address of legacy ICHI token.
-    /// @param ichiFarm_ Address of ICHI farming contract.
-    function initialize(address ichi_, address ichiV1_, address ichiFarm_) external initializer {
-        if (address(ichi_) == address(0) || address(ichiV1_) == address(0) || address(ichiFarm_) == address(0))
+    /**
+     * @notice Initializes the contract with the given ICHI token addresses.
+     * @param ichi Address of ICHI v2 token.
+     * @param ichiV1 Address of legacy ICHI token.
+     * @param ichiFarm Address of ICHI farming contract.
+     */
+    function initialize(address ichi, address ichiV1, address ichiFarm) external initializer {
+        if (address(ichi) == address(0) || address(ichiV1) == address(0) || address(ichiFarm) == address(0))
             revert Errors.ZERO_ADDRESS();
 
         __ReentrancyGuard_init();
-        __ERC1155_init("WIchiFarm");
+        __ERC1155_init("wIchiFarm");
 
-        ichiV2 = IIchiV2(ichi_);
-        ichiV1 = IERC20Upgradeable(ichiV1_);
-        ichiFarm = IIchiFarm(ichiFarm_);
+        _ichiV2 = IIchiV2(ichi);
+        _ichiV1 = IERC20Upgradeable(ichiV1);
+        _ichiFarm = IIchiFarm(ichiFarm);
     }
 
-    /// @notice Encodes the provided pool ID and ichiPerShare value into a single 256-bit ERC1155 token ID.
-    /// The token ID is structured as follows:
-    /// - The first 16 bits store the pool ID.
-    /// - The remaining 240 bits store the ichiPerShare value.
-    /// @param pid The pool ID to encode. Must be representable in 16 bits.
-    /// @param ichiPerShare Ichi amount per share, multiplied by 1e18. Must be representable in 240-bits.
-    /// @return id The ERC1155 token id that gets minted.
+    /// @inheritdoc IWIchiFarm
     function encodeId(uint256 pid, uint256 ichiPerShare) public pure returns (uint256 id) {
         if (pid >= (1 << 16)) revert Errors.BAD_PID(pid);
         if (ichiPerShare >= (1 << 240)) revert Errors.BAD_REWARD_PER_SHARE(ichiPerShare);
@@ -95,53 +93,15 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
         return (pid << 240) | ichiPerShare;
     }
 
-    /// @notice Decodes the provided ERC1155 token ID into its constituent pool ID and ichiPerShare value.
-    /// The token ID is structured as follows:
-    /// - The first 16 bits store the pool ID.
-    /// - The remaining 240 bits store the ichiPerShare value.
-    /// @param id The ERC1155 token ID to decode.
-    /// @return pid The extracted pool ID (first 16 bits of the token ID)
-    /// @return ichiPerShare The extracted ichiPerShare value (last 240 bits of the token ID).
+    /// @inheritdoc IWIchiFarm
     function decodeId(uint256 id) public pure returns (uint256 pid, uint256 ichiPerShare) {
         pid = id >> 240; // First 16 bits
         ichiPerShare = id & ((1 << 240) - 1); // Last 240 bits
     }
 
-    /// @notice Return the underlying ERC-20 for the given ERC-1155 token id.
-    /// @param id Token id
-    function getUnderlyingToken(uint256 id) external view override returns (address) {
-        (uint256 pid, ) = decodeId(id);
-        return ichiFarm.lpToken(pid);
-    }
-
-    /// @notice Return pending rewards from the farming pool
-    /// @param tokenId Token Id
-    /// @param amount amount of share
-    function pendingRewards(
-        uint256 tokenId,
-        uint amount
-    ) public view override returns (address[] memory tokens, uint256[] memory rewards) {
-        (uint256 pid, uint256 stIchiPerShare) = decodeId(tokenId);
-        uint256 lpDecimals = IERC20MetadataUpgradeable(ichiFarm.lpToken(pid)).decimals();
-        (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
-
-        /// Multiple by 1e9 because reward token should be converted from ICHI v1 to ICHI v2
-        /// ICHI v1 decimal: 9, ICHI v2 Decimal: 18
-        uint256 stIchi = 1e9 * (stIchiPerShare * amount).divCeil(10 ** lpDecimals);
-        uint256 enIchi = (1e9 * (enIchiPerShare * amount)) / (10 ** lpDecimals);
-        uint256 ichiRewards = enIchi > stIchi ? enIchi - stIchi : 0;
-
-        tokens = new address[](1);
-        rewards = new uint256[](1);
-        tokens[0] = address(ichiV2);
-        rewards[0] = ichiRewards;
-    }
-
-    /// @notice Mint ERC1155 token for the given pool id.
-    /// @param pid Pool id
-    /// @param amount Token amount to wrap
-    /// @return The ERC1155 token id that gets minted.
+    /// @inheritdoc IWIchiFarm
     function mint(uint256 pid, uint256 amount) external nonReentrant returns (uint256) {
+        IIchiFarm ichiFarm = getIchiFarm();
         address lpToken = ichiFarm.lpToken(pid);
         IERC20Upgradeable(lpToken).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -157,10 +117,7 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
         return id;
     }
 
-    /// @notice Burn an ERC1155 token to reclaim the original LP tokens and any farming rewards.
-    /// @param id ERC1155 token id
-    /// @param amount Amount of ERC-1155 tokens to burn.
-    /// @return The amount of tokens received as farming rewards.
+    /// @inheritdoc IWIchiFarm
     function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
         if (amount == type(uint256).max) {
             amount = balanceOf(msg.sender, id);
@@ -168,13 +125,16 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
         (uint256 pid, ) = decodeId(id);
         _burn(msg.sender, id, amount);
 
+        IIchiFarm ichiFarm = getIchiFarm();
+        IIchiV2 ichiV2 = getIchiV2();
+
         uint256 ichiRewards = ichiFarm.pendingIchi(pid, address(this));
         ichiFarm.harvest(pid, address(this));
         ichiFarm.withdraw(pid, amount, address(this));
 
         /// Convert Legacy ICHI to ICHI v2
         if (ichiRewards > 0) {
-            IERC20(address(ichiV1)).universalApprove(address(ichiV2), ichiRewards);
+            IERC20(address(_ichiV1)).universalApprove(address(ichiV2), ichiRewards);
             ichiV2.convertToV2(ichiRewards);
         }
 
@@ -193,6 +153,50 @@ contract WIchiFarm is ERC1155Upgradeable, ReentrancyGuardUpgradeable, OwnableUpg
             );
         }
         return rewards[0];
+    }
+
+    /// @inheritdoc IERC20Wrapper
+    function pendingRewards(
+        uint256 tokenId,
+        uint amount
+    ) public view override returns (address[] memory tokens, uint256[] memory rewards) {
+        (uint256 pid, uint256 stIchiPerShare) = decodeId(tokenId);
+        IIchiFarm ichiFarm = getIchiFarm();
+
+        uint256 lpDecimals = IERC20MetadataUpgradeable(ichiFarm.lpToken(pid)).decimals();
+        (uint256 enIchiPerShare, , ) = ichiFarm.poolInfo(pid);
+
+        /// Multiple by 1e9 because reward token should be converted from ICHI v1 to ICHI v2
+        /// ICHI v1 decimal: 9, ICHI v2 Decimal: 18
+        uint256 stIchi = 1e9 * (stIchiPerShare * amount).divCeil(10 ** lpDecimals);
+        uint256 enIchi = (1e9 * (enIchiPerShare * amount)) / (10 ** lpDecimals);
+        uint256 ichiRewards = enIchi > stIchi ? enIchi - stIchi : 0;
+
+        tokens = new address[](1);
+        rewards = new uint256[](1);
+        tokens[0] = address(getIchiV2());
+        rewards[0] = ichiRewards;
+    }
+
+    /// @inheritdoc IWIchiFarm
+    function getIchiV1() external view override returns (IERC20Upgradeable) {
+        return _ichiV1;
+    }
+
+    /// @inheritdoc IWIchiFarm
+    function getIchiV2() public view override returns (IIchiV2) {
+        return _ichiV2;
+    }
+
+    /// @inheritdoc IWIchiFarm
+    function getIchiFarm() public view override returns (IIchiFarm) {
+        return _ichiFarm;
+    }
+
+    /// @inheritdoc IERC20Wrapper
+    function getUnderlyingToken(uint256 id) external view override returns (address) {
+        (uint256 pid, ) = decodeId(id);
+        return _ichiFarm.lpToken(pid);
     }
 
     /**

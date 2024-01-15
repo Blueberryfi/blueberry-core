@@ -26,9 +26,11 @@ import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
 import { IUniswapV3Router } from "../interfaces/uniswap/IUniswapV3Router.sol";
 import { IWIchiFarm } from "../interfaces/IWIchiFarm.sol";
 
-/// @title IchiSpell
-/// @author BlueberryProtocol
-/// @notice Factory contract that defines the interaction between the Blueberry Protocol and Ichi Vaults.
+/**
+ * @title IchiSpell
+ * @author BlueberryProtocol
+ * @notice Factory contract that defines the interaction between the Blueberry Protocol and Ichi Vaults.
+ */
 contract IchiSpell is BasicSpell {
     using SafeCast for uint256;
     using SafeCast for int256;
@@ -41,11 +43,10 @@ contract IchiSpell is BasicSpell {
 
     /// @dev Address of the Uniswap V3 router.
     IUniswapV3Router private _uniV3Router;
-
     /// @dev Address of the ICHI farm wrapper.
-    IWIchiFarm public wIchiFarm;
+    IWIchiFarm private _wIchiFarm;
     /// @dev Address of the ICHI token.
-    address public ichiV2;
+    address private _ichiV2;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -60,44 +61,166 @@ contract IchiSpell is BasicSpell {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Initializes contract with essential external dependencies.
-    /// @param bank_ Address of the bank.
-    /// @param werc20_ Address of the wrapped ERC20.
-    /// @param weth_ Address of WETH.
-    /// @param wichiFarm_ Address of ICHI farm wrapper.
-    /// @param uniV3Router_ Address of the Uniswap V3 router.
-    /// @param augustusSwapper_ Augustus Swapper address
-    /// @param tokenTransferProxy_ Token Transfer Proxy address
+    /**
+     * @notice Initializes the contract with required parameters.
+     * @param bank Reference to the Bank contract.
+     * @param werc20 Reference to the WERC20 contract.
+     * @param weth Address of the wrapped Ether token.
+     * @param wichiFarm Address of the wrapped Ichi Farm contract.
+     * @param augustusSwapper Address of the paraswap AugustusSwapper.
+     * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     */
     function initialize(
-        IBank bank_,
-        address werc20_,
-        address weth_,
-        address wichiFarm_,
-        address uniV3Router_,
-        address augustusSwapper_,
-        address tokenTransferProxy_
+        IBank bank,
+        address werc20,
+        address weth,
+        address wichiFarm,
+        address uniV3Router,
+        address augustusSwapper,
+        address tokenTransferProxy
     ) external initializer {
-        __BasicSpell_init(bank_, werc20_, weth_, augustusSwapper_, tokenTransferProxy_);
-        if (wichiFarm_ == address(0)) revert Errors.ZERO_ADDRESS();
+        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
+        if (wichiFarm == address(0)) revert Errors.ZERO_ADDRESS();
 
-        wIchiFarm = IWIchiFarm(wichiFarm_);
-        ichiV2 = address(wIchiFarm.ichiV2());
-        wIchiFarm.setApprovalForAll(address(bank_), true);
+        _wIchiFarm = IWIchiFarm(wichiFarm);
+        _ichiV2 = address(IWIchiFarm(wichiFarm).getIchiV2());
+        _wIchiFarm.setApprovalForAll(address(bank), true);
 
-        _uniV3Router = IUniswapV3Router(uniV3Router_);
+        _uniV3Router = IUniswapV3Router(uniV3Router);
     }
 
-    /// @notice Adds a strategy to the contract.
-    /// @param vault Address of the vault linked to the strategy.
-    /// @param minPosSize Minimum position size in USD, normalized to 1e18.
-    /// @param maxPosSize Maximum position size in USD, normalized to 1e18.
+    /**
+     * @notice Adds a strategy to the contract.
+     * @param vault Address of the vault linked to the strategy.
+     * @param minPosSize Minimum position size in USD, normalized to 1e18.
+     * @param maxPosSize Maximum position size in USD, normalized to 1e18.
+     */
     function addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(vault, minPosSize, maxPosSize);
     }
 
-    /// @notice Handles the deposit logic, including lending and borrowing
-    ///         operations, and depositing borrowed tokens in the ICHI vault.
-    /// @param param Parameters required for the deposit operation.
+    /**
+     * @notice Deposits assets into an IchiVault.
+     * @param param Parameters required for the open position operation.
+     */
+    function openPosition(
+        OpenPosParam calldata param
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        /// 1-5 Deposit on ichi vault
+        _deposit(param);
+
+        /// 6. Put collateral - ICHI Vault Lp Token
+        address vault = strategies[param.strategyId].vault;
+        _doPutCollateral(vault, IERC20Upgradeable(vault).balanceOf(address(this)));
+    }
+
+    /**
+     * @notice Deposits assets into an IchiVault and then farms them in Ichi Farm.
+     * @param param Parameters required for the open position operation.
+     */
+    function openPositionFarm(
+        OpenPosParam calldata param
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        Strategy memory strategy = strategies[param.strategyId];
+
+        IWIchiFarm wIchiFarm = getWIchiFarm();
+
+        address lpToken = wIchiFarm.getIchiFarm().lpToken(param.farmingPoolId);
+        if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
+
+        /// 1-5 Deposit on ichi vault
+        _deposit(param);
+
+        /// 6. Take out collateral and burn
+        {
+            IBank.Position memory pos = bank.getCurrentPositionInfo();
+            address posCollToken = pos.collToken;
+            uint256 collId = pos.collId;
+            uint256 collSize = pos.collateralSize;
+
+            if (collSize > 0) {
+                (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
+                if (param.farmingPoolId != decodedPid) revert Errors.INCORRECT_PID(param.farmingPoolId);
+                if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
+
+                bank.takeCollateral(collSize);
+                wIchiFarm.burn(collId, collSize);
+
+                _doRefundRewards(getIchiV2());
+            }
+        }
+
+        /// 5. Deposit on farming pool, put collateral
+        uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
+        IERC20(lpToken).universalApprove(address(wIchiFarm), lpAmount);
+        uint256 id = wIchiFarm.mint(param.farmingPoolId, lpAmount);
+        bank.putCollateral(address(wIchiFarm), id, lpAmount);
+    }
+
+    /**
+     * @notice Withdraws assets from an ICHI Vault.
+     * @param param Parameters required for the close position operation.
+     */
+    function closePosition(
+        ClosePosParam calldata param
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        /// 1. Take out collateral
+        _doTakeCollateral(strategies[param.strategyId].vault, param.amountPosRemove);
+
+        /// 2-8. Remove liquidity
+        _withdraw(param);
+    }
+
+    /**
+     * @notice Withdraws assets from an ICHI Vault and from Ichi Farm.
+     * @param param Parameters required for the close position operation.
+     */
+    function closePositionFarm(
+        ClosePosParam calldata param
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        address vault = strategies[param.strategyId].vault;
+        IBank.Position memory pos = bank.getCurrentPositionInfo();
+        address posCollToken = pos.collToken;
+        uint256 collId = pos.collId;
+
+        IWIchiFarm wIchiFarm = getWIchiFarm();
+        address ichiV2 = getIchiV2();
+
+        if (IWIchiFarm(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
+        if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
+
+        /// 1. Take out collateral
+        bank.takeCollateral(param.amountPosRemove);
+        wIchiFarm.burn(collId, param.amountPosRemove);
+        _doRefundRewards(ichiV2);
+
+        /// 2-8. Remove liquidity
+        _withdraw(param);
+
+        /// 9. Refund ichi token
+        _doRefund(ichiV2);
+    }
+
+    /// @notice Returns the Uniswap V3 router.
+    function getUniswapV3Router() public view returns (IUniswapV3Router) {
+        return _uniV3Router;
+    }
+
+    /// @notice Returns the ICHI Farm wrapper.
+    function getWIchiFarm() public view returns (IWIchiFarm) {
+        return _wIchiFarm;
+    }
+
+    /// @notice Returns the address of the ICHIV2 token.
+    function getIchiV2() public view returns (address) {
+        return _ichiV2;
+    }
+
+    /**
+     * @notice Handles the deposit logic, including lending and borrowing
+     *         operations, and depositing borrowed tokens in the ICHI vault.
+     * @param param Parameters required for the deposit operation.
+     */
     function _deposit(OpenPosParam calldata param) internal {
         Strategy memory strategy = strategies[param.strategyId];
 
@@ -130,63 +253,11 @@ contract IchiSpell is BasicSpell {
         _validatePosSize(param.strategyId);
     }
 
-    /// @notice Deposits assets into an IchiVault.
-    /// @param param Parameters required for the open position operation.
-    /// @dev param struct found in {BasicSpell}.
-    function openPosition(
-        OpenPosParam calldata param
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        /// 1-5 Deposit on ichi vault
-        _deposit(param);
-
-        /// 6. Put collateral - ICHI Vault Lp Token
-        address vault = strategies[param.strategyId].vault;
-        _doPutCollateral(vault, IERC20Upgradeable(vault).balanceOf(address(this)));
-    }
-
-    /// @notice Deposits assets into an IchiVault and then farms them in Ichi Farm.
-    /// @param param Parameters required for the open position operation.
-    /// @dev param struct found in {BasicSpell}.
-    function openPositionFarm(
-        OpenPosParam calldata param
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        Strategy memory strategy = strategies[param.strategyId];
-        address lpToken = wIchiFarm.ichiFarm().lpToken(param.farmingPoolId);
-        if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
-
-        /// 1-5 Deposit on ichi vault
-        _deposit(param);
-
-        /// 6. Take out collateral and burn
-        {
-            IBank.Position memory pos = bank.getCurrentPositionInfo();
-            address posCollToken = pos.collToken;
-            uint256 collId = pos.collId;
-            uint256 collSize = pos.collateralSize;
-
-            if (collSize > 0) {
-                (uint256 decodedPid, ) = wIchiFarm.decodeId(collId);
-                if (param.farmingPoolId != decodedPid) revert Errors.INCORRECT_PID(param.farmingPoolId);
-                if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
-
-                bank.takeCollateral(collSize);
-                wIchiFarm.burn(collId, collSize);
-
-                _doRefundRewards(ichiV2);
-            }
-        }
-
-        /// 5. Deposit on farming pool, put collateral
-        uint256 lpAmount = IERC20Upgradeable(lpToken).balanceOf(address(this));
-        IERC20(lpToken).universalApprove(address(wIchiFarm), lpAmount);
-        uint256 id = wIchiFarm.mint(param.farmingPoolId, lpAmount);
-        bank.putCollateral(address(wIchiFarm), id, lpAmount);
-    }
-
-    /// @notice Handles the withdrawal logic, including withdrawing
-    ///         from the ICHI vault, swapping tokens, and repaying the debt.
-    /// @param param Parameters required for the withdrawal operation.
-    /// @dev param struct found in {BasicSpell}.
+    /**
+     * @notice Handles the withdrawal logic, including withdrawing
+     *         from the ICHI vault, swapping tokens, and repaying the debt.
+     * @param param Parameters required for the close position operation.
+     */
     function _withdraw(ClosePosParam calldata param) internal {
         Strategy memory strategy = strategies[param.strategyId];
         IICHIVault vault = IICHIVault(strategy.vault);
@@ -226,8 +297,10 @@ contract IchiSpell is BasicSpell {
                 sqrtPriceLimitX96: 0
             });
 
-            IERC20(params.tokenIn).universalApprove(address(_uniV3Router), amountIn);
-            _uniV3Router.exactInputSingle(params);
+            IUniswapV3Router uniV3Router = getUniswapV3Router();
+
+            IERC20(params.tokenIn).universalApprove(address(uniV3Router), amountIn);
+            uniV3Router.exactInputSingle(params);
         }
 
         /// 5. Withdraw isolated collateral from Bank
@@ -244,44 +317,5 @@ contract IchiSpell is BasicSpell {
         /// 8. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
-    }
-
-    /// @notice Withdraws assets from an ICHI Vault.
-    /// @param param Parameters required for the close position operation.
-    /// @dev param struct found in {BasicSpell}.
-    function closePosition(
-        ClosePosParam calldata param
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        /// 1. Take out collateral
-        _doTakeCollateral(strategies[param.strategyId].vault, param.amountPosRemove);
-
-        /// 2-8. Remove liquidity
-        _withdraw(param);
-    }
-
-    /// @notice Withdraws assets from an ICHI Vault and from Ichi Farm.
-    /// @param param Parameters required for the close position operation.
-    /// @dev param struct found in {BasicSpell}.
-    function closePositionFarm(
-        ClosePosParam calldata param
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        address vault = strategies[param.strategyId].vault;
-        IBank.Position memory pos = bank.getCurrentPositionInfo();
-        address posCollToken = pos.collToken;
-        uint256 collId = pos.collId;
-
-        if (IWIchiFarm(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
-        if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
-
-        /// 1. Take out collateral
-        bank.takeCollateral(param.amountPosRemove);
-        wIchiFarm.burn(collId, param.amountPosRemove);
-        _doRefundRewards(ichiV2);
-
-        /// 2-8. Remove liquidity
-        _withdraw(param);
-
-        /// 9. Refund ichi token
-        _doRefund(ichiV2);
     }
 }
