@@ -156,7 +156,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
      * @param token The token address to check.
      * @return The canonical form of the token, if it exists.
      */
-    function getTokenRemapping(address token) public view returns (address) {
+    function getTokenRemapping(address token) external view returns (address) {
         return _remappedTokens[token];
     }
 }
