@@ -569,7 +569,7 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function getBankInfo(address token) external view returns (Bank memory bank) {
+    function getBankInfo(address token) external view override returns (Bank memory bank) {
         bank = _banks[token];
     }
 
