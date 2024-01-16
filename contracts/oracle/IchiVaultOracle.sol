@@ -32,7 +32,7 @@ import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
  *      Base token prices are fetched from Chainlink or Band Protocol.
  *      To prevent flashloan price manipulations, it compares spot & twap prices from Uni V3 Pool.
  */
-contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt {
+contract IchiVaultOracle is IBaseOracle, UsingBaseOracle, Ownable, BaseOracleExt {
     /*//////////////////////////////////////////////////////////////////////////
                                       STRUCTS 
     //////////////////////////////////////////////////////////////////////////*/
@@ -54,7 +54,7 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                      PUBLIC STORAGE 
+                                      STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Mapping to keep track of token info related to ICHI Vaults
@@ -84,12 +84,6 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
      */
     event SetPriceDeviation(address indexed token, uint256 maxPriceDeviation);
 
-    /**
-     * @notice Event emitted when a new ICHI Vault token is registered.
-     * @param vaultToken ICHI Vault token address
-     */
-    event RegisterVault(address indexed vaultToken);
-
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -115,7 +109,7 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
             vaultDecimals: vault.decimals()
         });
 
-        emit RegisterVault(vaultToken);
+        emit RegisterLpToken(vaultToken);
     }
 
     /**
@@ -207,7 +201,7 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
     }
 
     /**
-     * @notice Check if spot price and twap price are valid
+     * @notice Fetches the vault info for a given LP token.
      * @param token Token address
      * @return VaultInfo struct of given token
      */

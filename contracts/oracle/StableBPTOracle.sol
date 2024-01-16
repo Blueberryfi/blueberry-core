@@ -29,13 +29,37 @@ import { IRateProvider } from "../interfaces/balancer-v2/IRateProvider.sol";
  * @author BlueberryProtocol
  * @notice Oracle contract which privides price feeds of Stable Balancer LP tokens
  */
-contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracle {
+contract StableBPTOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeable {
     using FixedPoint for uint256;
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      STRUCTS 
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Struct to store token info related to Balancer Pool tokens
+     * @param tokens An array of tokens within the pool
+     * @param rateProviders An array of rate providers associated with the tokens in the pool
+     */
+    struct TokenInfo {
+        address[] tokens;
+        address[] rateProviders;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      STORAGE 
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address of the weighted pool oracle
     IBaseOracle private _weightedPoolOracle;
     /// @dev Address of the Balancer Vault
     IBalancerVault private immutable _VAULT;
+    /// @dev mapping of registered bpt tokens to their token info
+    mapping(address => TokenInfo) private _tokenInfo;
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      MODIFIERS
+    //////////////////////////////////////////////////////////////////////////*/
 
     // Protects the oracle from being manipulated via read-only reentrancy
     modifier balancerNonReentrant() {
@@ -64,37 +88,53 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
 
     /// @inheritdoc IBaseOracle
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
-        uint256 minPrice;
-        IBalancerV2StablePool pool = IBalancerV2StablePool(token);
+        TokenInfo memory tokenInfo = getBptInfo(token);
+        uint256 tokenLength = tokenInfo.tokens.length;
 
+        if (tokenLength == 0) revert Errors.ORACLE_NOT_SUPPORT_LP(token);
+
+        uint256 minPrice = _getTokensMinPrice(tokenInfo.tokens, tokenInfo.rateProviders, tokenLength);
+        uint256 rate = IBalancerV2StablePool(token).getRate();
+
+        return minPrice.mulDown(rate);
+    }
+
+    /**
+     * @notice Register Balancer Pool token to oracle
+     * @dev Stores persistent data of Balancer Pool token
+     * @dev An oracle cannot be used for a LP token unless it is registered
+     * @param bpt Address of the Balancer Pool token to register
+     */
+    function registerBpt(address bpt) external onlyOwner {
+        if (bpt == address(0)) revert Errors.ZERO_ADDRESS();
+
+        IBalancerV2StablePool pool = IBalancerV2StablePool(bpt);
         (address[] memory tokens, , ) = _VAULT.getPoolTokens(pool.getPoolId());
         address[] memory rateProviders = pool.getRateProviders();
 
+        uint256 tokenLength = tokens.length;
         // Only ComposableStablePools return BPT within the array of tokens when calling `getPoolTokens`.
         // In order to support all types of stable pools we need to encapsulate `getBPTIndex`
         // in a try/catch block. If the pool is not a ComposableStablePool, we will just
         // set the subTokens to the tokens array that we queried from the vault
         try pool.getBptIndex() returns (uint256 bptIndex) {
-            address[] memory subTokens = new address[](tokens.length - 1);
-            address[] memory subRateProviders = new address[](tokens.length - 1);
+            address[] memory subTokens = new address[](tokenLength - 1);
+            address[] memory subRateProviders = new address[](tokenLength - 1);
 
             uint256 index = 0;
-            for (uint256 i = 0; i < tokens.length; ++i) {
+            for (uint256 i = 0; i < tokenLength; ++i) {
                 if (i != bptIndex) {
                     subTokens[index] = tokens[i];
                     subRateProviders[index] = rateProviders[i];
                     index++;
                 }
             }
-
-            minPrice = _getTokensMinPrice(subTokens, subRateProviders);
+            _tokenInfo[bpt] = TokenInfo(subTokens, subRateProviders);
         } catch {
-            minPrice = _getTokensMinPrice(tokens, rateProviders);
+            _tokenInfo[bpt] = TokenInfo(tokens, rateProviders);
         }
 
-        uint256 rate = pool.getRate();
-
-        return minPrice.mulDown(rate);
+        emit RegisterLpToken(bpt);
     }
 
     /**
@@ -108,6 +148,15 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
         _weightedPoolOracle = IBaseOracle(oracle);
     }
 
+    /**
+     * @notice Fetches the TokenInfo struct of a given LP token
+     * @param bpt Balancer Pool Token address
+     * @return TokenInfo struct of given LP token
+     */
+    function getBptInfo(address bpt) public view returns (TokenInfo memory) {
+        return _tokenInfo[bpt];
+    }
+
     /// @notice Returns the weighted pool oracle address
     function getWeightedPoolOracle() external view returns (address) {
         return address(_weightedPoolOracle);
@@ -117,12 +166,16 @@ contract StableBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracl
      * @notice Returns the minimum price of a given array of tokens
      * @param tokens An array of tokens within the pool
      * @param rateProviders An array of rate providers associated with the tokens in the pool
+     * @param length The length of the array of tokens
      * @return The minimum price of the given array of tokens
      */
-    function _getTokensMinPrice(address[] memory tokens, address[] memory rateProviders) internal returns (uint256) {
+    function _getTokensMinPrice(
+        address[] memory tokens,
+        address[] memory rateProviders,
+        uint256 length
+    ) internal returns (uint256) {
         uint256 minPrice;
         address minToken;
-        uint256 length = tokens.length;
 
         for (uint256 i = 0; i < length; ++i) {
             address minCandidate = tokens[i];

@@ -136,8 +136,8 @@ describe('Ichi Vault Oracle', () => {
       );
 
       await expect(ichiOracle.connect(admin).registerVault(ADDRESS.ICHI_VAULT_USDC))
-        .to.be.emit(ichiOracle, 'RegisterVault')
-        .withArgs(ADDRESS.ICHI_VAULT_USDC);
+        .to.be.emit(ichiOracle, 'RegisterLpToken')
+        .withArgs(ichiOracle.address, ADDRESS.ICHI_VAULT_USDC);
     });
   });
 

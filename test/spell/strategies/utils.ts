@@ -87,6 +87,9 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   await weightedOracle.connect(admin).setStablePoolOracle(stableOracle.address);
   await stableOracle.connect(admin).setWeightedPoolOracle(weightedOracle.address);
 
+  await weightedOracle.connect(admin).registerBpt(ADDRESS.BAL_OHM_WETH);
+  await stableOracle.connect(admin).registerBpt(ADDRESS.BAL_WSTETH_WETH);
+
   await oracle.setRoutes(
     [
       ADDRESS.USDC,
