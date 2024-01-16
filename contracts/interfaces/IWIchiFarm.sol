@@ -26,10 +26,10 @@ import { IIchiFarm } from "./ichi/IIchiFarm.sol";
  */
 interface IWIchiFarm is IERC1155Upgradeable, IERC20Wrapper {
     /// @notice Emitted when a user stakes liquidity provider tokens and a new ERC1155 token is minted.
-    event Minted(uint256 pid, uint256 amount, address indexed user);
+    event Minted(uint256 indexed id, uint256 indexed pid, uint256 amount);
 
     /// @notice Emitted when a user burns an ERC1155 token to claim rewards and close their position.
-    event Burned(uint256 id, uint256 amount, address indexed user);
+    event Burned(uint256 indexed id, uint256 indexed pid, uint256 amount);
 
     /**
      * @notice Encodes pool id and ICHI per share into an ERC1155 token id

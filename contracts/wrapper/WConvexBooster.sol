@@ -137,7 +137,7 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
 
         _cvxPerShareDebt[id] = _cvxPerShareByPid[pid];
 
-        emit Minted(pid, amount, msg.sender);
+        emit Minted(id, pid, amount);
     }
 
     /// @notice IWConvexBooster
@@ -171,7 +171,7 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
             IPoolEscrow(escrow).transferToken(_rewardToken, msg.sender, rewards[i]);
         }
 
-        emit Burned(id, amount, msg.sender);
+        emit Burned(id, pid, amount);
     }
 
     /// @notice IWConvexBooster
