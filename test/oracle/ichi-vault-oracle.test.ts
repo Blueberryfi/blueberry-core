@@ -134,10 +134,10 @@ describe('Ichi Vault Oracle', () => {
         ichiOracle,
         'ZERO_ADDRESS'
       );
-
+      await uniswapV3Oracle.registerToken(ICHI);
       await expect(ichiOracle.connect(admin).registerVault(ADDRESS.ICHI_VAULT_USDC))
         .to.be.emit(ichiOracle, 'RegisterLpToken')
-        .withArgs(ichiOracle.address, ADDRESS.ICHI_VAULT_USDC);
+        .withArgs(ADDRESS.ICHI_VAULT_USDC);
     });
   });
 
@@ -213,6 +213,7 @@ describe('Ichi Vault Oracle', () => {
   });
 
   it('USDC/ICHI Angel Vault Price', async () => {
+    await uniswapV3Oracle.registerToken(ICHI);
     const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
     console.log('ICHI Price', utils.formatUnits(ichiPrice));
     await ichiOracle.connect(admin).registerVault(ADDRESS.ICHI_VAULT_USDC);
@@ -261,6 +262,7 @@ describe('Ichi Vault Oracle', () => {
       );
       console.log('USDC Balance: ', utils.formatUnits(await usdc.balanceOf(admin.address), 6));
       console.log('\n=== Before ===');
+      await uniswapV3Oracle.registerToken(ICHI);
       const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
       console.log('ICHI Price', utils.formatUnits(ichiPrice));
 

@@ -65,7 +65,9 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       UniV3WrappedLibContainer: LibInstance.address,
     },
   });
-  const uniswapV3AdapterOracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(oracle.address, admin.address);
+  const uniswapV3AdapterOracle = <UniswapV3AdapterOracle>(
+    await UniswapV3AdapterOracle.deploy(oracle.address, admin.address)
+  );
 
   await uniswapV3AdapterOracle.setStablePools(
     [ADDRESS.OHM, ADDRESS.ICHI],
