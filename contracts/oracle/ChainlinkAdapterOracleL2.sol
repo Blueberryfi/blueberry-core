@@ -77,7 +77,7 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
 
     /**
      * @notice Initializes the contract
-     * @param registry Chainlink feed registry address.
+     * @param sequencerUptimeFeed Chainlink L2 sequencer uptime feed registry source.
      * @param owner Address of the owner of the contract.
      */
     function initialize(ISequencerUptimeFeed sequencerUptimeFeed, address owner) external initializer {

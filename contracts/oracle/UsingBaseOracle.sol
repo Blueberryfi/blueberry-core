@@ -43,11 +43,12 @@ abstract contract UsingBaseOracle is Ownable2StepUpgradeable {
      * @param base Address of the Base oracle source.
      * @param owner Address of the owner.
      */
-    function __UsingBaseOracle_init(address base, address owner) internal onlyInitializing {
-        _base = IBaseOracle(base);
+    function __UsingBaseOracle_init(IBaseOracle base, address owner) internal onlyInitializing {
+        _base = base;
         __Ownable2Step_init();
         _transferOwnership(owner);
     }
+
     /* solhint-enable func-name-mixedcase */
 
     /// @notice Returns the address of the Base oracle source.

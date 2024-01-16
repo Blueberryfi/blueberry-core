@@ -51,7 +51,7 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address provider for Curve-related contracts.
-    ICurveAddressProvider private immutable _addressProvider;
+    ICurveAddressProvider private _addressProvider;
     /// @dev Mapping of Curve Lp token to token info.
     mapping(address => TokenInfo) private _tokenInfo;
 
@@ -78,6 +78,7 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle {
         __UsingBaseOracle_init(base, owner);
         _addressProvider = addressProvider;
     }
+
     /* solhint-enable func-name-mixedcase */
 
     /**
