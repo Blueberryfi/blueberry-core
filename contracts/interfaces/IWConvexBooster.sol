@@ -19,10 +19,10 @@ import { IPoolEscrowFactory } from "../wrapper/escrow/interfaces/IPoolEscrowFact
  */
 interface IWConvexBooster is IERC1155Upgradeable, IERC20Wrapper {
     /// @notice Emitted when a user stakes liquidity provider tokens and a new ERC1155 token is minted.
-    event Minted(uint256 pid, uint256 amount, address indexed user);
+    event Minted(uint256 indexed id, uint256 indexed pid, uint256 amount);
 
     /// @notice Emitted when a user burns an ERC1155 token to claim rewards and close their position.
-    event Burned(uint256 id, uint256 amount, address indexed user);
+    event Burned(uint256 indexed id, uint256 indexed pid, uint256 amount);
 
     /**
      * @notice Encodes pool id and BAL per share into an ERC1155 token id
@@ -35,9 +35,10 @@ interface IWConvexBooster is IERC1155Upgradeable, IERC20Wrapper {
     /**
      * @notice Decode an encoded ID into two separate uint values.
      * @param id The encoded uint ID to decode.
-     * @return The two individual uint256 values decoded from the provided ID.
+     * @return pid The pool ID representing the specific Convex pool.
+     * @return cvxPerShare Original CVX amount per share, which should be multiplied by 1e18.
      */
-    function decodeId(uint256 id) external pure returns (uint256, uint256);
+    function decodeId(uint256 id) external pure returns (uint256 pid, uint256 cvxPerShare);
 
     /**
      *
