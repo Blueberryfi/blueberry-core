@@ -66,22 +66,30 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Constructs the ChainlinkAdapterOracleL2 and sets the L2 sequencer uptime feed.
-     * @param sequencerUptimeFeed The Chainlink L2 sequencer uptime feed source.
-     */
-    constructor(ISequencerUptimeFeed sequencerUptimeFeed) {
-        if (address(sequencerUptimeFeed) == address(0)) {
-            revert Errors.ZERO_ADDRESS();
-        }
-
-        _sequencerUptimeFeed = sequencerUptimeFeed;
+    
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Initializes the contract
+     * @param registry Chainlink feed registry address.
+     * @param owner Address of the owner of the contract.
+     */
+    function initialize(ISequencerUptimeFeed sequencerUptimeFeed, address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
+
+        if (address(sequencerUptimeFeed) == address(0)) {
+            revert Errors.ZERO_ADDRESS();
+        }
+        _sequencerUptimeFeed = sequencerUptimeFeed;
+    }
 
     /**
      * @notice Sets the Chainlink L2 sequencer uptime feed registry source.

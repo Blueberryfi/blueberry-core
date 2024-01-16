@@ -59,13 +59,15 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
      * @param weth Wrapped Ether address
      * @param augustusSwapper Augustus Swapper address
      * @param tokenTransferProxy Token Transfer Proxy address
+     * @param owner Address of the owner
      */
     function initialize(
         IBank bank,
         address werc20,
         address weth,
         address augustusSwapper,
-        address tokenTransferProxy
+        address tokenTransferProxy,
+        address owner
     ) external initializer {
         if (augustusSwapper == address(0)) revert Errors.ZERO_ADDRESS();
         if (tokenTransferProxy == address(0)) revert Errors.ZERO_ADDRESS();
@@ -73,7 +75,7 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
         _augustusSwapper = augustusSwapper;
         _tokenTransferProxy = tokenTransferProxy;
 
-        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
+        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy, owner);
     }
 
     /// @inheritdoc IShortLongSpell

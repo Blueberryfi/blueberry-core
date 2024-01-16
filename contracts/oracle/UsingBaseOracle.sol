@@ -10,6 +10,8 @@
 
 pragma solidity 0.8.22;
 
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 
 /**
@@ -19,25 +21,43 @@ import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
  *      to an external oracle service. It provides an immutable reference to a
  *      specified oracle source.
  */
-contract UsingBaseOracle {
+abstract contract UsingBaseOracle is Ownable2StepUpgradeable {
     /// @dev Base oracle source
-    IBaseOracle internal immutable _base;
+    IBaseOracle internal _base;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
+    
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                       FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Constructs a new instance of the contract.
-     * @dev Initializes the contract with a given oracle source.
-     * @param base The address of the oracle to be used as a data source.
+     * @dev Initializes the Base oracle source.
+     * @param base Address of the Base oracle source.
+     * @param owner Address of the owner.
      */
-    constructor(IBaseOracle base) {
-        _base = base;
+    function __UsingBaseOracle_init(address base, address owner) internal onlyInitializing {
+        _base = IBaseOracle(base);
+        __Ownable2Step_init();
+        _transferOwnership(owner);
     }
 
     /// @notice Returns the address of the Base oracle source.
     function getBaseOracle() public view returns (IBaseOracle) {
         return _base;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     *      variables without shifting down storage in the inheritance chain.
+     *      See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[10] private __gap;
 }

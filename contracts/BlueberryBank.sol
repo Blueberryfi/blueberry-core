@@ -13,7 +13,7 @@ pragma solidity 0.8.22;
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import { BBMath } from "./libraries/BBMath.sol";
 import { UniversalERC20, IERC20 } from "./libraries/UniversalERC20.sol";
@@ -36,7 +36,7 @@ import { ISoftVault } from "./interfaces/ISoftVault.sol";
  * @author BlueberryProtocol
  * @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
  */
-contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
+contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
@@ -125,9 +125,15 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-
-    function initialize(ICoreOracle oracle, IProtocolConfig config) external initializer {
-        __Ownable_init();
+    /**
+     * @notice Initializes the Blueberry Bank contract.
+     * @param oracle The address of the Core Oracle contract.
+     * @param config The address of the config contract.
+     * @param owner The address of the owner.
+     */
+    function initialize(ICoreOracle oracle, IProtocolConfig config, address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         if (address(oracle) == address(0) || address(config) == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
@@ -793,5 +799,12 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
         return _SPELL;
     }
 
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     *      variables without shifting down storage in the inheritance chain.
+     *      See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[30] private __gap;
+    
     /* solhint-enable func-name-mixedcase */
 }

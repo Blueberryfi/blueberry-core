@@ -14,6 +14,8 @@ pragma solidity 0.8.22;
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+
 /* solhint-enable max-line-length */
 
 import "../utils/BlueberryErrors.sol" as Errors;
@@ -30,7 +32,7 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
  * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank and do not generate yields.
  *      LP Tokens are identified by tokenIds encoded from lp token address
  */
-contract WERC20 is IWERC20, BaseWrapper, ReentrancyGuardUpgradeable {
+contract WERC20 is IWERC20, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -46,8 +48,13 @@ contract WERC20 is IWERC20, BaseWrapper, ReentrancyGuardUpgradeable {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Initializes the ERC1155 and ReentrancyGuard base contracts.
-    function initialize() external initializer {
+    /**
+     * @notice Initializes the ERC1155 and ReentrancyGuard base contracts.
+     * @param owner The owner of the contract.
+     */
+    function initialize(address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         __ReentrancyGuard_init();
         __ERC1155_init("wERC20");
     }

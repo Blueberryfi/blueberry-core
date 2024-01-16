@@ -11,7 +11,6 @@
 pragma solidity 0.8.22;
 
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import { UniV3WrappedLibContainer } from "../libraries/UniV3/UniV3WrappedLibContainer.sol";
 
@@ -32,7 +31,7 @@ import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
  *      Base token prices are fetched from Chainlink or Band Protocol.
  *      To prevent flashloan price manipulations, it compares spot & twap prices from Uni V3 Pool.
  */
-contract IchiVaultOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeable, BaseOracleExt {
+contract IchiVaultOracle is IBaseOracle, UsingBaseOracle, BaseOracleExt {
     /*//////////////////////////////////////////////////////////////////////////
                                       STRUCTS 
     //////////////////////////////////////////////////////////////////////////*/
@@ -64,19 +63,6 @@ contract IchiVaultOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeabl
     mapping(address => uint256) private _maxPriceDeviations;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                     CONSTRUCTOR
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Constructs a new instance of the contract.
-     * @param base The base oracle instance.
-     * @
-     */
-    constructor(IBaseOracle base, address owner) UsingBaseOracle(base) Ownable2StepUpgradeable() {
-        _transferOwnership(owner);
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
                                       EVENTS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -88,8 +74,26 @@ contract IchiVaultOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeabl
     event SetPriceDeviation(address indexed token, uint256 maxPriceDeviation);
 
     /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+    
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+    
+    /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Initializes the contract
+     * @param base The base oracle instance.
+     * @param owner Address of the owner of the contract.
+     */
+    function initialize(IBaseOracle base, address owner) external initializer {
+        __UsingBaseOracle_init(base, owner);
+    }
 
     /**
      * @notice Register ICHI Vault token to oracle

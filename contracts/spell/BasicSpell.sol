@@ -12,7 +12,7 @@ pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 /* solhint-enable max-line-length */
 
 import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
@@ -32,10 +32,9 @@ import { IBasicSpell } from "../interfaces/spell/IBasicSpell.sol";
  * @title BasicSpell
  * @author BlueberryProtocol
  * @notice BasicSpell is the abstract contract that other spells utilize
- * @dev It extends functionalities from ERC1155NaiveReceiver, OwnableUpgradeable
+ * @alities from ERC1155NaiveReceiver, Ownable2StepUpgradeable
  */
-abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, OwnableUpgradeable {
-    using UniversalERC20 for IERC20;
+abstract contract BasicSpell is IBas    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                     STORAGE
@@ -88,6 +87,15 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, OwnableUpgrad
     }
 
     /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
     /* solhint-disable func-name-mixedcase */
@@ -98,19 +106,22 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, OwnableUpgrad
      * @param weth The address of the wrapped Ether token.
      * @param augustusSwapper Address of the paraswap AugustusSwapper.
      * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     * @param owner Address of the owner of the contract.
      */
     function __BasicSpell_init(
         IBank bank,
         address werc20,
         address weth,
         address augustusSwapper,
-        address tokenTransferProxy
+        address tokenTransferProxy,
+        address owner
     ) internal onlyInitializing {
         if (address(bank) == address(0) || address(werc20) == address(0) || address(weth) == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
 
-        __Ownable_init();
+        __Ownable2Step_init();
+        _transferOwnership(owner);
 
         _bank = bank;
         _werc20 = IWERC20(werc20);
@@ -459,5 +470,5 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, OwnableUpgrad
      *      variables without shifting down storage in the inheritance chain.
      *      See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
      */
-    uint256[45] private __gap;
+    uint256[43] private __gap;
 }

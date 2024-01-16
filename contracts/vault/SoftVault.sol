@@ -14,7 +14,7 @@ pragma solidity 0.8.22;
 import { ERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 /* solhint-enable max-line-length */
 
@@ -34,7 +34,7 @@ import { IBErc20 } from "../interfaces/money-market/IBErc20.sol";
  * @dev The SoftVault is an ERC20 contract where each LP token is associated with a unique tokenId.
  *      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
  */
-contract SoftVault is ISoftVault, OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgradeable {
+contract SoftVault is ISoftVault, Ownable2StepUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
@@ -66,17 +66,20 @@ contract SoftVault is ISoftVault, OwnableUpgradeable, ERC20Upgradeable, Reentran
      * @notice Initializes the contract
      * @param config Address of protocol configuration
      * @param bToken Address of bToken
+     * @param owner Address of the owner of the SoftVault contract
      * @param name ERC20 name for the SoftVault token
      * @param symbol ERC20 symbol for the SoftVault token
      */
     function initialize(
         IProtocolConfig config,
         IBErc20 bToken,
+        address owner,
         string memory name,
         string memory symbol
     ) external initializer {
         __ReentrancyGuard_init();
-        __Ownable_init();
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         __ERC20_init(name, symbol);
 
         if (address(bToken) == address(0) || address(config) == address(0)) revert Errors.ZERO_ADDRESS();
@@ -155,4 +158,11 @@ contract SoftVault is ISoftVault, OwnableUpgradeable, ERC20Upgradeable, Reentran
     function getConfig() public view override returns (IProtocolConfig) {
         return _config;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     *      variables without shifting down storage in the inheritance chain.
+     *      See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[47] private __gap;
 }

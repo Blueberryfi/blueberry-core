@@ -16,7 +16,7 @@ import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 /* solhint-enable max-line-length */
 
 import "../utils/BlueberryConst.sol" as Constants;
@@ -41,7 +41,7 @@ import { IWConvexBooster, ICvxBooster } from "../interfaces/IWConvexBooster.sol"
  *     and do not generate yields. LP Tokens are identified by tokenIds
  *    encoded from lp token address.
  */
-contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -67,19 +67,37 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
     mapping(uint256 => address) private _escrows;
     /// @dev pid => A set of extra rewarders
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private _extraRewards;
+        
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Initializes contract with dependencies.
      * @param cvx Address of the CVX token.
      * @param cvxBooster Address of the Convex Booster.
      * @param escrowFactory Address of the escrow factory.
+     * @param owner The owner of the contract.
      */
-    function initialize(address cvx, address cvxBooster, address escrowFactory) external initializer {
+    function initialize(address cvx, address cvxBooster, address escrowFactory, address owner) external initializer {
         if (cvx == address(0) || cvxBooster == address(0) || escrowFactory == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
+
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         __ReentrancyGuard_init();
         __ERC1155_init("wConvexBooster");
+        
         _escrowFactory = IPoolEscrowFactory(escrowFactory);
         _cvxToken = IConvex(cvx);
         _cvxBooster = ICvxBooster(cvxBooster);

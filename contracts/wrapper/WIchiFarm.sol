@@ -15,7 +15,7 @@ import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 /* solhint-enable max-line-length */
 
 import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
@@ -38,7 +38,7 @@ import { IIchiFarm } from "../interfaces/ichi/IIchiFarm.sol";
  *      At the same time, Underlying LPs will be deposited to ICHI farming pools and generate yields
  *      LP Tokens are identified by tokenIds encoded from lp token address and accPerShare of deposited time
  */
-contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeERC20Upgradeable for IIchiV2;
@@ -73,11 +73,14 @@ contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, Ownab
      * @param ichi Address of ICHI v2 token.
      * @param ichiV1 Address of legacy ICHI token.
      * @param ichiFarm Address of ICHI farming contract.
+     * @param owner The owner of the contract.
      */
-    function initialize(address ichi, address ichiV1, address ichiFarm) external initializer {
+    function initialize(address ichi, address ichiV1, address ichiFarm, address owner) external initializer {
         if (address(ichi) == address(0) || address(ichiV1) == address(0) || address(ichiFarm) == address(0))
             revert Errors.ZERO_ADDRESS();
 
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         __ReentrancyGuard_init();
         __ERC1155_init("wIchiFarm");
 

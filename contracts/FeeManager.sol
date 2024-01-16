@@ -10,7 +10,7 @@
 
 pragma solidity 0.8.22;
 
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
@@ -25,7 +25,7 @@ import { IFeeManager } from "./interfaces/IFeeManager.sol";
  * @notice The FeeManager contract is responsible for processing and distributing fees
  *         within the BlueberryProtocol ecosystem.
  */
-contract FeeManager is IFeeManager, OwnableUpgradeable {
+contract FeeManager is IFeeManager, Ownable2StepUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     IProtocolConfig private _config;
@@ -46,9 +46,11 @@ contract FeeManager is IFeeManager, OwnableUpgradeable {
     /**
      * @notice Initializes the FeeManager contract
      * @param config Address of the protocol config.
+     * @param owner Address of the owner.
      */
-    function initialize(IProtocolConfig config) external initializer {
-        __Ownable_init();
+    function initialize(IProtocolConfig config, address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
 
         if (address(config) == address(0)) revert Errors.ZERO_ADDRESS();
         _config = config;

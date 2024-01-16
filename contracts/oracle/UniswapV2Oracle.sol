@@ -10,7 +10,6 @@
 
 pragma solidity 0.8.22;
 
-import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
@@ -28,7 +27,7 @@ import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
  *  @dev Implented Fair Lp Pricing
  *      Ref: https://blog.alphaventuredao.io/fair-lp-token-pricing/
  */
-contract UniswapV2Oracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeable {
+contract UniswapV2Oracle is IBaseOracle, UsingBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                       STRUCTS
     //////////////////////////////////////////////////////////////////////////*/
@@ -58,18 +57,23 @@ contract UniswapV2Oracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeabl
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Constructs a new instance of the contract.
-     * @param base The base oracle instance.
-     * @param owner Address of the owner of the contract.
-     */
-    constructor(IBaseOracle base, address owner) UsingBaseOracle(base) Ownable2StepUpgradeable() {
-        _transferOwnership(owner);
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Initializes the contract
+     * @param base The base oracle instance.
+     * @param owner Address of the owner of the contract.
+     */
+    function initialize(IBaseOracle base, address owner) external initializer {
+        __UsingBaseOracle_init(base, owner);
+    }
 
     /// @inheritdoc IBaseOracle
     function getPrice(address pair) external override returns (uint256) {

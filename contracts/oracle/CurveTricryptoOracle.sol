@@ -28,17 +28,25 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Constructor initializes the CurveBaseOracle with the provided parameters.
-     * @param base The address of the base oracle.
-     * @param addressProvider The address of the curve address provider.
-     */
-    constructor(IBaseOracle base, ICurveAddressProvider addressProvider) CurveBaseOracle(base, addressProvider) {}
+    
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Initializes the contract
+     * @param addressProvider Address of the curve address provider
+     * @param base The base oracle instance.
+     * @param owner Address of the owner of the contract.
+     */
+    function initialize(ICurveAddressProvider addressProvider, IBaseOracle base, address owner) external initializer {
+        __CurveBaseOracle_init(addressProvider, base, owner);
+    }
 
     /// @inheritdoc IBaseOracle
     function getPrice(address crvLp) external override returns (uint256) {

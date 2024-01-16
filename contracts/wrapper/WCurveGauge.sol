@@ -14,7 +14,7 @@ pragma solidity 0.8.22;
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 /* solhint-enable max-line-length */
 
 import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
@@ -38,7 +38,7 @@ import { IWCurveGauge } from "../interfaces/IWCurveGauge.sol";
  * @dev LP Tokens are identified by tokenIds, which are encoded from the LP token address.
  *     This contract assumes leveraged LP Tokens are held in the BlueberryBank and do not generate yields.
  */
-contract WCurveGauge is IWCurveGauge, BaseWrapper, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract WCurveGauge is IWCurveGauge, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
@@ -56,6 +56,15 @@ contract WCurveGauge is IWCurveGauge, BaseWrapper, ReentrancyGuardUpgradeable, O
     mapping(uint256 => uint256) private _accCrvPerShares;
 
     /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -64,10 +73,14 @@ contract WCurveGauge is IWCurveGauge, BaseWrapper, ReentrancyGuardUpgradeable, O
      * @param crv Address of the CRV token.
      * @param crvRegistry Address of the Curve Registry.
      * @param gaugeController Address of the Gauge Controller.
+     * @param owner The owner of the contract.
      */
-    function initialize(address crv, address crvRegistry, address gaugeController) external initializer {
+    function initialize(address crv, address crvRegistry, address gaugeController, address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         __ReentrancyGuard_init();
         __ERC1155_init("wCurveGauge");
+        
         _crvToken = IERC20Upgradeable(crv);
         _registry = ICurveRegistry(crvRegistry);
         _gaugeController = ICurveGaugeController(gaugeController);

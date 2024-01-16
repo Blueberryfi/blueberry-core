@@ -70,6 +70,7 @@ contract IchiSpell is IIchiSpell, BasicSpell {
      * @param wichiFarm Address of the wrapped Ichi Farm contract.
      * @param augustusSwapper Address of the paraswap AugustusSwapper.
      * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     * @param owner Address of the owner of the contract.
      */
     function initialize(
         IBank bank,
@@ -78,9 +79,10 @@ contract IchiSpell is IIchiSpell, BasicSpell {
         address wichiFarm,
         address uniV3Router,
         address augustusSwapper,
-        address tokenTransferProxy
+        address tokenTransferProxy,
+        address owner
     ) external initializer {
-        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
+        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy, owner);
         if (wichiFarm == address(0)) revert Errors.ZERO_ADDRESS();
 
         _wIchiFarm = IWIchiFarm(wichiFarm);

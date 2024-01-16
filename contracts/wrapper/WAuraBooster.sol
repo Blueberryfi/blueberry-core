@@ -14,7 +14,7 @@ pragma solidity 0.8.22;
 import { EnumerableSetUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import { SafeERC20Upgradeable, IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { FixedPointMathLib } from "../libraries/FixedPointMathLib.sol";
 /* solhint-enable max-line-length */
 
@@ -42,7 +42,7 @@ import { IRewarder } from "../interfaces/convex/IRewarder.sol";
  *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
-contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using FixedPointMathLib for uint256;
@@ -76,7 +76,16 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
 
     /// @dev The denominator used for reward multiplier
     // solhint-disable-next-line var-name-mixedcase
-    uint256 private _REWARD_MULTIPLIER_DENOMINATOR;
+    uint256 private _rewardMultiplierDenominator;
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -88,12 +97,14 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
      * @param auraBooster The auraBooster contract address
      * @param escrowFactory The escrow factory contract address
      * @param balancerVault The balancer vault contract address
+     * @param owner The owner of the contract.
      */
     function initialize(
         address aura,
         address auraBooster,
         address escrowFactory,
-        address balancerVault
+        address balancerVault,
+        address owner
     ) external initializer {
         if (
             aura == address(0) ||
@@ -103,13 +114,16 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
         ) {
             revert Errors.ZERO_ADDRESS();
         }
+
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         __ReentrancyGuard_init();
         __ERC1155_init("wAuraBooster");
 
         _auraToken = IAura(aura);
         _escrowFactory = IPoolEscrowFactory(escrowFactory);
         _auraBooster = IAuraBooster(auraBooster);
-        _REWARD_MULTIPLIER_DENOMINATOR = IAuraBooster(auraBooster).REWARD_MULTIPLIER_DENOMINATOR();
+        _rewardMultiplierDenominator = IAuraBooster(auraBooster).REWARD_MULTIPLIER_DENOMINATOR();
         _balancerVault = IBalancerVault(balancerVault);
     }
 

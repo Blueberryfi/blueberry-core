@@ -14,7 +14,7 @@ pragma solidity 0.8.22;
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 /* solhint-enable max-line-length */
 
@@ -34,7 +34,7 @@ import { IProtocolConfig } from "../interfaces/IProtocolConfig.sol";
  *      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
  *      can be used as collateral in this vault.
  */
-contract HardVault is IHardVault, OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpgradeable {
+contract HardVault is IHardVault, Ownable2StepUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
@@ -61,10 +61,12 @@ contract HardVault is IHardVault, OwnableUpgradeable, ERC1155Upgradeable, Reentr
     /**
      * @dev Initializes the HardVault contract.
      * @param config Address of the protocol config.
+     * @param owner Address of the owner.
      */
-    function initialize(IProtocolConfig config) external initializer {
+    function initialize(IProtocolConfig config, address owner) external initializer {
         __ReentrancyGuard_init();
-        __Ownable_init();
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         __ERC1155_init("HardVault");
 
         if (address(config) == address(0)) revert Errors.ZERO_ADDRESS();
@@ -141,4 +143,11 @@ contract HardVault is IHardVault, OwnableUpgradeable, ERC1155Upgradeable, Reentr
     function _encodeTokenId(address uToken) internal pure returns (uint256) {
         return uint256(uint160(uToken));
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     *      variables without shifting down storage in the inheritance chain.
+     *      See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[49] private __gap;
 }

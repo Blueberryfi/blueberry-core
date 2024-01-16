@@ -46,6 +46,15 @@ contract CurveSpell is ICurveSpell, BasicSpell {
     address private _crvToken;
 
     /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -57,6 +66,7 @@ contract CurveSpell is ICurveSpell, BasicSpell {
      * @param wCurveGauge Address of the wrapped Curve Gauge contract.
      * @param augustusSwapper Address of the paraswap AugustusSwapper.
      * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     * @param owner Address of the owner of the contract.
      */
     function initialize(
         IBank bank,
@@ -65,9 +75,10 @@ contract CurveSpell is ICurveSpell, BasicSpell {
         address wCurveGauge,
         address crvOracle,
         address augustusSwapper,
-        address tokenTransferProxy
+        address tokenTransferProxy,
+        address owner
     ) external initializer {
-        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
+        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy, owner);
         if (wCurveGauge == address(0) || crvOracle == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
