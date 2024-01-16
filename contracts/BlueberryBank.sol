@@ -224,7 +224,7 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
         if (liqThreshold < Constants.MIN_LIQ_THRESHOLD) revert Errors.LIQ_THRESHOLD_TOO_LOW(liqThreshold);
 
         Bank storage bank = banks[token];
-        address bToken = address(ISoftVault(softVault).bToken());
+        address bToken = address(ISoftVault(softVault).getBToken());
 
         if (bTokenInBank[bToken]) revert Errors.BTOKEN_ALREADY_ADDED();
         if (bank.isListed) revert Errors.BANK_ALREADY_LISTED();
@@ -268,7 +268,7 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
 
         address bankToken = allBanks[bankIndex];
         Bank storage bank = banks[bankToken];
-        address bToken = address(ISoftVault(softVault).bToken());
+        address bToken = address(ISoftVault(softVault).getBToken());
 
         bank.bToken = bToken;
         bank.softVault = softVault;
@@ -829,6 +829,6 @@ contract BlueberryBank is OwnableUpgradeable, ERC1155NaiveReceiver, IBank {
     /// @param token The underlying token of the vault to be checked.
     /// @return bool True if it's a Soft Vault, False if it's a Hard Vault.
     function _isSoftVault(address token) internal view returns (bool) {
-        return address(ISoftVault(banks[token].softVault).uToken()) == token;
+        return address(ISoftVault(banks[token].softVault).getUnderlyingToken()) == token;
     }
 }
