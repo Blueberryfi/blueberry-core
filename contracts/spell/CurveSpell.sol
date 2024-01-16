@@ -23,14 +23,20 @@ import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 import { IWETH } from "../interfaces/IWETH.sol";
 import { IWCurveGauge } from "../interfaces/IWCurveGauge.sol";
 
+import { ICurveSpell } from "../interfaces/spell/ICurveSpell.sol";
+
 /**
  * @title CurveSpell
  * @author BlueberryProtocol
  * @notice CurveSpell is the factory contract that
  *     defines how Blueberry Protocol interacts with Curve pools
  */
-contract CurveSpell is BasicSpell {
+contract CurveSpell is ICurveSpell, BasicSpell {
     using UniversalERC20 for IERC20;
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                    STORAGE
+    //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev address of Wrapped Curve Gauge
     IWCurveGauge private _wCurveGauge;
@@ -39,15 +45,10 @@ contract CurveSpell is BasicSpell {
     /// @dev address of CRV token
     address private _crvToken;
 
-    /**
-     * @notice Initializes the contract with required parameters.
-     * @param bank Reference to the Bank contract.
-     * @param werc20 Reference to the WERC20 contract.
-     * @param weth Address of the wrapped Ether token.
-     * @param wCurveGauge Address of the wrapped Curve Gauge contract.
-     * @param augustusSwapper Address of the paraswap AugustusSwapper.
-     * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
-     */
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
     function initialize(
         IBank bank,
         address werc20,
@@ -71,20 +72,12 @@ contract CurveSpell is BasicSpell {
         tokenTransferProxy = tokenTransferProxy;
     }
 
-    /**
-     * @notice Add strategy to the spell
-     * @param crvLp Address of crv lp token for given strategy
-     * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
-     * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
-     */
+    /// @inheritdoc ICurveSpell
     function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
-    /**
-     * @notice Add liquidity to Curve pool with 2 underlying tokens, with staking to Curve gauge
-     * @param minLPMint Desired LP token amount (slippage control)
-     */
+    /// @inheritdoc ICurveSpell
     function openPositionFarm(
         OpenPosParam calldata param,
         uint256 minLPMint
@@ -200,13 +193,7 @@ contract CurveSpell is BasicSpell {
         }
     }
 
-    /**
-     * @notice Closes a position from a Curve Gauge
-     * @param param Parameters for closing the position
-     * @param amounts Expected reward amounts for each reward token
-     * @param swapDatas Data required for swapping reward tokens to the debt token
-     * @param deadline Deadline for the transaction to be executed
-     */
+    /// @inheritdoc ICurveSpell
     function closePositionFarm(
         ClosePosParam calldata param,
         uint256[] calldata amounts,
@@ -277,17 +264,17 @@ contract CurveSpell is BasicSpell {
         _doRefund(getCrvToken());
     }
 
-    /// @notice Returns the Wrapped Curve Gauge contract address.
-    function getWCurveGauge() public view returns (IWCurveGauge) {
+    /// @inheritdoc ICurveSpell
+    function getWCurveGauge() public view override returns (IWCurveGauge) {
         return _wCurveGauge;
     }
 
-    /// @notice Returns the address of the Crv token.
-    function getCrvToken() public view returns (address) {
+    /// @inheritdoc ICurveSpell
+    function getCrvToken() public view override returns (address) {
         return _crvToken;
     }
 
-    /// @notice Returns the address of the Curve Oracle.
+    /// @inheritdoc ICurveSpell
     function getCurveOracle() external view returns (ICurveOracle) {
         return _crvOracle;
     }
