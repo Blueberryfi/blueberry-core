@@ -15,6 +15,12 @@ import { IERC20Wrapper } from "./IERC20Wrapper.sol";
  *         as ERC1155 tokens, providing batch transfer capabilities and more.
  */
 interface IWERC20 is IERC1155Upgradeable, IERC20Wrapper {
+    /// @notice Emitted when a token is minted.
+    event Minted(uint256 indexed id, uint256 amount);
+
+    /// @notice Emitted when a token is burned.
+    event Burned(uint256 indexed id, uint256 amount);
+
     /**
      * @notice Fetches the balance of the underlying ERC20 token for a specific user.
      * @param token The ERC20 token address.

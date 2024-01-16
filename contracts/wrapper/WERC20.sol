@@ -62,12 +62,17 @@ contract WERC20 is IWERC20, BaseWrapper, ReentrancyGuardUpgradeable {
         _validateTokenId(id);
 
         _mint(msg.sender, id, balanceAfter - balanceBefore, "");
+
+        emit Minted(id, amount);
     }
 
     /// @inheritdoc IWERC20
     function burn(address token, uint256 amount) external override nonReentrant {
-        _burn(msg.sender, _encodeTokenId(token), amount);
+        uint256 id = _encodeTokenId(token);
+        _burn(msg.sender, id, amount);
         IERC20Upgradeable(token).safeTransfer(msg.sender, amount);
+
+        emit Burned(id, amount);
     }
 
     /// @inheritdoc IERC20Wrapper
