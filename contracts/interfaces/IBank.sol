@@ -2,39 +2,41 @@
 
 pragma solidity 0.8.22;
 
-import "./IProtocolConfig.sol";
-import "./IFeeManager.sol";
-import "./ICoreOracle.sol";
+import { IProtocolConfig } from "./IProtocolConfig.sol";
+import { IFeeManager } from "./IFeeManager.sol";
+import { ICoreOracle } from "./ICoreOracle.sol";
 
-/// @title IBank
-/// @notice Interface for the bank operations, including lending, borrowing, and management of collateral positions.
+/**
+ * @title IBank
+ * @notice Interface for the bank operations, including lending, borrowing, and management of collateral positions.
+ */
 interface IBank {
     /*//////////////////////////////////////////////////////////////////////////
                                        STRUCTS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// Represents the configuration and current state of a bank.
+    /// @notice Represents the configuration and current state of a bank.
     struct Bank {
-        bool isListed; /// Indicates if this bank is active.
-        uint8 index; /// Index for reverse lookups.
-        address hardVault; /// Address of the hard vault.
-        address softVault; /// Address of the soft vault.
-        address bToken; /// Address of the bToken associated with the bank.
-        uint256 totalShare; /// Total shares of debt across all open positions.
-        uint256 liqThreshold; /// Liquidation threshold (e.g., 85% for volatile tokens,
+        bool isListed; /// @dev Indicates if this bank is active.
+        uint8 index; /// @dev Index for reverse lookups.
+        address hardVault; /// @dev Address of the hard vault.
+        address softVault; /// @dev Address of the soft vault.
+        address bToken; /// @dev Address of the bToken associated with the bank.
+        uint256 totalShare; /// @dev Total shares of debt across all open positions.
+        uint256 liqThreshold; /// @dev Liquidation threshold (e.g., 85% for volatile tokens,
         /// 90% for stablecoins). Base: 1e4
     }
 
-    /// Represents a position in the bank, including both debt and collateral.
+    /// @notice Represents a position in the bank, including both debt and collateral.
     struct Position {
-        address owner; /// Address of the position's owner.
-        address collToken; /// Address of the ERC1155 token used as collateral.
-        address underlyingToken; /// Address of the isolated underlying collateral token.
-        address debtToken; /// Address of the debt token.
-        uint256 underlyingVaultShare; /// Amount of vault share for isolated underlying collateral.
-        uint256 collId; /// Token ID of the ERC1155 collateral.
-        uint256 collateralSize; /// Amount of wrapped token used as collateral.
-        uint256 debtShare; /// Debt share of the given debt token for the bank.
+        address owner; /// @dev Address of the position's owner.
+        address collToken; /// @dev Address of the ERC1155 token used as collateral.
+        address underlyingToken; /// @dev Address of the isolated underlying collateral token.
+        address debtToken; /// @dev Address of the debt token.
+        uint256 underlyingVaultShare; /// @dev Amount of vault share for isolated underlying collateral.
+        uint256 collId; /// @dev Token ID of the ERC1155 collateral.
+        uint256 collateralSize; /// @dev Amount of wrapped token used as collateral.
+        uint256 debtShare; /// @dev Debt share of the given debt token for the bank.
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -43,18 +45,18 @@ interface IBank {
 
     /// @notice Emitted when a new bank is added by the owner.
     event AddBank(
-        address token, /// The primary token associated with the bank.
-        address bToken, /// The corresponding bToken for the bank.
-        address softVault, /// Address of the soft vault.
-        address hardVault /// Address of the hard vault.
+        address token, /// @dev The primary token associated with the bank.
+        address bToken, /// @dev The corresponding bToken for the bank.
+        address softVault, /// @dev Address of the soft vault.
+        address hardVault /// @dev Address of the hard vault.
     );
 
     /// @notice Emitted when a bank is modified by the owner.
     event ModifyBank(
-        address token, /// The primary token associated with the bank.
-        address bToken, /// The corresponding bToken for the bank.
-        address softVault, /// Address of the soft vault.
-        address hardVault /// Address of the hard vault.
+        address token, /// @dev The primary token associated with the bank.
+        address bToken, /// @dev The corresponding bToken for the bank.
+        address softVault, /// @dev Address of the soft vault.
+        address hardVault /// @dev Address of the hard vault.
     );
 
     /// @notice Emitted when the oracle's address is updated by the owner.
@@ -146,8 +148,10 @@ interface IBank {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Returns the next available position ID.
-    /// @return Next position ID.
+    /**
+     * @dev Returns the next available position ID.
+     * @return Next position ID.
+     */
     function getNextPositionId() external view returns (uint256);
 
     /// @notice Provides the protocol configuration settings.
@@ -165,16 +169,22 @@ interface IBank {
      */
     function getFeeManager() external view returns (IFeeManager);
 
-    /// @notice Returns whitelist status of a given token.
-    /// @param token Address of the token.
+    /**
+     * @notice Returns whitelist status of a given token.
+     * @param token Address of the token.
+     */
     function isTokenWhitelisted(address token) external view returns (bool);
 
-    /// @notice Returns whitelist status of a given wrapped token
-    /// @param token Address of the wrapped token.
+    /**
+     * @notice Returns whitelist status of a given wrapped token.
+     * @param token Address of the wrapped token.
+     */
     function isWrappedTokenWhitelisted(address token) external view returns (bool);
 
-    /// @notice Returns whitelist status of a given spell
-    /// @param spell Address of the spell.
+    /**
+     * @notice Returns whitelist status of a given spell.
+     * @param spell Address of the spell.
+     */
     function isSpellWhitelisted(address spell) external view returns (bool);
 
     /**
@@ -208,12 +218,14 @@ interface IBank {
     /// @notice Fetches details of a bank given its token.
     function getBankInfo(address token) external view returns (Bank memory bank);
 
-    /// @notice Gets the status of the bank
-    /// @return The status of the bank
-    ///         1: Borrow is allowed
-    ///         2: Repay is allowed
-    ///         4: Lend is allowed
-    ///         8: WithdrawLend is allowed
+    /**
+     * @notice Gets the status of the bank
+     * @return The status of the bank
+     * @dev 1: Borrow is allowed
+     *      2: Repay is allowed
+     *      4: Lend is allowed
+     *      8: WithdrawLend is allowed
+     */
     function getBankStatus() external view returns (uint256);
 
     /**
@@ -248,7 +260,7 @@ interface IBank {
     function getPositionDebt(uint256 positionId) external view returns (uint256 debt);
 
     /**
-     * @dev Determines if a given position can be liquidated based on its risk ratio.
+     * @notice Determines if a given position can be liquidated based on its risk ratio.
      * @param positionId ID of the position to check.
      * @return True if the position can be liquidated; otherwise, false.
      */
@@ -328,54 +340,73 @@ interface IBank {
      */
     function execute(uint256 positionId, address spell, bytes memory data) external returns (uint256);
 
-    /// @notice Allows users to repay their borrowed tokens to the bank.
-    /// @dev This function must only be called while under execution.
-    /// @dev Emit a {Repay} event.
-    /// @param token The token to repay to the bank.
-    /// @param amountCall The amount of tokens to be repaid.
+    /**
+     * @notice Allows users to repay their borrowed tokens to the bank.
+     * @dev This function must only be called while under execution.
+     * @dev Emit a {Repay} event.
+     * @param token The token to repay to the bank.
+     * @param amountCall The amount of tokens to be repaid.
+     */
     function repay(address token, uint256 amountCall) external;
 
-    /// @notice Allows users to provide additional collateral.
-    /// @dev Must only be called during execution.
-    /// @param collToken The ERC1155 token wrapped for collateral (i.e., Wrapped token of LP).
-    /// @param collId The token ID for collateral (i.e., uint256 format of LP address).
-    /// @param amountCall The amount of tokens to add as collateral.
+    /**
+     * @notice Allows users to provide additional collateral.
+     * @dev Must only be called during execution.
+     * @param collToken The ERC1155 token wrapped for collateral (i.e., Wrapped token of LP).
+     * @param collId The token ID for collateral (i.e., uint256 format of LP address).
+     * @param amountCall The amount of tokens to add as collateral.
+     */
     function putCollateral(address collToken, uint256 collId, uint256 amountCall) external;
 
-    /// @notice Allows users to withdraw a portion of their collateral.
-    /// @dev Must only be called during execution.
-    /// @param amount The amount of tokens to be withdrawn as collateral.
-    /// @return Returns the amount of collateral withdrawn.
+    /**
+     * @notice Allows users to withdraw a portion of their collateral.
+     * @dev Must only be called during execution.
+     * @param amount The amount of tokens to be withdrawn as collateral.
+     * @return Returns the amount of collateral withdrawn.
+     */
     function takeCollateral(uint256 amount) external returns (uint256);
 
-    /// @dev Liquidates a position by repaying its debt and taking the collateral.
-    /// @dev Emits a {Liquidate} event.
-    /// @notice Liquidation can only be triggered if the position is deemed liquidatable
-    ///         and other conditions are met.
-    /// @param positionId The unique identifier of the position to liquidate.
-    /// @param debtToken The token in which the debt is denominated.
-    /// @param amountCall The amount of debt to be repaid when calling transferFrom.
+    /**
+     * @dev Liquidates a position by repaying its debt and taking the collateral.
+     * @dev Emit a {Liquidate} event.
+     * @notice Liquidation can only be triggered if the position is deemed liquidatable
+     *         and other conditions are met.
+     * @param positionId The unique identifier of the position to liquidate.
+     * @param debtToken The token in which the debt is denominated.
+     * @param amountCall The amount of debt to be repaid when calling transferFrom.
+     */
     function liquidate(uint256 positionId, address debtToken, uint256 amountCall) external;
 
-    /// @notice Accrues interest for a given token.
-    /// @param token Address of the token to accrue interest for.
+    /**
+     * @notice Accrues interest for a given token.
+     * @param token Address of the token to accrue interest for.
+     */
     function accrue(address token) external;
 
-    /// @dev Convenient function to trigger interest accrual for multiple banks.
-    /// @param tokens An array of token addresses to trigger interest accrual for.
+    /**
+     * @notice Accrues interest for a given list of tokens.
+     * @param tokens An array of token addresses to accrue interest for.
+     */
     function accrueAll(address[] memory tokens) external;
 
     /* solhint-disable func-name-mixedcase */
-    /// @notice Returns the current executor's address, which is the owner of the current position.
-    /// @return Address of the current executor.
+
+    /**
+     * @notice Returns the current executor's address, which is the owner of the current position.
+     * @return Address of the current executor.
+     */
     function EXECUTOR() external view returns (address);
 
-    /// @notice Returns the ID of the currently executed position.
-    /// @return Current position ID.
+    /**
+     * @notice Returns the ID of the currently executed position.
+     * @return Current position ID.
+     */
     function POSITION_ID() external view returns (uint256);
 
-    /// @notice Returns the address of the currently executed spell.
-    /// @return Current spell address.
+    /**
+     * @notice Returns the address of the currently executed bank.
+     * @return Current bank address.
+     */
     function SPELL() external view returns (address);
 
     /* solhint-enable func-name-mixedcase */
