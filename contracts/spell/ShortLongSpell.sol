@@ -77,6 +77,25 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
     }
 
     /// @inheritdoc IShortLongSpell
+    function openPosition(
+        OpenPosParam calldata param,
+        bytes calldata swapData
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        Strategy memory strategy = _strategies[param.strategyId];
+        if (address(ISoftVault(strategy.vault).getUnderlyingToken()) == param.borrowToken) {
+            revert Errors.INCORRECT_LP(param.borrowToken);
+        }
+
+        /// 1-3 Swap to strategy underlying token, deposit to softvault
+        _deposit(param, swapData);
+
+        /// 4. Put collateral - strategy token
+        address vault = _strategies[param.strategyId].vault;
+
+        _doPutCollateral(vault, IERC20Upgradeable(ISoftVault(vault)).balanceOf(address(this)));
+    }
+
+    /// @inheritdoc IShortLongSpell
     function closePosition(
         ClosePosParam calldata param,
         bytes calldata swapData
@@ -100,25 +119,6 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
 
         /// 2-7. Remove liquidity
         _withdraw(param, swapData);
-    }
-
-    /// @inheritdoc IShortLongSpell
-    function openPosition(
-        OpenPosParam calldata param,
-        bytes calldata swapData
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        Strategy memory strategy = _strategies[param.strategyId];
-        if (address(ISoftVault(strategy.vault).getUnderlyingToken()) == param.borrowToken) {
-            revert Errors.INCORRECT_LP(param.borrowToken);
-        }
-
-        /// 1-3 Swap to strategy underlying token, deposit to softvault
-        _deposit(param, swapData);
-
-        /// 4. Put collateral - strategy token
-        address vault = _strategies[param.strategyId].vault;
-
-        _doPutCollateral(vault, IERC20Upgradeable(ISoftVault(vault)).balanceOf(address(this)));
     }
 
     /// @inheritdoc IShortLongSpell
