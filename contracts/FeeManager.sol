@@ -71,7 +71,7 @@ contract FeeManager is IFeeManager, OwnableUpgradeable {
 
     /// @inheritdoc IFeeManager
     function doCutVaultWithdrawFee(address token, uint256 amount) external returns (uint256) {
-        IProtocolConfig config = _config;
+        IProtocolConfig config = getConfig();
         /// Calculate the fee if it's within the fee window, otherwise return the original amount.
         if (block.timestamp < config.getWithdrawVaultFeeWindowStartTime() + config.getWithdrawVaultFeeWindow()) {
             return _doCutFee(token, amount, config.getWithdrawVaultFee());
