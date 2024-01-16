@@ -166,7 +166,7 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
 
         _auraPerShareDebt[id] = _auraPerShareByPid[pid];
 
-        emit Minted(pid, amount, msg.sender);
+        emit Minted(id, pid, amount);
     }
 
     /// @inheritdoc IWAuraBooster
@@ -213,7 +213,7 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
 
         _packedBalances[pid] = _packBalances(lastBalPerToken, auraBalance);
 
-        emit Burned(id, amount, msg.sender);
+        emit Burned(id, pid, amount);
     }
 
     /// @inheritdoc IERC20Wrapper

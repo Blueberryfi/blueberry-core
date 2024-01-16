@@ -28,10 +28,10 @@ import { IPoolEscrowFactory } from "../wrapper/escrow/interfaces/IPoolEscrowFact
  */
 interface IWAuraBooster is IERC1155Upgradeable, IERC20Wrapper {
     /// @notice Emitted when a user stakes liquidity provider tokens and a new ERC1155 token is minted.
-    event Minted(uint256 pid, uint256 amount, address indexed user);
+    event Minted(uint256 indexed id, uint256 indexed pid, uint256 amount);
 
     /// @notice Emitted when a user burns an ERC1155 token to claim rewards and close their position.
-    event Burned(uint256 id, uint256 amount, address indexed user);
+    event Burned(uint256 indexed id, uint256 indexed pid, uint256 amount);
 
     /**
      * @notice Struct for storing information regarding an Aura Pools Stash Token.
