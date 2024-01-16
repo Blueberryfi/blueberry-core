@@ -196,7 +196,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
       UniV3WrappedLibContainer: LibInstance.address,
     },
   });
-  ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(mockOracle.address);
+  ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(mockOracle.address, admin.address);
   await ichiOracle.deployed();
   await ichiOracle.setPriceDeviation(ICHI, 500);
   await ichiOracle.setPriceDeviation(USDC, 500);

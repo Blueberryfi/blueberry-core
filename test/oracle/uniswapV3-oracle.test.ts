@@ -28,7 +28,7 @@ describe('Uniswap V3 Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    uniswapV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(mockOracle.address);
+    uniswapV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(mockOracle.address, admin.address);
     await uniswapV3Oracle.deployed();
   });
 
@@ -102,9 +102,15 @@ describe('Uniswap V3 Oracle', () => {
         [BigNumber.from(10).pow(18)] // $1
       );
       await uniswapV3Oracle.setStablePools(
-        [ADDRESS.UNI, ADDRESS.ICHI, ADDRESS.CRV],
-        [ADDRESS.UNI_V3_UNI_USDC, ADDRESS.UNI_V3_ICHI_USDC, ADDRESS.UNI_V3_USDC_CRV]
+        [ADDRESS.UNI, ADDRESS.ICHI, ADDRESS.CRV, ADDRESS.DAI],
+        [ADDRESS.UNI_V3_UNI_USDC, ADDRESS.UNI_V3_ICHI_USDC, ADDRESS.UNI_V3_USDC_CRV, ADDRESS.UNI_V3_USDC_DAI]
       );
+
+      await uniswapV3Oracle.connect(admin).registerToken(ADDRESS.UNI);
+      await uniswapV3Oracle.connect(admin).registerToken(ADDRESS.ICHI);
+      await uniswapV3Oracle.connect(admin).registerToken(ADDRESS.CRV);
+      await uniswapV3Oracle.connect(admin).registerToken(ADDRESS.DAI);
+
       await uniswapV3Oracle.setTimeGap(
         [ADDRESS.UNI, ADDRESS.ICHI, ADDRESS.CRV],
         [3600, 3600, 3600] // timeAgo - 1 hour
@@ -112,14 +118,14 @@ describe('Uniswap V3 Oracle', () => {
     });
 
     it('should revert when mean time is not set', async () => {
-      await expect(uniswapV3Oracle.callStatic.getPrice(ADDRESS.USDC))
+      await expect(uniswapV3Oracle.callStatic.getPrice(ADDRESS.DAI))
         .to.be.revertedWithCustomError(uniswapV3Oracle, 'NO_MEAN')
-        .withArgs(ADDRESS.USDC);
+        .withArgs(ADDRESS.DAI);
     });
     it('should revert when stable pool is not set', async () => {
       await uniswapV3Oracle.setTimeGap([ADDRESS.USDC], [3600]);
       await expect(uniswapV3Oracle.callStatic.getPrice(ADDRESS.USDC))
-        .to.be.revertedWithCustomError(uniswapV3Oracle, 'NO_STABLEPOOL')
+        .to.be.revertedWithCustomError(uniswapV3Oracle, 'ORACLE_NOT_SUPPORT_LP')
         .withArgs(ADDRESS.USDC);
     });
     it('$UNI Price', async () => {

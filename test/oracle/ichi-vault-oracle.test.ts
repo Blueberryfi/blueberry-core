@@ -68,7 +68,7 @@ describe('Ichi Vault Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    uniswapV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(coreOracle.address);
+    uniswapV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(coreOracle.address, admin.address);
     await uniswapV3Oracle.deployed();
     await uniswapV3Oracle.setStablePools([ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
     await uniswapV3Oracle.setTimeGap(
@@ -83,7 +83,7 @@ describe('Ichi Vault Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(coreOracle.address);
+    ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(coreOracle.address, admin.address);
     await ichiOracle.deployed();
 
     swapRouter = <ISwapRouter>await ethers.getContractAt('ISwapRouter', ADDRESS.UNI_V3_ROUTER);
