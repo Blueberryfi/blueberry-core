@@ -11,7 +11,6 @@
 pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
-import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { EnumerableSetUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import { SafeERC20Upgradeable, IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -20,6 +19,8 @@ import { FixedPointMathLib } from "../libraries/FixedPointMathLib.sol";
 /* solhint-enable max-line-length */
 
 import "../utils/BlueberryErrors.sol" as Errors;
+
+import { BaseWrapper } from "./BaseWrapper.sol";
 
 import { IWAuraBooster } from "../interfaces/IWAuraBooster.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
@@ -41,13 +42,7 @@ import { IRewarder } from "../interfaces/convex/IRewarder.sol";
  *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
-contract WAuraBooster is
-    IERC20Wrapper,
-    IWAuraBooster,
-    ERC1155Upgradeable,
-    ReentrancyGuardUpgradeable,
-    OwnableUpgradeable
-{
+contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable, OwnableUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using FixedPointMathLib for uint256;
@@ -564,16 +559,6 @@ contract WAuraBooster is
             return stash == auraStash;
         } catch {
             return false;
-        }
-    }
-
-    /**
-     * @notice Verifies that the provided token id is unique and has not been minted yet
-     * @param tokenId The ID of the ERC1155 token representing the staked position.
-     */
-    function _validateTokenId(uint256 tokenId) internal view {
-        if (balanceOf(msg.sender, tokenId) != 0) {
-            revert Errors.DUPLICATE_TOKEN_ID(tokenId);
         }
     }
 }

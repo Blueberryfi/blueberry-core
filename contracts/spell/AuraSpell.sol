@@ -92,8 +92,9 @@ contract AuraSpell is BasicSpell {
         OpenPosParam calldata param,
         uint256 minimumBPT
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        IBank bank = getBank();
         /// Extract strategy details for the given strategy ID.
-        Strategy memory strategy = strategies[param.strategyId];
+        Strategy memory strategy = _strategies[param.strategyId];
         /// Fetch pool information based on provided farming pool ID.
         (address lpToken, , , , , ) = _wAuraBooster.getPoolInfoFromPoolId(param.farmingPoolId);
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
@@ -175,12 +176,12 @@ contract AuraSpell is BasicSpell {
         bytes[] calldata swapDatas
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         /// Information about the position from Blueberry Bank
+        IBank bank = getBank();
         IBank.Position memory pos = bank.getCurrentPositionInfo();
-        address[] memory rewardTokens;
 
         /// Ensure the position's collateral token matches the expected one
         {
-            address lpToken = strategies[param.strategyId].vault;
+            address lpToken = _strategies[param.strategyId].vault;
             if (pos.collToken != address(_wAuraBooster)) revert Errors.INCORRECT_COLTOKEN(pos.collToken);
             if (_wAuraBooster.getUnderlyingToken(pos.collId) != lpToken) {
                 revert Errors.INCORRECT_UNDERLYING(lpToken);
@@ -190,6 +191,7 @@ contract AuraSpell is BasicSpell {
 
             /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards
             {
+                address[] memory rewardTokens;
                 (rewardTokens, ) = _wAuraBooster.burn(pos.collId, param.amountPosRemove);
                 /// 2. Swap each reward token for the debt token
                 _sellRewards(rewardTokens, expectedRewards, swapDatas);
@@ -341,7 +343,7 @@ contract AuraSpell is BasicSpell {
             _doCutRewardsFee(sellToken);
             if (
                 expectedRewards[i] != 0 &&
-                !PSwapLib.swap(augustusSwapper, tokenTransferProxy, sellToken, expectedRewards[i], swapDatas[i])
+                !PSwapLib.swap(_augustusSwapper, _tokenTransferProxy, sellToken, expectedRewards[i], swapDatas[i])
             ) revert Errors.SWAP_FAILED(sellToken);
 
             /// Refund rest (dust) amount to owner
