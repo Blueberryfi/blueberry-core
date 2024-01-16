@@ -203,6 +203,9 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiOracle.setPriceDeviation(DAI, 500);
   await ichiOracle.setPriceDeviation(wstETH, 500);
 
+  await ichiOracle.registerVault(ichi_USDC_ICHI_Vault.address);
+  await ichiOracle.registerVault(ichi_USDC_DAI_Vault.address);
+
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, { unsafeAllow: ['delegatecall'] });
   await oracle.deployed();
