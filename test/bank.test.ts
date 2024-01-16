@@ -108,14 +108,12 @@ describe('Bank', () => {
       );
       await bank.deployed();
 
-      expect(await bank.GENERAL_LOCK()).to.be.equal(1);
-      expect(await bank.IN_EXEC_LOCK()).to.be.equal(1);
       expect(await bank.POSITION_ID()).to.be.equal(ethers.constants.MaxUint256);
       expect(await bank.SPELL()).to.be.equal('0x0000000000000000000000000000000000000001');
-      expect(await bank.oracle()).to.be.equal(oracle.address);
-      expect(await bank.config()).to.be.equal(config.address);
-      expect(await bank.nextPositionId()).to.be.equal(1);
-      expect(await bank.bankStatus()).to.be.equal(15);
+      expect(await bank.getOracle()).to.be.equal(oracle.address);
+      expect(await bank.getConfig()).to.be.equal(config.address);
+      expect(await bank.getNextPositionId()).to.be.equal(1);
+      expect(await bank.getBankStatus()).to.be.equal(15);
     });
     it('should revert initializing twice', async () => {
       await expect(bank.initialize(oracle.address, config.address)).to.be.revertedWith(
@@ -157,7 +155,7 @@ describe('Bank', () => {
       ).to.be.revertedWithCustomError(bank, 'SPELL_NOT_WHITELISTED');
     });
     it('should revert execution for existing position when given position id is greater than last pos id', async () => {
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       await expect(
         bank.execute(
           positionId,
@@ -193,7 +191,7 @@ describe('Bank', () => {
         ])
       );
 
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       await expect(
         bank.connect(alice).execute(
           positionId.sub(1),
@@ -273,7 +271,7 @@ describe('Bank', () => {
         ])
       );
 
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       await expect(
         bank.execute(
           positionId.sub(1),
@@ -309,7 +307,7 @@ describe('Bank', () => {
         ])
       );
 
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       await expect(
         bank.execute(
           positionId.sub(1),
@@ -345,7 +343,7 @@ describe('Bank', () => {
         ])
       );
 
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       const position = await bank.getPositionInfo(positionId.sub(1));
       await expect(
         bank.execute(
@@ -418,7 +416,7 @@ describe('Bank', () => {
         ])
       );
 
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
       TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
@@ -460,7 +458,7 @@ describe('Bank', () => {
         ])
       );
 
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
       TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
@@ -516,7 +514,7 @@ describe('Bank', () => {
       );
 
       await bank.whitelistTokens([USDC], [false]);
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
       TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
@@ -558,7 +556,7 @@ describe('Bank', () => {
           },
         ])
       );
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       await bank.execute(
         positionId,
         spell.address,
@@ -604,7 +602,7 @@ describe('Bank', () => {
           },
         ])
       );
-      positionId = (await bank.nextPositionId()).sub(1);
+      positionId = (await bank.getNextPositionId()).sub(1);
     });
     it('should revert liquidation when repay is not allowed', async () => {
       const liqAmount = utils.parseUnits('100', 6);
@@ -772,10 +770,9 @@ describe('Bank', () => {
       );
       risk = await bank.callStatic.getPositionRisk(positionId);
       console.log('Position Risk:', risk);
-      console.log(
-        'Liquidity Threshold:',
-        (await bank.banks((await bank.positions(positionId)).underlyingToken)).liqThreshold
-      );
+      const positionInfo = await bank.getPositionInfo(positionId);
+      const bankInfo = await bank.getBankInfo(positionInfo.underlyingToken);
+      console.log('Liquidity Threshold:', bankInfo.liqThreshold);
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
       console.log('Is Liquidatable:', await bank.callStatic.isLiquidatable(positionId));
 
@@ -821,11 +818,11 @@ describe('Bank', () => {
           bank.whitelistSpells([admin.address, constants.AddressZero], [true, true])
         ).to.be.revertedWithCustomError(bank, 'ZERO_ADDRESS');
 
-        expect(await bank.whitelistedSpells(admin.address)).to.be.false;
+        expect(await bank.isSpellWhitelisted(admin.address)).to.be.false;
         await bank.whitelistSpells([admin.address], [true]);
-        expect(await bank.whitelistedSpells(admin.address)).to.be.true;
+        expect(await bank.isSpellWhitelisted(admin.address)).to.be.true;
         await bank.whitelistSpells([admin.address], [false]);
-        expect(await bank.whitelistedSpells(admin.address)).to.be.false;
+        expect(await bank.isSpellWhitelisted(admin.address)).to.be.false;
       });
       it('should be able to whitelist standard ERC20 tokens', async () => {
         await expect(bank.connect(alice).whitelistTokens([WETH], [true])).to.be.revertedWith(
@@ -842,16 +839,16 @@ describe('Bank', () => {
           .withArgs(ADDRESS.CRV);
 
         await bank.whitelistTokens([WETH, ICHI], [true, true]);
-        expect(await bank.whitelistedTokens(WETH)).to.be.true;
-        expect(await bank.whitelistedTokens(ICHI)).to.be.true;
+        expect(await bank.isTokenWhitelisted(WETH)).to.be.true;
+        expect(await bank.isTokenWhitelisted(ICHI)).to.be.true;
 
         await bank.whitelistTokens([WETH, ICHI], [false, false]);
-        expect(await bank.whitelistedTokens(WETH)).to.be.false;
-        expect(await bank.whitelistedTokens(ICHI)).to.be.false;
+        expect(await bank.isTokenWhitelisted(WETH)).to.be.false;
+        expect(await bank.isTokenWhitelisted(ICHI)).to.be.false;
 
         await bank.whitelistTokens([WETH, ICHI], [true, true]);
-        expect(await bank.whitelistedTokens(WETH)).to.be.true;
-        expect(await bank.whitelistedTokens(ICHI)).to.be.true;
+        expect(await bank.isTokenWhitelisted(WETH)).to.be.true;
+        expect(await bank.isTokenWhitelisted(ICHI)).to.be.true;
       });
       it('should be able to whitelist ERC1155 tokens', async () => {
         await expect(bank.connect(alice).whitelistERC1155([werc20.address], true)).to.be.revertedWith(
@@ -864,13 +861,13 @@ describe('Bank', () => {
         );
 
         await bank.whitelistERC1155([werc20.address], true);
-        expect(await bank.whitelistedWrappedTokens(werc20.address)).to.be.true;
+        expect(await bank.isWrappedTokenWhitelisted(werc20.address)).to.be.true;
 
         await bank.whitelistERC1155([werc20.address], false);
-        expect(await bank.whitelistedWrappedTokens(werc20.address)).to.be.false;
+        expect(await bank.isWrappedTokenWhitelisted(werc20.address)).to.be.false;
 
         await bank.whitelistERC1155([werc20.address], true);
-        expect(await bank.whitelistedWrappedTokens(werc20.address)).to.be.true;
+        expect(await bank.isWrappedTokenWhitelisted(werc20.address)).to.be.true;
       });
       it('should be able to add bank', async () => {
         await expect(
@@ -1004,7 +1001,7 @@ describe('Bank', () => {
             },
           ])
         );
-        const positionId = (await bank.nextPositionId()).sub(1);
+        const positionId = (await bank.getNextPositionId()).sub(1);
         const tick = await ichiVault.currentTick();
         TickMath.getSqrtRatioAtTick(tick);
         await ichi.approve(bank.address, ethers.constants.MaxUint256);
@@ -1103,7 +1100,7 @@ describe('Bank', () => {
         // set ICHI token oracle route wrongly
         oracle.setRoutes([ICHI], [ICHI]);
 
-        const positionId = (await bank.nextPositionId()).sub(1);
+        const positionId = (await bank.getNextPositionId()).sub(1);
         const positionValue = await bank.callStatic.getPositionValue(positionId);
         expect(positionValue).to.be.gte(BigNumber.from(0));
 

@@ -26,25 +26,28 @@ import { IProtocolConfig } from "../interfaces/IProtocolConfig.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IBErc20 } from "../interfaces/money-market/IBErc20.sol";
 
-/// @author BlueberryProtocol
-/// @title Soft Vault
-/// @notice Soft Vault is a spot where users lend and borrow tokens from/to Blueberry Money Market.
-/// @dev SoftVault is communicating with bTokens to lend and borrow underlying tokens from/to Blueberry Money Market.
-///      Underlying tokens can be ERC20 tokens listed by Blueberry team, such as USDC, USDT, DAI, WETH, ...
-contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgradeable, ISoftVault {
+/**
+ * @title SoftVault
+ * @author BlueberryProtocol
+ * @notice The SoftVault contract is used to lock LP tokens as collateral.
+ *         This vault simply holds onto LP tokens deposited by users, serving as collateral storage.
+ * @dev The SoftVault is an ERC20 contract where each LP token is associated with a unique tokenId.
+ *      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
+ */
+contract SoftVault is ISoftVault, OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                   PUBLIC STORAGE
+                                      STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev address of bToken for underlying token
-    IBErc20 public bToken;
+    IBErc20 private _bToken;
     /// @dev address of underlying token
-    IERC20Upgradeable public uToken;
+    IERC20Upgradeable private _underlyingToken;
     /// @dev address of protocol config
-    IProtocolConfig public config;
+    IProtocolConfig private _config;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -59,46 +62,53 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Initializes the contract
-    /// @param _config Address of protocol configuration
-    /// @param _bToken Address of bToken
-    /// @param _name ERC20 name for the SoftVault token
-    /// @param _symbol ERC20 symbol for the SoftVault token
+    /**
+     * @notice Initializes the contract
+     * @param config Address of protocol configuration
+     * @param bToken Address of bToken
+     * @param name ERC20 name for the SoftVault token
+     * @param symbol ERC20 symbol for the SoftVault token
+     */
     function initialize(
-        IProtocolConfig _config,
-        IBErc20 _bToken,
-        string memory _name,
-        string memory _symbol
+        IProtocolConfig config,
+        IBErc20 bToken,
+        string memory name,
+        string memory symbol
     ) external initializer {
         __ReentrancyGuard_init();
         __Ownable_init();
-        __ERC20_init(_name, _symbol);
+        __ERC20_init(name, symbol);
 
-        if (address(_bToken) == address(0) || address(_config) == address(0)) revert Errors.ZERO_ADDRESS();
+        if (address(bToken) == address(0) || address(config) == address(0)) revert Errors.ZERO_ADDRESS();
 
-        IERC20Upgradeable _uToken = IERC20Upgradeable(_bToken.underlying());
-        config = _config;
-        bToken = _bToken;
-        uToken = _uToken;
+        IERC20Upgradeable uToken = IERC20Upgradeable(bToken.underlying());
+        _config = config;
+        _bToken = bToken;
+        _underlyingToken = uToken;
     }
 
-    /// @dev Vault has same decimal as bToken, bToken has same decimal as underlyingToken
+    /*
+     * @dev Vault has same decimal as bToken, bToken has same decimal as underlyingToken
+     * @notice gets the decimals of the underlying token
+     * @return decimals of the underlying token
+     */
     function decimals() public view override returns (uint8) {
-        return bToken.decimals();
+        return _bToken.decimals();
     }
 
-    /// @notice Deposit underlying assets on Blueberry Money Market and issue share token
-    /// @dev Emits a {Deposited} event.
-    /// @param amount Underlying token amount to deposit
-    /// @return shareAmount same as bToken amount received
+    /// @inheritdoc ISoftVault
     function deposit(uint256 amount) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
-        uint256 uBalanceBefore = uToken.balanceOf(address(this));
-        uToken.safeTransferFrom(msg.sender, address(this), amount);
-        uint256 uBalanceAfter = uToken.balanceOf(address(this));
+
+        IBErc20 bToken = getBToken();
+        IERC20Upgradeable underlyingToken = getUnderlyingToken();
+
+        uint256 uBalanceBefore = underlyingToken.balanceOf(address(this));
+        underlyingToken.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 uBalanceAfter = underlyingToken.balanceOf(address(this));
 
         uint256 cBalanceBefore = bToken.balanceOf(address(this));
-        IERC20(address(uToken)).universalApprove(address(bToken), amount);
+        IERC20(address(underlyingToken)).universalApprove(address(bToken), amount);
         if (bToken.mint(uBalanceAfter - uBalanceBefore) != 0) revert Errors.LEND_FAILED(amount);
         uint256 cBalanceAfter = bToken.balanceOf(address(this));
 
@@ -108,26 +118,41 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
         emit Deposited(msg.sender, amount, shareAmount);
     }
 
-    /// @notice Withdraw underlying assets from Blueberry Money Market
-    /// @dev Emits a {Withdrawn} event.
-    /// @dev It cuts vault withdraw fee when you withdraw within the vault withdraw window
-    /// @param shareAmount Amount of bTokens to redeem
-    /// @return withdrawAmount Amount of underlying assets withdrawn
+    /// @inheritdoc ISoftVault
     function withdraw(uint256 shareAmount) external override nonReentrant returns (uint256 withdrawAmount) {
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
 
+        IBErc20 bToken = getBToken();
+        IERC20Upgradeable underlyingToken = getUnderlyingToken();
+        IProtocolConfig config = getConfig();
+
         _burn(msg.sender, shareAmount);
 
-        uint256 uBalanceBefore = uToken.balanceOf(address(this));
+        uint256 uBalanceBefore = underlyingToken.balanceOf(address(this));
         if (bToken.redeem(shareAmount) != 0) revert Errors.REDEEM_FAILED(shareAmount);
-        uint256 uBalanceAfter = uToken.balanceOf(address(this));
+        uint256 uBalanceAfter = underlyingToken.balanceOf(address(this));
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
-        IERC20(address(uToken)).universalApprove(address(config.getFeeManager()), withdrawAmount);
+        IERC20(address(underlyingToken)).universalApprove(address(config.getFeeManager()), withdrawAmount);
 
-        withdrawAmount = config.getFeeManager().doCutVaultWithdrawFee(address(uToken), withdrawAmount);
-        uToken.safeTransfer(msg.sender, withdrawAmount);
+        withdrawAmount = config.getFeeManager().doCutVaultWithdrawFee(address(underlyingToken), withdrawAmount);
+        underlyingToken.safeTransfer(msg.sender, withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);
+    }
+
+    /// @inheritdoc ISoftVault
+    function getBToken() public view override returns (IBErc20) {
+        return _bToken;
+    }
+
+    /// @inheritdoc ISoftVault
+    function getUnderlyingToken() public view override returns (IERC20Upgradeable) {
+        return _underlyingToken;
+    }
+
+    /// @inheritdoc ISoftVault
+    function getConfig() public view override returns (IProtocolConfig) {
+        return _config;
     }
 }

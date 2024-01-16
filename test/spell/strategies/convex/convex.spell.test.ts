@@ -129,7 +129,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #1', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       3,
@@ -158,7 +158,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #2', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       3,
@@ -187,7 +187,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #3', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       3,
@@ -216,7 +216,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #4', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       3,
@@ -245,7 +245,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #5', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       3,
@@ -266,7 +266,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it.skip('should be able to harvest on Convex #6', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(positionId, 3, CRV_STETH, WETH, balance, crvRewarder1, 0, crvStEth);
     await revertToSnapshot(snapshotId);
   });
@@ -286,7 +286,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #7', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       2,
@@ -315,7 +315,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #8', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       2,
@@ -344,7 +344,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #9', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       2,
@@ -373,7 +373,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #10', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       2,
@@ -402,7 +402,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #11', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       2,
@@ -423,7 +423,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it.skip('should be able to harvest on Convex #12', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(positionId, 2, CRV_FRXETH, WETH, balance, crvRewarder2, 0, crvFrxEth);
     await revertToSnapshot(snapshotId);
   });
@@ -443,7 +443,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #13', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       4,
@@ -473,7 +473,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it.skip('should be able to harvest on Convex #14', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(positionId, 4, CRV_MIM3CRV, DAI, balance.div(2), crvRewarder3, 0, crvMim3Crv);
     await revertToSnapshot(snapshotId);
   });
@@ -493,7 +493,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #15', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       4,
@@ -514,7 +514,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it.skip('should be able to harvest on Convex #16', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(positionId, 4, CRV_MIM3CRV, USDC, balance, crvRewarder3, 0, crvMim3Crv);
     await revertToSnapshot(snapshotId);
   });
@@ -534,7 +534,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #17', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       5,
@@ -563,7 +563,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #18', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       5,
@@ -592,7 +592,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #19', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       5,
@@ -621,7 +621,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it('should be able to harvest on Convex #20', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
       5,
@@ -642,7 +642,7 @@ describe('Convex Spells Deploy', () => {
   });
 
   it.skip('should be able to harvest on Convex #21', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(positionId, 5, CRV_CVXCRV, CRV, balance, crvRewarder4, 0, crvCvxCrv);
   });
 
@@ -656,7 +656,7 @@ describe('Convex Spells Deploy', () => {
     colTokenContract: any,
     crvRewarder: IRewarder
   ) {
-    const positionId = await bank.nextPositionId();
+    const positionId = await bank.getNextPositionId();
     const beforeTreasuryBalance = await colTokenContract.balanceOf(treasury.address);
     await bank.execute(
       0,
@@ -677,7 +677,7 @@ describe('Convex Spells Deploy', () => {
     const bankInfo = await bank.getBankInfo(borrowToken);
     console.log('Bank Info:', bankInfo);
 
-    const pos = await bank.positions(positionId);
+    const pos = await bank.getPositionInfo(positionId);
     console.log('Position Info:', pos);
     console.log('Position Value:', await bank.callStatic.getPositionValue(positionId));
     expect(pos.owner).to.be.equal(admin.address);
@@ -701,7 +701,7 @@ describe('Convex Spells Deploy', () => {
   ) {
     await evm_mine_blocks(1000);
 
-    const position = await bank.positions(positionId);
+    const position = await bank.getPositionInfo(positionId);
 
     const totalEarned = await crvRewarder.earned(wconvex.address);
     console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));

@@ -83,7 +83,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #1', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       4,
@@ -104,7 +104,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #2', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       4,
@@ -125,7 +125,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #3', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       4,
@@ -146,7 +146,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #4', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       4,
@@ -167,7 +167,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #5', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       1,
@@ -188,7 +188,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #6', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       1,
@@ -209,7 +209,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #7', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       1,
@@ -239,7 +239,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #8', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       2,
@@ -260,7 +260,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #9', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       2,
@@ -281,7 +281,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #10', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       2,
@@ -302,7 +302,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #11', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       2,
@@ -323,7 +323,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #12', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       3,
@@ -344,7 +344,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #13', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       3,
@@ -365,7 +365,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #14', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       3,
@@ -386,7 +386,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #15', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       2,
@@ -407,7 +407,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #16', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       2,
@@ -428,7 +428,7 @@ describe('ShortLong Spell Test test', () => {
   });
 
   it('should be able to close position #17', async () => {
-    const positionId = (await bank.nextPositionId()).sub(1);
+    const positionId = (await bank.getNextPositionId()).sub(1);
     await testClosePosition(
       positionId,
       2,
@@ -453,7 +453,7 @@ describe('ShortLong Spell Test test', () => {
     farmingPoolId: number,
     colTokenContract: any
   ) {
-    const positionId = await bank.nextPositionId();
+    const positionId = await bank.getNextPositionId();
     const beforeTreasuryBalance = await colTokenContract.balanceOf(treasury.address);
     const swapData = await getParaswapCalldata(borrowToken, swapToken, borrowAmount, spell.address, 100);
 
@@ -476,7 +476,7 @@ describe('ShortLong Spell Test test', () => {
     const bankInfo = await bank.getBankInfo(DAI);
     console.log('DAI Bank Info:', bankInfo);
 
-    const pos = await bank.positions(positionId);
+    const pos = await bank.getPositionInfo(positionId);
     console.log('Position Info:', pos);
     console.log('Position Value:', await bank.callStatic.getPositionValue(positionId));
     expect(pos.owner).to.be.equal(admin.address);
@@ -500,7 +500,7 @@ describe('ShortLong Spell Test test', () => {
     collTokenContract: any
   ) {
     await evm_mine_blocks(10000);
-    const position = await bank.positions(positionId);
+    const position = await bank.getPositionInfo(positionId);
 
     const swapAmount = await softVault.callStatic.withdraw(position.collateralSize);
 

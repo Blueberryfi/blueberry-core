@@ -77,7 +77,7 @@ describe('HardVault', () => {
         })
       ).to.be.revertedWithCustomError(HardVault, 'ZERO_ADDRESS');
 
-      expect(await vault.config()).to.be.equal(config.address);
+      expect(await vault.getConfig()).to.be.equal(config.address);
     });
     it('should revert initializing twice', async () => {
       await expect(vault.initialize(config.address)).to.be.revertedWith(
@@ -156,7 +156,7 @@ describe('HardVault', () => {
     });
 
     it('should return balance of underlying token', async () => {
-      expect(await vault.balanceOfERC20(USDC, admin.address)).to.be.equal(depositAmount);
+      expect(await vault.balanceOfToken(USDC, admin.address)).to.be.equal(depositAmount);
     });
     it('should return token id from uToken address', async () => {
       expect(await vault.getUnderlyingToken(tokenId)).to.be.equal(USDC);

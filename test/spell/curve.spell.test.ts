@@ -251,7 +251,7 @@ describe('Curve Spell', () => {
       ).to.be.revertedWithCustomError(spell, 'INCORRECT_LP');
     });
     it('should be able to farm USDC on Curve pool', async () => {
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       await bank.execute(
         0,
@@ -272,7 +272,7 @@ describe('Curve Spell', () => {
       const bankInfo = await bank.getBankInfo(USDC);
       console.log('USDC Bank Info:', bankInfo);
 
-      const pos = await bank.positions(positionId);
+      const pos = await bank.getPositionInfo(positionId);
       console.log('Position Info:', pos);
       console.log('Position Value:', await bank.callStatic.getPositionValue(1));
       expect(pos.owner).to.be.equal(admin.address);
@@ -290,7 +290,7 @@ describe('Curve Spell', () => {
       // transfer 1 wei DAI to check tx success.
       await dai.connect(admin).transfer(spell.address, 1);
 
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       await bank.execute(
         0,
@@ -311,7 +311,7 @@ describe('Curve Spell', () => {
       const bankInfo = await bank.getBankInfo(USDC);
       console.log('USDC Bank Info:', bankInfo);
 
-      const pos = await bank.positions(positionId);
+      const pos = await bank.getPositionInfo(positionId);
       console.log('Position Info:', pos);
       console.log('Position Value:', await bank.callStatic.getPositionValue(1));
       expect(pos.owner).to.be.equal(admin.address);
@@ -326,8 +326,8 @@ describe('Curve Spell', () => {
     it('should be able to get pendingReward info', async () => {
       evm_mine_blocks(1000);
 
-      const positionId = (await bank.nextPositionId()).sub(1);
-      const position = await bank.positions(positionId);
+      const positionId = (await bank.getNextPositionId()).sub(1);
+      const position = await bank.getPositionInfo(positionId);
 
       const pendingRewardsInfo = await wgauge.callStatic.pendingRewards(position.collId, position.collateralSize);
 
@@ -363,7 +363,7 @@ describe('Curve Spell', () => {
     });
     // TODO: Find another USDC curve pool
     // it("should revert increasing existing position when diff pos param given", async () => {
-    //   const positionId = (await bank.nextPositionId()).sub(1);
+    //   const positionId = (await bank.getNextPositionId()).sub(1);
     //   await expect(
     //     bank.execute(
     //       positionId,
@@ -384,7 +384,7 @@ describe('Curve Spell', () => {
       await crv.transfer(spell.address, utils.parseUnits('10', 18));
 
       const deadline = await currentTime();
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
 
       await expect(
@@ -420,7 +420,7 @@ describe('Curve Spell', () => {
       const amount = utils.parseUnits('10', 18);
       await crv.transfer(spell.address, amount);
 
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
 
       const rewardFeeRatio = await config.getRewardFee();
@@ -460,7 +460,7 @@ describe('Curve Spell', () => {
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeCrvBalance = await crv.balanceOf(admin.address);
 
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       const iface = new ethers.utils.Interface(SpellABI);
 
       const rewardFeeRatio = await config.getRewardFee();
