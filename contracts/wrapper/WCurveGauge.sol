@@ -80,7 +80,6 @@ contract WCurveGauge is IWCurveGauge, BaseWrapper, ReentrancyGuardUpgradeable, O
         _transferOwnership(owner);
         __ReentrancyGuard_init();
         __ERC1155_init("wCurveGauge");
-        
         _crvToken = IERC20Upgradeable(crv);
         _registry = ICurveRegistry(crvRegistry);
         _gaugeController = ICurveGaugeController(gaugeController);

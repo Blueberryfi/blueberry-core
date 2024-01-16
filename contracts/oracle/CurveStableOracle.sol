@@ -27,7 +27,6 @@ contract CurveStableOracle is CurveBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -36,7 +35,6 @@ contract CurveStableOracle is CurveBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-    
     /**
      * @notice Initializes the contract
      * @param addressProvider Address of the curve address provider

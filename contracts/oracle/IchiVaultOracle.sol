@@ -76,16 +76,13 @@ contract IchiVaultOracle is IBaseOracle, UsingBaseOracle, BaseOracleExt {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
-    
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-
     /**
      * @notice Initializes the contract
      * @param base The base oracle instance.

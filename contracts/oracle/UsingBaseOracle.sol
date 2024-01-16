@@ -28,7 +28,6 @@ abstract contract UsingBaseOracle is Ownable2StepUpgradeable {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -38,6 +37,7 @@ abstract contract UsingBaseOracle is Ownable2StepUpgradeable {
                                        FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /* solhint-disable func-name-mixedcase */
     /**
      * @dev Initializes the Base oracle source.
      * @param base Address of the Base oracle source.
@@ -48,6 +48,7 @@ abstract contract UsingBaseOracle is Ownable2StepUpgradeable {
         __Ownable2Step_init();
         _transferOwnership(owner);
     }
+    /* solhint-enable func-name-mixedcase */
 
     /// @notice Returns the address of the Base oracle source.
     function getBaseOracle() public view returns (IBaseOracle) {

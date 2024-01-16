@@ -805,6 +805,5 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
      *      See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
      */
     uint256[30] private __gap;
-    
     /* solhint-enable func-name-mixedcase */
 }

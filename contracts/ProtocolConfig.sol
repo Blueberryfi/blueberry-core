@@ -70,7 +70,6 @@ contract ProtocolConfig is IProtocolConfig, Ownable2StepUpgradeable {
     function initialize(address treasury, address owner) external initializer {
         __Ownable2Step_init();
         _transferOwnership(owner);
-        
         if (treasury == address(0)) revert Errors.ZERO_ADDRESS();
         _treasury = treasury;
 

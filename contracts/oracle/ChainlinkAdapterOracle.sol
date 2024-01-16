@@ -82,7 +82,6 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-    
     /**
      * @notice Initializes the contract
      * @param registry Chainlink feed registry address.
@@ -95,7 +94,6 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         if (address(registry) == address(0)) revert Errors.ZERO_ADDRESS();
         _registry = registry;
     }
-    
 
     /**
      * @notice Updates the Chainlink feed registry used by this adapter.

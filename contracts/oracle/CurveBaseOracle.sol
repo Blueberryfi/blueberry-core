@@ -10,8 +10,6 @@
 
 pragma solidity 0.8.22;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-
 import "../utils/BlueberryErrors.sol" as Errors;
 
 import { UsingBaseOracle } from "./UsingBaseOracle.sol";
@@ -69,17 +67,18 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
-
+    /* solhint-disable func-name-mixedcase */
     /**
-     * @notice Initializes the contract.
-     * @param addressProvider Address provider for Curve-related contracts.
+     * @notice Initializes the contract
+     * @param addressProvider Address of the curve address provider
      * @param base The base oracle instance.
      * @param owner Address of the owner of the contract.
      */
-    function __CurveBaseOracle_init( ICurveAddressProvider addressProvider, IBaseOracle base, address owner) internal {
+    function __CurveBaseOracle_init(ICurveAddressProvider addressProvider, IBaseOracle base, address owner) internal {
         __UsingBaseOracle_init(base, owner);
         _addressProvider = addressProvider;
     }
+    /* solhint-enable func-name-mixedcase */
 
     /**
      * @notice Registers Curve LP token with the oracle.

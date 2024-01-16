@@ -67,7 +67,6 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
     mapping(uint256 => address) private _escrows;
     /// @dev pid => A set of extra rewarders
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private _extraRewards;
-        
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -97,7 +96,6 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
         _transferOwnership(owner);
         __ReentrancyGuard_init();
         __ERC1155_init("wConvexBooster");
-        
         _escrowFactory = IPoolEscrowFactory(escrowFactory);
         _cvxToken = IConvex(cvx);
         _cvxBooster = ICvxBooster(cvxBooster);

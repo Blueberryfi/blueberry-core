@@ -32,9 +32,10 @@ import { IBasicSpell } from "../interfaces/spell/IBasicSpell.sol";
  * @title BasicSpell
  * @author BlueberryProtocol
  * @notice BasicSpell is the abstract contract that other spells utilize
- * @alities from ERC1155NaiveReceiver, Ownable2StepUpgradeable
+ * @dev Inherits from IBasicSpell, ERC1155NaiveReceiver, Ownable2StepUpgradeable
  */
-abstract contract BasicSpell is IBas    using UniversalERC20 for IERC20;
+abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepUpgradeable {
+    using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
                                     STORAGE

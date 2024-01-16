@@ -66,7 +66,6 @@ contract ChainlinkAdapterOracleL2 is IBaseOracle, BaseAdapter {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
-    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
