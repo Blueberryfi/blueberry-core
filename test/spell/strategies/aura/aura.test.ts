@@ -113,7 +113,7 @@ describe('Aura Spell Strategy test', () => {
 
           it('Swap collateral to borrow token to repay debt for negative PnL', async () => {
             const positionId = await openPosition(alice, depositAmount, borrowAmount, strategyInfo.poolId ?? '0');
-            const position = await bank.positions(positionId);
+            const position = await bank.getPositionInfo(positionId);
 
             await evm_mine_blocks(1000);
 
@@ -174,8 +174,8 @@ describe('Aura Spell Strategy test', () => {
 
             await evm_mine_blocks(10);
 
-            const position = await bank.positions(positionId);
-            const bobPosition = await bank.positions(bobPositionId);
+            const position = await bank.getPositionInfo(positionId);
+            const bobPosition = await bank.getPositionInfo(bobPositionId);
 
             const alicePendingRewardsInfoBefore = await waura.callStatic.pendingRewards(
               position.collId,
@@ -265,7 +265,7 @@ describe('Aura Spell Strategy test', () => {
             const positionId = await openPosition(alice, depositAmount, borrowAmount, strategyInfo.poolId ?? '0');
             await evm_mine_blocks(10);
 
-            const position = await bank.positions(positionId);
+            const position = await bank.getPositionInfo(positionId);
 
             const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
 
@@ -316,7 +316,7 @@ describe('Aura Spell Strategy test', () => {
 
             const positionId = await openPosition(alice, depositAmount, borrowAmount, pid);
 
-            const position = await bank.positions(positionId);
+            const position = await bank.getPositionInfo(positionId);
 
             // Open a position to update the rewarder
             await openPosition(bob, depositAmount, borrowAmount, pid);
@@ -395,7 +395,7 @@ describe('Aura Spell Strategy test', () => {
               ])
             );
 
-            const positionId = (await bank.nextPositionId()).sub(1);
+            const positionId = (await bank.getNextPositionId()).sub(1);
 
             return positionId;
           };

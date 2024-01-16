@@ -301,14 +301,14 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         /// Get previous position size
         uint256 prevPosSize;
         if (pos.collToken != address(0)) {
-            prevPosSize = bank.oracle().getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
+            prevPosSize = bank.getOracle().getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
         }
 
         /// Get newly added position size
         uint256 addedPosSize;
         IERC20 lpToken = IERC20(strategy.vault);
         uint256 lpBalance = lpToken.balanceOf(address(this));
-        uint256 lpPrice = bank.oracle().getPrice(address(lpToken));
+        uint256 lpPrice = bank.getOracle().getPrice(address(lpToken));
 
         addedPosSize = (lpPrice * lpBalance) / 10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
 
@@ -341,8 +341,8 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         uint256 rewardsBalance = IERC20(token).balanceOf(address(this));
         if (rewardsBalance > 0) {
             IBank bank = getBank();
-            IERC20(token).universalApprove(address(bank.feeManager()), rewardsBalance);
-            left = bank.feeManager().doCutRewardsFee(token, rewardsBalance);
+            IERC20(token).universalApprove(address(bank.getFeeManager()), rewardsBalance);
+            left = bank.getFeeManager().doCutRewardsFee(token, rewardsBalance);
         }
     }
 

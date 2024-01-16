@@ -271,7 +271,7 @@ describe('Convex Spell', () => {
     });
 
     it('should be able to farm USDC on Convex', async () => {
-      const positionId = await bank.nextPositionId();
+      const positionId = await bank.getNextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
       await bank.execute(
         0,
@@ -292,7 +292,7 @@ describe('Convex Spell', () => {
       const bankInfo = await bank.getBankInfo(USDC);
       console.log('USDC Bank Info:', bankInfo);
 
-      const pos = await bank.positions(positionId);
+      const pos = await bank.getPositionInfo(positionId);
       console.log('Position Info:', pos);
       console.log('Position Value:', await bank.callStatic.getPositionValue(positionId));
       expect(pos.owner).to.be.equal(admin.address);
@@ -308,9 +308,9 @@ describe('Convex Spell', () => {
     });
 
     it('should be able to get multiple rewards', async () => {
-      let positionId = await bank.nextPositionId();
+      let positionId = await bank.getNextPositionId();
       positionId = positionId.sub(1);
-      const position = await bank.positions(positionId);
+      const position = await bank.getPositionInfo(positionId);
 
       const beforeSenderCrvBalance = await crv.balanceOf(admin.address);
       const beforeTreasuryCvxBalance = await cvx.balanceOf(admin.address);
@@ -345,7 +345,7 @@ describe('Convex Spell', () => {
     });
 
     it('should be able to get position risk ratio', async () => {
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
       let pv = await bank.callStatic.getPositionValue(positionId);
       let ov = await bank.callStatic.getDebtValue(positionId);
       let cv = await bank.callStatic.getIsolatedCollateralValue(positionId);
@@ -373,7 +373,7 @@ describe('Convex Spell', () => {
     });
     // TODO: Find another USDC curve pool
     // it("should revert increasing existing position when diff pos param given", async () => {
-    //   const positionId = (await bank.nextPositionId()).sub(1);
+    //   const positionId = (await bank.getNextPositionId()).sub(1);
     //   await expect(
     //     bank.execute(
     //       positionId,
@@ -392,8 +392,8 @@ describe('Convex Spell', () => {
 
     it('should revert if received amount is lower than slippage', async () => {
       await evm_mine_blocks(1000);
-      const positionId = (await bank.nextPositionId()).sub(1);
-      const position = await bank.positions(positionId);
+      const positionId = (await bank.getNextPositionId()).sub(1);
+      const position = await bank.getPositionInfo(positionId);
 
       const totalEarned = await crvRewarder1.earned(wconvex.address);
       console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));
@@ -446,7 +446,7 @@ describe('Convex Spell', () => {
     });
 
     it('should fail to close position for non-existing strategy', async () => {
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
 
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
@@ -475,7 +475,7 @@ describe('Convex Spell', () => {
     });
 
     it('should fail to close position for non-existing collateral', async () => {
-      const positionId = (await bank.nextPositionId()).sub(1);
+      const positionId = (await bank.getNextPositionId()).sub(1);
 
       const iface = new ethers.utils.Interface(SpellABI);
       await expect(
@@ -507,8 +507,8 @@ describe('Convex Spell', () => {
 
     it('should be able to harvest on Convex 1', async () => {
       await evm_mine_blocks(1000);
-      const positionId = (await bank.nextPositionId()).sub(1);
-      const position = await bank.positions(positionId);
+      const positionId = (await bank.getNextPositionId()).sub(1);
+      const position = await bank.getPositionInfo(positionId);
 
       await bank.callStatic.currentPositionDebt(positionId);
 
@@ -548,8 +548,8 @@ describe('Convex Spell', () => {
       it('should be able to harvest on Convex 2', async () => {
         await evm_mine_blocks(1000);
 
-        const positionId = (await bank.nextPositionId()).sub(1);
-        const position = await bank.positions(positionId);
+        const positionId = (await bank.getNextPositionId()).sub(1);
+        const position = await bank.getPositionInfo(positionId);
 
         const totalEarned = await crvRewarder1.earned(wconvex.address);
         console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));
