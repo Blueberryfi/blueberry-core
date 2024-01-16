@@ -146,21 +146,6 @@ interface IBank {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /* solhint-disable func-name-mixedcase */
-    /// @notice Returns the ID of the currently executed position.
-    /// @return Current position ID.
-    function getPositionId() external view returns (uint256);
-
-    /// @notice Returns the address of the currently executed spell.
-    /// @return Current spell address.
-    function getSpell() external view returns (address);
-
-    /// @notice Returns the current executor's address, which is the owner of the current position.
-    /// @return Address of the current executor.
-    function getExecutor() external view returns (address);
-
-    /* solhint-enable func-name-mixedcase */
-
     /// @notice Returns the next available position ID.
     /// @return Next position ID.
     function getNextPositionId() external view returns (uint256);
@@ -239,8 +224,10 @@ interface IBank {
      */
     function getDebtValue(uint256 positionId) external returns (uint256 debtValue);
 
-    /// @notice Gets the repay resumed timestamp of the bank
-    /// @return The timestamp when repay is resumed
+    /**
+     * @notice Gets the repay resumed timestamp of the bank
+     * @return The timestamp when repay is resumed
+     */
     function getRepayResumedTimestamp() external view returns (uint256);
 
     /**
@@ -267,60 +254,78 @@ interface IBank {
      */
     function isLiquidatable(uint256 positionId) external returns (bool);
 
-    /// @dev Computes the total USD value of the collateral of a given position.
-    /// @notice The returned value includes both the collateral and any pending rewards.
-    /// @param positionId ID of the position to compute the value for.
-    /// @return positionValue Total USD value of the collateral and pending rewards.
+    /**
+     * @dev Computes the total USD value of the collateral of a given position.
+     * @notice The returned value includes both the collateral and any pending rewards.
+     * @param positionId ID of the position to compute the value for.
+     * @return positionValue Total USD value of the collateral and pending rewards.
+     */
     function getPositionValue(uint256 positionId) external returns (uint256);
 
-    /// @notice Computes the isolated collateral value for a particular position.
-    /// @dev Should call accrue first to get current debt.
-    /// @param positionId The unique ID of the position.
-    /// @return icollValue The value of the isolated collateral in USD.
+    /**
+     * @notice Computes the isolated collateral value for a particular position.
+     * @dev Should call accrue first to get current debt.
+     * @param positionId The unique ID of the position.
+     * @return icollValue The value of the isolated collateral in USD.
+     */
     function getIsolatedCollateralValue(uint256 positionId) external returns (uint256 icollValue);
 
-    /// @notice Provides comprehensive details about a position using its ID.
-    /// @param positionId The unique ID of the position.
-    /// @return A Position struct containing details of the position.
+    /**
+     * @notice Provides comprehensive details about a position using its ID.
+     * @param positionId The unique ID of the position.
+     * @return A Position struct containing details of the position.
+     */
     function getPositionInfo(uint256 positionId) external view returns (Position memory);
 
-    /// @notice Fetches information about the currently active position.
-    /// @return A Position struct with details of the current position.
+    /**
+     * @notice Fetches information about the currently active position.
+     * @return A Position struct with details of the current position.
+     */
     function getCurrentPositionInfo() external view returns (Position memory);
 
-    /// @notice Triggers interest accumulation and fetches the updated borrow balance.
-    /// @param positionId The unique ID of the position.
-    /// @return The updated debt balance after accruing interest.
+    /**
+     * @notice Triggers interest accumulation and fetches the updated borrow balance.
+     * @param positionId The unique ID of the position.
+     * @return The updated debt balance after accruing interest.
+     */
     function currentPositionDebt(uint256 positionId) external returns (uint256);
 
-    /// @dev Lend tokens to the bank as isolated collateral.
-    /// @dev Emit a {Lend} event.
-    /// @notice The tokens lent will be used as collateral in the bank and might earn interest or other rewards.
-    /// @param token The address of the token to lend.
-    /// @param amount The number of tokens to lend.
+    /**
+     * @dev Lend tokens to the bank as isolated collateral.
+     * @dev Emit a {Lend} event.
+     * @notice The tokens lent will be used as collateral in the bank and might earn interest or other rewards.
+     * @param token The address of the token to lend.
+     * @param amount The number of tokens to lend.
+     */
     function lend(address token, uint256 amount) external;
 
-    /// @dev Withdraw isolated collateral tokens previously lent to the bank.
-    /// @dev Emit a {WithdrawLend} event.
-    /// @notice This will reduce the isolated collateral and might also reduce the position's overall health.
-    /// @param token The address of the isolated collateral token to withdraw.
-    /// @param shareAmount The number of vault share tokens to withdraw.
+    /**
+     * @dev Withdraw isolated collateral tokens previously lent to the bank.
+     * @dev Emit a {WithdrawLend} event.
+     * @notice This will reduce the isolated collateral and might also reduce the position's overall health.
+     * @param token The address of the isolated collateral token to withdraw.
+     * @param shareAmount The number of vault share tokens to withdraw.
+     */
     function withdrawLend(address token, uint256 shareAmount) external;
 
-    /// @notice Allows users to borrow tokens from the specified bank.
-    /// @dev This function must only be called from a spell while under execution.
-    /// @dev Emit a {Borrow} event.
-    /// @param token The token to borrow from the bank.
-    /// @param amount The amount of tokens the user wishes to borrow.
-    /// @return borrowedAmount Returns the actual amount borrowed from the bank.
+    /**
+     * @notice Allows users to borrow tokens from the specified bank.
+     * @dev This function must only be called from a spell while under execution.
+     * @dev Emit a {Borrow} event.
+     * @param token The token to borrow from the bank.
+     * @param amount The amount of tokens the user wishes to borrow.
+     * @return borrowedAmount Returns the actual amount borrowed from the bank.
+     */
     function borrow(address token, uint256 amount) external returns (uint256);
 
-    /// @dev Executes a specific action on a position.
-    /// @dev Emit an {Execute} event.
-    /// @notice This can be used for various operations like adjusting collateral, repaying debt, etc.
-    /// @param positionId Unique identifier of the position, or zero for a new position.
-    /// @param spell Address of the contract ("spell") that contains the logic for the action to be executed.
-    /// @param data Data payload to pass to the spell for execution.
+    /**
+     * @dev Executes a specific action on a position.
+     * @dev Emit an {Execute} event.
+     * @notice This can be used for various operations like adjusting collateral, repaying debt, etc.
+     * @param positionId Unique identifier of the position, or zero for a new position.
+     * @param spell Address of the contract ("spell") that contains the logic for the action to be executed.
+     * @param data Data payload to pass to the spell for execution.
+     */
     function execute(uint256 positionId, address spell, bytes memory data) external returns (uint256);
 
     /// @notice Allows users to repay their borrowed tokens to the bank.
@@ -359,4 +364,19 @@ interface IBank {
     /// @dev Convenient function to trigger interest accrual for multiple banks.
     /// @param tokens An array of token addresses to trigger interest accrual for.
     function accrueAll(address[] memory tokens) external;
+
+    /* solhint-disable func-name-mixedcase */
+    /// @notice Returns the current executor's address, which is the owner of the current position.
+    /// @return Address of the current executor.
+    function EXECUTOR() external view returns (address);
+
+    /// @notice Returns the ID of the currently executed position.
+    /// @return Current position ID.
+    function POSITION_ID() external view returns (uint256);
+
+    /// @notice Returns the address of the currently executed spell.
+    /// @return Current spell address.
+    function SPELL() external view returns (address);
+
+    /* solhint-enable func-name-mixedcase */
 }

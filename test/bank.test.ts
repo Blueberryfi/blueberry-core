@@ -108,8 +108,8 @@ describe('Bank', () => {
       );
       await bank.deployed();
 
-      expect(await bank.getPositionId()).to.be.equal(ethers.constants.MaxUint256);
-      expect(await bank.getSpell()).to.be.equal('0x0000000000000000000000000000000000000001');
+      expect(await bank.POSITION_ID()).to.be.equal(ethers.constants.MaxUint256);
+      expect(await bank.SPELL()).to.be.equal('0x0000000000000000000000000000000000000001');
       expect(await bank.getOracle()).to.be.equal(oracle.address);
       expect(await bank.getConfig()).to.be.equal(config.address);
       expect(await bank.getNextPositionId()).to.be.equal(1);
@@ -1065,7 +1065,7 @@ describe('Bank', () => {
     });
     describe('View functions', async () => {
       it('should revert EXECUTOR call when the bank is not under execution', async () => {
-        await expect(bank.getExecutor()).to.be.revertedWithCustomError(bank, 'NOT_UNDER_EXECUTION');
+        await expect(bank.EXECUTOR()).to.be.revertedWithCustomError(bank, 'NOT_UNDER_EXECUTION');
       });
       it('should be able to check if the oracle support the token', async () => {
         expect(await oracle.callStatic.isTokenSupported(ADDRESS.CRV)).to.be.false;

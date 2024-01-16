@@ -519,11 +519,6 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function getSpell() external view override returns (address) {
-        return _SPELL;
-    }
-
-    /// @inheritdoc IBank
     function getRepayResumedTimestamp() external view returns (uint256) {
         return _repayResumedTimestamp;
     }
@@ -541,20 +536,6 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
     /// @inheritdoc IBank
     function isSpellWhitelisted(address spell) external view returns (bool) {
         return _whitelistedSpells[spell];
-    }
-
-    /// @inheritdoc IBank
-    function getExecutor() external view override returns (address) {
-        uint256 positionId = _POSITION_ID;
-        if (positionId == _NO_ID) {
-            revert Errors.NOT_UNDER_EXECUTION();
-        }
-        return _positions[positionId].owner;
-    }
-
-    /// @inheritdoc IBank
-    function getPositionId() external view override returns (uint256) {
-        return _POSITION_ID;
     }
 
     /// @inheritdoc IBank
@@ -791,4 +772,26 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
     function _isSoftVault(address token) internal view returns (bool) {
         return address(ISoftVault(_banks[token].softVault).uToken()) == token;
     }
+
+    /* solhint-disable func-name-mixedcase */
+    /// @inheritdoc IBank
+    function EXECUTOR() external view returns (address) {
+        uint256 positionId = _POSITION_ID;
+        if (positionId == _NO_ID) {
+            revert Errors.NOT_UNDER_EXECUTION();
+        }
+        return _positions[positionId].owner;
+    }
+
+    /// @inheritdoc IBank
+    function POSITION_ID() external view returns (uint256) {
+        return _POSITION_ID;
+    }
+
+    /// @inheritdoc IBank
+    function SPELL() external view returns (address) {
+        return _SPELL;
+    }
+
+    /* solhint-enable func-name-mixedcase */
 }

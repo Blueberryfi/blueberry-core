@@ -279,7 +279,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     function _validateMaxLTV(uint256 strategyId) internal {
         IBank bank = getBank();
 
-        uint256 positionId = bank.getPositionId();
+        uint256 positionId = bank.POSITION_ID();
         IBank.Position memory pos = bank.getPositionInfo(positionId);
         uint256 debtValue = bank.getDebtValue(positionId);
         uint256 uValue = bank.getIsolatedCollateralValue(positionId);
@@ -328,7 +328,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     function _doRefund(address token) internal {
         uint256 balance = IERC20(token).universalBalanceOf(address(this));
         if (balance > 0) {
-            IERC20(token).universalTransfer(_bank.getExecutor(), balance);
+            IERC20(token).universalTransfer(_bank.EXECUTOR(), balance);
         }
     }
 
