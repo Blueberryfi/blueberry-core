@@ -27,6 +27,8 @@ import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
 import { IWETH } from "../interfaces/IWETH.sol";
 
+import { IConvexSpell } from "../interfaces/spell/IConvexSpell.sol";
+
 /**
  * @title ConvexSpell
  * @author BlueberryProtocol
@@ -34,18 +36,12 @@ import { IWETH } from "../interfaces/IWETH.sol";
         interacts with Convex pools. It handles strategies, interactions with external contracts,
         and facilitates operations related to liquidity provision.
  */
-contract ConvexSpell is BasicSpell {
+contract ConvexSpell is IConvexSpell, BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
-    struct ClosePositionFarmParam {
-        ClosePosParam param;
-        uint256[] amounts;
-        bytes[] swapDatas;
-    }
-
     /*//////////////////////////////////////////////////////////////////////////
-                                   PUBLIC STORAGE
+                                     STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address of the Wrapped Convex Pools
@@ -69,6 +65,7 @@ contract ConvexSpell is BasicSpell {
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
     /**
      * @notice Initializes the ConvexSpell contract with required parameters.
      * @param bank Address of the bank contract.
@@ -99,21 +96,12 @@ contract ConvexSpell is BasicSpell {
         IWConvexBooster(wConvexBooster).setApprovalForAll(address(bank), true);
     }
 
-    /**
-     * @notice Adds a new strategy to the spell.
-     * @param crvLp Address of the Curve LP token for the strategy.
-     * @param minPosSize Minimum position size in USD for the strategy (with 1e18 precision).
-     * @param maxPosSize Maximum position size in USD for the strategy (with 1e18 precision).
-     */
+    /// @inheritdoc IConvexSpell
     function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(crvLp, minPosSize, maxPosSize);
     }
 
-    /**
-     * @notice Adds liquidity to a Curve pool with two underlying tokens and stakes in Curve gauge.
-     * @param param Struct containing all required parameters for opening a position.
-     * @param minLPMint Minimum LP tokens expected to mint for slippage control.
-     */
+    /// @inheritdoc IConvexSpell
     function openPositionFarm(
         OpenPosParam calldata param,
         uint256 minLPMint
@@ -258,10 +246,7 @@ contract ConvexSpell is BasicSpell {
         }
     }
 
-    /**
-     * @notice Closes an existing liquidity position, unstakes from Curve gauge, and swaps rewards.
-     * @param closePosParam Struct containing all required parameters for closing a position.
-     */
+    /// @inheritdoc IConvexSpell
     function closePositionFarm(
         ClosePositionFarmParam calldata closePosParam
     )
@@ -319,18 +304,18 @@ contract ConvexSpell is BasicSpell {
         _doRefund(getCvxToken());
     }
 
-    /// @notice Returns the address of the wrapped Aura Booster contract.
-    function getWConvexBooster() public view returns (IWConvexBooster) {
+    /// @inheritdoc IConvexSpell
+    function getWConvexBooster() public view override returns (IWConvexBooster) {
         return _wConvexBooster;
     }
 
-    /// @notice Returns the address of the Cvx token.
-    function getCvxToken() public view returns (address) {
+    /// @inheritdoc IConvexSpell
+    function getCvxToken() public view override returns (address) {
         return _cvxToken;
     }
 
-    /// @notice Returns the address of the Cvx oracle.
-    function getCrvOracle() public view returns (ICurveOracle) {
+    /// @inheritdoc IConvexSpell
+    function getCrvOracle() public view override returns (ICurveOracle) {
         return _crvOracle;
     }
 

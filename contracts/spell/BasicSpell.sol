@@ -26,6 +26,7 @@ import { IBank } from "../interfaces/IBank.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IWETH } from "../interfaces/IWETH.sol";
+import { IBasicSpell } from "../interfaces/spell/IBasicSpell.sol";
 
 /**
  * @title BasicSpell
@@ -33,76 +34,18 @@ import { IWETH } from "../interfaces/IWETH.sol";
  * @notice BasicSpell is the abstract contract that other spells utilize
  * @dev It extends functionalities from ERC1155NaiveReceiver, OwnableUpgradeable
  */
-abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
+abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, OwnableUpgradeable {
     using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                   STRUCTS
+                                    STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
-    /**
-     * @dev Defines strategies for Blueberry Protocol.
-     * @param vault Address of the vault where assets are held.
-     * @param minPositionSize Minimum size of the position in USD.
-     * @param maxPositionSize Maximum size of the position in USD.
-     */
-    struct Strategy {
-        address vault;
-        uint256 minPositionSize;
-        uint256 maxPositionSize;
-    }
-
-    /**
-     * @dev Defines parameters required for opening a new position.
-     * @param strategyId Identifier for the strategy.
-     * @param collToken Address of the collateral token (e.g., USDC).
-     * @param collAmount Amount of user's collateral to deposit.
-     * @param borrowToken Address of the token to borrow.
-     * @param borrowAmount Amount to borrow from the bank.
-     * @param farmingPoolId Identifier for the farming pool.
-     */
-    struct OpenPosParam {
-        uint256 strategyId;
-        address collToken;
-        uint256 collAmount;
-        address borrowToken;
-        uint256 borrowAmount;
-        uint256 farmingPoolId;
-    }
-
-    /**
-     * @dev Defines parameters required for closing a position.
-     * @param strategyId Identifier for the strategy to close.
-     * @param collToken Address of the isolated collateral token.
-     * @param borrowToken Address of the token representing the debt.
-     * @param amountRepay Amount of debt to repay.
-     * @param amountPosRemove Amount of position to withdraw.
-     * @param amountShareWithdraw Amount of isolated collateral tokens to withdraw.
-     * @param amountOutMin Minimum amount to receive after the operation (used to handle slippage).
-     * @param amountToSwap Collateral amount to swap to repay debt for negative PnL
-     * @param swapData Paraswap sawp data to swap collateral to borrow token
-     */
-    struct ClosePosParam {
-        uint256 strategyId;
-        address collToken;
-        address borrowToken;
-        uint256 amountRepay;
-        uint256 amountPosRemove;
-        uint256 amountShareWithdraw;
-        uint256 amountOutMin;
-        uint256 amountToSwap;
-        bytes swapData;
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                   PUBLIC STORAGE
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /// Reference to the bank contract interface.
+    /// @dev Reference to the bank contract interface.
     IBank internal _bank;
-    /// Reference to the WERC20 contract interface.
+    /// @dev Reference to the WERC20 contract interface.
     IWERC20 internal _werc20;
-    /// Address of the Wrapped Ether contract.
+    /// @dev Address of the Wrapped Ether contract.
     address internal _weth;
     /// @dev paraswap AugustusSwapper Address
     address internal _augustusSwapper;
@@ -110,39 +53,12 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
     address internal _tokenTransferProxy;
     /// @dev strategyId => vault
     Strategy[] internal _strategies;
+
     /// @dev Mapping from strategy ID to collateral token and its maximum Loan-To-Value ratio.
     /// Note: LTV is in base 1e4 to provide precision.
     mapping(uint256 => mapping(address => uint256)) internal _maxLTV;
     /// @dev ETH address
     address internal constant _ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    /*//////////////////////////////////////////////////////////////////////////
-                                      EVENTS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice This event is emitted when a new strategy is added.
-     * @param strategyId Unique identifier for the strategy.
-     * @param vault Address of the vault where assets are held.
-     * @param minPosSize Minimum size of the position in USD.
-     * @param maxPosSize Maximum size of the position in USD.
-     */
-    event StrategyAdded(uint256 strategyId, address vault, uint256 minPosSize, uint256 maxPosSize);
-
-    /**
-     * @notice This event is emitted when a strategy's min/max position size is updated.
-     * @param strategyId Unique identifier for the strategy.
-     * @param minPosSize Minimum size of the position in USD.
-     * @param maxPosSize Maximum size of the position in USD.
-     */
-    event StrategyPosSizeUpdated(uint256 strategyId, uint256 minPosSize, uint256 maxPosSize);
-
-    /**
-     * @notice This event is emitted when a strategy's collateral max LTV is updated.
-     * @param strategyId Unique identifier for the strategy.
-     * @param collaterals Array of collateral token addresses.
-     * @param maxLTVs Array of maximum LTVs corresponding to the collaterals. (base 1e4)
-     */
-    event CollateralsMaxLTVSet(uint256 strategyId, address[] collaterals, uint256[] maxLTVs);
 
     /*//////////////////////////////////////////////////////////////////////////
                                       MODIFIERS
@@ -225,13 +141,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         emit StrategyAdded(_strategies.length - 1, vault, minPosSize, maxPosSize);
     }
 
-    /**
-     * @notice Update the position sizes for a specific strategy.
-     * @dev This function validates the inputs, updates the strategy's position sizes, and emits an event.
-     * @param strategyId ID of the strategy to be updated.
-     * @param minPosSize New minimum position size for the strategy.
-     * @param maxPosSize New maximum position size for the strategy.
-     */
+    /// @inheritdoc IBasicSpell
     function setPosSize(
         uint256 strategyId,
         uint256 minPosSize,
@@ -246,13 +156,7 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         emit StrategyPosSizeUpdated(strategyId, minPosSize, maxPosSize);
     }
 
-    /**
-     * @notice Set maximum Loan-To-Value (LTV) ratios for collaterals in a given strategy.
-     * @dev This function validates the input arrays, sets the maxLTVs for each collateral, and emits an event.
-     * @param strategyId ID of the strategy for which the maxLTVs are being set.
-     * @param collaterals Array of addresses for each collateral token.
-     * @param maxLTVs Array of maxLTV values corresponding to each collateral token.
-     */
+    /// @inheritdoc IBasicSpell
     function setCollateralsMaxLTVs(
         uint256 strategyId,
         address[] memory collaterals,
@@ -269,6 +173,79 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         }
 
         emit CollateralsMaxLTVSet(strategyId, collaterals, maxLTVs);
+    }
+
+    /**
+     * @notice Increase isolated collateral to support the position
+     * @param token Isolated collateral token address
+     * @param amount Amount of token to deposit and increase position
+     */
+    function increasePosition(address token, uint256 amount) external {
+        /// 1. Deposit isolated collaterals on Blueberry Money Market
+        _doLend(token, amount);
+    }
+
+    /**
+     * @dev Reduce the isolated collateral of a position.
+     * @param strategyId The ID of the strategy being used.
+     * @param collToken Address of the isolated collateral token.
+     * @param collShareAmount Amount of isolated collateral to reduce.
+     */
+    function reducePosition(uint256 strategyId, address collToken, uint256 collShareAmount) external {
+        // Validate strategy id
+        IBank.Position memory pos = _bank.getCurrentPositionInfo();
+        address unwrappedCollToken = IERC20Wrapper(pos.collToken).getUnderlyingToken(pos.collId);
+        if (_strategies[strategyId].vault != unwrappedCollToken) {
+            revert Errors.INCORRECT_STRATEGY_ID(strategyId);
+        }
+
+        _doWithdraw(collToken, collShareAmount);
+        _doRefund(collToken);
+        _validateMaxLTV(strategyId);
+    }
+
+    /// @notice Fetch the bank contract address.
+    function getBank() public view returns (IBank) {
+        return _bank;
+    }
+
+    /// @notice Fetch the WERC20 contract address.
+    function getWrappedERC20() public view returns (IWERC20) {
+        return _werc20;
+    }
+
+    /// @notice Fetch the WETH contract address.
+    function getWETH() public view returns (address) {
+        return _weth;
+    }
+
+    /// @notice Fetch the AugustusSwapper contract address.
+    function getAugustusSwapper() external view returns (address) {
+        return _augustusSwapper;
+    }
+
+    /// @notice Fetch the TokenTransferProxy contract address.
+    function getTokenTransferProxy() external view returns (address) {
+        return _tokenTransferProxy;
+    }
+
+    /**
+     * @notice Fetch the strategy by its strategyId.
+     * @param strategyId The ID of the strategy to fetch.
+     * @return Strategy struct containing the vault address, min/max position sizes.
+     */
+    function getStrategy(uint256 strategyId) external view returns (Strategy memory) {
+        return _strategies[strategyId];
+    }
+
+    /**
+     * @notice Fetch the maximum Loan-To-Value (LTV) ratio for a given collateral token.
+     * @param strategyId The ID of the strategy to fetch the LTV for.
+     * @param collateral The address of the collateral token.
+     * @return The maximum LTV ratio for the given collateral token.
+     */
+    function getMaxLTV(uint256 strategyId, address collateral) public view returns (uint256) {
+        return _maxLTV[strategyId][collateral];
     }
 
     /**
@@ -473,80 +450,8 @@ abstract contract BasicSpell is ERC1155NaiveReceiver, OwnableUpgradeable {
         }
     }
 
-    /**
-     * @notice Increase isolated collateral to support the position
-     * @param token Isolated collateral token address
-     * @param amount Amount of token to deposit and increase position
-     */
-    function increasePosition(address token, uint256 amount) external {
-        /// 1. Deposit isolated collaterals on Blueberry Money Market
-        _doLend(token, amount);
-    }
-
-    /**
-     * @dev Reduce the isolated collateral of a position.
-     * @param strategyId The ID of the strategy being used.
-     * @param collToken Address of the isolated collateral token.
-     * @param collShareAmount Amount of isolated collateral to reduce.
-     */
-    function reducePosition(uint256 strategyId, address collToken, uint256 collShareAmount) external {
-        // Validate strategy id
-        IBank.Position memory pos = _bank.getCurrentPositionInfo();
-        address unwrappedCollToken = IERC20Wrapper(pos.collToken).getUnderlyingToken(pos.collId);
-        if (_strategies[strategyId].vault != unwrappedCollToken) {
-            revert Errors.INCORRECT_STRATEGY_ID(strategyId);
-        }
-
-        _doWithdraw(collToken, collShareAmount);
-        _doRefund(collToken);
-        _validateMaxLTV(strategyId);
-    }
-
-    /// @notice Fetch the bank contract address.
-    function getBank() public view returns (IBank) {
-        return _bank;
-    }
-
-    /// @notice Fetch the WERC20 contract address.
-    function getWrappedERC20() public view returns (IWERC20) {
-        return _werc20;
-    }
-
-    /// @notice Fetch the WETH contract address.
-    function getWETH() public view returns (address) {
-        return _weth;
-    }
-
-    /// @notice Fetch the AugustusSwapper contract address.
-    function getAugustusSwapper() external view returns (address) {
-        return _augustusSwapper;
-    }
-
-    /// @notice Fetch the TokenTransferProxy contract address.
-    function getTokenTransferProxy() external view returns (address) {
-        return _tokenTransferProxy;
-    }
-
-    /**
-     * @notice Fetch the strategy by its strategyId.
-     * @param strategyId The ID of the strategy to fetch.
-     * @return Strategy struct containing the vault address, min/max position sizes.
-     */
-    function getStrategy(uint256 strategyId) external view returns (Strategy memory) {
-        return _strategies[strategyId];
-    }
-
-    /**
-     * @notice Fetch the maximum Loan-To-Value (LTV) ratio for a given collateral token.
-     * @param strategyId The ID of the strategy to fetch the LTV for.
-     * @param collateral The address of the collateral token.
-     * @return The maximum LTV ratio for the given collateral token.
-     */
-    function getMaxLTV(uint256 strategyId, address collateral) public view returns (uint256) {
-        return _maxLTV[strategyId][collateral];
-    }
-
     /// @dev Fallback function.
+    /// NOTE: may remove this function in the future
     receive() external payable {}
 
     /**

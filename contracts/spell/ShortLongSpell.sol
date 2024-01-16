@@ -24,6 +24,7 @@ import { BasicSpell } from "./BasicSpell.sol";
 import { IBank } from "../interfaces/IBank.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
+import { IShortLongSpell } from "../interfaces/spell/IShortLongSpell.sol";
 
 /**
  * @title Short/Long Spell
@@ -32,15 +33,11 @@ import { IWERC20 } from "../interfaces/IWERC20.sol";
  *          defines how Blueberry Protocol interacts for leveraging
  *          an asset either long or short
  */
-contract ShortLongSpell is BasicSpell {
+contract ShortLongSpell is IShortLongSpell, BasicSpell {
     using SafeCast for uint256;
     using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                   PUBLIC STORAGE
-    //////////////////////////////////////////////////////////////////////////*/
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -77,6 +74,56 @@ contract ShortLongSpell is BasicSpell {
         _tokenTransferProxy = tokenTransferProxy;
 
         __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
+    }
+
+    /// @inheritdoc IShortLongSpell
+    function openPosition(
+        OpenPosParam calldata param,
+        bytes calldata swapData
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        Strategy memory strategy = _strategies[param.strategyId];
+        if (address(ISoftVault(strategy.vault).getUnderlyingToken()) == param.borrowToken) {
+            revert Errors.INCORRECT_LP(param.borrowToken);
+        }
+
+        /// 1-3 Swap to strategy underlying token, deposit to softvault
+        _deposit(param, swapData);
+
+        /// 4. Put collateral - strategy token
+        address vault = _strategies[param.strategyId].vault;
+
+        _doPutCollateral(vault, IERC20Upgradeable(ISoftVault(vault)).balanceOf(address(this)));
+    }
+
+    /// @inheritdoc IShortLongSpell
+    function closePosition(
+        ClosePosParam calldata param,
+        bytes calldata swapData
+    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        IBank bank = getBank();
+        IWERC20 werc20 = getWrappedERC20();
+        Strategy memory strategy = _strategies[param.strategyId];
+
+        address vault = strategy.vault;
+        IBank.Position memory pos = bank.getCurrentPositionInfo();
+        address posCollToken = pos.collToken;
+        uint256 collId = pos.collId;
+
+        if (IWERC20(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
+        if (posCollToken != address(werc20)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
+
+        /// 1. Take out collateral
+        uint256 burnAmount = bank.takeCollateral(param.amountPosRemove);
+
+        werc20.burn(vault, burnAmount);
+
+        /// 2-7. Remove liquidity
+        _withdraw(param, swapData);
+    }
+
+    /// @inheritdoc IShortLongSpell
+    function addStrategy(address swapToken, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(swapToken, minPosSize, maxPosSize);
     }
 
     /**
@@ -120,37 +167,6 @@ contract ShortLongSpell is BasicSpell {
 
         /// 6. Validate Max Pos Size
         _validatePosSize(param.strategyId);
-    }
-
-    /**
-     * @notice Opens a position using provided parameters and swap data.
-     * @dev This function first deposits an isolated underlying asset to Blueberry Money Market,
-     * then borrows tokens from it. The borrowed tokens are swapped for another token using
-     * ParaSwap and the resulting tokens are deposited into the softvault.
-     *
-     * Pre-conditions:
-     * - Strategy for `param.strategyId` must exist.
-     * - Collateral for `param.strategyId` and `param.collToken` must exist.
-     *
-     * @param param Parameters required to open the position, described in the `OpenPosParam` struct from {BasicSpell}.
-     * @param swapData Specific data needed for the ParaSwap swap, structured in the `bytes` format from {PSwapLib}.
-     */
-    function openPosition(
-        OpenPosParam calldata param,
-        bytes calldata swapData
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        Strategy memory strategy = _strategies[param.strategyId];
-        if (address(ISoftVault(strategy.vault).getUnderlyingToken()) == param.borrowToken) {
-            revert Errors.INCORRECT_LP(param.borrowToken);
-        }
-
-        /// 1-3 Swap to strategy underlying token, deposit to softvault
-        _deposit(param, swapData);
-
-        /// 4. Put collateral - strategy token
-        address vault = _strategies[param.strategyId].vault;
-
-        _doPutCollateral(vault, IERC20Upgradeable(ISoftVault(vault)).balanceOf(address(this)));
     }
 
     /**
@@ -207,53 +223,5 @@ contract ShortLongSpell is BasicSpell {
         /// 7. Refund
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
-    }
-
-    /**
-     * @notice Externally callable function to close a position using provided parameters and swap data.
-     * @dev This function is a higher-level action that internally calls `_withdraw` to manage the closing
-     * of a position. It ensures the given strategy and collateral exist, and then carries out the required
-     * operations to close the position.
-     *
-     * Pre-conditions:
-     * - Strategy for `param.strategyId` must exist.
-     * - Collateral for `param.strategyId` and `param.collToken` must exist.
-     *
-     * @param param Parameters required to close the position, described in the `ClosePosParam` struct.
-     * @param swapData Specific data needed for the ParaSwap swap.
-     */
-    function closePosition(
-        ClosePosParam calldata param,
-        bytes calldata swapData
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        IBank bank = getBank();
-        IWERC20 werc20 = getWrappedERC20();
-        Strategy memory strategy = _strategies[param.strategyId];
-
-        address vault = strategy.vault;
-        IBank.Position memory pos = bank.getCurrentPositionInfo();
-        address posCollToken = pos.collToken;
-        uint256 collId = pos.collId;
-
-        if (IWERC20(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
-        if (posCollToken != address(werc20)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
-
-        /// 1. Take out collateral
-        uint256 burnAmount = bank.takeCollateral(param.amountPosRemove);
-
-        werc20.burn(vault, burnAmount);
-
-        /// 2-7. Remove liquidity
-        _withdraw(param, swapData);
-    }
-
-    /**
-     * @notice Add strategy to the spell
-     * @param swapToken Address of token for given strategy
-     * @param minPosSize USD price of minimum position size for given strategy, based 1e18
-     * @param maxPosSize USD price of maximum position size for given strategy, based 1e18
-     */
-    function addStrategy(address swapToken, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(swapToken, minPosSize, maxPosSize);
     }
 }

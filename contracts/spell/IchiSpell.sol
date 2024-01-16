@@ -25,20 +25,21 @@ import { IBank } from "../interfaces/IBank.sol";
 import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
 import { IUniswapV3Router } from "../interfaces/uniswap/IUniswapV3Router.sol";
 import { IWIchiFarm } from "../interfaces/IWIchiFarm.sol";
+import { IIchiSpell } from "../interfaces/spell/IIchiSpell.sol";
 
 /**
  * @title IchiSpell
  * @author BlueberryProtocol
  * @notice Factory contract that defines the interaction between the Blueberry Protocol and Ichi Vaults.
  */
-contract IchiSpell is BasicSpell {
+contract IchiSpell is IIchiSpell, BasicSpell {
     using SafeCast for uint256;
     using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                   PUBLIC STORAGE
+                                      STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address of the Uniswap V3 router.
@@ -89,20 +90,12 @@ contract IchiSpell is BasicSpell {
         _uniV3Router = IUniswapV3Router(uniV3Router);
     }
 
-    /**
-     * @notice Adds a strategy to the contract.
-     * @param vault Address of the vault linked to the strategy.
-     * @param minPosSize Minimum position size in USD, normalized to 1e18.
-     * @param maxPosSize Maximum position size in USD, normalized to 1e18.
-     */
+    /// @inheritdoc IIchiSpell
     function addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
         _addStrategy(vault, minPosSize, maxPosSize);
     }
 
-    /**
-     * @notice Deposits assets into an IchiVault.
-     * @param param Parameters required for the open position operation.
-     */
+    /// @inheritdoc IIchiSpell
     function openPosition(
         OpenPosParam calldata param
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
@@ -114,10 +107,7 @@ contract IchiSpell is BasicSpell {
         _doPutCollateral(vault, IERC20Upgradeable(vault).balanceOf(address(this)));
     }
 
-    /**
-     * @notice Deposits assets into an IchiVault and then farms them in Ichi Farm.
-     * @param param Parameters required for the open position operation.
-     */
+    /// @inheritdoc IIchiSpell
     function openPositionFarm(
         OpenPosParam calldata param
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
@@ -158,10 +148,7 @@ contract IchiSpell is BasicSpell {
         bank.putCollateral(address(wIchiFarm), id, lpAmount);
     }
 
-    /**
-     * @notice Withdraws assets from an ICHI Vault.
-     * @param param Parameters required for the close position operation.
-     */
+    /// @inheritdoc IIchiSpell
     function closePosition(
         ClosePosParam calldata param
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
@@ -172,10 +159,7 @@ contract IchiSpell is BasicSpell {
         _withdraw(getBank(), param);
     }
 
-    /**
-     * @notice Withdraws assets from an ICHI Vault and from Ichi Farm.
-     * @param param Parameters required for the close position operation.
-     */
+    /// @inheritdoc IIchiSpell
     function closePositionFarm(
         ClosePosParam calldata param
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
@@ -203,17 +187,17 @@ contract IchiSpell is BasicSpell {
         _doRefund(ichiV2);
     }
 
-    /// @notice Returns the Uniswap V3 router.
-    function getUniswapV3Router() public view returns (IUniswapV3Router) {
+    /// @inheritdoc IIchiSpell
+    function getUniswapV3Router() public view override returns (IUniswapV3Router) {
         return _uniV3Router;
     }
 
-    /// @notice Returns the ICHI Farm wrapper.
-    function getWIchiFarm() public view returns (IWIchiFarm) {
+    /// @inheritdoc IIchiSpell
+    function getWIchiFarm() public view override returns (IWIchiFarm) {
         return _wIchiFarm;
     }
 
-    /// @notice Returns the address of the ICHIV2 token.
+    /// @inheritdoc IIchiSpell
     function getIchiV2() public view returns (address) {
         return _ichiV2;
     }
