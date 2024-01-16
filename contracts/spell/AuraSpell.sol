@@ -317,6 +317,12 @@ contract AuraSpell is IAuraSpell, BasicSpell {
         return (minAmountsOut, tokens, exitTokenIndex);
     }
 
+    /**
+     * @notice Internal function to sell reward tokens.
+     * @param rewardTokens List of reward tokens to sell.
+     * @param expectedRewards Expected reward amounts for each reward token.
+     * @param swapDatas Data required for swapping reward tokens to the debt token.
+     */
     function _sellRewards(
         address[] memory rewardTokens,
         uint256[] calldata expectedRewards,

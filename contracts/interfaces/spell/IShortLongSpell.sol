@@ -3,10 +3,6 @@
 pragma solidity 0.8.22;
 
 import { IBasicSpell } from "./IBasicSpell.sol";
-import { ICurveOracle } from "../ICurveOracle.sol";
-import { IWCurveGauge } from "../IWCurveGauge.sol";
-import { IUniswapV3Router } from "../uniswap/IUniswapV3Router.sol";
-import { IWIchiFarm } from "../IWIchiFarm.sol";
 
 /**
  * @title IShortLongSpell
