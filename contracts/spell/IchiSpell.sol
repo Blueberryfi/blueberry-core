@@ -39,7 +39,7 @@ contract IchiSpell is IIchiSpell, BasicSpell {
     using UniversalERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                   PUBLIC STORAGE
+                                      STORAGE
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address of the Uniswap V3 router.
