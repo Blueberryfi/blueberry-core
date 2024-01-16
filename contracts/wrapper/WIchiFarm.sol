@@ -115,7 +115,7 @@ contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, Ownab
         _validateTokenId(id);
         _mint(msg.sender, id, amount, "");
 
-        emit Minted(pid, amount, msg.sender);
+        emit Minted(id, pid, amount);
 
         return id;
     }
@@ -156,7 +156,7 @@ contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, Ownab
             );
         }
 
-        emit Burned(id, amount, msg.sender);
+        emit Burned(id, pid, amount);
 
         return rewards[0];
     }

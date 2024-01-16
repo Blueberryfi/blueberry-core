@@ -427,8 +427,8 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
         if (liqThreshold > Constants.DENOMINATOR) revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
         if (liqThreshold < Constants.MIN_LIQ_THRESHOLD) revert Errors.LIQ_THRESHOLD_TOO_LOW(liqThreshold);
 
-        Bank storage bank = _banks[token];
-        address bToken = address(ISoftVault(softVault).bToken());
+        Bank storage bank = getBank(token);
+        address bToken = address(ISoftVault(softVault).getBToken());
 
         if (_bTokenInBank[bToken]) revert Errors.BTOKEN_ALREADY_ADDED();
         if (bank.isListed) revert Errors.BANK_ALREADY_LISTED();
@@ -464,8 +464,8 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
         if (bankIndex >= _allBanks.length) revert Errors.BANK_NOT_EXIST(bankIndex);
 
         address bankToken = _allBanks[bankIndex];
-        Bank storage bank = _banks[bankToken];
-        address bToken = address(ISoftVault(softVault).bToken());
+        Bank storage bank = getBank(bankToken);
+        address bToken = address(ISoftVault(softVault).getBToken());
 
         bank.bToken = bToken;
         bank.softVault = softVault;
@@ -770,7 +770,7 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
      * @return True if it's a Soft Vault, False if it's a Hard Vault.
      */
     function _isSoftVault(address token) internal view returns (bool) {
-        return address(ISoftVault(_banks[token].softVault).uToken()) == token;
+        return address(ISoftVault(banks[token].softVault).getUnderlyingToken()) == token;
     }
 
     /* solhint-disable func-name-mixedcase */

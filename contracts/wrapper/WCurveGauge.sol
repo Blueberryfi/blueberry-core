@@ -102,7 +102,7 @@ contract WCurveGauge is IWCurveGauge, BaseWrapper, ReentrancyGuardUpgradeable, O
         _validateTokenId(id);
         _mint(msg.sender, id, amount, "");
 
-        emit Minted(gid, amount, msg.sender);
+        emit Minted(id, gid, amount);
 
         return id;
     }
@@ -134,7 +134,7 @@ contract WCurveGauge is IWCurveGauge, BaseWrapper, ReentrancyGuardUpgradeable, O
             crvToken.safeTransfer(msg.sender, rewards);
         }
 
-        emit Burned(id, amount, msg.sender);
+        emit Burned(id, gid, amount);
 
         return rewards;
     }
