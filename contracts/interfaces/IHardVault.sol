@@ -2,10 +2,10 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
+import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 
-import "./IERC20Wrapper.sol";
-import "./IProtocolConfig.sol";
+import { IERC20Wrapper } from "./IERC20Wrapper.sol";
+import { IProtocolConfig } from "./IProtocolConfig.sol";
 
 /**
  * @title IHardVault

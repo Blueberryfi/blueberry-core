@@ -34,7 +34,7 @@ import { IProtocolConfig } from "../interfaces/IProtocolConfig.sol";
  *      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
  *      can be used as collateral in this vault.
  */
-contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpgradeable, IHardVault {
+contract HardVault is IHardVault, OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
@@ -67,35 +67,6 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
         _config = config;
     }
 
-    /**
-     * @dev Encodes a given ERC20 token address into a unique tokenId.
-     * @param uToken Address of the ERC20 token.
-     * @return TokenId representing the token.
-     */
-    function _encodeTokenId(address uToken) internal pure returns (uint256) {
-        return uint256(uint160(uToken));
-    }
-
-    /**
-     * @dev Decodes a given tokenId back into the ERC20 token address.
-     * @param tokenId The tokenId to decode.
-     * @return Address of the corresponding ERC20 token.
-     */
-    function _decodeTokenId(uint256 tokenId) internal pure returns (address) {
-        return address(uint160(tokenId));
-    }
-
-    /// @inheritdoc IHardVault
-    function balanceOfToken(address token, address user) external view override returns (uint256) {
-        return balanceOf(user, _encodeTokenId(token));
-    }
-
-    /// @inheritdoc IHardVault
-    function getUnderlyingToken(uint256 tokenId) external pure override returns (address token) {
-        token = _decodeTokenId(tokenId);
-        if (_encodeTokenId(token) != tokenId) revert Errors.INVALID_TOKEN_ID(tokenId);
-    }
-
     /// @inheritdoc IHardVault
     function deposit(address token, uint256 amount) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
@@ -119,7 +90,7 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
     ) external override nonReentrant returns (uint256 withdrawAmount) {
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
 
-        IProtocolConfig config = _config;
+        IProtocolConfig config = getConfig();
 
         IERC20Upgradeable uToken = IERC20Upgradeable(token);
         _burn(msg.sender, _encodeTokenId(token), shareAmount);
@@ -134,7 +105,36 @@ contract HardVault is OwnableUpgradeable, ERC1155Upgradeable, ReentrancyGuardUpg
     }
 
     /// @inheritdoc IHardVault
-    function getConfig() external view returns (IProtocolConfig) {
+    function balanceOfToken(address token, address user) external view override returns (uint256) {
+        return balanceOf(user, _encodeTokenId(token));
+    }
+
+    /// @inheritdoc IHardVault
+    function getUnderlyingToken(uint256 tokenId) external pure returns (address token) {
+        token = _decodeTokenId(tokenId);
+        if (_encodeTokenId(token) != tokenId) revert Errors.INVALID_TOKEN_ID(tokenId);
+    }
+
+    /// @inheritdoc IHardVault
+    function getConfig() public view override returns (IProtocolConfig) {
         return _config;
+    }
+
+    /**
+     * @dev Decodes a given tokenId back into the ERC20 token address.
+     * @param tokenId The tokenId to decode.
+     * @return Address of the corresponding ERC20 token.
+     */
+    function _decodeTokenId(uint256 tokenId) internal pure returns (address) {
+        return address(uint160(tokenId));
+    }
+
+    /**
+     * @dev Encodes a given ERC20 token address into a unique tokenId.
+     * @param uToken Address of the ERC20 token.
+     * @return TokenId representing the token.
+     */
+    function _encodeTokenId(address uToken) internal pure returns (uint256) {
+        return uint256(uint160(uToken));
     }
 }

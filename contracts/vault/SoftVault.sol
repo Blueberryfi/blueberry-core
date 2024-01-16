@@ -34,7 +34,7 @@ import { IBErc20 } from "../interfaces/money-market/IBErc20.sol";
  * @dev The SoftVault is an ERC20 contract where each LP token is associated with a unique tokenId.
  *      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
  */
-contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgradeable, ISoftVault {
+contract SoftVault is ISoftVault, OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
 
@@ -93,8 +93,8 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
     function deposit(uint256 amount) external override nonReentrant returns (uint256 shareAmount) {
         if (amount == 0) revert Errors.ZERO_AMOUNT();
 
-        IBErc20 bToken = _bToken;
-        IERC20Upgradeable underlyingToken = _underlyingToken;
+        IBErc20 bToken = getBToken();
+        IERC20Upgradeable underlyingToken = getUnderlyingToken();
 
         uint256 uBalanceBefore = underlyingToken.balanceOf(address(this));
         underlyingToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -115,9 +115,9 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
     function withdraw(uint256 shareAmount) external override nonReentrant returns (uint256 withdrawAmount) {
         if (shareAmount == 0) revert Errors.ZERO_AMOUNT();
 
-        IBErc20 bToken = _bToken;
-        IERC20Upgradeable underlyingToken = _underlyingToken;
-        IProtocolConfig config = _config;
+        IBErc20 bToken = getBToken();
+        IERC20Upgradeable underlyingToken = getUnderlyingToken();
+        IProtocolConfig config = getConfig();
 
         _burn(msg.sender, shareAmount);
 
@@ -135,17 +135,17 @@ contract SoftVault is OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgra
     }
 
     /// @inheritdoc ISoftVault
-    function getBToken() external view override returns (IBErc20) {
+    function getBToken() public view override returns (IBErc20) {
         return _bToken;
     }
 
     /// @inheritdoc ISoftVault
-    function getUnderlyingToken() external view override returns (IERC20Upgradeable) {
+    function getUnderlyingToken() public view override returns (IERC20Upgradeable) {
         return _underlyingToken;
     }
 
     /// @inheritdoc ISoftVault
-    function getConfig() external view returns (IProtocolConfig) {
+    function getConfig() public view override returns (IProtocolConfig) {
         return _config;
     }
 }

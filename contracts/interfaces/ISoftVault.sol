@@ -2,10 +2,10 @@
 
 pragma solidity 0.8.22;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "./money-market/IBErc20.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { IBErc20 } from "./money-market/IBErc20.sol";
 
-import "./IProtocolConfig.sol";
+import { IProtocolConfig } from "./IProtocolConfig.sol";
 
 /**
  * @title ISoftVault
