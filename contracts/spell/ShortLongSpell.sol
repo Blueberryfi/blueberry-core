@@ -52,6 +52,14 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Initializes the contract
+     * @param bank The bank interface
+     * @param werc20 Wrapped ERC20 interface
+     * @param weth Wrapped Ether address
+     * @param augustusSwapper Augustus Swapper address
+     * @param tokenTransferProxy Token Transfer Proxy address
+     */
     function initialize(
         IBank bank,
         address werc20,

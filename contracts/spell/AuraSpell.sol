@@ -49,6 +49,15 @@ contract AuraSpell is IAuraSpell, BasicSpell {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Initializes the contract with required parameters.
+     * @param bank Reference to the Bank contract.
+     * @param werc20 Reference to the WERC20 contract.
+     * @param weth Address of the wrapped Ether token.
+     * @param wAuraPools Address of the wrapped Aura Pools contract.
+     * @param augustusSwapper Address of the paraswap AugustusSwapper.
+     * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     */
     function initialize(
         IBank bank,
         address werc20,

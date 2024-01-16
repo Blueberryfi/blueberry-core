@@ -66,6 +66,16 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Initializes the ConvexSpell contract with required parameters.
+     * @param bank Address of the bank contract.
+     * @param werc20 Address of the wrapped ERC20 contract.
+     * @param weth Address of the wrapped Ethereum contract.
+     * @param wConvexBooster Address of the wrapped Convex pools contract.
+     * @param crvOracle Address of the Curve Oracle contract.
+     * @param augustusSwapper Address of the paraswap AugustusSwapper.
+     * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     */
     function initialize(
         IBank bank,
         address werc20,
