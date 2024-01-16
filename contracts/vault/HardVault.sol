@@ -58,6 +58,10 @@ contract HardVault is IHardVault, OwnableUpgradeable, ERC1155Upgradeable, Reentr
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /**
+     * @dev Initializes the HardVault contract.
+     * @param config_ Address of the protocol config.
+     */
     function initialize(IProtocolConfig config) external initializer {
         __ReentrancyGuard_init();
         __Ownable_init();

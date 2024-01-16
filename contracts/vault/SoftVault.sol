@@ -62,6 +62,13 @@ contract SoftVault is ISoftVault, OwnableUpgradeable, ERC20Upgradeable, Reentran
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Initializes the contract
+     * @param config Address of protocol configuration
+     * @param bToken Address of bToken
+     * @param name ERC20 name for the SoftVault token
+     * @param symbol ERC20 symbol for the SoftVault token
+     */
     function initialize(
         IProtocolConfig config,
         IBErc20 bToken,
