@@ -78,6 +78,7 @@ describe('Balancer Stable Pool BPT Oracle', () => {
     const pointNine = ethers.utils.parseEther('0.9');
     const onePointOne = ethers.utils.parseEther('1.1');
 
+    await stableBPTOracle.registerBpt(ADDRESS.BAL_UDU);
     const price = await stableBPTOracle.callStatic.getPrice(ADDRESS.BAL_UDU);
 
     assert(price.gte(pointNine), 'Price is greater than 0.9');
@@ -88,6 +89,7 @@ describe('Balancer Stable Pool BPT Oracle', () => {
     const pointNine = ethers.utils.parseEther('0.9');
     const onePointOne = ethers.utils.parseEther('1.1');
 
+    await stableBPTOracle.registerBpt(ADDRESS.BAL_GHO_3POOL);
     const price = await stableBPTOracle.callStatic.getPrice(ADDRESS.BAL_GHO_3POOL);
 
     assert(price.gte(pointNine), 'Price is greater than 0.9');
@@ -98,6 +100,7 @@ describe('Balancer Stable Pool BPT Oracle', () => {
     const twoThousand = ethers.utils.parseEther('2000');
     const twoThousandFiveHundred = ethers.utils.parseEther('2500');
 
+    await stableBPTOracle.registerBpt(ADDRESS.BAL_WSTETH_WETH);
     const price = await stableBPTOracle.callStatic.getPrice(ADDRESS.BAL_WSTETH_WETH);
 
     assert(price > twoThousand, 'Price is greater than 2000');

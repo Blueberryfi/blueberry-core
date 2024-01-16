@@ -56,7 +56,6 @@ describe('Convex Spell', () => {
 
   before(async () => {
     await fork(1);
-    console.log('forked');
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
     crv = <ERC20>await ethers.getContractAt('ERC20', CRV);

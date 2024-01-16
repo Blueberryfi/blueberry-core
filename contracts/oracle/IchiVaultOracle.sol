@@ -11,7 +11,7 @@
 pragma solidity 0.8.22;
 
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import { UniV3WrappedLibContainer } from "../libraries/UniV3/UniV3WrappedLibContainer.sol";
 
@@ -32,10 +32,33 @@ import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
  *      Base token prices are fetched from Chainlink or Band Protocol.
  *      To prevent flashloan price manipulations, it compares spot & twap prices from Uni V3 Pool.
  */
-contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt {
+contract IchiVaultOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeable, BaseOracleExt {
     /*//////////////////////////////////////////////////////////////////////////
-                                      PUBLIC STORAGE 
+                                      STRUCTS 
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Struct to store token info related to ICHI Vaults
+     * @param token0 Address of token0
+     * @param token1 Address of token1
+     * @param token0Decimals Decimals of token0
+     * @param token1Decimals Decimals of token1
+     * @param vaultDecimals Decimals of ICHI Vault
+     */
+    struct VaultInfo {
+        address token0;
+        address token1;
+        uint8 token0Decimals;
+        uint8 token1Decimals;
+        uint8 vaultDecimals;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      STORAGE 
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Mapping to keep track of token info related to ICHI Vaults
+    mapping(address => VaultInfo) private _vaultInfo;
 
     /// @dev Mapping to keep track of the maximum price deviation allowed for each token
     mapping(address => uint256) private _maxPriceDeviations;
@@ -47,8 +70,11 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
     /**
      * @notice Constructs a new instance of the contract.
      * @param base The base oracle instance.
+     * @
      */
-    constructor(IBaseOracle base) UsingBaseOracle(base) {}
+    constructor(IBaseOracle base, address owner) UsingBaseOracle(base) Ownable2StepUpgradeable() {
+        _transferOwnership(owner);
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       EVENTS
@@ -64,6 +90,30 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Register ICHI Vault token to oracle
+     * @dev Stores persistent data of ICHI Vault token
+     * @dev An oracle cannot be used for a LP token unless it is registered
+     * @param vaultToken LP Token to register
+     */
+    function registerVault(address vaultToken) external onlyOwner {
+        if (vaultToken == address(0)) revert Errors.ZERO_ADDRESS();
+
+        IICHIVault vault = IICHIVault(vaultToken);
+        address token0 = vault.token0();
+        address token1 = vault.token1();
+
+        _vaultInfo[vaultToken] = VaultInfo({
+            token0: token0,
+            token1: token1,
+            token0Decimals: IERC20Metadata(token0).decimals(),
+            token1Decimals: IERC20Metadata(token1).decimals(),
+            vaultDecimals: vault.decimals()
+        });
+
+        emit RegisterLpToken(vaultToken);
+    }
 
     /**
      * @notice Set price deviations for given token
@@ -122,11 +172,15 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
     /// @inheritdoc IBaseOracle
     function getPrice(address token) external override returns (uint256) {
         IICHIVault vault = IICHIVault(token);
+        VaultInfo memory vaultInfo = getVaultInfo(token);
+
+        if (vaultInfo.token0 == address(0)) revert Errors.ORACLE_NOT_SUPPORT_LP(token);
+
         uint256 totalSupply = vault.totalSupply();
         if (totalSupply == 0) return 0;
 
-        address token0 = vault.token0();
-        address token1 = vault.token1();
+        address token0 = vaultInfo.token0;
+        address token1 = vaultInfo.token1;
 
         /// Check price manipulations on Uni V3 pool by flashloan attack
         uint256 spotPrice = spotPrice0InToken1(vault);
@@ -140,12 +194,22 @@ contract IchiVaultOracle is UsingBaseOracle, IBaseOracle, Ownable, BaseOracleExt
         (uint256 r0, uint256 r1) = vault.getTotalAmounts();
         uint256 px0 = base.getPrice(address(token0));
         uint256 px1 = base.getPrice(address(token1));
-        uint256 t0Decimal = IERC20Metadata(token0).decimals();
-        uint256 t1Decimal = IERC20Metadata(token1).decimals();
 
-        uint256 totalReserve = (r0 * px0) / 10 ** t0Decimal + (r1 * px1) / 10 ** t1Decimal;
+        uint256 totalReserve = (r0 * px0) /
+            10 ** vaultInfo.token0Decimals +
+            (r1 * px1) /
+            10 ** vaultInfo.token1Decimals;
 
-        return (totalReserve * 10 ** vault.decimals()) / totalSupply;
+        return (totalReserve * 10 ** vaultInfo.vaultDecimals) / totalSupply;
+    }
+
+    /**
+     * @notice Fetches the vault info for a given LP token.
+     * @param token Token address
+     * @return VaultInfo struct of given token
+     */
+    function getVaultInfo(address token) public view returns (VaultInfo memory) {
+        return _vaultInfo[token];
     }
 
     /**

@@ -32,10 +32,34 @@ import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
 contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOracle {
     using FixedPoint for uint256;
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                      STRUCTS 
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Struct to store token info related to Balancer Pool tokens
+     * @param tokens An array of tokens within the pool
+     * @param normalizedWeights An array of normalized weights associated with the tokens in the pool
+     */
+    struct TokenInfo {
+        address[] tokens;
+        uint256[] normalizedWeights;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      STORAGE 
+    //////////////////////////////////////////////////////////////////////////*/
+
     /// @notice Stable pool oracle
     IBaseOracle private _stablePoolOracle;
     /// @notice Balancer Vault
     IBalancerVault private immutable _VAULT;
+    /// @notice Mapping of registered bpt tokens to their token info
+    mapping(address => TokenInfo) private _tokenInfo;
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      MODIFIERS
+    //////////////////////////////////////////////////////////////////////////*/
 
     // Protects the oracle from being manipulated via read-only reentrancy
     modifier balancerNonReentrant() {
@@ -66,9 +90,10 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
         IBalancerV2WeightedPool pool = IBalancerV2WeightedPool(token);
 
-        (address[] memory tokens, , ) = _VAULT.getPoolTokens(pool.getPoolId());
+        TokenInfo memory tokenInfo = getBptInfo(token);
 
-        uint256[] memory weights = pool.getNormalizedWeights();
+        address[] memory tokens = tokenInfo.tokens;
+        uint256[] memory weights = tokenInfo.normalizedWeights;
 
         uint256 length = weights.length;
         uint256 mult = Constants.PRICE_PRECISION;
@@ -85,6 +110,16 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
         return invariant.mulDown(mult).divDown(totalSupply);
     }
 
+    function registerBpt(address bpt) external onlyOwner {
+        if (bpt == address(0)) revert Errors.ZERO_ADDRESS();
+
+        IBalancerV2WeightedPool pool = IBalancerV2WeightedPool(bpt);
+        (address[] memory tokens, , ) = _VAULT.getPoolTokens(pool.getPoolId());
+        uint256[] memory weights = pool.getNormalizedWeights();
+
+        _tokenInfo[bpt] = TokenInfo(tokens, weights);
+    }
+
     /**
      * @notice Set the stable pool oracle
      * @dev Only owner can set the stable pool oracle
@@ -94,6 +129,15 @@ contract WeightedBPTOracle is UsingBaseOracle, Ownable2StepUpgradeable, IBaseOra
         if (oracle == address(0)) revert Errors.ZERO_ADDRESS();
 
         _stablePoolOracle = IBaseOracle(oracle);
+    }
+
+    /**
+     * @notice Fetches the TokenInfo struct of a given LP token
+     * @param bpt Balancer Pool Token address
+     * @return TokenInfo struct of given LP token
+     */
+    function getBptInfo(address bpt) public view returns (TokenInfo memory) {
+        return _tokenInfo[bpt];
     }
 
     /// @notice Returns the stable pool oracle address

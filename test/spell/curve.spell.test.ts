@@ -50,7 +50,6 @@ describe('Curve Spell', () => {
 
   before(async () => {
     await fork(1);
-    console.log('forked');
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
     dai = <ERC20>await ethers.getContractAt('ERC20', DAI);

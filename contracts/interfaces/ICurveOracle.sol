@@ -10,9 +10,6 @@ import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider
  * @notice Interface for the CurveOracle contract which provides price feed data for assets on Curve Finance.
  */
 interface ICurveOracle is IBaseOracle {
-    /// @notice Emitted when a Curve LP token is registered with its associated pool and underlying tokens.
-    event CurveLpRegistered(address crvLp, address pool, address[] underlyingTokens);
-
     /**
      * @notice Fetches relevant information about a Curve liquidity pool.
      * @param crvLp The address of the Curve liquidity pool token (LP token).

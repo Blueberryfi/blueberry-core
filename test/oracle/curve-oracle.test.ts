@@ -65,6 +65,8 @@ describe('Curve LP Oracle', () => {
       await CurveVolatileOracleFactory.deploy(coreOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
     );
     await volatileOracle.deployed();
+
+    await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
     const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
     tricryptoOracle = <CurveTricryptoOracle>(
       await CurveTricryptoOracleFactory.deploy(coreOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
@@ -73,6 +75,12 @@ describe('Curve LP Oracle', () => {
   });
 
   describe('Owner', () => {
+    it('fail to register curve lp with non-owner', async () => {
+      await expect(volatileOracle.connect(alice).registerCurveLp(ADDRESS.CRV_CVXETH)).to.be.revertedWith(
+        'Ownable: caller is not the owner'
+      );
+    });
+
     it('should be able to set limiter', async () => {
       const poolInfo = await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXETH);
 
@@ -97,6 +105,13 @@ describe('Curve LP Oracle', () => {
 
   describe('Price Feed', () => {
     it('Getting PoolInfo', async () => {
+      await stableOracle.registerCurveLp(ADDRESS.CRV_3Crv);
+      await tricryptoOracle.registerCurveLp(ADDRESS.CRV_TriCrypto);
+      await stableOracle.registerCurveLp(ADDRESS.CRV_FRAXUSDC);
+      await stableOracle.registerCurveLp(ADDRESS.CRV_FRXETH);
+      await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
+      await stableOracle.registerCurveLp(ADDRESS.CRV_CVXCRV_CRV);
+
       console.log('3CrvPool', await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_3Crv));
       console.log('TriCrypto2 Pool', await tricryptoOracle.callStatic.getPoolInfo(ADDRESS.CRV_TriCrypto));
       console.log('FRAX/USDC USD Pool', await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRAXUSDC));
@@ -146,21 +161,28 @@ describe('Curve LP Oracle', () => {
         ]
       );
 
+      await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
+
       const poolInfo = await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXETH);
       await volatileOracle.setLimiter(ADDRESS.CRV_CVXETH, poolInfo.virtualPrice);
 
+      await stableOracle.registerCurveLp(ADDRESS.CRV_3Crv);
       let price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_3Crv);
       console.log('3CrvPool Price:', utils.formatUnits(price, 18));
 
+      await tricryptoOracle.registerCurveLp(ADDRESS.CRV_TriCrypto);
       price = await tricryptoOracle.callStatic.getPrice(ADDRESS.CRV_TriCrypto);
       console.log('TriCrypto Price:', utils.formatUnits(price, 18));
 
+      await stableOracle.registerCurveLp(ADDRESS.CRV_FRAXUSDC);
       price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_FRAXUSDC);
       console.log('FRAX/USDC Price:', utils.formatUnits(price, 18));
 
+      await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
       price = await volatileOracle.callStatic.getPrice(ADDRESS.CRV_CVXETH);
       console.log('CVX/ETH Price:', utils.formatUnits(price, 18));
 
+      await stableOracle.registerCurveLp(ADDRESS.CRV_FRXETH);
       price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_FRXETH);
       console.log('frxETH/ETH Price:', utils.formatUnits(price, 18));
     });

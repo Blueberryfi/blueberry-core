@@ -68,7 +68,7 @@ describe('Ichi Vault Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    uniswapV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(coreOracle.address);
+    uniswapV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(coreOracle.address, admin.address);
     await uniswapV3Oracle.deployed();
     await uniswapV3Oracle.setStablePools([ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
     await uniswapV3Oracle.setTimeGap(
@@ -83,7 +83,7 @@ describe('Ichi Vault Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(coreOracle.address);
+    ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(coreOracle.address, admin.address);
     await ichiOracle.deployed();
 
     swapRouter = <ISwapRouter>await ethers.getContractAt('ISwapRouter', ADDRESS.UNI_V3_ROUTER);
@@ -124,6 +124,21 @@ describe('Ichi Vault Oracle', () => {
         .to.be.emit(ichiOracle, 'SetPriceDeviation')
         .withArgs(ICHI, 300);
     });
+
+    it('should be able to register new vault', async () => {
+      await expect(ichiOracle.connect(user).registerVault(ADDRESS.ICHI_VAULT_USDC)).to.be.revertedWith(
+        'Ownable: caller is not the owner'
+      );
+
+      await expect(ichiOracle.connect(admin).registerVault(ethers.constants.AddressZero)).to.be.revertedWithCustomError(
+        ichiOracle,
+        'ZERO_ADDRESS'
+      );
+      await uniswapV3Oracle.registerToken(ICHI);
+      await expect(ichiOracle.connect(admin).registerVault(ADDRESS.ICHI_VAULT_USDC))
+        .to.be.emit(ichiOracle, 'RegisterLpToken')
+        .withArgs(ADDRESS.ICHI_VAULT_USDC);
+    });
   });
 
   it('should revert price feed for empty vault', async () => {
@@ -136,6 +151,7 @@ describe('Ichi Vault Oracle', () => {
       },
     });
     const newVault = await IchiVault.deploy(ADDRESS.UNI_V3_ICHI_USDC, true, true, admin.address, admin.address, 3600);
+    await ichiOracle.connect(admin).registerVault(newVault.address);
 
     const price = await ichiOracle.callStatic.getPrice(newVault.address);
     expect(price).to.be.equal(0);
@@ -158,6 +174,9 @@ describe('Ichi Vault Oracle', () => {
       admin.address,
       60 // 60 seconds
     );
+
+    await ichiOracle.connect(admin).registerVault(newVault.address);
+
     await usdc.approve(newVault.address, ethers.constants.MaxUint256);
     await newVault.deposit(0, utils.parseUnits('100', 6), admin.address);
 
@@ -186,15 +205,18 @@ describe('Ichi Vault Oracle', () => {
     await usdc.approve(newVault.address, ethers.constants.MaxUint256);
     await newVault.deposit(0, utils.parseUnits('100', 6), admin.address);
 
+    await ichiOracle.connect(admin).registerVault(newVault.address);
+
     await expect(ichiOracle.callStatic.getPrice(newVault.address))
       .to.be.revertedWithCustomError(ichiOracle, 'TOO_LONG_DELAY')
       .withArgs(60 * 60 * 24 * 3);
   });
 
   it('USDC/ICHI Angel Vault Price', async () => {
+    await uniswapV3Oracle.registerToken(ICHI);
     const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
     console.log('ICHI Price', utils.formatUnits(ichiPrice));
-
+    await ichiOracle.connect(admin).registerVault(ADDRESS.ICHI_VAULT_USDC);
     const lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
     console.log('USDC/ICHI Vault Price: \t', utils.formatUnits(lpPrice, 18));
 
@@ -240,6 +262,7 @@ describe('Ichi Vault Oracle', () => {
       );
       console.log('USDC Balance: ', utils.formatUnits(await usdc.balanceOf(admin.address), 6));
       console.log('\n=== Before ===');
+      await uniswapV3Oracle.registerToken(ICHI);
       const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
       console.log('ICHI Price', utils.formatUnits(ichiPrice));
 

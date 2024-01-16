@@ -65,13 +65,18 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       UniV3WrappedLibContainer: LibInstance.address,
     },
   });
-  const uniswapV3AdapterOracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(oracle.address);
+  const uniswapV3AdapterOracle = <UniswapV3AdapterOracle>(
+    await UniswapV3AdapterOracle.deploy(oracle.address, admin.address)
+  );
 
   await uniswapV3AdapterOracle.setStablePools(
     [ADDRESS.OHM, ADDRESS.ICHI],
     [ADDRESS.UNI_V3_OHM_WETH, ADDRESS.UNI_V3_ICHI_USDC]
   );
   await uniswapV3AdapterOracle.setTimeGap([ADDRESS.OHM, ADDRESS.ICHI], [OneHour, OneHour]);
+
+  await uniswapV3AdapterOracle.registerToken(ADDRESS.OHM);
+  await uniswapV3AdapterOracle.registerToken(ADDRESS.ICHI);
 
   const WeightedBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.WeightedBPTOracle);
   const weightedOracle = <WeightedBPTOracle>(
@@ -86,6 +91,9 @@ export const setupOracles = async (): Promise<CoreOracle> => {
 
   await weightedOracle.connect(admin).setStablePoolOracle(stableOracle.address);
   await stableOracle.connect(admin).setWeightedPoolOracle(weightedOracle.address);
+
+  await weightedOracle.connect(admin).registerBpt(ADDRESS.BAL_OHM_WETH);
+  await stableOracle.connect(admin).registerBpt(ADDRESS.BAL_WSTETH_WETH);
 
   await oracle.setRoutes(
     [

@@ -14,6 +14,7 @@ describe('Uniswap V2 LP Oracle', () => {
   let uniswapOracle: UniswapV2Oracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
   before(async () => {
+    const [admin] = await ethers.getSigners();
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
     await chainlinkAdapterOracle.deployed();
@@ -21,12 +22,15 @@ describe('Uniswap V2 LP Oracle', () => {
     await chainlinkAdapterOracle.setTimeGap([ADDRESS.USDC, ADDRESS.CRV], [OneDay, OneDay]);
 
     const UniswapOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2Oracle);
-    uniswapOracle = <UniswapV2Oracle>await UniswapOracleFactory.deploy(chainlinkAdapterOracle.address);
+    uniswapOracle = <UniswapV2Oracle>await UniswapOracleFactory.deploy(chainlinkAdapterOracle.address, admin.address);
     await uniswapOracle.deployed();
   });
 
   it('USDC/CRV LP Price', async () => {
     const pair = <IUniswapV2Pair>await ethers.getContractAt(UniPairABI, ADDRESS.UNI_V2_USDC_CRV);
+
+    await uniswapOracle.registerPair(pair.address);
+
     const oraclePrice = await uniswapOracle.callStatic.getPrice(ADDRESS.UNI_V2_USDC_CRV);
 
     // Calculate real lp price manually
