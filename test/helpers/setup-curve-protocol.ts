@@ -209,6 +209,8 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
       stableOracle.address,
     ]
   );
+  
+  await stableOracle.registerCurveLp(ADDRESS.CRV_3Crv);
 
   const bTokens = await deployBTokens(admin.address, oracle.address);
   comptroller = bTokens.comptroller;

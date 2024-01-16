@@ -326,6 +326,15 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
       stableOracle.address,
     ]
   );
+  
+  await stableOracle.registerCurveLp(ADDRESS.CRV_FRXETH);
+  await stableOracle.registerCurveLp(ADDRESS.CRV_CVXCRV_CRV);
+  await stableOracle.registerCurveLp(ADDRESS.CRV_3Crv);
+  await stableOracle.registerCurveLp(ADDRESS.CRV_FRAX3Crv);
+  await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
+  await stableOracle.registerCurveLp(ADDRESS.CRV_STETH);
+  await stableOracle.registerCurveLp(ADDRESS.CRV_MIM3CRV);
+  await stableOracle.registerCurveLp(ADDRESS.CRV_FRAXUSDC);
 
   const bTokens = await deployBTokens(admin.address, oracle.address);
   comptroller = bTokens.comptroller;
