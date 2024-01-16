@@ -427,7 +427,7 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
         if (liqThreshold > Constants.DENOMINATOR) revert Errors.LIQ_THRESHOLD_TOO_HIGH(liqThreshold);
         if (liqThreshold < Constants.MIN_LIQ_THRESHOLD) revert Errors.LIQ_THRESHOLD_TOO_LOW(liqThreshold);
 
-        Bank storage bank = getBank(token);
+        Bank storage bank = _banks[token];
         address bToken = address(ISoftVault(softVault).getBToken());
 
         if (_bTokenInBank[bToken]) revert Errors.BTOKEN_ALREADY_ADDED();
@@ -464,7 +464,7 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
         if (bankIndex >= _allBanks.length) revert Errors.BANK_NOT_EXIST(bankIndex);
 
         address bankToken = _allBanks[bankIndex];
-        Bank storage bank = getBank(bankToken);
+        Bank storage bank = _banks[bankToken];
         address bToken = address(ISoftVault(softVault).getBToken());
 
         bank.bToken = bToken;
@@ -569,7 +569,7 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function getBankInfo(address token) external view override returns (Bank memory bank) {
+    function getBankInfo(address token) external view returns (Bank memory bank) {
         bank = _banks[token];
     }
 
@@ -770,7 +770,7 @@ contract BlueberryBank is IBank, OwnableUpgradeable, ERC1155NaiveReceiver {
      * @return True if it's a Soft Vault, False if it's a Hard Vault.
      */
     function _isSoftVault(address token) internal view returns (bool) {
-        return address(ISoftVault(banks[token].softVault).getUnderlyingToken()) == token;
+        return address(ISoftVault(_banks[token].softVault).getUnderlyingToken()) == token;
     }
 
     /* solhint-disable func-name-mixedcase */
