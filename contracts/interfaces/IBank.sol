@@ -245,7 +245,7 @@ interface IBank {
     /**
      * @dev Computes the risk ratio of a specified position.
      * @notice A higher risk ratio implies greater risk associated with the position.
-     *         when:  riskRatio = (ov - pv) / cv
+     * @dev    when:  riskRatio = (ov - pv) / cv
      *         where: riskRatio = (debt - positionValue) / isolatedCollateralValue
      * @param positionId ID of the position to assess risk for.
      * @return risk The risk ratio of the position (based on a scale of 1e4).
