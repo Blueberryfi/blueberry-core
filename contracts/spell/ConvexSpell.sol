@@ -119,7 +119,7 @@ contract ConvexSpell is BasicSpell {
         uint256 minLPMint
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         uint256 _minLPMint = minLPMint;
-        Strategy memory strategy = strategies[param.strategyId];
+        Strategy memory strategy = _strategies[param.strategyId];
 
         IWConvexBooster wConvexBooster = getWConvexBooster();
 
@@ -145,12 +145,12 @@ contract ConvexSpell is BasicSpell {
                 revert Errors.INSUFFICIENT_COLLATERAL();
             }
 
-            bool isBorrowTokenWeth = borrowToken == weth;
+            bool isBorrowTokenWeth = borrowToken == _weth;
             if (isBorrowTokenWeth) {
                 bool hasEth;
                 uint256 tokenLength = tokens.length;
                 for (uint256 i; i < tokenLength; ++i) {
-                    if (tokens[i] == ETH) {
+                    if (tokens[i] == _ETH) {
                         hasEth = true;
                         break;
                     }
@@ -184,7 +184,7 @@ contract ConvexSpell is BasicSpell {
                     uint256[2] memory suppliedAmts;
 
                     for (uint256 i; i < 2; ++i) {
-                        if ((tokens[i] == borrowToken) || (tokens[i] == ETH && isBorrowTokenWeth)) {
+                        if ((tokens[i] == borrowToken) || (tokens[i] == _ETH && isBorrowTokenWeth)) {
                             suppliedAmts[i] = tokenBalance;
                             break;
                         }
@@ -195,7 +195,7 @@ contract ConvexSpell is BasicSpell {
                 uint256[3] memory suppliedAmts;
 
                 for (uint256 i; i < 3; ++i) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && isBorrowTokenWeth)) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == _ETH && isBorrowTokenWeth)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -206,7 +206,7 @@ contract ConvexSpell is BasicSpell {
                 uint256[4] memory suppliedAmts;
 
                 for (uint256 i; i < 4; ++i) {
-                    if ((tokens[i] == borrowToken) || (tokens[i] == ETH && isBorrowTokenWeth)) {
+                    if ((tokens[i] == borrowToken) || (tokens[i] == _ETH && isBorrowTokenWeth)) {
                         suppliedAmts[i] = tokenBalance;
                         break;
                     }
@@ -223,6 +223,7 @@ contract ConvexSpell is BasicSpell {
         _validatePosSize(param.strategyId);
 
         {
+            IBank bank = getBank();
             /// 6. Take out existing collateral and burn
             IBank.Position memory pos = bank.getCurrentPositionInfo();
             if (pos.collateralSize > 0) {
@@ -247,14 +248,13 @@ contract ConvexSpell is BasicSpell {
                 }
             }
         }
-
         {
             /// 7. Deposit on Convex Pool, Put wrapped collateral tokens on Blueberry Bank
             uint256 lpAmount = IERC20(lpToken).balanceOf(address(this));
             IERC20(lpToken).universalApprove(address(wConvexBooster), lpAmount);
 
             uint256 id = wConvexBooster.mint(param.farmingPoolId, lpAmount);
-            bank.putCollateral(address(wConvexBooster), id, lpAmount);
+            _bank.putCollateral(address(wConvexBooster), id, lpAmount);
         }
     }
 
@@ -269,7 +269,8 @@ contract ConvexSpell is BasicSpell {
         existingStrategy(closePosParam.param.strategyId)
         existingCollateral(closePosParam.param.strategyId, closePosParam.param.collToken)
     {
-        address crvLp = strategies[closePosParam.param.strategyId].vault;
+        IBank bank = getBank();
+        address crvLp = _strategies[closePosParam.param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
 
         IWConvexBooster wConvexBooster = getWConvexBooster();
@@ -387,8 +388,8 @@ contract ConvexSpell is BasicSpell {
             ICurvePool(pool).remove_liquidity_one_coin(amountPosRemove, tokenIndex, param.amountOutMin);
         }
 
-        if (tokens[uint128(tokenIndex)] == ETH) {
-            IWETH(weth).deposit{ value: address(this).balance }();
+        if (tokens[uint128(tokenIndex)] == _ETH) {
+            IWETH(_weth).deposit{ value: address(this).balance }();
         }
     }
 
@@ -434,7 +435,7 @@ contract ConvexSpell is BasicSpell {
      */
     function _swapOnParaswap(address token, uint256 amount, bytes calldata swapData) internal {
         if (amount == 0) return;
-        if (!PSwapLib.swap(augustusSwapper, tokenTransferProxy, token, amount, swapData))
+        if (!PSwapLib.swap(_augustusSwapper, _tokenTransferProxy, token, amount, swapData))
             revert Errors.SWAP_FAILED(token);
 
         // Refund rest amount to owner

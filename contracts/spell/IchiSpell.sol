@@ -110,7 +110,7 @@ contract IchiSpell is BasicSpell {
         _deposit(param);
 
         /// 6. Put collateral - ICHI Vault Lp Token
-        address vault = strategies[param.strategyId].vault;
+        address vault = _strategies[param.strategyId].vault;
         _doPutCollateral(vault, IERC20Upgradeable(vault).balanceOf(address(this)));
     }
 
@@ -121,7 +121,7 @@ contract IchiSpell is BasicSpell {
     function openPositionFarm(
         OpenPosParam calldata param
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        Strategy memory strategy = strategies[param.strategyId];
+        Strategy memory strategy = _strategies[param.strategyId];
 
         IWIchiFarm wIchiFarm = getWIchiFarm();
 
@@ -131,6 +131,7 @@ contract IchiSpell is BasicSpell {
         /// 1-5 Deposit on ichi vault
         _deposit(param);
 
+        IBank bank = getBank();
         /// 6. Take out collateral and burn
         {
             IBank.Position memory pos = bank.getCurrentPositionInfo();
@@ -165,10 +166,10 @@ contract IchiSpell is BasicSpell {
         ClosePosParam calldata param
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         /// 1. Take out collateral
-        _doTakeCollateral(strategies[param.strategyId].vault, param.amountPosRemove);
+        _doTakeCollateral(_strategies[param.strategyId].vault, param.amountPosRemove);
 
         /// 2-8. Remove liquidity
-        _withdraw(param);
+        _withdraw(getBank(), param);
     }
 
     /**
@@ -178,7 +179,8 @@ contract IchiSpell is BasicSpell {
     function closePositionFarm(
         ClosePosParam calldata param
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
-        address vault = strategies[param.strategyId].vault;
+        IBank bank = getBank();
+        address vault = _strategies[param.strategyId].vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
@@ -195,7 +197,7 @@ contract IchiSpell is BasicSpell {
         _doRefundRewards(ichiV2);
 
         /// 2-8. Remove liquidity
-        _withdraw(param);
+        _withdraw(bank, param);
 
         /// 9. Refund ichi token
         _doRefund(ichiV2);
@@ -222,7 +224,7 @@ contract IchiSpell is BasicSpell {
      * @param param Parameters required for the deposit operation.
      */
     function _deposit(OpenPosParam calldata param) internal {
-        Strategy memory strategy = strategies[param.strategyId];
+        Strategy memory strategy = _strategies[param.strategyId];
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
@@ -256,10 +258,11 @@ contract IchiSpell is BasicSpell {
     /**
      * @notice Handles the withdrawal logic, including withdrawing
      *         from the ICHI vault, swapping tokens, and repaying the debt.
+     * @param bank Reference to the Bank contract.
      * @param param Parameters required for the close position operation.
      */
-    function _withdraw(ClosePosParam calldata param) internal {
-        Strategy memory strategy = strategies[param.strategyId];
+    function _withdraw(IBank bank, ClosePosParam calldata param) internal {
+        Strategy memory strategy = _strategies[param.strategyId];
         IICHIVault vault = IICHIVault(strategy.vault);
 
         /// 1. Compute repay amount if MAX_INT is supplied (max debt)

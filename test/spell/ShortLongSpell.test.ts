@@ -119,11 +119,11 @@ describe('ShortLongSpell', () => {
     });
 
     it('Check initial values', async () => {
-      expect(await spell.bank()).to.eq(bank.address);
-      expect(await spell.werc20()).to.eq(werc20.address);
-      expect(await spell.weth()).to.eq(weth.address);
-      expect(await spell.augustusSwapper()).to.eq(augustusSwapper.address);
-      expect(await spell.tokenTransferProxy()).to.eq(tokenTransferProxy.address);
+      expect(await spell.getBank()).to.eq(bank.address);
+      expect(await spell.getWrappedERC20()).to.eq(werc20.address);
+      expect(await spell.getWETH()).to.eq(weth.address);
+      expect(await spell.getAugustusSwapper()).to.eq(augustusSwapper.address);
+      expect(await spell.getTokenTransferProxy()).to.eq(tokenTransferProxy.address);
       expect(await spell.owner()).to.eq(owner.address);
       expect(await werc20.isApprovedForAll(spell.address, bank.address)).to.be.true;
     });
@@ -166,7 +166,7 @@ describe('ShortLongSpell', () => {
     it('should add new strategy', async () => {
       await spell.connect(owner).addStrategy(weth.address, 1, 10);
 
-      const strategy = await spell.strategies(0);
+      const strategy = await spell.getStrategy(0);
       expect(strategy.vault).to.eq(weth.address);
       expect(strategy.minPositionSize).to.eq(1);
       expect(strategy.maxPositionSize).to.eq(10);

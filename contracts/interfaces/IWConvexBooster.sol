@@ -35,9 +35,10 @@ interface IWConvexBooster is IERC1155Upgradeable, IERC20Wrapper {
     /**
      * @notice Decode an encoded ID into two separate uint values.
      * @param id The encoded uint ID to decode.
-     * @return The two individual uint256 values decoded from the provided ID.
+     * @return pid The pool ID representing the specific Convex pool.
+     * @return cvxPerShare Original CVX amount per share, which should be multiplied by 1e18.
      */
-    function decodeId(uint256 id) external pure returns (uint256, uint256);
+    function decodeId(uint256 id) external pure returns (uint256 pid, uint256 cvxPerShare);
 
     /**
      *

@@ -11,21 +11,19 @@
 pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
-import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { EnumerableSetUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-import "../utils/BlueberryConst.sol" as Constants;
-
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 /* solhint-enable max-line-length */
 
+import "../utils/BlueberryConst.sol" as Constants;
 import "../utils/BlueberryErrors.sol" as Errors;
 
-import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
+import { BaseWrapper } from "./BaseWrapper.sol";
+
 import { ICvxExtraRewarder } from "../interfaces/convex/ICvxExtraRewarder.sol";
 import { IConvex } from "../interfaces/convex/IConvex.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
@@ -43,13 +41,7 @@ import { IWConvexBooster, ICvxBooster } from "../interfaces/IWConvexBooster.sol"
  *     and do not generate yields. LP Tokens are identified by tokenIds
  *    encoded from lp token address.
  */
-contract WConvexBooster is
-    IERC20Wrapper,
-    IWConvexBooster,
-    ERC1155Upgradeable,
-    ReentrancyGuardUpgradeable,
-    OwnableUpgradeable
-{
+contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradeable, OwnableUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -424,16 +416,6 @@ contract WConvexBooster is
         for (uint256 i; i < currentExtraRewardsCount; ++i) {
             address extraRewarder = _extraRewards[pid].at(i);
             ICvxExtraRewarder(extraRewarder).getReward(escrow);
-        }
-    }
-
-    /**
-     * @notice Verifies that the provided token id is unique and has not been minted yet
-     * @param id The token id to validate
-     */
-    function _validateTokenId(uint256 id) internal view {
-        if (balanceOf(msg.sender, id) != 0) {
-            revert Errors.DUPLICATE_TOKEN_ID(id);
         }
     }
 }
