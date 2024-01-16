@@ -326,7 +326,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
       stableOracle.address,
     ]
   );
-  
+
   await stableOracle.registerCurveLp(ADDRESS.CRV_FRXETH);
   await stableOracle.registerCurveLp(ADDRESS.CRV_CVXCRV_CRV);
   await stableOracle.registerCurveLp(ADDRESS.CRV_3Crv);

@@ -80,7 +80,7 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle, Ownable {
      */
     function registerCurveLp(address crvLp) external onlyOwner {
         if (crvLp == address(0)) revert Errors.ZERO_ADDRESS();
-        (address pool, address[] memory tokens, uint256 registryIndex) = _getTokens(crvLp);
+        (address pool, address[] memory tokens, uint256 registryIndex) = _setTokens(crvLp);
         _tokenInfo[crvLp] = TokenInfo(pool, tokens, registryIndex);
     }
 
@@ -124,19 +124,9 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle, Ownable {
         }
 
         // If the registry index is 5, use the CryptoSwap Curve registry.
-        if (tokenInfo.registryIndex == 5) {
-            address registry = _addressProvider.get_address(5);
-
-            pool = tokenInfo.pool;
-            ulTokens = tokenInfo.tokens;
-            virtualPrice = ICurveCryptoSwapRegistry(registry).get_virtual_price_from_lp_token(crvLp);
-
-            return (pool, ulTokens, virtualPrice);
-        }
-
         // If the registry index is 7, use the Meta Curve registry.
-        if (tokenInfo.registryIndex == 7) {
-            address registry = _addressProvider.get_address(7);
+        if (tokenInfo.registryIndex == 5 || tokenInfo.registryIndex == 7) {
+            address registry = _addressProvider.get_address(tokenInfo.registryIndex);
 
             pool = tokenInfo.pool;
             ulTokens = tokenInfo.tokens;
@@ -153,7 +143,7 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle, Ownable {
      * @return tokens An array of tokens in the Curve liquidity pool.
      * @return registryIndex The index of the registry to use for a given pool.
      */
-    function _getTokens(
+    function _setTokens(
         address crvLp
     ) internal view returns (address pool, address[] memory tokens, uint256 registryIndex) {
         /// 1. Attempt retrieval from main Curve registry.

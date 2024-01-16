@@ -111,7 +111,7 @@ describe('Curve LP Oracle', () => {
       await stableOracle.registerCurveLp(ADDRESS.CRV_FRXETH);
       await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
       await stableOracle.registerCurveLp(ADDRESS.CRV_CVXCRV_CRV);
-      
+
       console.log('3CrvPool', await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_3Crv));
       console.log('TriCrypto2 Pool', await tricryptoOracle.callStatic.getPoolInfo(ADDRESS.CRV_TriCrypto));
       console.log('FRAX/USDC USD Pool', await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRAXUSDC));
@@ -160,12 +160,12 @@ describe('Curve LP Oracle', () => {
           chainlinkAdapterOracle.address,
         ]
       );
-      
+
       await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
 
       const poolInfo = await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXETH);
       await volatileOracle.setLimiter(ADDRESS.CRV_CVXETH, poolInfo.virtualPrice);
-      
+
       await stableOracle.registerCurveLp(ADDRESS.CRV_3Crv);
       let price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_3Crv);
       console.log('3CrvPool Price:', utils.formatUnits(price, 18));
