@@ -267,8 +267,8 @@ interface IBank {
     function isLiquidatable(uint256 positionId) external returns (bool);
 
     /**
-     * @dev Computes the total USD value of the collateral of a given position.
-     * @notice The returned value includes both the collateral and any pending rewards.
+     * @notice Computes the total USD value of the collateral of a given position.
+     * @dev The returned value includes both the collateral and any pending rewards.
      * @param positionId ID of the position to compute the value for.
      * @return positionValue Total USD value of the collateral and pending rewards.
      */
