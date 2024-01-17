@@ -249,24 +249,39 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   const CurveStableOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveStableOracle);
   stableOracle = <CurveStableOracle>(
-    await CurveStableOracleFactory.deploy(mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+    await upgrades.deployProxy(
+      CurveStableOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
+
   await stableOracle.deployed();
 
   const CurveVolatileOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveVolatileOracle);
   volatileOracle = <CurveVolatileOracle>(
-    await CurveVolatileOracleFactory.deploy(mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+    await upgrades.deployProxy(
+      CurveVolatileOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
+
   await volatileOracle.deployed();
 
   const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
   tricryptoOracle = <CurveTricryptoOracle>(
-    await CurveTricryptoOracleFactory.deploy(mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+    await upgrades.deployProxy(
+      CurveTricryptoOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
+
   await tricryptoOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, { unsafeAllow: ['delegatecall'] });
+  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
   await oracle.deployed();
 
   await oracle.setRoutes(
@@ -305,27 +320,27 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   // Deploy Bank
   const Config = await ethers.getContractFactory('ProtocolConfig');
-  config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address], {
+  config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
   await config.deployed();
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory('FeeManager');
-  feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address], {
+  feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
   await feeManager.deployed();
   await config.setFeeManager(feeManager.address);
 
   const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
-  bank = <BlueberryBank>(
-    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
-  );
+  bank = <BlueberryBank>await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], {
+    unsafeAllow: ['delegatecall'],
+  });
   await bank.deployed();
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-  werc20 = <WERC20>await upgrades.deployProxy(WERC20, { unsafeAllow: ['delegatecall'] });
+  werc20 = <WERC20>await upgrades.deployProxy(WERC20, [admin.address], { unsafeAllow: ['delegatecall'] });
   await werc20.deployed();
 
   // Deploy CRV spell
@@ -333,7 +348,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   shortLongSpell = <ShortLongSpell>(
     await upgrades.deployProxy(
       ShortLongSpell,
-      [bank.address, werc20.address, WETH, AUGUSTUS_SWAPPER, TOKEN_TRANSFER_PROXY],
+      [bank.address, werc20.address, WETH, AUGUSTUS_SWAPPER, TOKEN_TRANSFER_PROXY, admin.address],
       { unsafeAllow: ['delegatecall'] }
     )
   );
@@ -342,7 +357,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   usdcSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bUSDC.address, 'Interest Bearing USDC', 'ibUSDC'],
+    [config.address, bUSDC.address, 'Interest Bearing USDC', 'ibUSDC', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -351,7 +366,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   daiSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bDAI.address, 'Interest Bearing DAI', 'ibDAI'],
+    [config.address, bDAI.address, 'Interest Bearing DAI', 'ibDAI', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -360,7 +375,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   crvSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bCRV.address, 'Interest Bearing CRV', 'ibCRV'],
+    [config.address, bCRV.address, 'Interest Bearing CRV', 'ibCRV', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -369,7 +384,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   linkSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bLINK.address, 'Interest Bearing LINK', 'ibLINK'],
+    [config.address, bLINK.address, 'Interest Bearing LINK', 'ibLINK', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -378,7 +393,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   wbtcSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bWBTC.address, 'Interest Bearing WBTC', 'ibWBTC'],
+    [config.address, bWBTC.address, 'Interest Bearing WBTC', 'ibWBTC', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -387,7 +402,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   wethSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bWETH.address, 'Interest Bearing WETH', 'ibWETH'],
+    [config.address, bWETH.address, 'Interest Bearing WETH', 'ibWETH', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -396,7 +411,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   wstETHSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bWstETH.address, 'Interest Bearing WstETH', 'ibWstETH'],
+    [config.address, bWstETH.address, 'Interest Bearing WstETH', 'ibWstETH', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -447,7 +462,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await bank.whitelistERC1155([werc20.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address], {
+  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
 

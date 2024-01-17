@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { ChainlinkAdapterOracle, IFeedRegistry, IWstETH } from '../../typechain-types';
@@ -30,7 +30,13 @@ describe('Chainlink Adapter Oracle', () => {
 
   beforeEach(async () => {
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
+    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
+    );
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setTokenRemappings([ADDRESS.wstETH], [ADDRESS.stETH]);
@@ -41,10 +47,11 @@ describe('Chainlink Adapter Oracle', () => {
   describe('Constructor', () => {
     it('should revert when feed registry address is invalid', async () => {
       const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-      await expect(ChainlinkAdapterOracle.deploy(ethers.constants.AddressZero)).to.be.revertedWithCustomError(
-        ChainlinkAdapterOracle,
-        'ZERO_ADDRESS'
-      );
+      await expect(
+        upgrades.deployProxy(ChainlinkAdapterOracle, [ethers.constants.AddressZero, admin.address], {
+          unsafeAllow: ['delegatecall'],
+        })
+      ).to.be.revertedWithCustomError(ChainlinkAdapterOracle, 'ZERO_ADDRESS');
     });
     it('should set feed registry', async () => {
       expect(await chainlinkAdapterOracle.getFeedRegistry()).to.be.equal(ADDRESS.ChainlinkRegistry);

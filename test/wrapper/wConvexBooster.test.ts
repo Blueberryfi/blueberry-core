@@ -18,6 +18,7 @@ import { generateRandomAddress } from '../helpers';
 
 describe('WConvexBooster', () => {
   let alice: SignerWithAddress;
+  let admin: SignerWithAddress;
 
   let lpToken: MockERC20;
   let extraRewarder: MockVirtualBalanceRewardPool;
@@ -32,7 +33,7 @@ describe('WConvexBooster', () => {
   let escrowFactory: PoolEscrowFactory;
 
   beforeEach(async () => {
-    [alice] = await ethers.getSigners();
+    [admin, alice] = await ethers.getSigners();
 
     const MockERC20Factory = await ethers.getContractFactory('MockERC20');
     lpToken = await MockERC20Factory.deploy('', '', 18);
@@ -72,7 +73,7 @@ describe('WConvexBooster', () => {
 
     wConvexBooster = <WConvexBooster>await upgrades.deployProxy(
       WConvexBoosterFactory,
-      [cvx.address, booster.address, escrowFactory.address],
+      [cvx.address, booster.address, escrowFactory.address, admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }
@@ -90,6 +91,9 @@ describe('WConvexBooster', () => {
 
     await lpToken.mintWithAmount(utils.parseEther('10000000'));
     await lpToken.approve(wConvexBooster.address, utils.parseEther('10000000'));
+
+    await lpToken.connect(alice).mintWithAmount(utils.parseEther('10000000'));
+    await lpToken.connect(alice).approve(wConvexBooster.address, utils.parseEther('10000000'));
   });
 
   describe('#initialize', () => {
@@ -99,9 +103,9 @@ describe('WConvexBooster', () => {
     });
 
     it('should revert initializing twice', async () => {
-      await expect(wConvexBooster.initialize(cvx.address, booster.address, escrowFactory.address)).to.be.revertedWith(
-        'Initializable: contract is already initialized'
-      );
+      await expect(
+        wConvexBooster.initialize(cvx.address, booster.address, escrowFactory.address, admin.address)
+      ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });
 
@@ -196,7 +200,7 @@ describe('WConvexBooster', () => {
 
     beforeEach(async () => {
       await crvRewards.setRewardPerToken(crvPerShare);
-      await wConvexBooster.mint(pid, amount);
+      await wConvexBooster.connect(alice).mint(pid, amount);
     });
 
     it('return zero at initial stage', async () => {
@@ -363,7 +367,7 @@ describe('WConvexBooster', () => {
     });
 
     it('deposit into cvxPools', async () => {
-      await wConvexBooster.mint(pid, amount);
+      await wConvexBooster.connect(alice).mint(pid, amount);
 
       const escrowContract = await wConvexBooster.getEscrow(pid);
 
@@ -374,13 +378,13 @@ describe('WConvexBooster', () => {
     });
 
     it('mint ERC1155 NFT', async () => {
-      await wConvexBooster.mint(pid, amount);
+      await wConvexBooster.connect(alice).mint(pid, amount);
 
       expect(await wConvexBooster.balanceOf(alice.address, tokenId)).to.be.eq(amount);
     });
 
     it('sync extra reward info', async () => {
-      await wConvexBooster.mint(pid, amount);
+      await wConvexBooster.connect(alice).mint(pid, amount);
 
       expect(await wConvexBooster.getInitialTokenPerShare(tokenId, extraRewarder.address)).to.be.eq(
         extraRewardPerToken
@@ -391,8 +395,8 @@ describe('WConvexBooster', () => {
     });
 
     it('keep existing extra reward info when syncing', async () => {
-      await wConvexBooster.mint(pid, amount);
-      await wConvexBooster.mint(pid, amount);
+      await wConvexBooster.connect(alice).mint(pid, amount);
+      await wConvexBooster.connect(alice).mint(pid, amount);
 
       expect(await wConvexBooster.extraRewardsLength(pid)).to.be.eq(1);
       expect(await wConvexBooster.getExtraRewarder(pid, 0)).to.be.eq(extraRewarder.address);
@@ -413,7 +417,7 @@ describe('WConvexBooster', () => {
       await crvRewards.setRewardPerToken(crvRewardPerToken);
       await extraRewarder.setRewardPerToken(extraRewardPerToken);
 
-      await wConvexBooster.mint(pid, mintAmount);
+      await wConvexBooster.connect(alice).mint(pid, mintAmount);
 
       await rewardToken.mintTo(crvRewards.address, utils.parseEther('10000000000'));
       await extraRewardToken.mintTo(extraRewarder.address, utils.parseEther('10000000000'));
@@ -431,7 +435,7 @@ describe('WConvexBooster', () => {
     it('withdraw from cvxPools', async () => {
       const balBefore = await lpToken.balanceOf(alice.address);
 
-      await wConvexBooster.burn(tokenId, amount);
+      await wConvexBooster.connect(alice).burn(tokenId, amount);
 
       const escrowContract = await wConvexBooster.getEscrow(pid);
 
@@ -443,7 +447,7 @@ describe('WConvexBooster', () => {
     });
 
     it('burn ERC1155 NFT', async () => {
-      await wConvexBooster.burn(tokenId, amount);
+      await wConvexBooster.connect(alice).burn(tokenId, amount);
 
       expect(await wConvexBooster.balanceOf(alice.address, tokenId)).to.be.eq(mintAmount.sub(amount));
     });
@@ -451,7 +455,7 @@ describe('WConvexBooster', () => {
     it('receive rewards', async () => {
       const res = await wConvexBooster.pendingRewards(tokenId, amount);
 
-      await wConvexBooster.burn(tokenId, amount);
+      await wConvexBooster.connect(alice).burn(tokenId, amount);
 
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
       expect(await cvx.balanceOf(alice.address)).to.be.eq(res[1][1]);
@@ -462,7 +466,7 @@ describe('WConvexBooster', () => {
       const res = await wConvexBooster.pendingRewards(tokenId, amount);
 
       await crvRewards.clearExtraRewards();
-      await wConvexBooster.burn(tokenId, amount);
+      await wConvexBooster.connect(alice).burn(tokenId, amount);
 
       expect(await rewardToken.balanceOf(alice.address)).to.be.eq(res[1][0]);
       expect(await cvx.balanceOf(alice.address)).to.be.eq(res[1][1]);

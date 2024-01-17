@@ -10,7 +10,7 @@
 
 pragma solidity 0.8.22;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "../utils/BlueberryConst.sol" as Constants;
 import "../utils/BlueberryErrors.sol" as Errors;
@@ -24,7 +24,7 @@ import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
  * @notice This contract aggregates price feeds from multiple oracle sources,
  *         ensuring a more reliable and resilient price data.
  */
-contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
+contract AggregatorOracle is IBaseOracle, Ownable2StepUpgradeable, BaseOracleExt {
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
@@ -49,8 +49,26 @@ contract AggregatorOracle is IBaseOracle, Ownable, BaseOracleExt {
     event SetPrimarySources(address indexed token, uint256 maxPriceDeviation, IBaseOracle[] oracles);
 
     /*//////////////////////////////////////////////////////////////////////////
+                                      CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Initializes the contract
+     * @param owner Address of the owner of the contract.
+     */
+    function initialize(address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
+    }
 
     /**
      * @notice Set primary oracle sources for the given token

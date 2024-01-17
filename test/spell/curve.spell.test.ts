@@ -79,6 +79,7 @@ describe('Curve Spell', () => {
             stableOracle.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -94,6 +95,7 @@ describe('Curve Spell', () => {
             stableOracle.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -109,6 +111,7 @@ describe('Curve Spell', () => {
             stableOracle.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -124,6 +127,7 @@ describe('Curve Spell', () => {
             stableOracle.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -139,6 +143,7 @@ describe('Curve Spell', () => {
             ethers.constants.AddressZero,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -153,7 +158,8 @@ describe('Curve Spell', () => {
           ethers.constants.AddressZero,
           stableOracle.address,
           AUGUSTUS_SWAPPER,
-          TOKEN_TRANSFER_PROXY
+          TOKEN_TRANSFER_PROXY,
+          admin.address
         )
       ).to.be.revertedWith('Initializable: contract is already initialized');
     });

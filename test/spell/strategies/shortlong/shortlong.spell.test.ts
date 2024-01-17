@@ -247,7 +247,7 @@ describe('ShortLong Spell Test test', () => {
       LINK, // Borrow Token
       DAI, // Swap Token
       daiSoftVault, // Soft Vault
-      utils.parseUnits('1', 18), // wstETH Deposit Amount
+      utils.parseUnits('2', 18), // wstETH Deposit Amount
       utils.parseUnits('1.5', 18), // Collateral Swap Amount
       wstETH
     );

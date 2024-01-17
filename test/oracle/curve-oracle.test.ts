@@ -31,7 +31,13 @@ describe('Curve LP Oracle', () => {
     [admin, alice] = await ethers.getSigners();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
+    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
+    );
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setTimeGap(
@@ -50,27 +56,42 @@ describe('Curve LP Oracle', () => {
     );
 
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, { unsafeAllow: ['delegatecall'] });
+    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
     await coreOracle.deployed();
   });
 
   beforeEach(async () => {
     const CurveStableOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveStableOracle);
     stableOracle = <CurveStableOracle>(
-      await CurveStableOracleFactory.deploy(coreOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+      await upgrades.deployProxy(
+        CurveStableOracleFactory,
+        [ADDRESS.CRV_ADDRESS_PROVIDER, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
     );
+
     await stableOracle.deployed();
+
     const CurveVolatileOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveVolatileOracle);
     volatileOracle = <CurveVolatileOracle>(
-      await CurveVolatileOracleFactory.deploy(coreOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+      await upgrades.deployProxy(
+        CurveVolatileOracleFactory,
+        [ADDRESS.CRV_ADDRESS_PROVIDER, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
     );
+
     await volatileOracle.deployed();
 
-    await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
     const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
     tricryptoOracle = <CurveTricryptoOracle>(
-      await CurveTricryptoOracleFactory.deploy(coreOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+      await upgrades.deployProxy(
+        CurveTricryptoOracleFactory,
+        [ADDRESS.CRV_ADDRESS_PROVIDER, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
     );
+
     await tricryptoOracle.deployed();
   });
 
@@ -82,6 +103,7 @@ describe('Curve LP Oracle', () => {
     });
 
     it('should be able to set limiter', async () => {
+      await volatileOracle.connect(admin).registerCurveLp(ADDRESS.CRV_CVXETH);
       const poolInfo = await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXETH);
 
       await expect(

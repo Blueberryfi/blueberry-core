@@ -20,7 +20,7 @@ chai.use(near);
 chai.use(roughlyNear);
 
 describe('ShortLongSpell', () => {
-  let owner: SignerWithAddress;
+  let admin: SignerWithAddress;
   let alice: SignerWithAddress;
 
   let weth: IWETH;
@@ -33,10 +33,10 @@ describe('ShortLongSpell', () => {
   beforeEach(async () => {
     await fork(17089048);
 
-    [owner, alice] = await ethers.getSigners();
+    [admin, alice] = await ethers.getSigners();
 
     const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-    werc20 = <WERC20>await upgrades.deployProxy(WERC20, { unsafeAllow: ['delegatecall'] });
+    werc20 = <WERC20>await upgrades.deployProxy(WERC20, [admin.address], { unsafeAllow: ['delegatecall'] });
 
     const MockWethFactory = await ethers.getContractFactory(CONTRACT_NAMES.MockWETH);
     weth = <IWETH>await MockWethFactory.deploy();
@@ -55,7 +55,14 @@ describe('ShortLongSpell', () => {
     spell = <ShortLongSpell>(
       await upgrades.deployProxy(
         ShortLongSpellFactory,
-        [bank.address, werc20.address, weth.address, augustusSwapper.address, tokenTransferProxy.address],
+        [
+          bank.address,
+          werc20.address,
+          weth.address,
+          augustusSwapper.address,
+          tokenTransferProxy.address,
+          admin.address,
+        ],
         { unsafeAllow: ['delegatecall'] }
       )
     );
@@ -72,7 +79,14 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [constants.AddressZero, werc20.address, weth.address, augustusSwapper.address, tokenTransferProxy.address],
+          [
+            constants.AddressZero,
+            werc20.address,
+            weth.address,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -82,7 +96,14 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [bank.address, constants.AddressZero, weth.address, augustusSwapper.address, tokenTransferProxy.address],
+          [
+            bank.address,
+            constants.AddressZero,
+            weth.address,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -92,7 +113,14 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [bank.address, werc20.address, constants.AddressZero, augustusSwapper.address, tokenTransferProxy.address],
+          [
+            bank.address,
+            werc20.address,
+            constants.AddressZero,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -102,7 +130,14 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [bank.address, werc20.address, weth.address, constants.AddressZero, tokenTransferProxy.address],
+          [
+            bank.address,
+            werc20.address,
+            weth.address,
+            constants.AddressZero,
+            tokenTransferProxy.address,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -112,7 +147,7 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [bank.address, werc20.address, weth.address, augustusSwapper.address, constants.AddressZero],
+          [bank.address, werc20.address, weth.address, augustusSwapper.address, constants.AddressZero, admin.address],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -124,47 +159,54 @@ describe('ShortLongSpell', () => {
       expect(await spell.getWETH()).to.eq(weth.address);
       expect(await spell.getAugustusSwapper()).to.eq(augustusSwapper.address);
       expect(await spell.getTokenTransferProxy()).to.eq(tokenTransferProxy.address);
-      expect(await spell.owner()).to.eq(owner.address);
+      expect(await spell.owner()).to.eq(admin.address);
       expect(await werc20.isApprovedForAll(spell.address, bank.address)).to.be.true;
     });
 
     it('should revert initializing twice', async () => {
       await expect(
-        spell.initialize(bank.address, werc20.address, weth.address, augustusSwapper.address, constants.AddressZero)
+        spell.initialize(
+          bank.address,
+          werc20.address,
+          weth.address,
+          augustusSwapper.address,
+          constants.AddressZero,
+          admin.address
+        )
       ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });
 
   describe('#addStrategy', () => {
-    it('should revert when msg.sender is not owner', async () => {
+    it('should revert when msg.sender is not admin', async () => {
       await expect(spell.connect(alice).addStrategy(weth.address, 1, 10)).to.be.revertedWith(
         'Ownable: caller is not the owner'
       );
     });
 
     it('should revert when vault is address(0)', async () => {
-      await expect(spell.connect(owner).addStrategy(constants.AddressZero, 1, 10)).to.be.revertedWithCustomError(
+      await expect(spell.connect(admin).addStrategy(constants.AddressZero, 1, 10)).to.be.revertedWithCustomError(
         spell,
         'ZERO_ADDRESS'
       );
     });
 
     it('should revert when maxPosSize is 0', async () => {
-      await expect(spell.connect(owner).addStrategy(weth.address, 0, 0)).to.be.revertedWithCustomError(
+      await expect(spell.connect(admin).addStrategy(weth.address, 0, 0)).to.be.revertedWithCustomError(
         spell,
         'ZERO_AMOUNT'
       );
     });
 
     it('should revert when minPosSize >= maxPosSize', async () => {
-      await expect(spell.connect(owner).addStrategy(weth.address, 10, 10)).to.be.revertedWithCustomError(
+      await expect(spell.connect(admin).addStrategy(weth.address, 10, 10)).to.be.revertedWithCustomError(
         spell,
         'INVALID_POS_SIZE'
       );
     });
 
     it('should add new strategy', async () => {
-      await spell.connect(owner).addStrategy(weth.address, 1, 10);
+      await spell.connect(admin).addStrategy(weth.address, 1, 10);
 
       const strategy = await spell.getStrategy(0);
       expect(strategy.vault).to.eq(weth.address);
@@ -173,7 +215,7 @@ describe('ShortLongSpell', () => {
     });
 
     it('should emit StrategyAdded event', async () => {
-      const tx = await spell.connect(owner).addStrategy(weth.address, 1, 10);
+      const tx = await spell.connect(admin).addStrategy(weth.address, 1, 10);
 
       await expect(tx).to.emit(spell, 'StrategyAdded').withArgs(0, weth.address, 1, 10);
     });

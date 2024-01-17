@@ -63,6 +63,15 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
     address private constant _USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     /*//////////////////////////////////////////////////////////////////////////
+                                     CONSTRUCTOR
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -75,6 +84,7 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
      * @param crvOracle Address of the Curve Oracle contract.
      * @param augustusSwapper Address of the paraswap AugustusSwapper.
      * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
+     * @param owner Address of the owner of the contract.
      */
     function initialize(
         IBank bank,
@@ -83,9 +93,10 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
         address wConvexBooster,
         address crvOracle,
         address augustusSwapper,
-        address tokenTransferProxy
+        address tokenTransferProxy,
+        address owner
     ) external initializer {
-        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy);
+        __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy, owner);
         if (wConvexBooster == address(0) || crvOracle == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }

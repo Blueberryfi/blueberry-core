@@ -3,21 +3,28 @@ import { BigNumber } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS } from '../../constant';
 import { MockIchiFarm, WIchiFarm } from '../../typechain-types';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 describe('Wrapped Ichi Farm', () => {
   let ichiFarm: MockIchiFarm;
   let wichi: WIchiFarm;
+  let admin: SignerWithAddress;
 
   before(async () => {
+    [admin] = await ethers.getSigners();
     const MockIchiFarm = await ethers.getContractFactory('MockIchiFarm');
     ichiFarm = <MockIchiFarm>await MockIchiFarm.deploy(
       ADDRESS.ICHI_FARM,
       ethers.utils.parseUnits('1', 9) // 1 ICHI.FARM per block
     );
     const WIchiFarm = await ethers.getContractFactory('WIchiFarm');
-    wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address], {
-      unsafeAllow: ['delegatecall'],
-    });
+    wichi = <WIchiFarm>await upgrades.deployProxy(
+      WIchiFarm,
+      [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
+    );
     await wichi.deployed();
   });
 
@@ -25,25 +32,33 @@ describe('Wrapped Ichi Farm', () => {
     it('should revert when zero address is provided in params', async () => {
       const WIchiFarm = await ethers.getContractFactory('WIchiFarm');
       await expect(
-        upgrades.deployProxy(WIchiFarm, [ethers.constants.AddressZero, ADDRESS.ICHI_FARM, ichiFarm.address], {
+        upgrades.deployProxy(
+          WIchiFarm,
+          [ethers.constants.AddressZero, ADDRESS.ICHI_FARM, ichiFarm.address, admin.address],
+          {
+            unsafeAllow: ['delegatecall'],
+          }
+        )
+      ).to.be.revertedWithCustomError(WIchiFarm, 'ZERO_ADDRESS');
+      await expect(
+        upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ethers.constants.AddressZero, ichiFarm.address, admin.address], {
           unsafeAllow: ['delegatecall'],
         })
       ).to.be.revertedWithCustomError(WIchiFarm, 'ZERO_ADDRESS');
       await expect(
-        upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ethers.constants.AddressZero, ichiFarm.address], {
-          unsafeAllow: ['delegatecall'],
-        })
-      ).to.be.revertedWithCustomError(WIchiFarm, 'ZERO_ADDRESS');
-      await expect(
-        upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ethers.constants.AddressZero], {
-          unsafeAllow: ['delegatecall'],
-        })
+        upgrades.deployProxy(
+          WIchiFarm,
+          [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ethers.constants.AddressZero, admin.address],
+          {
+            unsafeAllow: ['delegatecall'],
+          }
+        )
       ).to.be.revertedWithCustomError(WIchiFarm, 'ZERO_ADDRESS');
     });
     it('should revert initializing twice', async () => {
-      await expect(wichi.initialize(ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address)).to.be.revertedWith(
-        'Initializable: contract is already initialized'
-      );
+      await expect(
+        wichi.initialize(ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address, admin.address)
+      ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });
 

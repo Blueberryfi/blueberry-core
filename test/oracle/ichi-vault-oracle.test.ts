@@ -49,13 +49,20 @@ describe('Ichi Vault Oracle', () => {
     await mockOracle.deployed();
 
     const CoreOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracleFactory, {
-      unsafeAllow: ['delegatecall'],
-    });
+    coreOracle = <CoreOracle>(
+      await upgrades.deployProxy(CoreOracleFactory, [admin.address], { unsafeAllow: ['delegatecall'] })
+    );
+
     await coreOracle.deployed();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
+    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
+    );
     await chainlinkAdapterOracle.deployed();
     await chainlinkAdapterOracle.setTimeGap([USDC], [86400]);
 
@@ -68,7 +75,13 @@ describe('Ichi Vault Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    uniswapV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(coreOracle.address, admin.address);
+    uniswapV3Oracle = <UniswapV3AdapterOracle>await upgrades.deployProxy(
+      UniswapV3AdapterOracle,
+      [coreOracle.address, admin.address],
+      {
+        unsafeAllow: ['delegatecall', 'external-library-linking'],
+      }
+    );
     await uniswapV3Oracle.deployed();
     await uniswapV3Oracle.setStablePools([ICHI], [ADDRESS.UNI_V3_ICHI_USDC]);
     await uniswapV3Oracle.setTimeGap(
@@ -83,7 +96,9 @@ describe('Ichi Vault Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(coreOracle.address, admin.address);
+    ichiOracle = <IchiVaultOracle>await upgrades.deployProxy(IchiVaultOracle, [coreOracle.address, admin.address], {
+      unsafeAllow: ['delegatecall', 'external-library-linking'],
+    });
     await ichiOracle.deployed();
 
     swapRouter = <ISwapRouter>await ethers.getContractAt('ISwapRouter', ADDRESS.UNI_V3_ROUTER);

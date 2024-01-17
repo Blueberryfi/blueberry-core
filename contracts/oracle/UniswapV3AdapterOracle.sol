@@ -69,18 +69,23 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Constructs a new instance of the contract.
-     * @param base The base oracle instance.
-     * @param owner Address of the owner of the contract.
-     */
-    constructor(IBaseOracle base, address owner) UsingBaseOracle(base) {
-        _transferOwnership(owner);
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Initializes the contract
+     * @param base The base oracle instance.
+     * @param owner Address of the owner of the contract.
+     */
+    function initialize(IBaseOracle base, address owner) external initializer {
+        __UsingBaseOracle_init(base, owner);
+    }
 
     /// @inheritdoc IBaseOracle
     function getPrice(address token) external override returns (uint256) {

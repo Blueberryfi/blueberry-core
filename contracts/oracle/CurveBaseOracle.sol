@@ -10,8 +10,6 @@
 
 pragma solidity 0.8.22;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-
 import "../utils/BlueberryErrors.sol" as Errors;
 
 import { UsingBaseOracle } from "./UsingBaseOracle.sol";
@@ -27,7 +25,7 @@ import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider
  * @author BlueberryProtocol
  * @notice Abstract base oracle for Curve LP token price feeds.
  */
-abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle, Ownable {
+abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle {
     /*//////////////////////////////////////////////////////////////////////////
                                       structs 
     //////////////////////////////////////////////////////////////////////////*/
@@ -53,7 +51,7 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle, Ownable {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Address provider for Curve-related contracts.
-    ICurveAddressProvider private immutable _addressProvider;
+    ICurveAddressProvider private _addressProvider;
     /// @dev Mapping of Curve Lp token to token info.
     mapping(address => TokenInfo) private _tokenInfo;
 
@@ -61,18 +59,27 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle, Ownable {
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Constructor initializes the CurveBaseOracle with the provided parameters.
-     * @param base The address of the base oracle.
-     * @param addressProvider The address of the curve address provider.
-     */
-    constructor(IBaseOracle base, ICurveAddressProvider addressProvider) UsingBaseOracle(base) {
-        _addressProvider = addressProvider;
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+    /* solhint-disable func-name-mixedcase */
+    /**
+     * @notice Initializes the contract
+     * @param addressProvider Address of the curve address provider
+     * @param base The base oracle instance.
+     * @param owner Address of the owner of the contract.
+     */
+    function __CurveBaseOracle_init(ICurveAddressProvider addressProvider, IBaseOracle base, address owner) internal {
+        __UsingBaseOracle_init(base, owner);
+        _addressProvider = addressProvider;
+    }
+
+    /* solhint-enable func-name-mixedcase */
 
     /**
      * @notice Registers Curve LP token with the oracle.

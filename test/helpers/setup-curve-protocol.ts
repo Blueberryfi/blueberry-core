@@ -178,24 +178,39 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
 
   const CurveStableOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveStableOracle);
   stableOracle = <CurveStableOracle>(
-    await CurveStableOracleFactory.deploy(mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+    await upgrades.deployProxy(
+      CurveStableOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
+
   await stableOracle.deployed();
 
   const CurveVolatileOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveVolatileOracle);
   volatileOracle = <CurveVolatileOracle>(
-    await CurveVolatileOracleFactory.deploy(mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+    await upgrades.deployProxy(
+      CurveVolatileOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
+
   await volatileOracle.deployed();
 
   const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
   tricryptoOracle = <CurveTricryptoOracle>(
-    await CurveTricryptoOracleFactory.deploy(mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER)
+    await upgrades.deployProxy(
+      CurveTricryptoOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
+
   await tricryptoOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, { unsafeAllow: ['delegatecall'] });
+  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
   await oracle.deployed();
 
   await oracle.setRoutes(
@@ -229,33 +244,33 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
 
   // Deploy Bank
   const Config = await ethers.getContractFactory('ProtocolConfig');
-  config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address], {
+  config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
   await config.deployed();
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory('FeeManager');
-  feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address], {
+  feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
   await feeManager.deployed();
   await config.setFeeManager(feeManager.address);
 
   const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
-  bank = <BlueberryBank>(
-    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
-  );
+  bank = <BlueberryBank>await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], {
+    unsafeAllow: ['delegatecall'],
+  });
   await bank.deployed();
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-  werc20 = <WERC20>await upgrades.deployProxy(WERC20, { unsafeAllow: ['delegatecall'] });
+  werc20 = <WERC20>await upgrades.deployProxy(WERC20, [admin.address], { unsafeAllow: ['delegatecall'] });
   await werc20.deployed();
 
   const WCurveGauge = await ethers.getContractFactory(CONTRACT_NAMES.WCurveGauge);
   wgauge = <WCurveGauge>await upgrades.deployProxy(
     WCurveGauge,
-    [CRV, ADDRESS.CRV_REGISTRY, ADDRESS.CRV_GAUGE_CONTROLLER],
+    [CRV, ADDRESS.CRV_REGISTRY, ADDRESS.CRV_GAUGE_CONTROLLER, admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -275,6 +290,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
         stableOracle.address,
         AUGUSTUS_SWAPPER,
         TOKEN_TRANSFER_PROXY,
+        admin.address,
       ],
       { unsafeAllow: ['delegatecall'] }
     )
@@ -300,14 +316,14 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
   await bank.whitelistERC1155([werc20.address, wgauge.address], true);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address], {
+  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
 
   const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
   usdcSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bUSDC.address, 'Interest Bearing USDC', 'ibUSDC'],
+    [config.address, bUSDC.address, 'Interest Bearing USDC', 'ibUSDC', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -317,7 +333,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
 
   daiSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bDAI.address, 'Interest Bearing DAI', 'ibDAI'],
+    [config.address, bDAI.address, 'Interest Bearing DAI', 'ibDAI', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -327,7 +343,7 @@ export const setupCrvProtocol = async (): Promise<CrvProtocol> => {
 
   crvSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bCRV.address, 'Interest Bearing CRV', 'ibCRV'],
+    [config.address, bCRV.address, 'Interest Bearing CRV', 'ibCRV', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }

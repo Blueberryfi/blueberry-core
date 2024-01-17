@@ -28,8 +28,13 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   const [admin] = await ethers.getSigners();
 
   const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-  const chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
-
+  const chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+    ChainlinkAdapterOracle,
+    [ADDRESS.ChainlinkRegistry, admin.address],
+    {
+      unsafeAllow: ['delegatecall'],
+    }
+  );
   await chainlinkAdapterOracle.setTokenRemappings(
     [ADDRESS.WETH, ADDRESS.WBTC, ADDRESS.wstETH],
     [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC, ADDRESS.stETH]
@@ -54,7 +59,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   );
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-  const oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, { unsafeAllow: ['delegatecall'] });
+  const oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
 
   const LinkedLibFactory = await ethers.getContractFactory('UniV3WrappedLib');
   const LibInstance = await LinkedLibFactory.deploy();
@@ -65,8 +70,12 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       UniV3WrappedLibContainer: LibInstance.address,
     },
   });
-  const uniswapV3AdapterOracle = <UniswapV3AdapterOracle>(
-    await UniswapV3AdapterOracle.deploy(oracle.address, admin.address)
+  const uniswapV3AdapterOracle = <UniswapV3AdapterOracle>await upgrades.deployProxy(
+    UniswapV3AdapterOracle,
+    [oracle.address, admin.address],
+    {
+      unsafeAllow: ['delegatecall', 'external-library-linking'],
+    }
   );
 
   await uniswapV3AdapterOracle.setStablePools(
@@ -79,14 +88,22 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   await uniswapV3AdapterOracle.registerToken(ADDRESS.ICHI);
 
   const WeightedBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.WeightedBPTOracle);
-  const weightedOracle = <WeightedBPTOracle>(
-    await WeightedBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, oracle.address, admin.address)
+  const weightedOracle = <WeightedBPTOracle>await upgrades.deployProxy(
+    WeightedBPTOracleFactory,
+    [ADDRESS.BALANCER_VAULT, oracle.address, admin.address],
+    {
+      unsafeAllow: ['delegatecall'],
+    }
   );
 
   const StableBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.StableBPTOracle);
 
-  const stableOracle = <StableBPTOracle>(
-    await StableBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, oracle.address, admin.address)
+  const stableOracle = <StableBPTOracle>await upgrades.deployProxy(
+    StableBPTOracleFactory,
+    [ADDRESS.BALANCER_VAULT, oracle.address, admin.address],
+    {
+      unsafeAllow: ['delegatecall'],
+    }
   );
 
   await weightedOracle.connect(admin).setStablePoolOracle(stableOracle.address);
@@ -143,10 +160,11 @@ export const setupVaults = async (
   config: ProtocolConfig,
   signer: SignerWithAddress
 ): Promise<Vaults> => {
+  const [admin] = await ethers.getSigners();
   const bTokens = await deployBTokens(signer.address, oracle.address);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address], {
+  const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
 
@@ -168,6 +186,7 @@ export const setupVaults = async (
           bToken.address,
           `Interest Bearing ${(await bToken.name()).split(' ')[1]}`,
           `i${await bToken.symbol()}`,
+          admin.address,
         ],
         { unsafeAllow: ['delegatecall'] }
       )
@@ -206,12 +225,12 @@ export const setupBasicBank = async (): Promise<Protocol> => {
   const [admin, alice, treasury] = await ethers.getSigners();
 
   const Config = await ethers.getContractFactory('ProtocolConfig');
-  const config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address], {
+  const config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
 
   const FeeManager = await ethers.getContractFactory('FeeManager');
-  const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address], {
+  const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
   await config.setFeeManager(feeManager.address);
@@ -220,8 +239,12 @@ export const setupBasicBank = async (): Promise<Protocol> => {
 
   const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
 
-  const bank = <BlueberryBank>(
-    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
+  const bank = <BlueberryBank>await upgrades.deployProxy(
+    BlueberryBank,
+    [oracle.address, config.address, admin.address],
+    {
+      unsafeAllow: ['delegatecall'],
+    }
   );
 
   const vaults = await setupVaults(bank, oracle, config, admin);

@@ -96,6 +96,7 @@ describe('ICHI Angel Vaults Spell', () => {
             UNI_V3_ROUTER,
             ADDRESS.AUGUSTUS_SWAPPER,
             ADDRESS.TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -111,6 +112,7 @@ describe('ICHI Angel Vaults Spell', () => {
             UNI_V3_ROUTER,
             ADDRESS.AUGUSTUS_SWAPPER,
             ADDRESS.TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -126,6 +128,7 @@ describe('ICHI Angel Vaults Spell', () => {
             UNI_V3_ROUTER,
             ADDRESS.AUGUSTUS_SWAPPER,
             ADDRESS.TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -141,6 +144,7 @@ describe('ICHI Angel Vaults Spell', () => {
             UNI_V3_ROUTER,
             ADDRESS.AUGUSTUS_SWAPPER,
             ADDRESS.TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -155,7 +159,8 @@ describe('ICHI Angel Vaults Spell', () => {
           ethers.constants.AddressZero,
           UNI_V3_ROUTER,
           ADDRESS.AUGUSTUS_SWAPPER,
-          ADDRESS.TOKEN_TRANSFER_PROXY
+          ADDRESS.TOKEN_TRANSFER_PROXY,
+          admin.address
         )
       ).to.be.revertedWith('Initializable: contract is already initialized');
     });
@@ -1167,6 +1172,7 @@ describe('ICHI Angel Vaults Spell', () => {
             UNI_V3_ROUTER,
             ADDRESS.AUGUSTUS_SWAPPER,
             ADDRESS.TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )

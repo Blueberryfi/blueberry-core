@@ -10,7 +10,7 @@
 
 pragma solidity 0.8.22;
 
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "./utils/BlueberryConst.sol" as Constants;
 import "./utils/BlueberryErrors.sol" as Errors;
@@ -25,7 +25,7 @@ import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
  *          It holds references to fee management, various fee types and values,
  *          treasury settings, and other system configurations.
  */
-contract ProtocolConfig is IProtocolConfig, OwnableUpgradeable {
+contract ProtocolConfig is IProtocolConfig, Ownable2StepUpgradeable {
     /// Fee manager of the protocol to handle different types of fees.
     IFeeManager private _feeManager;
 
@@ -65,9 +65,11 @@ contract ProtocolConfig is IProtocolConfig, OwnableUpgradeable {
     /**
      * @dev Initializes the contract with the given treasury address.
      * @param treasury Address of the treasury.
+     * @param owner Address of the owner.
      */
-    function initialize(address treasury) external initializer {
-        __Ownable_init();
+    function initialize(address treasury, address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
         if (treasury == address(0)) revert Errors.ZERO_ADDRESS();
         _treasury = treasury;
 

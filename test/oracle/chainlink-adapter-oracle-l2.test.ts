@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { ChainlinkAdapterOracleL2 } from '../../typechain-types';
@@ -31,8 +31,12 @@ describe('Aggregator Oracle', () => {
   beforeEach(async () => {
     // Chainlink Oracle
     const ChainlinkAdapterOracleL2 = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracleL2);
-    chainlinkAdapterOracle = <ChainlinkAdapterOracleL2>(
-      await ChainlinkAdapterOracleL2.deploy(ADDRESS.ChainlinkSequencerArb)
+    chainlinkAdapterOracle = <ChainlinkAdapterOracleL2>await upgrades.deployProxy(
+      ChainlinkAdapterOracleL2,
+      [ADDRESS.ChainlinkSequencerArb, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
     await chainlinkAdapterOracle.deployed();
 
@@ -46,10 +50,11 @@ describe('Aggregator Oracle', () => {
   describe('Constructor', () => {
     it('should revert when sequencer address is invalid', async () => {
       const ChainlinkAdapterOracleL2 = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracleL2);
-      await expect(ChainlinkAdapterOracleL2.deploy(ethers.constants.AddressZero)).to.be.revertedWithCustomError(
-        ChainlinkAdapterOracleL2,
-        'ZERO_ADDRESS'
-      );
+      await expect(
+        upgrades.deployProxy(ChainlinkAdapterOracleL2, [ethers.constants.AddressZero, admin.address], {
+          unsafeAllow: ['delegatecall'],
+        })
+      ).to.be.revertedWithCustomError(ChainlinkAdapterOracleL2, 'ZERO_ADDRESS');
     });
     it('should set sequencer', async () => {
       expect(await chainlinkAdapterOracle.getSequencerUptimeFeed()).to.be.equal(ADDRESS.ChainlinkSequencerArb);

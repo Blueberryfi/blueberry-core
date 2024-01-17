@@ -10,7 +10,7 @@
 
 pragma solidity 0.8.22;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
 import "../utils/BlueberryConst.sol" as Constants;
@@ -21,7 +21,7 @@ import "../utils/BlueberryConst.sol" as Constants;
  * @notice This contract provides a base for adapters that interface with external oracle services.
  * @dev It allows the owner to set time gaps for price feed data of different tokens.
  */
-abstract contract BaseAdapter is Ownable {
+abstract contract BaseAdapter is Ownable2StepUpgradeable {
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/

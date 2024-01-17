@@ -12,7 +12,7 @@ pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 /* solhint-enable max-line-length */
 
@@ -29,7 +29,7 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
  *      The price feed sources can be aggregators, liquidity pool oracles, or any other
  *      custom oracles that conform to the `IBaseOracle` interface.
  */
-contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
+contract CoreOracle is ICoreOracle, Ownable2StepUpgradeable, PausableUpgradeable {
     /*//////////////////////////////////////////////////////////////////////////
                                       PUBLIC STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
@@ -50,9 +50,13 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Initializes the CoreOracle contract
-    function initialize() external initializer {
-        __Ownable_init();
+    /**
+     * @notice Initializes the CoreOracle contract.
+     * @param owner The address of the owner of the contract.
+     */
+    function initialize(address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
     }
 
     /// @notice Pauses the contract.
@@ -148,4 +152,11 @@ contract CoreOracle is ICoreOracle, OwnableUpgradeable, PausableUpgradeable {
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         value = (_getPrice(token) * amount) / 10 ** decimals;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     *      variables without shifting down storage in the inheritance chain.
+     *      See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[10] private __gap;
 }

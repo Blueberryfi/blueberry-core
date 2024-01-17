@@ -30,11 +30,17 @@ describe('Core Oracle', () => {
     mockOracle = <MockOracle>await MockOracle.deploy();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
+    chainlinkOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
+    );
     await chainlinkOracle.deployed();
 
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, { unsafeAllow: ['delegatecall'] });
+    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
 
     const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
     werc20 = <WERC20>await WERC20.deploy();
@@ -66,7 +72,9 @@ describe('Core Oracle', () => {
       expect(route).to.be.equal(mockOracle.address);
     });
     it('should revert initializing twice', async () => {
-      await expect(coreOracle.initialize()).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(coreOracle.initialize(admin.address)).to.be.revertedWith(
+        'Initializable: contract is already initialized'
+      );
     });
   });
   describe('Utils', () => {

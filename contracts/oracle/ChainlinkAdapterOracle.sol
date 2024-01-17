@@ -74,16 +74,26 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @param registry Chainlink feed registry address.
-    constructor(IFeedRegistry registry) {
-        if (address(registry) == address(0)) revert Errors.ZERO_ADDRESS();
-
-        _registry = registry;
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+    /**
+     * @notice Initializes the contract
+     * @param registry Chainlink feed registry address.
+     * @param owner Address of the owner of the contract.
+     */
+    function initialize(IFeedRegistry registry, address owner) external initializer {
+        __Ownable2Step_init();
+        _transferOwnership(owner);
+
+        if (address(registry) == address(0)) revert Errors.ZERO_ADDRESS();
+        _registry = registry;
+    }
 
     /**
      * @notice Updates the Chainlink feed registry used by this adapter.

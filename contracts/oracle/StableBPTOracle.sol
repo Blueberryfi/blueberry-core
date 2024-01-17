@@ -10,8 +10,6 @@
 
 pragma solidity 0.8.22;
 
-import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-
 import { FixedPoint } from "../libraries/balancer-v2/FixedPoint.sol";
 import { VaultReentrancyLib } from "../libraries/balancer-v2/VaultReentrancyLib.sol";
 
@@ -29,7 +27,7 @@ import { IRateProvider } from "../interfaces/balancer-v2/IRateProvider.sol";
  * @author BlueberryProtocol
  * @notice Oracle contract which privides price feeds of Stable Balancer LP tokens
  */
-contract StableBPTOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeable {
+contract StableBPTOracle is IBaseOracle, UsingBaseOracle {
     using FixedPoint for uint256;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -53,7 +51,7 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeabl
     /// @dev Address of the weighted pool oracle
     IBaseOracle private _weightedPoolOracle;
     /// @dev Address of the Balancer Vault
-    IBalancerVault private immutable _VAULT;
+    IBalancerVault private _vault;
     /// @dev mapping of registered bpt tokens to their token info
     mapping(address => TokenInfo) private _tokenInfo;
 
@@ -63,7 +61,7 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeabl
 
     // Protects the oracle from being manipulated via read-only reentrancy
     modifier balancerNonReentrant() {
-        VaultReentrancyLib.ensureNotInVaultContext(_VAULT);
+        VaultReentrancyLib.ensureNotInVaultContext(_vault);
         _;
     }
 
@@ -71,20 +69,25 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeabl
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Constructs a new instance of the contract.
-     * @param vault Instance of the Balancer V2 Vault
-     * @param base The base oracle instance.
-     * @param owner Address of the owner of the contract.
-     */
-    constructor(IBalancerVault vault, IBaseOracle base, address owner) UsingBaseOracle(base) Ownable2StepUpgradeable() {
-        _VAULT = vault;
-        _transferOwnership(owner);
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Initializes the contract
+     * @param vault Instance of the Balancer V2 Vault
+     * @param base The base oracle instance.
+     * @param owner Address of the owner of the contract.
+     */
+    function initialize(IBalancerVault vault, IBaseOracle base, address owner) external initializer {
+        __UsingBaseOracle_init(base, owner);
+        _vault = vault;
+    }
 
     /// @inheritdoc IBaseOracle
     function getPrice(address token) public override balancerNonReentrant returns (uint256) {
@@ -109,7 +112,7 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle, Ownable2StepUpgradeabl
         if (bpt == address(0)) revert Errors.ZERO_ADDRESS();
 
         IBalancerV2StablePool pool = IBalancerV2StablePool(bpt);
-        (address[] memory tokens, , ) = _VAULT.getPoolTokens(pool.getPoolId());
+        (address[] memory tokens, , ) = _vault.getPoolTokens(pool.getPoolId());
         address[] memory rateProviders = pool.getRateProviders();
 
         uint256 tokenLength = tokens.length;

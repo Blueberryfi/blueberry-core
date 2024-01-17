@@ -17,12 +17,18 @@ describe('Balancer Weighted Pool BPT Oracle', () => {
   let coreOracle: CoreOracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
-  before(async () => {
+  beforeEach(async () => {
     await fork();
     [admin] = await ethers.getSigners();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
+    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
+    );
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setTimeGap(
@@ -33,18 +39,27 @@ describe('Balancer Weighted Pool BPT Oracle', () => {
     await chainlinkAdapterOracle.setTokenRemappings([ADDRESS.WETH], [ADDRESS.CHAINLINK_ETH]);
 
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle);
+    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
 
     const WeightedBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.WeightedBPTOracle);
     weightedOracle = <WeightedBPTOracle>(
-      await WeightedBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address)
+      await upgrades.deployProxy(
+        WeightedBPTOracleFactory,
+        [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
     );
+
     await weightedOracle.deployed();
 
     const StableBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.StableBPTOracle);
 
-    stableOracle = <StableBPTOracle>(
-      await StableBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address)
+    stableOracle = <StableBPTOracle>await upgrades.deployProxy(
+      StableBPTOracleFactory,
+      [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
 
     await stableOracle.deployed();
@@ -68,8 +83,9 @@ describe('Balancer Weighted Pool BPT Oracle', () => {
     const thirty = ethers.utils.parseEther('30');
     const fifty = ethers.utils.parseEther('50');
 
-    await stableOracle.registerBpt(ADDRESS.BAL_UDU);
-    await weightedOracle.registerBpt(ADDRESS.BAL_WETH_3POOL);
+    await stableOracle.connect(admin).registerBpt(ADDRESS.BAL_UDU);
+    await weightedOracle.connect(admin).registerBpt(ADDRESS.BAL_WETH_3POOL);
+
     const price = await weightedOracle.callStatic.getPrice(ADDRESS.BAL_WETH_3POOL);
 
     assert(price.gte(thirty), 'Price is greater than 30');
