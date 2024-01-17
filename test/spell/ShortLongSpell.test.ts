@@ -36,7 +36,7 @@ describe('ShortLongSpell', () => {
     [admin, alice] = await ethers.getSigners();
 
     const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-    werc20 = <WERC20>await upgrades.deployProxy(WERC20, { unsafeAllow: ['delegatecall'] });
+    werc20 = <WERC20>await upgrades.deployProxy(WERC20, [admin.address], { unsafeAllow: ['delegatecall'] });
 
     const MockWethFactory = await ethers.getContractFactory(CONTRACT_NAMES.MockWETH);
     weth = <IWETH>await MockWethFactory.deploy();
@@ -180,7 +180,7 @@ describe('ShortLongSpell', () => {
   describe('#addStrategy', () => {
     it('should revert when msg.sender is not admin', async () => {
       await expect(spell.connect(alice).addStrategy(weth.address, 1, 10)).to.be.revertedWith(
-        'Ownable: caller is not the admin'
+        'Ownable: caller is not the owner'
       );
     });
 

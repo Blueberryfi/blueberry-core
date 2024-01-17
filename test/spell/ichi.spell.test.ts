@@ -1172,6 +1172,7 @@ describe('ICHI Angel Vaults Spell', () => {
             UNI_V3_ROUTER,
             ADDRESS.AUGUSTUS_SWAPPER,
             ADDRESS.TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )

@@ -90,6 +90,7 @@ describe('Convex Spell', () => {
             stableOracle.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -105,6 +106,7 @@ describe('Convex Spell', () => {
             stableOracle.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -120,6 +122,7 @@ describe('Convex Spell', () => {
             stableOracle.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -135,6 +138,7 @@ describe('Convex Spell', () => {
             stableOracle.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -150,6 +154,7 @@ describe('Convex Spell', () => {
             ethers.constants.AddressZero,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
