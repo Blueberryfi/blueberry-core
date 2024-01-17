@@ -117,6 +117,12 @@ contract WeightedBPTOracle is IBaseOracle, UsingBaseOracle {
         return invariant.mulDown(mult).divDown(totalSupply);
     }
 
+    /**
+     * @notice Register Balancer Pool token to oracle
+     * @dev Stores persistent data of Balancer Pool token
+     * @dev An oracle cannot be used for a LP token unless it is registered
+     * @param bpt Address of the Balancer Pool token to register
+     */
     function registerBpt(address bpt) external onlyOwner {
         if (bpt == address(0)) revert Errors.ZERO_ADDRESS();
 

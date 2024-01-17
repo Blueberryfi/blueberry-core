@@ -103,8 +103,12 @@ describe('Bank', () => {
     });
     it('should initialize states on constructor', async () => {
       const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
-      const bank = <BlueberryBank>(
-        await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], { unsafeAllow: ['delegatecall'] })
+      const bank = <BlueberryBank>await upgrades.deployProxy(
+        BlueberryBank,
+        [oracle.address, config.address, admin.address],
+        {
+          unsafeAllow: ['delegatecall'],
+        }
       );
       await bank.deployed();
 

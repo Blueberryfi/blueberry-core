@@ -191,21 +191,33 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
 
   const CurveStableOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveStableOracle);
   stableOracle = <CurveStableOracle>(
-    await upgrades.deployProxy(CurveStableOracleFactory, [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address], { unsafeAllow: ['delegatecall'] })
+    await upgrades.deployProxy(
+      CurveStableOracleFactory,
+      [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
 
   await stableOracle.deployed();
 
   const CurveVolatileOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveVolatileOracle);
   volatileOracle = <CurveVolatileOracle>(
-    await upgrades.deployProxy(CurveVolatileOracleFactory, [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address], { unsafeAllow: ['delegatecall'] })
+    await upgrades.deployProxy(
+      CurveVolatileOracleFactory,
+      [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
 
   await volatileOracle.deployed();
 
   const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
   tricryptoOracle = <CurveTricryptoOracle>(
-    await upgrades.deployProxy(CurveTricryptoOracleFactory, [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address], { unsafeAllow: ['delegatecall'] })
+    await upgrades.deployProxy(
+      CurveTricryptoOracleFactory,
+      [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
   );
 
   await tricryptoOracle.deployed();
@@ -259,9 +271,9 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   await config.setFeeManager(feeManager.address);
 
   const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
-  bank = <BlueberryBank>(
-    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], { unsafeAllow: ['delegatecall'] })
-  );
+  bank = <BlueberryBank>await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], {
+    unsafeAllow: ['delegatecall'],
+  });
   await bank.deployed();
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);

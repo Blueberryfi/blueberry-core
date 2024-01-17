@@ -28,8 +28,12 @@ describe('Uniswap V3 Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    uniswapV3Oracle = <UniswapV3AdapterOracle>(
-      await upgrades.deployProxy(UniswapV3AdapterOracle, [mockOracle.address, admin.address], { unsafeAllow: ['delegatecall', 'external-library-linking'] })
+    uniswapV3Oracle = <UniswapV3AdapterOracle>await upgrades.deployProxy(
+      UniswapV3AdapterOracle,
+      [mockOracle.address, admin.address],
+      {
+        unsafeAllow: ['delegatecall', 'external-library-linking'],
+      }
     );
     await uniswapV3Oracle.deployed();
   });

@@ -31,8 +31,12 @@ describe('Curve LP Oracle', () => {
     [admin, alice] = await ethers.getSigners();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkAdapterOracle = <ChainlinkAdapterOracle>(
-      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
+    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
     await chainlinkAdapterOracle.deployed();
 
@@ -59,20 +63,35 @@ describe('Curve LP Oracle', () => {
   beforeEach(async () => {
     const CurveStableOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveStableOracle);
     stableOracle = <CurveStableOracle>(
-      await upgrades.deployProxy(CurveStableOracleFactory, [coreOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],  { unsafeAllow: ['delegatecall'] }));
-  
+      await upgrades.deployProxy(
+        CurveStableOracleFactory,
+        [ADDRESS.CRV_ADDRESS_PROVIDER, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
+    );
+
     await stableOracle.deployed();
-  
+
     const CurveVolatileOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveVolatileOracle);
     volatileOracle = <CurveVolatileOracle>(
-      await upgrades.deployProxy(CurveVolatileOracleFactory, [coreOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],  { unsafeAllow: ['delegatecall'] }));
-    
+      await upgrades.deployProxy(
+        CurveVolatileOracleFactory,
+        [ADDRESS.CRV_ADDRESS_PROVIDER, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
+    );
+
     await volatileOracle.deployed();
-  
+
     const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
     tricryptoOracle = <CurveTricryptoOracle>(
-      await upgrades.deployProxy(CurveTricryptoOracleFactory, [coreOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],  { unsafeAllow: ['delegatecall'] }));
-    
+      await upgrades.deployProxy(
+        CurveTricryptoOracleFactory,
+        [ADDRESS.CRV_ADDRESS_PROVIDER, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
+    );
+
     await tricryptoOracle.deployed();
   });
 

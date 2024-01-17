@@ -1,4 +1,4 @@
-import chai, { assert, expect } from 'chai';
+import chai, { assert } from 'chai';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { ChainlinkAdapterOracle, CoreOracle, StableBPTOracle, WeightedBPTOracle } from '../../typechain-types';
@@ -17,13 +17,17 @@ describe('Balancer Weighted Pool BPT Oracle', () => {
   let coreOracle: CoreOracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
-  before(async () => {
+  beforeEach(async () => {
     await fork();
     [admin] = await ethers.getSigners();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    const chainlinkAdapterOracle = <ChainlinkAdapterOracle>(
-      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
+    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
     await chainlinkAdapterOracle.deployed();
 
@@ -38,16 +42,24 @@ describe('Balancer Weighted Pool BPT Oracle', () => {
     coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
 
     const WeightedBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.WeightedBPTOracle);
-    const weightedOracle = <WeightedBPTOracle>(
-      await upgrades.deployProxy(WeightedBPTOracleFactory, [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address], { unsafeAllow: ['delegatecall'] })
+    weightedOracle = <WeightedBPTOracle>(
+      await upgrades.deployProxy(
+        WeightedBPTOracleFactory,
+        [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
     );
 
     await weightedOracle.deployed();
-  
+
     const StableBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.StableBPTOracle);
-  
-    const stableOracle = <StableBPTOracle>(
-      await upgrades.deployProxy(StableBPTOracleFactory, [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address], { unsafeAllow: ['delegatecall'] })
+
+    stableOracle = <StableBPTOracle>await upgrades.deployProxy(
+      StableBPTOracleFactory,
+      [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
 
     await stableOracle.deployed();
@@ -72,7 +84,7 @@ describe('Balancer Weighted Pool BPT Oracle', () => {
     const fifty = ethers.utils.parseEther('50');
 
     await stableOracle.connect(admin).registerBpt(ADDRESS.BAL_UDU);
-    await weightedOracle.connect(admin).registerBpt(ADDRESS.BAL_WETH_3POOL)
+    await weightedOracle.connect(admin).registerBpt(ADDRESS.BAL_WETH_3POOL);
 
     const price = await weightedOracle.callStatic.getPrice(ADDRESS.BAL_WETH_3POOL);
 

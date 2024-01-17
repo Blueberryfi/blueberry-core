@@ -18,7 +18,9 @@ describe('Wrapped ERC20', () => {
 
   describe('Constructor', () => {
     it('should revert initializing twice', async () => {
-      await expect(werc20.initialize(admin.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(werc20.initialize(admin.address)).to.be.revertedWith(
+        'Initializable: contract is already initialized'
+      );
     });
   });
 

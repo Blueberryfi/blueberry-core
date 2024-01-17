@@ -100,9 +100,9 @@ describe('WConvexBooster', () => {
     });
 
     it('should revert initializing twice', async () => {
-      await expect(wConvexBooster.initialize(cvx.address, booster.address, escrowFactory.address, admin.address)).to.be.revertedWith(
-        'Initializable: contract is already initialized'
-      );
+      await expect(
+        wConvexBooster.initialize(cvx.address, booster.address, escrowFactory.address, admin.address)
+      ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });
 

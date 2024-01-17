@@ -55,7 +55,14 @@ describe('ShortLongSpell', () => {
     spell = <ShortLongSpell>(
       await upgrades.deployProxy(
         ShortLongSpellFactory,
-        [bank.address, werc20.address, weth.address, augustusSwapper.address, tokenTransferProxy.address, admin.address],
+        [
+          bank.address,
+          werc20.address,
+          weth.address,
+          augustusSwapper.address,
+          tokenTransferProxy.address,
+          admin.address,
+        ],
         { unsafeAllow: ['delegatecall'] }
       )
     );
@@ -72,7 +79,14 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [constants.AddressZero, werc20.address, weth.address, augustusSwapper.address, tokenTransferProxy.address, admin.address],
+          [
+            constants.AddressZero,
+            werc20.address,
+            weth.address,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -82,7 +96,14 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [bank.address, constants.AddressZero, weth.address, augustusSwapper.address, tokenTransferProxy.address, admin.address],
+          [
+            bank.address,
+            constants.AddressZero,
+            weth.address,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -92,7 +113,14 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [bank.address, werc20.address, constants.AddressZero, augustusSwapper.address, tokenTransferProxy.address, admin.address],
+          [
+            bank.address,
+            werc20.address,
+            constants.AddressZero,
+            augustusSwapper.address,
+            tokenTransferProxy.address,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -102,7 +130,14 @@ describe('ShortLongSpell', () => {
       await expect(
         upgrades.deployProxy(
           ShortLongSpellFactory,
-          [bank.address, werc20.address, weth.address, constants.AddressZero, tokenTransferProxy.address, admin.address],
+          [
+            bank.address,
+            werc20.address,
+            weth.address,
+            constants.AddressZero,
+            tokenTransferProxy.address,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -130,7 +165,14 @@ describe('ShortLongSpell', () => {
 
     it('should revert initializing twice', async () => {
       await expect(
-        spell.initialize(bank.address, werc20.address, weth.address, augustusSwapper.address, constants.AddressZero, admin.address)
+        spell.initialize(
+          bank.address,
+          werc20.address,
+          weth.address,
+          augustusSwapper.address,
+          constants.AddressZero,
+          admin.address
+        )
       ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });

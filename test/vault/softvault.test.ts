@@ -92,11 +92,17 @@ describe('SoftVault', () => {
           ethers.constants.AddressZero,
           'Interest Bearing USDC',
           'ibUSDC',
-          admin.address
+          admin.address,
         ])
       ).to.be.revertedWithCustomError(SoftVault, 'ZERO_ADDRESS');
       await expect(
-        upgrades.deployProxy(SoftVault, [ethers.constants.AddressZero, BUSDC, 'Interest Bearing USDC', 'ibUSDC', admin.address])
+        upgrades.deployProxy(SoftVault, [
+          ethers.constants.AddressZero,
+          BUSDC,
+          'Interest Bearing USDC',
+          'ibUSDC',
+          admin.address,
+        ])
       ).to.be.revertedWithCustomError(SoftVault, 'ZERO_ADDRESS');
     });
     it('should set bToken along with uToken in constructor', async () => {

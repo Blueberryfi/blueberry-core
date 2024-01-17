@@ -16,16 +16,25 @@ describe('Uniswap V2 LP Oracle', () => {
   before(async () => {
     const [admin] = await ethers.getSigners();
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    const chainlinkAdapterOracle = <ChainlinkAdapterOracle>(
-      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
+    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setTimeGap([ADDRESS.USDC, ADDRESS.CRV], [OneDay, OneDay]);
 
     const UniswapOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2Oracle);
-    uniswapOracle = <UniswapV2Oracle>(
-      await upgrades.deployProxy(UniswapOracleFactory, [chainlinkAdapterOracle.address, admin.address], { unsafeAllow: ['delegatecall'] }));
+    uniswapOracle = <UniswapV2Oracle>await upgrades.deployProxy(
+      UniswapOracleFactory,
+      [chainlinkAdapterOracle.address, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
+    );
     await uniswapOracle.deployed();
   });
 
@@ -35,7 +44,7 @@ describe('Uniswap V2 LP Oracle', () => {
     await uniswapOracle.registerPair(pair.address);
 
     const oraclePrice = await uniswapOracle.callStatic.getPrice(ADDRESS.UNI_V2_USDC_CRV);
-
+    console.log('USDC/CRV LP Price:', utils.formatUnits(oraclePrice, 18));
     // Calculate real lp price manually
     const { reserve0, reserve1 } = await pair.getReserves();
     const totalSupply = await pair.totalSupply();

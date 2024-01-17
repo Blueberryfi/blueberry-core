@@ -262,20 +262,35 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
 
   const CurveStableOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveStableOracle);
   stableOracle = <CurveStableOracle>(
-    await upgrades.deployProxy(CurveStableOracleFactory, [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],  { unsafeAllow: ['delegatecall'] }));
+    await upgrades.deployProxy(
+      CurveStableOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
+  );
 
   await stableOracle.deployed();
 
   const CurveVolatileOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveVolatileOracle);
   volatileOracle = <CurveVolatileOracle>(
-    await upgrades.deployProxy(CurveVolatileOracleFactory, [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],  { unsafeAllow: ['delegatecall'] }));
-  
+    await upgrades.deployProxy(
+      CurveVolatileOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
+  );
+
   await volatileOracle.deployed();
 
   const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
   tricryptoOracle = <CurveTricryptoOracle>(
-    await upgrades.deployProxy(CurveTricryptoOracleFactory, [mockOracle.address, ADDRESS.CRV_ADDRESS_PROVIDER, admin.address],  { unsafeAllow: ['delegatecall'] }));
-  
+    await upgrades.deployProxy(
+      CurveTricryptoOracleFactory,
+      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
+      { unsafeAllow: ['delegatecall'] }
+    )
+  );
+
   await tricryptoOracle.deployed();
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -368,9 +383,9 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   await config.setFeeManager(feeManager.address);
 
   const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
-  bank = <BlueberryBank>(
-    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], { unsafeAllow: ['delegatecall'] })
-  );
+  bank = <BlueberryBank>await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], {
+    unsafeAllow: ['delegatecall'],
+  });
   await bank.deployed();
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
@@ -400,7 +415,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   escrowFactory.initialize(wconvex.address, ADDRESS.CVX_BOOSTER);
 
   await wconvex.deployed();
-  console.log("Convex booster deployed");
+  console.log('Convex booster deployed');
   // Deploy CRV spell
   const ConvexSpell = await ethers.getContractFactory(CONTRACT_NAMES.ConvexSpell);
   convexSpell = <ConvexSpell>(
@@ -414,7 +429,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
         stableOracle.address,
         AUGUSTUS_SWAPPER,
         TOKEN_TRANSFER_PROXY,
-        admin.address
+        admin.address,
       ],
       { unsafeAllow: ['delegatecall'] }
     )
@@ -450,7 +465,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
         volatileOracle.address,
         AUGUSTUS_SWAPPER,
         TOKEN_TRANSFER_PROXY,
-        admin.address
+        admin.address,
       ],
       { unsafeAllow: ['delegatecall'] }
     )

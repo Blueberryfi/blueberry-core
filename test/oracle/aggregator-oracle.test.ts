@@ -34,8 +34,12 @@ describe('Aggregator Oracle', () => {
 
     // Chainlink Oracle
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkOracle = <ChainlinkAdapterOracle>(
-      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
+    chainlinkOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
     await chainlinkOracle.deployed();
 
@@ -67,7 +71,9 @@ describe('Aggregator Oracle', () => {
       ).to.be.revertedWith('Ownable: caller is not the owner');
 
       await expect(
-        aggregatorOracle.connect(admin).setPrimarySources(ethers.constants.AddressZero, DEVIATION, [chainlinkOracle.address])
+        aggregatorOracle
+          .connect(admin)
+          .setPrimarySources(ethers.constants.AddressZero, DEVIATION, [chainlinkOracle.address])
       ).to.be.revertedWithCustomError(aggregatorOracle, 'ZERO_ADDRESS');
 
       await expect(

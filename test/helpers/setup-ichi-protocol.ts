@@ -196,11 +196,10 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
       UniV3WrappedLibContainer: LibInstance.address,
     },
   });
-  ichiOracle = <IchiVaultOracle>await upgrades.deployProxy(
-    IchiVaultOracle, [mockOracle.address, admin.address],
-    { unsafeAllow: ['delegatecall', 'external-library-linking']
+  ichiOracle = <IchiVaultOracle>await upgrades.deployProxy(IchiVaultOracle, [mockOracle.address, admin.address], {
+    unsafeAllow: ['delegatecall', 'external-library-linking'],
   });
-  
+
   await ichiOracle.deployed();
   await ichiOracle.setPriceDeviation(ICHI, 500);
   await ichiOracle.setPriceDeviation(USDC, 500);
@@ -244,9 +243,9 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
 
-  bank = <BlueberryBank>(
-    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], { unsafeAllow: ['delegatecall'] })
-  );
+  bank = <BlueberryBank>await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], {
+    unsafeAllow: ['delegatecall'],
+  });
   await bank.deployed();
 
   // Deploy ICHI wrapper
@@ -265,9 +264,13 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await werc20.deployed();
 
   const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-  wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address, admin.address], {
-    unsafeAllow: ['delegatecall'],
-  });
+  wichi = <WIchiFarm>await upgrades.deployProxy(
+    WIchiFarm,
+    [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address, admin.address],
+    {
+      unsafeAllow: ['delegatecall'],
+    }
+  );
   await wichi.deployed();
 
   // Deploy ICHI spell

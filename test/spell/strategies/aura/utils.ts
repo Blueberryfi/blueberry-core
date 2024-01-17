@@ -19,7 +19,7 @@ export const strategies: StrategyInfo[] = [
 export const setupStrategy = async () => {
   const [admin] = await ethers.getSigners();
   const protocol = await setupBasicBank();
-  console.log("bank setup");
+  console.log('bank setup');
   const escrow_Factory = await ethers.getContractFactory(CONTRACT_NAMES.PoolEscrow);
   const escrow = await escrow_Factory.deploy();
 
@@ -49,7 +49,7 @@ export const setupStrategy = async () => {
         waura.address,
         ADDRESS.AUGUSTUS_SWAPPER,
         ADDRESS.TOKEN_TRANSFER_PROXY,
-        admin.address
+        admin.address,
       ],
       { unsafeAllow: ['delegatecall'] }
     )

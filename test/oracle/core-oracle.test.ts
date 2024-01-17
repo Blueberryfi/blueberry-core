@@ -30,8 +30,12 @@ describe('Core Oracle', () => {
     mockOracle = <MockOracle>await MockOracle.deploy();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkOracle = <ChainlinkAdapterOracle>(
-      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
+    chainlinkOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
     await chainlinkOracle.deployed();
 
@@ -68,7 +72,9 @@ describe('Core Oracle', () => {
       expect(route).to.be.equal(mockOracle.address);
     });
     it('should revert initializing twice', async () => {
-      await expect(coreOracle.initialize(admin.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(coreOracle.initialize(admin.address)).to.be.revertedWith(
+        'Initializable: contract is already initialized'
+      );
     });
   });
   describe('Utils', () => {

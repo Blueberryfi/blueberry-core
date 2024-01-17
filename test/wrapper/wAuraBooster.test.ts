@@ -118,7 +118,13 @@ describe('wAuraBooster', () => {
 
     it('should revert initializing twice', async () => {
       await expect(
-        wAuraBooster.initialize(aura.address, booster.address, escrowFactory.address, generateRandomAddress(), admin.address)
+        wAuraBooster.initialize(
+          aura.address,
+          booster.address,
+          escrowFactory.address,
+          generateRandomAddress(),
+          admin.address
+        )
       ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });

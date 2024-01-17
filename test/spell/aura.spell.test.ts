@@ -80,14 +80,30 @@ describe('Aura Spell', () => {
       await expect(
         upgrades.deployProxy(
           AuraSpell,
-          [ethers.constants.AddressZero, werc20.address, WETH, waura.address, AUGUSTUS_SWAPPER, TOKEN_TRANSFER_PROXY, admin.address],
+          [
+            ethers.constants.AddressZero,
+            werc20.address,
+            WETH,
+            waura.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
       await expect(
         upgrades.deployProxy(
           AuraSpell,
-          [bank.address, ethers.constants.AddressZero, WETH, waura.address, AUGUSTUS_SWAPPER, TOKEN_TRANSFER_PROXY, admin.address],
+          [
+            bank.address,
+            ethers.constants.AddressZero,
+            WETH,
+            waura.address,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');
@@ -101,7 +117,7 @@ describe('Aura Spell', () => {
             waura.address,
             AUGUSTUS_SWAPPER,
             TOKEN_TRANSFER_PROXY,
-            admin.address
+            admin.address,
           ],
           { unsafeAllow: ['delegatecall'] }
         )
@@ -109,7 +125,15 @@ describe('Aura Spell', () => {
       await expect(
         upgrades.deployProxy(
           AuraSpell,
-          [bank.address, werc20.address, WETH, ethers.constants.AddressZero, AUGUSTUS_SWAPPER, TOKEN_TRANSFER_PROXY, admin.address],
+          [
+            bank.address,
+            werc20.address,
+            WETH,
+            ethers.constants.AddressZero,
+            AUGUSTUS_SWAPPER,
+            TOKEN_TRANSFER_PROXY,
+            admin.address,
+          ],
           { unsafeAllow: ['delegatecall'] }
         )
       ).to.be.revertedWithCustomError(spell, 'ZERO_ADDRESS');

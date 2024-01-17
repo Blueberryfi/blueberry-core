@@ -20,14 +20,19 @@ describe('Balancer Stable Pool BPT Oracle', () => {
 
   let coreOracle: CoreOracle;
   let stableBPTOracle: StableBPTOracle;
+  let weightedOracle: WeightedBPTOracle;
 
   before(async () => {
     await fork();
     [admin, alice] = await ethers.getSigners();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    const chainlinkAdapterOracle = <ChainlinkAdapterOracle>(
-      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
+    const chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
+      ChainlinkAdapterOracle,
+      [ADDRESS.ChainlinkRegistry, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
     await chainlinkAdapterOracle.deployed();
 
@@ -58,14 +63,22 @@ describe('Balancer Stable Pool BPT Oracle', () => {
     );
 
     const WeightedBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.WeightedBPTOracle);
-    const weightedOracle = <WeightedBPTOracle>(
-      await upgrades.deployProxy(WeightedBPTOracleFactory, [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address], { unsafeAllow: ['delegatecall'] })
+    weightedOracle = <WeightedBPTOracle>(
+      await upgrades.deployProxy(
+        WeightedBPTOracleFactory,
+        [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address],
+        { unsafeAllow: ['delegatecall'] }
+      )
     );
-  
+
     const StableBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.StableBPTOracle);
-  
-    const stableBPTOracle = <StableBPTOracle>(
-      await upgrades.deployProxy(StableBPTOracleFactory, [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address], { unsafeAllow: ['delegatecall'] })
+
+    stableBPTOracle = <StableBPTOracle>await upgrades.deployProxy(
+      StableBPTOracleFactory,
+      [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
 
     await stableBPTOracle.connect(admin).setWeightedPoolOracle(weightedOracle.address);
