@@ -64,7 +64,7 @@ contract PoolEscrow is Initializable {
         rewarder = IRewarder(_rewarder);
         lpToken = IERC20(_lpToken);
 
-        lpToken.approve(_wrapper, type(uint256).max);
+        UniversalERC20.universalApprove(lpToken, wrapper, type(uint256).max);
     }
 
     /**
