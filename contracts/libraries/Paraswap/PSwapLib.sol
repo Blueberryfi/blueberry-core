@@ -4,6 +4,7 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../../interfaces/paraswap/IParaswap.sol";
+import "../../libraries/UniversalERC20.sol";
 import "./Utils.sol";
 
 library PSwapLib {
@@ -13,8 +14,8 @@ library PSwapLib {
         uint256 amount
     ) internal {
         // approve zero before reset allocation
-        inToken.approve(spender, 0);
-        inToken.approve(spender, amount);
+        UniversalERC20.universalApprove(inToken, spender, 0);
+        UniversalERC20.universalApprove(inToken, spender, amount);
     }
 
     function swap(
@@ -30,7 +31,7 @@ library PSwapLib {
 
         (success, returndata) = augustusSwapper.call(data);
 
-        IERC20(fromToken).approve(tokenTransferProxy, 0);
+        UniversalERC20.universalApprove(IERC20(fromToken), tokenTransferProxy, 0);
 
         if (returndata.length > 0) {
             assembly {
@@ -49,7 +50,7 @@ library PSwapLib {
 
         uint256 result = IParaswap(augustusSwapper).megaSwap(data);
 
-        IERC20(data.fromToken).approve(tokenTransferProxy, 0);
+        UniversalERC20.universalApprove(IERC20(data.fromToken), tokenTransferProxy, 0);
 
         return result;
     }
