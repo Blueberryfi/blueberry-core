@@ -90,13 +90,13 @@ describe('Bank', () => {
     it('should revert Bank deployment when invalid args provided', async () => {
       const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
       await expect(
-        upgrades.deployProxy(BlueberryBank, [ethers.constants.AddressZero, config.address], {
+        upgrades.deployProxy(BlueberryBank, [ethers.constants.AddressZero, config.address, admin.address], {
           unsafeAllow: ['delegatecall'],
         })
       ).to.be.revertedWithCustomError(BlueberryBank, 'ZERO_ADDRESS');
 
       await expect(
-        upgrades.deployProxy(BlueberryBank, [oracle.address, ethers.constants.AddressZero], {
+        upgrades.deployProxy(BlueberryBank, [oracle.address, ethers.constants.AddressZero, admin.address], {
           unsafeAllow: ['delegatecall'],
         })
       ).to.be.revertedWithCustomError(BlueberryBank, 'ZERO_ADDRESS');
@@ -104,7 +104,7 @@ describe('Bank', () => {
     it('should initialize states on constructor', async () => {
       const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
       const bank = <BlueberryBank>(
-        await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
+        await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], { unsafeAllow: ['delegatecall'] })
       );
       await bank.deployed();
 
@@ -116,7 +116,7 @@ describe('Bank', () => {
       expect(await bank.getBankStatus()).to.be.equal(15);
     });
     it('should revert initializing twice', async () => {
-      await expect(bank.initialize(oracle.address, config.address)).to.be.revertedWith(
+      await expect(bank.initialize(oracle.address, config.address, admin.address)).to.be.revertedWith(
         'Initializable: contract is already initialized'
       );
     });
@@ -898,7 +898,7 @@ describe('Bank', () => {
         const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
         const crvSoftVault = <SoftVault>await upgrades.deployProxy(
           SoftVault,
-          [config.address, bCRV.address, 'Interest Bearing CRV', 'ibCRV'],
+          [config.address, bCRV.address, 'Interest Bearing CRV', 'ibCRV', admin.address],
           {
             unsafeAllow: ['delegatecall'],
           }

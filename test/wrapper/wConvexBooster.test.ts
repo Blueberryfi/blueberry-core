@@ -18,6 +18,7 @@ import { generateRandomAddress } from '../helpers';
 
 describe('WConvexBooster', () => {
   let alice: SignerWithAddress;
+  let admin: SignerWithAddress;
 
   let lpToken: MockERC20;
   let extraRewarder: MockVirtualBalanceRewardPool;
@@ -32,7 +33,7 @@ describe('WConvexBooster', () => {
   let escrowFactory: PoolEscrowFactory;
 
   beforeEach(async () => {
-    [alice] = await ethers.getSigners();
+    [admin, alice] = await ethers.getSigners();
 
     const MockERC20Factory = await ethers.getContractFactory('MockERC20');
     lpToken = await MockERC20Factory.deploy('', '', 18);
@@ -72,7 +73,7 @@ describe('WConvexBooster', () => {
 
     wConvexBooster = <WConvexBooster>await upgrades.deployProxy(
       WConvexBoosterFactory,
-      [cvx.address, booster.address, escrowFactory.address],
+      [cvx.address, booster.address, escrowFactory.address, admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }
@@ -99,7 +100,7 @@ describe('WConvexBooster', () => {
     });
 
     it('should revert initializing twice', async () => {
-      await expect(wConvexBooster.initialize(cvx.address, booster.address, escrowFactory.address)).to.be.revertedWith(
+      await expect(wConvexBooster.initialize(cvx.address, booster.address, escrowFactory.address, admin.address)).to.be.revertedWith(
         'Initializable: contract is already initialized'
       );
     });

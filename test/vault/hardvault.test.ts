@@ -31,12 +31,12 @@ describe('HardVault', () => {
     weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
     const ProtocolConfig = await ethers.getContractFactory('ProtocolConfig');
-    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address], {
+    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
 
     const FeeManager = await ethers.getContractFactory('FeeManager');
-    const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address], {
+    const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
     await feeManager.deployed();
@@ -46,7 +46,7 @@ describe('HardVault', () => {
 
   beforeEach(async () => {
     const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-    vault = <HardVault>await upgrades.deployProxy(HardVault, [config.address], {
+    vault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
     await vault.deployed();
@@ -72,7 +72,7 @@ describe('HardVault', () => {
     it('should revert when config address is invalid', async () => {
       const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
       await expect(
-        upgrades.deployProxy(HardVault, [ethers.constants.AddressZero], {
+        upgrades.deployProxy(HardVault, [ethers.constants.AddressZero, admin.address], {
           unsafeAllow: ['delegatecall'],
         })
       ).to.be.revertedWithCustomError(HardVault, 'ZERO_ADDRESS');
@@ -80,7 +80,7 @@ describe('HardVault', () => {
       expect(await vault.getConfig()).to.be.equal(config.address);
     });
     it('should revert initializing twice', async () => {
-      await expect(vault.initialize(config.address)).to.be.revertedWith(
+      await expect(vault.initialize(config.address, admin.address)).to.be.revertedWith(
         'Initializable: contract is already initialized'
       );
     });

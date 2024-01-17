@@ -66,16 +66,16 @@ contract SoftVault is ISoftVault, Ownable2StepUpgradeable, ERC20Upgradeable, Ree
      * @notice Initializes the contract
      * @param config Address of protocol configuration
      * @param bToken Address of bToken
-     * @param owner Address of the owner of the SoftVault contract
      * @param name ERC20 name for the SoftVault token
      * @param symbol ERC20 symbol for the SoftVault token
+     * @param owner Address of the owner of the SoftVault contract
      */
     function initialize(
         IProtocolConfig config,
         IBErc20 bToken,
-        address owner,
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address owner
     ) external initializer {
         __ReentrancyGuard_init();
         __Ownable2Step_init();

@@ -196,7 +196,11 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
       UniV3WrappedLibContainer: LibInstance.address,
     },
   });
-  ichiOracle = <IchiVaultOracle>await IchiVaultOracle.deploy(mockOracle.address, admin.address);
+  ichiOracle = <IchiVaultOracle>await upgrades.deployProxy(
+    IchiVaultOracle, [mockOracle.address, admin.address],
+    { unsafeAllow: ['delegatecall', 'external-library-linking']
+  });
+  
   await ichiOracle.deployed();
   await ichiOracle.setPriceDeviation(ICHI, 500);
   await ichiOracle.setPriceDeviation(USDC, 500);
@@ -207,7 +211,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiOracle.registerVault(ichi_USDC_DAI_Vault.address);
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, { unsafeAllow: ['delegatecall'] });
+  oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
   await oracle.deployed();
 
   await oracle.setRoutes(
@@ -225,14 +229,14 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   // Deploy Bank
   const Config = await ethers.getContractFactory('ProtocolConfig');
-  config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address], {
+  config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
   await config.deployed();
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory('FeeManager');
-  feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address], {
+  feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
   await feeManager.deployed();
@@ -241,7 +245,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
 
   bank = <BlueberryBank>(
-    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address], { unsafeAllow: ['delegatecall'] })
+    await upgrades.deployProxy(BlueberryBank, [oracle.address, config.address, admin.address], { unsafeAllow: ['delegatecall'] })
   );
   await bank.deployed();
 
@@ -257,11 +261,11 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiFarm.add(100, admin.address); // fake pool
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-  werc20 = <WERC20>await upgrades.deployProxy(WERC20, { unsafeAllow: ['delegatecall'] });
+  werc20 = <WERC20>await upgrades.deployProxy(WERC20, [admin.address], { unsafeAllow: ['delegatecall'] });
   await werc20.deployed();
 
   const WIchiFarm = await ethers.getContractFactory(CONTRACT_NAMES.WIchiFarm);
-  wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address], {
+  wichi = <WIchiFarm>await upgrades.deployProxy(WIchiFarm, [ADDRESS.ICHI, ADDRESS.ICHI_FARM, ichiFarm.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
   await wichi.deployed();
@@ -279,6 +283,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
         UNI_V3_ROUTER,
         ADDRESS.AUGUSTUS_SWAPPER,
         ADDRESS.TOKEN_TRANSFER_PROXY,
+        admin.address,
       ],
       { unsafeAllow: ['delegatecall'] }
     )
@@ -310,14 +315,14 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   bWBTC = bTokens.bWBTC;
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address], {
+  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
   });
 
   const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
   usdcSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bUSDC.address, 'Interest Bearing USDC', 'ibUSDC'],
+    [config.address, bUSDC.address, 'Interest Bearing USDC', 'ibUSDC', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -327,7 +332,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   daiSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bDAI.address, 'Interest Bearing DAI', 'ibDAI'],
+    [config.address, bDAI.address, 'Interest Bearing DAI', 'ibDAI', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -337,7 +342,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   ichiSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bICHI.address, 'Interest Bearing ICHI', 'ibICHI'],
+    [config.address, bICHI.address, 'Interest Bearing ICHI', 'ibICHI', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -347,7 +352,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   wethSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
-    [config.address, bWETH.address, 'Interest Bearing WETH', 'ibWETH'],
+    [config.address, bWETH.address, 'Interest Bearing WETH', 'ibWETH', admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }

@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import { utils } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { AggregatorOracle, ChainlinkAdapterOracle, MockOracle } from '../../typechain-types';
@@ -34,7 +34,9 @@ describe('Aggregator Oracle', () => {
 
     // Chainlink Oracle
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
+    chainlinkOracle = <ChainlinkAdapterOracle>(
+      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
+    );
     await chainlinkOracle.deployed();
 
     await chainlinkOracle.setTimeGap([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV], [OneDay, OneDay, OneDay]);
@@ -52,7 +54,9 @@ describe('Aggregator Oracle', () => {
 
   beforeEach(async () => {
     const AggregatorOracle = await ethers.getContractFactory(CONTRACT_NAMES.AggregatorOracle);
-    aggregatorOracle = <AggregatorOracle>await AggregatorOracle.deploy();
+    aggregatorOracle = <AggregatorOracle>(
+      await upgrades.deployProxy(AggregatorOracle, [admin.address], { unsafeAllow: ['delegatecall'] })
+    );
     await aggregatorOracle.deployed();
   });
 
@@ -63,7 +67,7 @@ describe('Aggregator Oracle', () => {
       ).to.be.revertedWith('Ownable: caller is not the owner');
 
       await expect(
-        aggregatorOracle.setPrimarySources(ethers.constants.AddressZero, DEVIATION, [chainlinkOracle.address])
+        aggregatorOracle.connect(admin).setPrimarySources(ethers.constants.AddressZero, DEVIATION, [chainlinkOracle.address])
       ).to.be.revertedWithCustomError(aggregatorOracle, 'ZERO_ADDRESS');
 
       await expect(

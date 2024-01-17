@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { MockOracle, UniswapV3AdapterOracle } from '../../typechain-types';
 
@@ -28,7 +28,9 @@ describe('Uniswap V3 Oracle', () => {
         UniV3WrappedLibContainer: LibInstance.address,
       },
     });
-    uniswapV3Oracle = <UniswapV3AdapterOracle>await UniswapV3AdapterOracle.deploy(mockOracle.address, admin.address);
+    uniswapV3Oracle = <UniswapV3AdapterOracle>(
+      await upgrades.deployProxy(UniswapV3AdapterOracle, [mockOracle.address, admin.address], { unsafeAllow: ['delegatecall', 'external-library-linking'] })
+    );
     await uniswapV3Oracle.deployed();
   });
 

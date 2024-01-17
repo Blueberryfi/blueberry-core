@@ -27,7 +27,7 @@ describe('Balancer Stable Pool BPT Oracle', () => {
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     const chainlinkAdapterOracle = <ChainlinkAdapterOracle>(
-      await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry)
+      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
     );
     await chainlinkAdapterOracle.deployed();
 
@@ -42,7 +42,7 @@ describe('Balancer Stable Pool BPT Oracle', () => {
     );
 
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
-    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, { unsafeAllow: ['delegatecall'] });
+    coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
     await coreOracle.deployed();
 
     await coreOracle.setRoutes(
@@ -57,18 +57,16 @@ describe('Balancer Stable Pool BPT Oracle', () => {
       ]
     );
 
-    const StableBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.StableBPTOracle);
-    stableBPTOracle = <StableBPTOracle>(
-      await StableBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address)
-    );
-
-    await stableBPTOracle.deployed();
-
     const WeightedBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.WeightedBPTOracle);
     const weightedOracle = <WeightedBPTOracle>(
-      await WeightedBPTOracleFactory.deploy(ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address)
+      await upgrades.deployProxy(WeightedBPTOracleFactory, [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address], { unsafeAllow: ['delegatecall'] })
     );
-    await weightedOracle.deployed();
+  
+    const StableBPTOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.StableBPTOracle);
+  
+    const stableBPTOracle = <StableBPTOracle>(
+      await upgrades.deployProxy(StableBPTOracleFactory, [ADDRESS.BALANCER_VAULT, coreOracle.address, admin.address], { unsafeAllow: ['delegatecall'] })
+    );
 
     await stableBPTOracle.connect(admin).setWeightedPoolOracle(weightedOracle.address);
     await weightedOracle.connect(admin).setStablePoolOracle(stableBPTOracle.address);

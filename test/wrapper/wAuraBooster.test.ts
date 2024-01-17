@@ -18,6 +18,7 @@ import {
 import { generateRandomAddress } from '../helpers';
 
 describe('wAuraBooster', () => {
+  let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
 
@@ -35,7 +36,7 @@ describe('wAuraBooster', () => {
   let escrowFactory: PoolEscrowFactory;
 
   beforeEach(async () => {
-    [alice, bob] = await ethers.getSigners();
+    [admin, alice, bob] = await ethers.getSigners();
 
     const MockERC20Factory = await ethers.getContractFactory('MockERC20');
     lpToken = await MockERC20Factory.deploy('', '', 18);
@@ -83,7 +84,7 @@ describe('wAuraBooster', () => {
     const wAuraBoosterFactory = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
     wAuraBooster = <WAuraBooster>await upgrades.deployProxy(
       wAuraBoosterFactory,
-      [aura.address, booster.address, escrowFactory.address, generateRandomAddress()],
+      [aura.address, booster.address, escrowFactory.address, generateRandomAddress(), admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }
@@ -117,7 +118,7 @@ describe('wAuraBooster', () => {
 
     it('should revert initializing twice', async () => {
       await expect(
-        wAuraBooster.initialize(aura.address, booster.address, escrowFactory.address, generateRandomAddress())
+        wAuraBooster.initialize(aura.address, booster.address, escrowFactory.address, generateRandomAddress(), admin.address)
       ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });

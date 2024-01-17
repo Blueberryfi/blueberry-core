@@ -20,7 +20,7 @@ describe('Fee Manager', () => {
     [admin, treasury] = await ethers.getSigners();
 
     const ProtocolConfig = await ethers.getContractFactory('ProtocolConfig');
-    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address], {
+    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
 
@@ -32,21 +32,21 @@ describe('Fee Manager', () => {
 
   beforeEach(async () => {
     const FeeManager = await ethers.getContractFactory('FeeManager');
-    feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address], {
+    feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
   });
 
   describe('Constructor', () => {
     it('should revert initializing twice', async () => {
-      await expect(feeManager.initialize(config.address)).to.be.revertedWith(
+      await expect(feeManager.initialize(config.address, admin.address)).to.be.revertedWith(
         'Initializable: contract is already initialized'
       );
     });
     it('should revert deployment when zero address provided as config address', async () => {
       const FeeManager = await ethers.getContractFactory('FeeManager');
       await expect(
-        upgrades.deployProxy(FeeManager, [ethers.constants.AddressZero], {
+        upgrades.deployProxy(FeeManager, [ethers.constants.AddressZero, admin.address], {
           unsafeAllow: ['delegatecall'],
         })
       ).to.be.revertedWithCustomError(FeeManager, 'ZERO_ADDRESS');

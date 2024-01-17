@@ -22,21 +22,21 @@ describe('Protocol Config', () => {
 
   beforeEach(async () => {
     const ProtocolConfig = await ethers.getContractFactory('ProtocolConfig');
-    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address], {
+    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
   });
 
   describe('Constructor', () => {
     it('should revert initializing twice', async () => {
-      await expect(config.initialize(config.address)).to.be.revertedWith(
+      await expect(config.initialize(config.address, admin.address)).to.be.revertedWith(
         'Initializable: contract is already initialized'
       );
     });
     it('should revert when treasury address is invalid', async () => {
       const ProtocolConfig = await ethers.getContractFactory('ProtocolConfig');
       await expect(
-        upgrades.deployProxy(ProtocolConfig, [ethers.constants.AddressZero], {
+        upgrades.deployProxy(ProtocolConfig, [ethers.constants.AddressZero, admin.address], {
           unsafeAllow: ['delegatecall'],
         })
       ).to.be.revertedWithCustomError(ProtocolConfig, 'ZERO_ADDRESS');

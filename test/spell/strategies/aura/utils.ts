@@ -17,8 +17,9 @@ export const strategies: StrategyInfo[] = [
 ];
 
 export const setupStrategy = async () => {
+  const [admin] = await ethers.getSigners();
   const protocol = await setupBasicBank();
-
+  console.log("bank setup");
   const escrow_Factory = await ethers.getContractFactory(CONTRACT_NAMES.PoolEscrow);
   const escrow = await escrow_Factory.deploy();
 
@@ -28,14 +29,14 @@ export const setupStrategy = async () => {
   const WAuraBooster = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
   const waura = <WAuraBooster>await upgrades.deployProxy(
     WAuraBooster,
-    [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address, ADDRESS.BALANCER_VAULT],
+    [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, escrowFactory.address, ADDRESS.BALANCER_VAULT, admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
   );
 
   const WERC20 = await ethers.getContractFactory(CONTRACT_NAMES.WERC20);
-  const werc20 = <WERC20>await upgrades.deployProxy(WERC20, { unsafeAllow: ['delegatecall'] });
+  const werc20 = <WERC20>await upgrades.deployProxy(WERC20, [admin.address], { unsafeAllow: ['delegatecall'] });
 
   const AuraSpell = await ethers.getContractFactory(CONTRACT_NAMES.AuraSpell);
   const auraSpell = <AuraSpell>(
@@ -48,6 +49,7 @@ export const setupStrategy = async () => {
         waura.address,
         ADDRESS.AUGUSTUS_SWAPPER,
         ADDRESS.TOKEN_TRANSFER_PROXY,
+        admin.address
       ],
       { unsafeAllow: ['delegatecall'] }
     )

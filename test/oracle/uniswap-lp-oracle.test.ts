@@ -1,6 +1,6 @@
 import chai, { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
-import { ethers } from 'hardhat';
+import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { UniswapV2Oracle, IUniswapV2Pair, ChainlinkAdapterOracle, IERC20Metadata } from '../../typechain-types';
 import UniPairABI from '../../abi/IUniswapV2Pair.json';
@@ -16,13 +16,16 @@ describe('Uniswap V2 LP Oracle', () => {
   before(async () => {
     const [admin] = await ethers.getSigners();
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkAdapterOracle = <ChainlinkAdapterOracle>await ChainlinkAdapterOracle.deploy(ADDRESS.ChainlinkRegistry);
+    const chainlinkAdapterOracle = <ChainlinkAdapterOracle>(
+      await upgrades.deployProxy(ChainlinkAdapterOracle, [ADDRESS.ChainlinkRegistry, admin.address], { unsafeAllow: ['delegatecall'] })
+    );
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setTimeGap([ADDRESS.USDC, ADDRESS.CRV], [OneDay, OneDay]);
 
     const UniswapOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2Oracle);
-    uniswapOracle = <UniswapV2Oracle>await UniswapOracleFactory.deploy(chainlinkAdapterOracle.address, admin.address);
+    uniswapOracle = <UniswapV2Oracle>(
+      await upgrades.deployProxy(UniswapOracleFactory, [chainlinkAdapterOracle.address, admin.address], { unsafeAllow: ['delegatecall'] }));
     await uniswapOracle.deployed();
   });
 

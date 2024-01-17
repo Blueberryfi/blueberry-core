@@ -41,13 +41,13 @@ describe('SoftVault', () => {
     bUSDC = <IBErc20>await ethers.getContractAt('IBErc20', BUSDC);
 
     const ProtocolConfig = await ethers.getContractFactory('ProtocolConfig');
-    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address], {
+    config = <ProtocolConfig>await upgrades.deployProxy(ProtocolConfig, [treasury.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
     config.startVaultWithdrawFee();
 
     const FeeManager = await ethers.getContractFactory('FeeManager');
-    const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address], {
+    const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
     await feeManager.deployed();
@@ -59,7 +59,7 @@ describe('SoftVault', () => {
 
     vault = <SoftVault>await upgrades.deployProxy(
       SoftVault,
-      [config.address, BUSDC, 'Interest Bearing USDC', 'ibUSDC'],
+      [config.address, BUSDC, 'Interest Bearing USDC', 'ibUSDC', admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }
@@ -92,10 +92,11 @@ describe('SoftVault', () => {
           ethers.constants.AddressZero,
           'Interest Bearing USDC',
           'ibUSDC',
+          admin.address
         ])
       ).to.be.revertedWithCustomError(SoftVault, 'ZERO_ADDRESS');
       await expect(
-        upgrades.deployProxy(SoftVault, [ethers.constants.AddressZero, BUSDC, 'Interest Bearing USDC', 'ibUSDC'])
+        upgrades.deployProxy(SoftVault, [ethers.constants.AddressZero, BUSDC, 'Interest Bearing USDC', 'ibUSDC', admin.address])
       ).to.be.revertedWithCustomError(SoftVault, 'ZERO_ADDRESS');
     });
     it('should set bToken along with uToken in constructor', async () => {
@@ -104,7 +105,7 @@ describe('SoftVault', () => {
     });
     it('should revert initializing twice', async () => {
       await expect(
-        vault.initialize(config.address, ethers.constants.AddressZero, 'Interest Bearing USDC', 'ibUSDC')
+        vault.initialize(config.address, ethers.constants.AddressZero, 'Interest Bearing USDC', 'ibUSDC', admin.address)
       ).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });
