@@ -63,7 +63,7 @@ contract AuraSpell is IAuraSpell, BasicSpell {
      * @param bank Reference to the Bank contract.
      * @param werc20 Reference to the WERC20 contract.
      * @param weth Address of the wrapped Ether token.
-     * @param wAuraPools Address of the wrapped Aura Pools contract.
+     * @param wAuraBooster Address of the wrapped Aura Pools contract.
      * @param augustusSwapper Address of the paraswap AugustusSwapper.
      * @param tokenTransferProxy Address of the paraswap TokenTransferProxy.
      * @param owner Address of the owner of the contract.
@@ -72,17 +72,17 @@ contract AuraSpell is IAuraSpell, BasicSpell {
         IBank bank,
         address werc20,
         address weth,
-        address wAuraPools,
+        address wAuraBooster,
         address augustusSwapper,
         address tokenTransferProxy,
         address owner
     ) external initializer {
         __BasicSpell_init(bank, werc20, weth, augustusSwapper, tokenTransferProxy, owner);
-        if (wAuraPools == address(0)) revert Errors.ZERO_ADDRESS();
+        if (wAuraBooster == address(0)) revert Errors.ZERO_ADDRESS();
 
-        _wAuraBooster = IWAuraBooster(wAuraPools);
-        _auraToken = address(IWAuraBooster(wAuraPools).getAuraToken());
-        IWAuraBooster(wAuraPools).setApprovalForAll(address(bank), true);
+        _wAuraBooster = IWAuraBooster(wAuraBooster);
+        _auraToken = address(IWAuraBooster(wAuraBooster).getAuraToken());
+        IWAuraBooster(wAuraBooster).setApprovalForAll(address(bank), true);
     }
 
     /// @inheritdoc IAuraSpell

@@ -8,10 +8,10 @@ import {
   IchiVaultOracle,
   IchiSpell,
   AuraSpell,
-  WAuraPools,
+  WAuraBooster,
   CurveStableOracle,
   ConvexSpell,
-  WConvexPools,
+  WConvexBooster,
   CurveSpell,
   WCurveGauge,
   ShortLongSpell,
@@ -237,22 +237,22 @@ async function main(): Promise<void> {
   deployment.WIchiFarm = wichiFarm.address;
   writeDeployments(deployment);
 
-  console.log('Deploying WAuraPools...');
-  const WAuraPools = await ethers.getContractFactory(CONTRACT_NAMES.WAuraPools);
-  const waura = <WAuraPools>(
-    await upgrades.deployProxy(WAuraPools, [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, ADDRESS.STASH_AURA])
+  console.log('Deploying WAuraBooster...');
+  const WAuraBooster = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
+  const waura = <WAuraBooster>(
+    await upgrades.deployProxy(WAuraBooster, [ADDRESS.AURA, ADDRESS.AURA_BOOSTER, ADDRESS.STASH_AURA])
   );
   await waura.deployed();
-  console.log('WAuraPools Address:', waura.address);
-  deployment.WAuraPools = waura.address;
+  console.log('WAuraBooster Address:', waura.address);
+  deployment.WAuraBooster = waura.address;
   writeDeployments(deployment);
 
-  console.log('Deploying WConvexPools...');
-  const WConvexPools = await ethers.getContractFactory(CONTRACT_NAMES.WConvexPools);
-  const wconvex = <WConvexPools>await upgrades.deployProxy(WConvexPools, [ADDRESS.CVX, ADDRESS.CVX_BOOSTER]);
+  console.log('Deploying WConvexBooster...');
+  const WConvexBooster = await ethers.getContractFactory(CONTRACT_NAMES.WConvexBooster);
+  const wconvex = <WConvexBooster>await upgrades.deployProxy(WConvexBooster, [ADDRESS.CVX, ADDRESS.CVX_BOOSTER]);
   await wconvex.deployed();
-  console.log('WConvexPools Address:', wconvex.address);
-  deployment.WConvexPools = wconvex.address;
+  console.log('WConvexBooster Address:', wconvex.address);
+  deployment.WConvexBooster = wconvex.address;
   writeDeployments(deployment);
 
   console.log('Deploying WCurveGauge...');
