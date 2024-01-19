@@ -1,6 +1,6 @@
 import { ethers, upgrades } from 'hardhat';
 import { utils } from 'ethers';
-import { WERC20, WAuraBooster, AuraSpell, IAuraBooster } from '../../../../typechain-types';
+import { WERC20, WAuraBooster, AuraSpell, IAuraBooster, PoolEscrowFactory } from '../../../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../../../constant';
 import { StrategyInfo, setupBasicBank } from '../utils';
 
@@ -20,11 +20,11 @@ export const setupStrategy = async () => {
   const [admin] = await ethers.getSigners();
   const protocol = await setupBasicBank();
   console.log('bank setup');
-  const escrow_Factory = await ethers.getContractFactory(CONTRACT_NAMES.PoolEscrow);
-  const escrow = await escrow_Factory.deploy();
-
-  const escrowFactory_Factory = await ethers.getContractFactory(CONTRACT_NAMES.PoolEscrowFactory);
-  const escrowFactory = await escrowFactory_Factory.deploy(escrow.address);
+  const escrowFactoryFactory = await ethers.getContractFactory('PoolEscrowFactory');
+  const escrowFactory = <PoolEscrowFactory>await upgrades.deployProxy(escrowFactoryFactory, [admin.address], {
+    unsafeAllow: ['delegatecall'],
+  });
+  await escrowFactory.deployed();
 
   const WAuraBooster = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
   const waura = <WAuraBooster>await upgrades.deployProxy(
@@ -56,8 +56,6 @@ export const setupStrategy = async () => {
   );
 
   const auraBooster = <IAuraBooster>await ethers.getContractAt('IAuraBooster', ADDRESS.AURA_BOOSTER);
-
-  escrowFactory.initialize(waura.address, ADDRESS.AURA_BOOSTER);
 
   // Setup Bank
   await protocol.bank.whitelistSpells([auraSpell.address], [true]);

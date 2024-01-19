@@ -148,7 +148,7 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
         address escrow = getEscrow(pid);
 
         if (escrow == address(0)) {
-            escrow = _escrowFactory.createEscrow(pid, auraRewarder, lpToken);
+            escrow = _escrowFactory.createEscrow(pid, address(_auraBooster), auraRewarder, lpToken);
             _escrows[pid] = escrow;
         }
 

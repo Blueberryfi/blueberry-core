@@ -10,11 +10,26 @@
 pragma solidity 0.8.22;
 
 interface IPoolEscrowFactory {
-    /// @dev Initializes the pool escrow with the given PID.
-    function initialize(address _wrapper, address _auraPools) external;
+    /*//////////////////////////////////////////////////////////////////////////
+                                      EVENTS
+    //////////////////////////////////////////////////////////////////////////*/
+    /// @notice Emitted when a new escrow contract is created
+    event EscrowCreated(address);
 
-    /// @notice Creates an escrow contract for a given PID
-    /// @param _pid The pool id (The first 16-bits)
-    /// @param _rewards the rewards contract address (e.g auraRewards)
-    function createEscrow(uint256 _pid, address _rewards, address _lpToken) external returns (address _escrow);
+    /*//////////////////////////////////////////////////////////////////////////
+                                      FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+    /**
+     * @notice Creates an escrow contract for a given PID
+     * @param _pid The pool id (The first 16-bits)
+     * @param _booster The booster address
+     * @param _rewards The rewards address
+     * @param _lpToken The LP token address
+     */
+    function createEscrow(
+        uint256 _pid,
+        address _booster,
+        address _rewards,
+        address _lpToken
+    ) external payable returns (address _escrow);
 }

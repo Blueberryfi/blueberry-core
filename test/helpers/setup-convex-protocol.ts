@@ -392,14 +392,10 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   werc20 = <WERC20>await upgrades.deployProxy(WERC20, [admin.address], { unsafeAllow: ['delegatecall'] });
   await werc20.deployed();
 
-  const escrowBaseFactory = await ethers.getContractFactory('PoolEscrow');
-  escrowBase = await escrowBaseFactory.deploy();
-
-  await escrowBase.deployed();
-
   const escrowFactoryFactory = await ethers.getContractFactory('PoolEscrowFactory');
-  escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
-
+  escrowFactory = <PoolEscrowFactory>await upgrades.deployProxy(escrowFactoryFactory, [admin.address], {
+    unsafeAllow: ['delegatecall'],
+  });
   await escrowFactory.deployed();
 
   const WConvexBoosterFactory = await ethers.getContractFactory(CONTRACT_NAMES.WConvexBooster);
@@ -411,8 +407,6 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
       unsafeAllow: ['delegatecall'],
     }
   );
-
-  escrowFactory.initialize(wconvex.address, ADDRESS.CVX_BOOSTER);
 
   await wconvex.deployed();
   console.log('Convex booster deployed');

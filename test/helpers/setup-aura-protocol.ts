@@ -280,14 +280,10 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   werc20 = <WERC20>await upgrades.deployProxy(WERC20, [admin.address], { unsafeAllow: ['delegatecall'] });
   await werc20.deployed();
 
-  const escrowBaseFactory = await ethers.getContractFactory('PoolEscrow');
-  escrowBase = await escrowBaseFactory.deploy();
-
-  await escrowBase.deployed();
-
   const escrowFactoryFactory = await ethers.getContractFactory('PoolEscrowFactory');
-  escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
-
+  escrowFactory = <PoolEscrowFactory>await upgrades.deployProxy(escrowFactoryFactory, [admin.address], {
+    unsafeAllow: ['delegatecall'],
+  });
   await escrowFactory.deployed();
 
   const balancerVault = await ethers.getContractAt('IBalancerVault', ADDRESS.BALANCER_VAULT);
@@ -300,8 +296,6 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
       unsafeAllow: ['delegatecall'],
     }
   );
-
-  escrowFactory.initialize(waura.address, ADDRESS.AURA_BOOSTER);
 
   await waura.deployed();
 

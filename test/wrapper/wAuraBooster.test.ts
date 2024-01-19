@@ -12,7 +12,6 @@ import {
   MockBaseRewardPool,
   MockVirtualBalanceRewardPool,
   MockStashToken,
-  PoolEscrow,
   PoolEscrowFactory,
 } from '../../typechain-types';
 import { generateRandomAddress } from '../helpers';
@@ -32,7 +31,6 @@ describe('wAuraBooster', () => {
   let booster: MockBooster;
   let auraRewarder: MockBaseRewardPool;
   let wAuraBooster: WAuraBooster;
-  let escrowBase: PoolEscrow;
   let escrowFactory: PoolEscrowFactory;
 
   beforeEach(async () => {
@@ -75,11 +73,11 @@ describe('wAuraBooster', () => {
     await stashToken.init(extraRewarder.address, aura.address);
     await auraRewarder.addExtraReward(extraRewarder.address);
 
-    const escrowBaseFactory = await ethers.getContractFactory('PoolEscrow');
-    escrowBase = await escrowBaseFactory.deploy();
-
     const escrowFactoryFactory = await ethers.getContractFactory('PoolEscrowFactory');
-    escrowFactory = await escrowFactoryFactory.deploy(escrowBase.address);
+    escrowFactory = <PoolEscrowFactory>await upgrades.deployProxy(escrowFactoryFactory, [admin.address], {
+      unsafeAllow: ['delegatecall'],
+    });
+    await escrowFactory.deployed();
 
     const wAuraBoosterFactory = await ethers.getContractFactory(CONTRACT_NAMES.WAuraBooster);
     wAuraBooster = <WAuraBooster>await upgrades.deployProxy(
@@ -89,8 +87,6 @@ describe('wAuraBooster', () => {
         unsafeAllow: ['delegatecall'],
       }
     );
-
-    escrowFactory.initialize(wAuraBooster.address, booster.address);
 
     await booster.addPool(
       lpToken.address,

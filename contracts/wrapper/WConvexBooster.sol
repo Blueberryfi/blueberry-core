@@ -124,7 +124,7 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
         address escrow = getEscrow(pid);
 
         if (escrow == address(0)) {
-            escrow = _escrowFactory.createEscrow(pid, cvxRewarder, lpToken);
+            escrow = _escrowFactory.createEscrow(pid, address(_cvxBooster), cvxRewarder, lpToken);
             _escrows[pid] = escrow;
         }
 
