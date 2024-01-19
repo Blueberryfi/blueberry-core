@@ -1,0 +1,10 @@
+{
+  "mainnet": {
+    "chainId": 1,
+    "block-explorer": "https://etherscan.io"
+  },
+  "phalcon": {
+    "chainId": 1,
+    "block-explorer": "https://phalcon.blocksec.com/fork/scan/fork_38c7a18b51a44effa4c36f0d5fea97d5"
+  }
+}
