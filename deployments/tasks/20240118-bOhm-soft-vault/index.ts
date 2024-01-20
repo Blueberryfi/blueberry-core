@@ -3,8 +3,8 @@ import { SoftVaultDeployment } from './input';
 
 export default async (task: Task, { force, from }: TaskRunOptions = {}): Promise<void> => {
   const input = task.input() as SoftVaultDeployment;
-  const bOHMDelegate = await task.deployAndVerify('BCollateralCapErc20Delegate', [], from, force);
-  const bOHMDelegatorArgs = [
+  const bwETHDelegate = await task.deployAndVerify('BCollateralCapErc20Delegate', [], from, force);
+  const bwETHDelegatorArgs = [
     input.OHM,
     input.Comptroller,
     input.JumpRateModelV2,
@@ -13,10 +13,10 @@ export default async (task: Task, { force, from }: TaskRunOptions = {}): Promise
     input.tokenSymbol,
     input.bTokenDecimals,
     input.BTokenAdmin,
-    bOHMDelegate.address,
+    bwETHDelegate.address,
     '0x00',
   ];
-  const bOHMDelegator = await task.deployAndVerify('BErc20Delegator', bOHMDelegatorArgs, from, force);
-  const softVaultArgs = [input.ProtcolConfig, bOHMDelegator.address, input.vaultName, input.vaultSymbol, input.Owner];
+  const bwETHDelegator = await task.deployAndVerify('BErc20Delegator', bwETHDelegatorArgs, from, force);
+  const softVaultArgs = [input.ProtocolConfig, bwETHDelegator.address, input.vaultName, input.vaultSymbol, input.Owner];
   await task.deployAndVerifyProxy('SoftVault', softVaultArgs, from, force);
 };

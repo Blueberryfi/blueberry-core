@@ -25,19 +25,23 @@ echo "Deploying Blueberry Protocol"
 sleep 10
 
 yarn extract-artifacts --id "20240118-aggregator-oracle" --name "AggregatorOracle" --file "AggregatorOracle"
-yarn hardhat deploy --network phalcon --id "20240118-aggregator-oracle" 
+yarn hardhat deploy --network phalcon --id "20240118-aggregator-oracle"
 sleep 10
 
 yarn extract-artifacts --id "20240118-core-oracle" --name "CoreOracle" --file "CoreOracle"
 yarn hardhat deploy --network phalcon --id "20240118-core-oracle"
 sleep 10
 
-yarn extract-artifacts --id "20240118-uni-v3-wrapped-lib-container" --name "Univ3WrappedLibContainer" --file "Univ3WrappedLibContainer"
+yarn extract-artifacts --id "20240118-chainlink-adapter-oracle" --name "ChainlinkAdapterOracle" --file "ChainlinkAdapterOracle"
+yarn hardhat deploy --network phalcon --id "20240118-chainlink-adapter-oracle"
+sleep 10
+
+yarn extract-artifacts --id "20240118-uni-v3-wrapped-lib-container" --name "UniV3WrappedLibContainer" --file "UniV3WrappedLibContainer"
 yarn hardhat deploy --network phalcon --id "20240118-uni-v3-wrapped-lib-container"
 sleep 10
 
-yarn extract-artifacts --id "20240118-uniswap-v3-adapter-oracle" --name "Univ3WrappedLibContainer" --file "Uniswapv3AdapterOracle"
-yarn extract-artifacts --id "20240118-uniswap-v3-adapter-oracle" --name "Uniswapv3AdapterOracle" --file "Uniswapv3AdapterOracle"
+yarn extract-artifacts --id "20240118-uniswap-v3-adapter-oracle" --name "UniV3WrappedLibContainer" --file "UniswapV3AdapterOracle"
+yarn extract-artifacts --id "20240118-uniswap-v3-adapter-oracle" --name "UniswapV3AdapterOracle" --file "UniswapV3AdapterOracle"
 yarn hardhat deploy --network phalcon --id "20240118-uniswap-v3-adapter-oracle"
 sleep 10
 
@@ -45,7 +49,11 @@ yarn extract-artifacts --id "20240118-protocol-config" --name "ProtocolConfig" -
 yarn hardhat deploy --network phalcon --id "20240118-protocol-config"
 sleep 10
 
-yarn extract-artifacts --id "20240118-ichi-vault-oracle" --name "Univ3WrappedLibContainer" --file "IchiVaultOracle"
+yarn extract-artifacts --id "20240118-fee-manager" --name "FeeManager" --file "FeeManager"
+yarn hardhat deploy --network phalcon --id "20240118-fee-manager"
+sleep 10
+
+yarn extract-artifacts --id "20240118-ichi-vault-oracle" --name "UniV3WrappedLibContainer" --file "IchiVaultOracle"
 yarn extract-artifacts --id "20240118-ichi-vault-oracle" --name "IchiVaultOracle" --file "IchiVaultOracle"
 yarn hardhat deploy --network phalcon --id "20240118-ichi-vault-oracle"
 sleep 10
@@ -60,6 +68,18 @@ sleep 10
 
 yarn extract-artifacts --id "20240118-curve-volatile-oracle" --name "CurveVolatileOracle" --file "CurveVolatileOracle"
 yarn hardhat deploy --network phalcon --id "20240118-curve-volatile-oracle"
+sleep 10
+
+yarn extract-artifacts --id "20240118-stable-bpt-oracle" --name "StableBPTOracle" --file "StableBPTOracle"
+yarn hardhat deploy --network phalcon --id "20240118-stable-bpt-oracle"
+sleep 10
+
+yarn extract-artifacts --id "20240118-weighted-bpt-oracle" --name "WeightedBPTOracle" --file "WeightedBPTOracle"
+yarn hardhat deploy --network phalcon --id "20240118-weighted-bpt-oracle"
+sleep 10
+
+yarn extract-artifacts --id "20240118-uniswap-v2-oracle" --name "UniswapV2Oracle" --file "UniswapV2Oracle"
+yarn hardhat deploy --network phalcon --id "20240118-uniswap-v2-oracle"
 sleep 10
 
 yarn extract-artifacts --id "20240118-blueberry-bank" --name "BlueberryBank" --file "BlueberryBank"
@@ -93,6 +113,11 @@ sleep 10
 yarn extract-artifacts --id "20240118-bMim-soft-vault" --name "SoftVault" --file "SoftVault"
 yarn extract-artifacts --id "20240118-bMim-soft-vault" --name "BCollateralCapErc20Delegate" --file "BCollateralCapErc20Delegate"
 yarn hardhat deploy --network phalcon --id "20240118-bMim"
+sleep 10
+
+yarn extract-artifacts --id "20240118-bOhm-soft-vault" --name "SoftVault" --file "SoftVault"
+yarn extract-artifacts --id "20240118-bOhm-soft-vault" --name "BCollateralCapErc20Delegate" --file "BCollateralCapErc20Delegate"
+yarn hardhat deploy --network phalcon --id "20240118-bOhm-soft-vault"
 sleep 10
 
 yarn extract-artifacts --id "20240118-bUsdc-soft-vault" --name "SoftVault" --file "SoftVault"
@@ -134,8 +159,8 @@ yarn extract-artifacts --id "20240118-aura-spell" --name "AuraSpell" --file "Aur
 yarn hardhat deploy --network phalcon --id "20240118-aura-spell"
 sleep 10
 
-yarn extract-artifacts --id "20240118-aura-spell" --name "AuraSpell" --file "AuraSpell"
-yarn hardhat deploy --network phalcon --id "20240118-aura-spell"
+yarn extract-artifacts --id "20240118-ichi-spell" --name "IchiSpell" --file "IchiSpell"
+yarn hardhat deploy --network phalcon --id "20240118-ichi-spell"
 sleep 10
 
 yarn extract-artifacts --id "20240118-convex-spell" --name "ConvexSpell" --file "ConvexSpell"
@@ -144,6 +169,5 @@ sleep 10
 
 yarn extract-artifacts --id "20240118-short-long-spell" --name "ShortLongSpell" --file "ShortLongSpell"
 yarn hardhat deploy --network phalcon --id "20240118-short-long-spell"
-
 
 # find . -path "*00000000-constants*" -prune -o -path "*/output/phalcon.json" -type f -exec rm -f {} +

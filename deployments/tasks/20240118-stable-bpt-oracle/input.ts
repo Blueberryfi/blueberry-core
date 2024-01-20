@@ -1,9 +1,9 @@
-import Task, { TaskMode } from "task";
+import Task, { TaskMode } from 'task';
 
 export type StableBPTOracleDeployment = {
-  balancerVault: string;
-  coreOracle: string;
-  owner: string;
+  BalancerVault: string;
+  CoreOracle: string;
+  Owner: string;
 };
 
 const BalancerVault = new Task('00000000-constants', TaskMode.READ_ONLY);

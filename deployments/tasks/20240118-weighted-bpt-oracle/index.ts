@@ -3,6 +3,6 @@ import { WeightedBPTOracleDeployment } from './input';
 
 export default async (task: Task, { force, from }: TaskRunOptions = {}): Promise<void> => {
   const input = task.input() as WeightedBPTOracleDeployment;
-  const args = [input.balancerVault, input.coreOracle, input.owner];
+  const args = [input.BalancerVault, input.CoreOracle, input.Owner];
   await task.deployAndVerifyProxy('WeightedBPTOracle', args, from, force);
 };
