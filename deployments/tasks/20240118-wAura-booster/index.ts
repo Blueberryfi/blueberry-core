@@ -12,5 +12,5 @@ export default async (task: Task, { force, from }: TaskRunOptions = {}): Promise
     input.Owner
   ];
 
-  await task.deployAndVerify('WAuraBooster', args, from, force);
+  await task.deployAndVerifyProxy('WAuraBooster', args, from, force);
 };

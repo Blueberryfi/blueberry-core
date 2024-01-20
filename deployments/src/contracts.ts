@@ -35,11 +35,10 @@ export async function deployProxy(
   if (!from) from = await getSigner();
 
   const artifact: Artifact = typeof contract === 'string' ? getArtifact(contract) : contract;
-
   const { ethers, upgrades } = await import('hardhat');
 
   const factory = await ethers.getContractFactoryFromArtifact(artifact, { libraries: libs });
-  const deployment = await upgrades.deployProxy(factory, args, { unsafeAllow: ['constructor'] });
+  const deployment = await upgrades.deployProxy(factory, args, { unsafeAllow: ['constructor', 'external-library-linking'] });
   return deployment.deployed();
 }
 

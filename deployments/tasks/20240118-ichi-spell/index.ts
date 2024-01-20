@@ -1,8 +1,8 @@
 import { Task, TaskRunOptions } from '@src';
-import { IchiSpellDeployment } from './input';
+import { ShortLongSpellDeployment } from './input';
 
 export default async (task: Task, { force, from }: TaskRunOptions = {}): Promise<void> => {
-  const input = task.input() as IchiSpellDeployment;
-  const args = [input.bank, input.werc20, input.weth, input.wIchiFarm, input.uniV3Router, input.augustusSwapper, input.tokenTransferProxy, input.owner];
+  const input = task.input() as ShortLongSpellDeployment;
+  const args = [input.BlueberryBank, input.WERC20, input.WETH, input.AugustusSwapper, input.TokenTransferProxy, input.Owner];
   await task.deployAndVerifyProxy('IchiSpell', args, from, force);
 };

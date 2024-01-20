@@ -1,9 +1,11 @@
 import Task, { TaskMode } from "task";
 
-export type ShortLongDeployment = {
+export type ShortLongSpellDeployment = {
   BlueberryBank: string;
   WERC20: string;
   WETH: string;
+  WIchiFarm: string;
+  UniV3Router: string;
   AugustusSwapper: string;
   TokenTransferProxy: string;
   Owner: string;

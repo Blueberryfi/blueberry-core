@@ -5,5 +5,5 @@ export default async (task: Task, { force, from }: TaskRunOptions = {}): Promise
   const input = task.input() as HardVaultDeployment;
 
   const args = [input.baseRate, input.multiplier, input.jumpMultiplier, input.kink1, input.roof];
-  await task.deploy('JumpRateModelV2', args, from, force);
+  await task.deployAndVerify('JumpRateModelV2', args, from, force);
 };

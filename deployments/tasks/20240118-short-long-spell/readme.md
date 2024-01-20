@@ -1,9 +1,9 @@
-# 2024-01-18 ShortLongSpell
+# 2024-01-18 Ichi Spell
 
-The ShortLongSpell contract is a factory contract that defines how Blueberry Protocol interacts for leveraging an asset either long or short. It extends the BasicSpell contract and is responsible for depositing and withdrawing assets, as well as opening and closing positions. The contract utilizes OpenZeppelin's SafeERC20Upgradeable and SafeCast libraries, as well as interfaces from other contracts like ISoftVault, IWERC20, and libraries from Paraswap.
+This contract is used to manage the deployments of borrowing tokens to enter into ICHI vault's. The contract allows users to open and close positions by depositing collateral into the Blueberry money market and borrowing tokens to achieve the desired leverage.
 
 ## Useful Links
-- [Docs](https://docs.blueberry.garden/developer-guides/contracts/spell/longshortspell)
+- [Docs](https://docs.blueberry.garden/developer-guides/contracts/spell/ichispell)
 
 ## Useful Files
 

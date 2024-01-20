@@ -1,0 +1,7 @@
+{
+    "Owner": "0x263c0a1ff85604f0ee3f4160cAa445d0bad28dF7",
+    "Treasury": "0x263c0a1ff85604f0ee3f4160cAa445d0bad28dF7",
+    "WETH": "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
+    "AugustusSwapper": "0x7b79995e5f793a07bc00c21412e50ecae098e7f9",
+    "TokenTransferProxy": "0x7b79995e5f793a07bc00c21412e50ecae098e7f9"
+}

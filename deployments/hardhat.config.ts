@@ -435,23 +435,23 @@ export default {
   },
   networks: {
     phalcon: {
-      url: 'https://rpc.phalcon.blocksec.com/rpc_1e10af1a092742b68d2306c42c43d608',
+      url: 'https://rpc.phalcon.blocksec.com/rpc_77adcfb33ac94881bc62f152b6d3a2ef',
       chainId: 1,
       accounts: [`0x${process.env.DEPLOY_ACCOUNT_KEY}`],
       gasPrice: 100000000000,
       gas: 10000000,
-      verificationAPIKey: 'f026eb40-d6ca-4aa7-b906-b8e5c27459e2',
+      verificationAPIKey: '34b90034-48e3-4a9b-9c6d-93b7e717db96',
     },
   },
   etherscan: {
-    apiKey: { phalcon: 'f026eb40-d6ca-4aa7-b906-b8e5c27459e2' },
+    apiKey: { phalcon: '34b90034-48e3-4a9b-9c6d-93b7e717db96' },
     customChains: [
       {
         network: 'phalcon',
         chainId: 1,
         urls: {
-          apiURL: 'https://api.phalcon.blocksec.com/api/rpc_1e10af1a092742b68d2306c42c43d608',
-          browserURL: 'https://phalcon.blocksec.com/fork/scan/fork_38c7a18b51a44effa4c36f0d5fea97d5',
+          apiURL: 'https://api.phalcon.blocksec.com/api/rpc_77adcfb33ac94881bc62f152b6d3a2ef',
+          browserURL: 'https://phalcon.blocksec.com/fork/scan/fork_ea810ace5dd84a1aac50715c0c1ff2c0',
         },
       },
     ],

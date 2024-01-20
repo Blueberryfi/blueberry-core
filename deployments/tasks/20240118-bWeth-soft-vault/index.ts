@@ -16,7 +16,6 @@ export default async (task: Task, { force, from }: TaskRunOptions = {}): Promise
     bwBTCDelegate.address,
     '0x00',
   ];
-  console.log('bwBTCDelegatorArgs', bwBTCDelegatorArgs);
   const bwBTCDelegator = await task.deployAndVerify('BErc20Delegator', bwBTCDelegatorArgs, from, force);
   const softVaultArgs = [input.ProtocolConfig, bwBTCDelegator.address, input.vaultName, input.vaultSymbol, input.Owner];
   await task.deployAndVerifyProxy('SoftVault', softVaultArgs, from, force);
