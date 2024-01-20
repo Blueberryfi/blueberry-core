@@ -1,6 +1,6 @@
 import Task, { TaskMode } from "task";
 
-export type ShortLongSpellDeployment = {
+export type IchiSpellDeployment = {
   BlueberryBank: string;
   WERC20: string;
   WETH: string;
