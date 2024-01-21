@@ -89,7 +89,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     struct CompMarketState {
         /// @notice The market's last updated compBorrowIndex or compSupplyIndex
         uint224 index;
-        /// @notice The block number the index was last updated at
+        /// @notice The block timestamp the index was last updated at
         uint32 block;
     }
 

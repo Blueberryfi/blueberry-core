@@ -67,9 +67,9 @@ contract BTokenStorage {
     uint256 public reserveFactorMantissa;
 
     /**
-     * @notice Block number that interest was last accrued at
+     * @notice Block timestamp that interest was last accrued at
      */
-    uint256 public accrualBlockNumber;
+    uint256 public accrualBlockTimestamp;
 
     /**
      * @notice Accumulator of the total earned interest rate since the opening of the market
@@ -325,9 +325,9 @@ contract BTokenInterface is BTokenStorage {
             uint256
         );
 
-    function borrowRatePerBlock() external view returns (uint256);
+    function borrowRatePerSecond() external view returns (uint256);
 
-    function supplyRatePerBlock() external view returns (uint256);
+    function supplyRatePerSecond() external view returns (uint256);
 
     function totalBorrowsCurrent() external returns (uint256);
 

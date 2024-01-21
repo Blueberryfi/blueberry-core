@@ -36,7 +36,8 @@ async function deployInterestRateModel(
   multiplier: BigNumber,
   jump: BigNumber,
   kink1: BigNumber,
-  roof: BigNumber
+  roof: BigNumber,
+  admin: string
 ) {
   const JumpRateModelV2 = await ethers.getContractFactory('JumpRateModelV2');
   const interestRateModel = await JumpRateModelV2.deploy(
@@ -44,7 +45,8 @@ async function deployInterestRateModel(
     multiplier.mul(kink1).div(utils.parseEther('1')),
     jump,
     kink1,
-    roof
+    roof,
+    admin
   );
   await interestRateModel.deployed();
 
@@ -149,7 +151,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   let jump = utils.parseEther('5');
   let kink1 = utils.parseEther('0.7');
   let roof = utils.parseEther('2');
-  let IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof);
+  let IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof, admin);
 
   // Deploy USDC
   const bUSDC = await deployBToken(
@@ -270,7 +272,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   jump = utils.parseEther('2.5');
   kink1 = utils.parseEther('0.8');
   roof = utils.parseEther('2');
-  IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof);
+  IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof, admin);
   const bWETH = await deployWrapped(
     ADDRESS.WETH,
     comptroller.address,
@@ -288,7 +290,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   jump = utils.parseEther('2');
   kink1 = utils.parseEther('0.8');
   roof = utils.parseEther('2');
-  IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof);
+  IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof, admin);
   const bWBTC = await deployBToken(
     ADDRESS.WBTC,
     comptroller.address,

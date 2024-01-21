@@ -1564,7 +1564,7 @@ contract Comptroller is
         return allMarkets;
     }
 
-    function getBlockNumber() public view returns (uint256) {
-        return block.number;
+    function getBlockTimestamp() public view returns (uint256) {
+        return block.timestamp;
     }
 }
