@@ -16,6 +16,11 @@ import { PoolEscrow } from "./PoolEscrow.sol";
 
 import { IPoolEscrowFactory } from "./interfaces/IPoolEscrowFactory.sol";
 
+/**
+ * @title PoolEscrowFactory
+ * @author BlueberryProtocol
+ * @notice This contract acts as a factory for creating PoolEscrow contracts.
+ */
 contract PoolEscrowFactory is IPoolEscrowFactory, Ownable2StepUpgradeable {
     using SafeERC20 for IERC20;
 
