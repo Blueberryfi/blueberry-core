@@ -14,7 +14,6 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { BaseAdapter } from "./BaseAdapter.sol";
 
-import { BBMath } from "../libraries/BBMath.sol";
 import "../utils/BlueberryConst.sol" as Constants;
 import "../utils/BlueberryErrors.sol" as Errors;
 
