@@ -29,10 +29,9 @@ import { IBErc20 } from "../interfaces/money-market/IBErc20.sol";
 /**
  * @title SoftVault
  * @author BlueberryProtocol
- * @notice The SoftVault contract is used to lock LP tokens as collateral.
- *         This vault simply holds onto LP tokens deposited by users, serving as collateral storage.
- * @dev The SoftVault is an ERC20 contract where each LP token is associated with a unique tokenId.
- *      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
+ * @notice The SoftVault contract is a spot where users lend and borrow tokens from/to Blueberry Money Market.
+ * @dev SoftVault is communicating with bTokens to lend and borrow underlying tokens from to Blueberry Money Market
+ *      Underlying tokens can be ERC20 tokens listed by Blueberry team, such as USDC, USDT, DAI, WETH, etc...
  */
 contract SoftVault is ISoftVault, Ownable2StepUpgradeable, ERC20Upgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;

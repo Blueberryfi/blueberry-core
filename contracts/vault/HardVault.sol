@@ -30,7 +30,7 @@ import { IProtocolConfig } from "../interfaces/IProtocolConfig.sol";
  * @author BlueberryProtocol
  * @notice The HardVault contract is used to lock LP tokens as collateral.
  *         This vault simply holds onto LP tokens deposited by users, serving as collateral storage.
- * @dev The HardVault is an ERC1155 contract where each LP token is associated with a unique tokenId.
+ * @dev The HardVault allows ERC1155 tokens where each LP token is associated with a unique tokenId.
  *      The tokenId is derived from the LP token address. Only LP tokens listed by the Blueberry team
  *      can be used as collateral in this vault.
  */

@@ -7,7 +7,11 @@
 ██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
-
+/**
+ * @title BlueberryErrors
+ * @author BlueberryProtocol
+ * @notice containing all errors used in Blueberry protocol
+ */
 /// title BlueberryErrors
 /// @notice containing all errors used in Blueberry protocol
 pragma solidity 0.8.22;

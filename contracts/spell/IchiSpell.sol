@@ -30,7 +30,8 @@ import { IIchiSpell } from "../interfaces/spell/IIchiSpell.sol";
 /**
  * @title IchiSpell
  * @author BlueberryProtocol
- * @notice Factory contract that defines the interaction between the Blueberry Protocol and Ichi Vaults.
+ * @notice Factory contract that defines the interaction between the
+ *         Blueberry Protocol and Ichi Vaults.
  */
 contract IchiSpell is IIchiSpell, BasicSpell {
     using SafeCast for uint256;

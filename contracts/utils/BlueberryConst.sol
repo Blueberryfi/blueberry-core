@@ -8,8 +8,11 @@
 ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 */
 
-/// title BlueberryConst
-/// @notice containing all general constants used in Blueberry protocol
+/**
+ * @title BlueberryErrors
+ * @author BlueberryProtocol
+ * @notice This contract contains the error messages for Blueberry Protocol.
+ */
 pragma solidity 0.8.22;
 
 /// @dev Common denominator for percentage-based calculations.

@@ -12,8 +12,11 @@ pragma solidity 0.8.22;
 
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
-/// @title ERC1155NaiveReceiver
-/// @notice A receiver contract that naively accepts all ERC1155 transfers.
+/**
+ * @title ERC1155NaiveReceiver
+ * @author BlueberryProtocol
+ * @notice A receiver contract that naively accepts all ERC1155 transfers.
+ */
 contract ERC1155NaiveReceiver is IERC1155Receiver {
     /// @notice Handle the receipt of a single ERC1155 token type.
     /// @dev This function is called at the end of a

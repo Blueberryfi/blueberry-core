@@ -33,8 +33,8 @@ import { IConvexSpell } from "../interfaces/spell/IConvexSpell.sol";
  * @title ConvexSpell
  * @author BlueberryProtocol
  * @notice This contract serves as the factory for defining how the Blueberry Protocol
-        interacts with Convex pools. It handles strategies, interactions with external contracts,
-        and facilitates operations related to liquidity provision.
+        interacts with Convex pools. It handles strategies, interactions with 
+        external contracts, and facilitates operations related to liquidity provision.
  */
 contract ConvexSpell is IConvexSpell, BasicSpell {
     using SafeERC20Upgradeable for IERC20Upgradeable;
