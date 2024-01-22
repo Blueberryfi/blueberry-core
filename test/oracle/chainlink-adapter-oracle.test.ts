@@ -1,4 +1,4 @@
-import chai, { expect } from 'chai';
+import chai, { expect, assert } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -41,7 +41,10 @@ describe('Chainlink Adapter Oracle', () => {
 
     await chainlinkAdapterOracle.setTokenRemappings([ADDRESS.wstETH], [ADDRESS.stETH]);
 
-    await chainlinkAdapterOracle.setTimeGap([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.stETH], [OneDay, OneDay, OneDay]);
+    await chainlinkAdapterOracle.setTimeGap(
+      [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.stETH, ADDRESS.ALCX],
+      [OneDay, OneDay, OneDay, OneDay]
+    );
   });
 
   describe('Constructor', () => {
@@ -151,6 +154,19 @@ describe('Chainlink Adapter Oracle', () => {
         price
       );
       console.log('UNI Price:', utils.formatUnits(price, 18));
+      console.log('Block Number:', await ethers.provider.getBlockNumber());
+    });
+
+    it('ALCX price feeds / based 10^18', async () => {
+      const fiften = ethers.utils.parseEther('15');
+      const thirty = ethers.utils.parseEther('30');
+
+      await chainlinkAdapterOracle.connect(admin).setEthDenominatedToken(ADDRESS.ALCX, true);
+      const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.ALCX);
+
+      assert(price.gte(fiften), 'Price is greater than 15');
+      assert(price.lte(thirty), 'Price is less than 30');
+      console.log('ALCX Price:', utils.formatUnits(price, 18));
     });
 
     it('wstETH price feeds / based 10^18', async () => {
