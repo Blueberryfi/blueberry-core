@@ -32,7 +32,7 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
         uint8 decimals_
     ) public {
         require(msg.sender == admin, "admin only");
-        require(accrualBlockNumber == 0 && borrowIndex == 0, "initialized");
+        require(accrualBlockTimestamp == 0 && borrowIndex == 0, "initialized");
 
         // Set initial exchange rate
         initialExchangeRateMantissa = initialExchangeRateMantissa_;
@@ -42,11 +42,11 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
         uint256 err = _setComptroller(comptroller_);
         require(err == uint256(Error.NO_ERROR), "set comptroller failed");
 
-        // Initialize block number and borrow index (block number mocks depend on comptroller being set)
-        accrualBlockNumber = getBlockNumber();
+        // Initialize block timestamp and borrow index (block timestamp mocks depend on comptroller being set)
+        accrualBlockTimestamp = getBlockTimestamp();
         borrowIndex = mantissaOne;
 
-        // Set the interest rate model (depends on block number / borrow index)
+        // Set the interest rate model (depends on block timestamp / borrow index)
         err = _setInterestRateModelFresh(interestRateModel_);
         require(err == uint256(Error.NO_ERROR), "set IRM failed");
 
@@ -169,18 +169,18 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @dev Function to simply retrieve block number
+     * @dev Function to simply retrieve block timestamp
      *  This exists mainly for inheriting test contracts to stub this result.
      */
-    function getBlockNumber() internal view returns (uint256) {
-        return block.number;
+    function getBlockTimestamp() internal view returns (uint256) {
+        return block.timestamp;
     }
 
     /**
-     * @notice Returns the current per-block borrow interest rate for this bToken
-     * @return The borrow interest rate per block, scaled by 1e18
+     * @notice Returns the current per-second borrow interest rate for this bToken
+     * @return The borrow interest rate per second, scaled by 1e18
      */
-    function borrowRatePerBlock() external view returns (uint256) {
+    function borrowRatePerSecond() external view returns (uint256) {
         return
             interestRateModel.getBorrowRate(
                 getCashPrior(),
@@ -190,10 +190,10 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Returns the current per-block supply interest rate for this bToken
-     * @return The supply interest rate per block, scaled by 1e18
+     * @notice Returns the current per-second supply interest rate for this bToken
+     * @return The supply interest rate per second, scaled by 1e18
      */
-    function supplyRatePerBlock() external view returns (uint256) {
+    function supplyRatePerSecond() external view returns (uint256) {
         return
             interestRateModel.getSupplyRate(
                 getCashPrior(),
@@ -204,10 +204,10 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Returns the estimated per-block borrow interest rate for this bToken after some change
-     * @return The borrow interest rate per block, scaled by 1e18
+     * @notice Returns the estimated per-second borrow interest rate for this bToken after some change
+     * @return The borrow interest rate per second, scaled by 1e18
      */
-    function estimateBorrowRatePerBlockAfterChange(uint256 change, bool repay)
+    function estimateBorrowRatePerSecondAfterChange(uint256 change, bool repay)
         external
         view
         returns (uint256)
@@ -231,10 +231,10 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Returns the estimated per-block supply interest rate for this bToken after some change
-     * @return The supply interest rate per block, scaled by 1e18
+     * @notice Returns the estimated per-second supply interest rate for this bToken after some change
+     * @return The supply interest rate per second, scaled by 1e18
      */
-    function estimateSupplyRatePerBlockAfterChange(uint256 change, bool repay)
+    function estimateSupplyRatePerSecondAfterChange(uint256 change, bool repay)
         external
         view
         returns (uint256)
@@ -388,16 +388,16 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice Applies accrued interest to total borrows and reserves
-     * @dev This calculates interest accrued from the last checkpointed block
-     *   up to the current block and writes new checkpoint to storage.
+     * @dev This calculates interest accrued from the last checkpointed second
+     *   up to the current block timestamp and writes new checkpoint to storage.
      */
     function accrueInterest() public returns (uint256) {
-        /* Remember the initial block number */
-        uint256 currentBlockNumber = getBlockNumber();
-        uint256 accrualBlockNumberPrior = accrualBlockNumber;
+        /* Remember the initial block timestamp */
+        uint256 currentBlockTimestamp = getBlockTimestamp();
+        uint256 accrualBlockTimestampPrior = accrualBlockTimestamp;
 
         /* Short-circuit accumulating 0 interest */
-        if (accrualBlockNumberPrior == currentBlockNumber) {
+        if (accrualBlockTimestampPrior == currentBlockTimestamp) {
             return uint256(Error.NO_ERROR);
         }
 
@@ -418,12 +418,12 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
             "borrow rate too high"
         );
 
-        /* Calculate the number of blocks elapsed since the last accrual */
-        uint256 blockDelta = sub_(currentBlockNumber, accrualBlockNumberPrior);
+        /* Calculate the number of seconds elapsed since the last accrual */
+        uint256 timestampDelta = sub_(currentBlockTimestamp, accrualBlockTimestampPrior);
 
         /*
          * Calculate the interest accumulated into borrows and reserves and the new index:
-         *  simpleInterestFactor = borrowRate * blockDelta
+         *  simpleInterestFactor = borrowRate * timestampDelta
          *  interestAccumulated = simpleInterestFactor * totalBorrows
          *  totalBorrowsNew = interestAccumulated + totalBorrows
          *  totalReservesNew = interestAccumulated * reserveFactor + totalReserves
@@ -432,7 +432,7 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
 
         Exp memory simpleInterestFactor = mul_(
             Exp({mantissa: borrowRateMantissa}),
-            blockDelta
+            timestampDelta
         );
         uint256 interestAccumulated = mul_ScalarTruncate(
             simpleInterestFactor,
@@ -455,7 +455,7 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
         // (No safe failures beyond this point)
 
         /* We write the previously calculated values into storage */
-        accrualBlockNumber = currentBlockNumber;
+        accrualBlockTimestamp = currentBlockTimestamp;
         borrowIndex = borrowIndexNew;
         totalBorrows = totalBorrowsNew;
         totalReserves = totalReservesNew;
@@ -563,8 +563,8 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
             "rejected"
         );
 
-        /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        /* Verify market's block timestamp equals current block timestamp */
+        require(accrualBlockTimestamp == getBlockTimestamp(), "market is stale");
 
         /* Reverts if protocol has insufficient cash */
         require(getCashPrior() >= borrowAmount, "insufficient cash");
@@ -680,8 +680,8 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
             "rejected"
         );
 
-        /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        /* Verify market's block timestamp equals current block timestamp */
+        require(accrualBlockTimestamp == getBlockTimestamp(), "market is stale");
 
         RepayBorrowLocalVars memory vars;
 
@@ -820,12 +820,12 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
             "rejected"
         );
 
-        /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        /* Verify market's block timestamp equals current block timestamp */
+        require(accrualBlockTimestamp == getBlockTimestamp(), "market is stale");
 
-        /* Verify bTokenCollateral market's block number equals current block number */
+        /* Verify bTokenCollateral market's block timestamp equals current block timestamp */
         require(
-            bTokenCollateral.accrualBlockNumber() == getBlockNumber(),
+            bTokenCollateral.accrualBlockTimestamp() == getBlockTimestamp(),
             "market is stale"
         );
 
@@ -1061,8 +1061,8 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
                 );
         }
 
-        // Verify market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // Verify market's block timestamp equals current block timestamp
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return
                 fail(
                     Error.MARKET_NOT_FRESH,
@@ -1122,8 +1122,8 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
         uint256 totalReservesNew;
         uint256 actualAddAmount;
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (
                 fail(
                     Error.MARKET_NOT_FRESH,
@@ -1196,8 +1196,8 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
                 );
         }
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return
                 fail(
                     Error.MARKET_NOT_FRESH,
@@ -1275,8 +1275,8 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
                 );
         }
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return
                 fail(
                     Error.MARKET_NOT_FRESH,
@@ -1353,7 +1353,7 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice User supplies assets into the market and receives bTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current block
+     * @dev Assumes interest has already been accrued up to the current second
      */
     function mintFresh(
         address minter,
@@ -1363,7 +1363,7 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice User redeems bTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current block
+     * @dev Assumes interest has already been accrued up to the current second
      */
     function redeemFresh(
         address payable redeemer,

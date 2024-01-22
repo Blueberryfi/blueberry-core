@@ -627,7 +627,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
 
     /**
      * @notice User supplies assets into the market and receives bTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current block
+     * @dev Assumes interest has already been accrued up to the current second
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not
@@ -652,8 +652,8 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
             return (uint256(Error.NO_ERROR), 0);
         }
 
-        /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        /* Verify market's block timestamp equals current block timestamp */
+        require(accrualBlockTimestamp == getBlockTimestamp(), "market is stale");
 
         MintLocalVars memory vars;
 
@@ -715,7 +715,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
 
     /**
      * @notice User redeems bTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current block. Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
+     * @dev Assumes interest has already been accrued up to the current second. Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
      * @param redeemer The address of the account which is redeeming the tokens
      * @param redeemTokensIn The number of bTokens to redeem into underlying
      * @param redeemAmountIn The number of underlying tokens to receive from redeeming bTokens
@@ -778,8 +778,8 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
             return uint256(Error.NO_ERROR);
         }
 
-        /* Verify market's block number equals current block number */
-        require(accrualBlockNumber == getBlockNumber(), "market is stale");
+        /* Verify market's block timestamp equals current block timestamp */
+        require(accrualBlockTimestamp == getBlockTimestamp(), "market is stale");
 
         /*
          * We calculate the new total supply and redeemer balance, checking for underflow:
