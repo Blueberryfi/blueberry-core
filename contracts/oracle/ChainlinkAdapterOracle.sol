@@ -14,6 +14,7 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { BaseAdapter } from "./BaseAdapter.sol";
 
+import { BBMath } from "../libraries/BBMath.sol";
 import "../utils/BlueberryConst.sol" as Constants;
 import "../utils/BlueberryErrors.sol" as Errors;
 
@@ -33,7 +34,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     using SafeCast for int256;
 
     /*//////////////////////////////////////////////////////////////////////////
-                                      PUBLIC STORAGE 
+                                      STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Chainlink feed registry for accessing price feeds.
@@ -44,8 +45,14 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     ///      For example, WETH may be remapped to ETH, WBTC to BTC, etc.
     mapping(address => address) private _remappedTokens;
 
+    /// @dev Token mapping if its pricing is quoted in ETH.
+    mapping(address => bool) private _isQuotedInEth;
+
     /// @dev Address representing USD in Chainlink's denominations.
     address private constant _USD = address(840);
+
+    /// @dev Address representing ETH in Chainlink's denominations.
+    address private constant _ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     /// @dev WstETH address
     address private constant _WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
@@ -121,39 +128,32 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         }
     }
 
+    /**
+     * @notice Registers a token as being quoted in ETH
+     * @param token The token address to register
+     * @param isQuoteEth Whether the token is quoted in ETH or not
+     */
+    function setEthDenominatedToken(address token, bool isQuoteEth) external onlyOwner {
+        if (token == address(0)) revert Errors.ZERO_ADDRESS();
+        _isQuotedInEth[token] = isQuoteEth;
+    }
+
     /// @inheritdoc IBaseOracle
     function getPrice(address token) external view override returns (uint256) {
         /// remap token if possible
         address remappedToken = _remappedTokens[token];
         if (remappedToken == address(0)) remappedToken = token;
 
-        uint256 maxDelayTime = _timeGaps[remappedToken];
-        if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
+        (uint256 answer, uint8 decimals) = _getPriceInUsd(remappedToken);
 
-        IFeedRegistry registry = getFeedRegistry();
-
-        /// Get token-USD price
-        uint256 decimals = registry.decimals(remappedToken, _USD);
-        (uint80 roundID, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = registry.latestRoundData(
-            remappedToken,
-            _USD
-        );
-
-        if (updatedAt < block.timestamp - maxDelayTime) revert Errors.PRICE_OUTDATED(token);
-        if (answer <= 0) revert Errors.PRICE_NEGATIVE(token);
-        if (answeredInRound < roundID) revert Errors.PRICE_OUTDATED(token);
-
+        // special case pricing for WstETH and ankrETH
         if (token == _WSTETH) {
-            return
-                ((answer.toUint256() * Constants.PRICE_PRECISION) * IWstETH(_WSTETH).stEthPerToken()) /
-                10 ** (18 + decimals);
+            return _calculateWstETH(answer, decimals);
         } else if (token == _ANKRETH) {
-            return
-                ((answer.toUint256() * Constants.PRICE_PRECISION) *
-                    IAnkrETH(_ANKRETH).sharesToBonds(Constants.PRICE_PRECISION)) / 10 ** (18 + decimals);
+            return _calculateAnkrETH(answer, decimals);
         }
 
-        return (answer.toUint256() * Constants.PRICE_PRECISION) / 10 ** decimals;
+        return (answer * Constants.PRICE_PRECISION) / 10 ** decimals;
     }
 
     /// @notice Returns the Chainlink feed registry used by this adapter.
@@ -168,5 +168,84 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
      */
     function getTokenRemapping(address token) external view returns (address) {
         return _remappedTokens[token];
+    }
+
+    /**
+     * @notice Gets the price of the specified token in USD.
+     * @param token The token address to fecth the price of.
+     * @return answer The price of the token in USD.
+     * @return decimals The number of decimals of the token.
+     */
+    function _getPriceInUsd(address token) internal view returns (uint256 answer, uint8 decimals) {
+        IFeedRegistry registry = getFeedRegistry();
+
+        uint256 maxDelayTime = _timeGaps[token];
+        if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
+
+        if (_isQuotedInEth[token] == true) {
+            uint256 tokenPriceInEth = _getTokenPrice(registry, token, _ETH, maxDelayTime);
+            uint8 feedDecimals = registry.decimals(token, _ETH);
+
+            uint256 ethUsdPrice = _getTokenPrice(registry, _ETH, _USD, maxDelayTime);
+            uint256 ethUsdDecimals = registry.decimals(_ETH, _USD);
+            uint256 scaledEthUsdPrice = (ethUsdPrice * Constants.PRICE_PRECISION) / 10 ** ethUsdDecimals;
+
+            answer = (tokenPriceInEth * scaledEthUsdPrice) / 10 ** feedDecimals;
+
+            // Decimals will always be 18 since we are scaling the ETH/USD price by 18 decimals
+            //    and token's price feed decimals will cancel out with the token's return value
+            return (answer, 18);
+        } else {
+            decimals = registry.decimals(token, _USD);
+            answer = _getTokenPrice(registry, token, _USD, maxDelayTime);
+        }
+    }
+
+    /**
+     * @notice Gets the token price from the Chainlink registry and validates it.
+     * @param registry The Chainlink feed registry to use.
+     * @param base The base token address.
+     * @param quote The quote token address.
+     * @param maxDelayTime The max delay allowed for price feed updates
+     * @return The price of the token.
+     */
+    function _getTokenPrice(
+        IFeedRegistry registry,
+        address base,
+        address quote,
+        uint256 maxDelayTime
+    ) internal view returns (uint256) {
+        (uint80 roundID, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = registry.latestRoundData(
+            base,
+            quote
+        );
+
+        if (updatedAt < block.timestamp - maxDelayTime) revert Errors.PRICE_OUTDATED(base);
+        if (answer <= 0) revert Errors.PRICE_NEGATIVE(base);
+        if (answeredInRound < roundID) revert Errors.PRICE_OUTDATED(base);
+
+        return answer.toUint256();
+    }
+
+    /**
+     * @notice Calculates the price of WstETH in USD.
+     * @param answer The price of the remapped token in USD.
+     * @param decimals The number of decimals returned by the Chainlink feed.
+     * @return The price of WstETH in USD.
+     */
+    function _calculateWstETH(uint256 answer, uint8 decimals) internal view returns (uint256) {
+        return ((answer * Constants.PRICE_PRECISION) * IWstETH(_WSTETH).stEthPerToken()) / 10 ** (18 + decimals);
+    }
+
+    /**
+     * @notice Calculates the price of AnkrETH in USD.
+     * @param answer The price of the remapped token in USD.
+     * @param decimals The number of decimals returned by the Chainlink feed.
+     * @return The price of AnkrETH in USD.
+     */
+    function _calculateAnkrETH(uint256 answer, uint256 decimals) internal view returns (uint256) {
+        return
+            ((answer * Constants.PRICE_PRECISION) * IAnkrETH(_ANKRETH).sharesToBonds(Constants.PRICE_PRECISION)) /
+            10 ** (18 + decimals);
     }
 }
