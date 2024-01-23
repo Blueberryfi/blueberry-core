@@ -19,6 +19,10 @@ contract MockOracle is IBaseOracle, Ownable {
         return prices[token];
     }
 
+    function decimals() external pure returns (uint8) {
+        return 18;
+    }
+
     /// @dev Set the prices of the given token addresses.
     /// @param tokens The token addresses to set the prices.
     /// @param pxs The price data points, representing token value in USD, based 1e18.

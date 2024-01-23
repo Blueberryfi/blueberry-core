@@ -30,7 +30,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
   const chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
     ChainlinkAdapterOracle,
-    [ADDRESS.ChainlinkRegistry, admin.address],
+    [admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -45,17 +45,40 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.ETH,
       ADDRESS.DAI,
       ADDRESS.USDC,
-      ADDRESS.DAI,
       ADDRESS.BAL,
       ADDRESS.FRAX,
       ADDRESS.CRV,
-      ADDRESS.MIM,
       ADDRESS.LINK,
       ADDRESS.SUSHI,
       ADDRESS.CHAINLINK_BTC,
       ADDRESS.stETH,
     ],
     [TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays]
+  );
+
+  await chainlinkAdapterOracle.setPriceFeeds(
+    [
+      ADDRESS.ETH,
+      ADDRESS.DAI,
+      ADDRESS.USDC,
+      ADDRESS.BAL,
+      ADDRESS.FRAX,
+      ADDRESS.CRV,
+      ADDRESS.LINK,
+      ADDRESS.CHAINLINK_BTC,
+      ADDRESS.stETH,
+    ],
+    [
+      ADDRESS.CHAINLINK_ETH_USD_FEED,
+      ADDRESS.CHAINLINK_DAI_USD_FEED,
+      ADDRESS.CHAINLINK_USDC_FEED,
+      ADDRESS.CHAINLINK_BAL_USD_FEED,
+      ADDRESS.CHAINLINK_FRAX_USD_FEED,
+      ADDRESS.CHAINLINK_CRV_FEED,
+      ADDRESS.CHAINLINK_LINK_USD_FEED,
+      ADDRESS.CHAINLINK_BTC_USD_FEED,
+      ADDRESS.CHAINLINK_STETH_USD_FEED,
+    ]
   );
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);

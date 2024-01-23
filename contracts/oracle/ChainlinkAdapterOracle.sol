@@ -19,7 +19,7 @@ import "../utils/BlueberryErrors.sol" as Errors;
 
 import { IAnkrETH } from "../interfaces/IAnkrETH.sol";
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
-import { IFeedRegistry } from "../interfaces/chainlink/IFeedRegistry.sol";
+import { IAggregatorV3Interface } from "../interfaces/chainlink/IAggregatorV3Interface.sol";
 import { IWstETH } from "../interfaces/IWstETH.sol";
 
 /**
@@ -32,13 +32,22 @@ import { IWstETH } from "../interfaces/IWstETH.sol";
 contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     using SafeCast for int256;
 
+    /**
+     * @dev Struct to store price feed data.
+     * @param feed The address of the Chainlink price feed.
+     * @param decimals The number of decimals returned by the Chainlink feed.
+     */
+    struct PriceFeed {
+        address feed;
+        uint8 decimals;
+    }
+
     /*//////////////////////////////////////////////////////////////////////////
                                       STORAGE 
     //////////////////////////////////////////////////////////////////////////*/
 
-    /// @dev Chainlink feed registry for accessing price feeds.
-    /// (source: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/Denominations.sol)
-    IFeedRegistry private _registry;
+    /// @dev A mapping from a token address to its associated Chainlink price feed.
+    mapping(address => PriceFeed) private _priceFeeds;
 
     /// @dev Maps tokens to their canonical form for price querying.
     ///      For example, WETH may be remapped to ETH, WBTC to BTC, etc.
@@ -46,9 +55,6 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
 
     /// @dev Token mapping if its pricing is quoted in ETH.
     mapping(address => bool) private _isQuotedInEth;
-
-    /// @dev Address representing USD in Chainlink's denominations.
-    address private constant _USD = address(840);
 
     /// @dev Address representing ETH in Chainlink's denominations.
     address private constant _ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -64,10 +70,11 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     //////////////////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Emitted when the Chainlink feed registry used by the adapter is updated.
-     * @param registry The address of the updated registry.
+     * @notice Emitted when a new price feed for a token is set or updated.
+     * @param token The address of the token for which the price feed is set or updated.
+     * @param priceFeed The address of the Chainlink price feed for the token.
      */
-    event SetRegistry(address registry);
+    event SetTokenPriceFeed(address indexed token, address indexed priceFeed);
 
     /**
      * @notice Emitted when a token is remapped to its canonical form.
@@ -90,25 +97,11 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     //////////////////////////////////////////////////////////////////////////*/
     /**
      * @notice Initializes the contract
-     * @param registry Chainlink feed registry address.
      * @param owner Address of the owner of the contract.
      */
-    function initialize(IFeedRegistry registry, address owner) external initializer {
+    function initialize(address owner) external initializer {
         __Ownable2Step_init();
         _transferOwnership(owner);
-
-        if (address(registry) == address(0)) revert Errors.ZERO_ADDRESS();
-        _registry = registry;
-    }
-
-    /**
-     * @notice Updates the Chainlink feed registry used by this adapter.
-     * @param registry The new Chainlink feed registry address.
-     */
-    function setFeedRegistry(IFeedRegistry registry) external onlyOwner {
-        if (address(registry) == address(0)) revert Errors.ZERO_ADDRESS();
-        _registry = registry;
-        emit SetRegistry(address(registry));
     }
 
     /**
@@ -119,11 +112,33 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     function setTokenRemappings(address[] calldata tokens, address[] calldata remappedTokens) external onlyOwner {
         uint256 tokensLength = tokens.length;
         if (tokensLength != remappedTokens.length) revert Errors.INPUT_ARRAY_MISMATCH();
+
         for (uint256 i = 0; i < tokensLength; ++i) {
             if (tokens[i] == address(0)) revert Errors.ZERO_ADDRESS();
 
             _remappedTokens[tokens[i]] = remappedTokens[i];
             emit SetTokenRemapping(tokens[i], remappedTokens[i]);
+        }
+    }
+
+    /**
+     * @notice Sets the price feeds for specified tokens.
+     * @param tokens List of tokens for which the price feeds are being set.
+     * @param priceFeeds Corresponding list of Chainlink price feeds.
+     */
+    function setPriceFeeds(address[] calldata tokens, address[] calldata priceFeeds) external onlyOwner {
+        uint256 tokensLength = tokens.length;
+        if (tokensLength != priceFeeds.length) revert Errors.INPUT_ARRAY_MISMATCH();
+
+        for (uint256 i = 0; i < tokensLength; ++i) {
+            if (tokens[i] == address(0)) revert Errors.ZERO_ADDRESS();
+            if (priceFeeds[i] == address(0)) revert Errors.ZERO_ADDRESS();
+
+            uint8 decimals = IAggregatorV3Interface(priceFeeds[i]).decimals();
+
+            _priceFeeds[tokens[i]] = PriceFeed(priceFeeds[i], decimals);
+
+            emit SetTokenPriceFeed(tokens[i], priceFeeds[i]);
         }
     }
 
@@ -155,9 +170,13 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         return (answer * Constants.PRICE_PRECISION) / 10 ** decimals;
     }
 
-    /// @notice Returns the Chainlink feed registry used by this adapter.
-    function getFeedRegistry() public view returns (IFeedRegistry) {
-        return _registry;
+    /**
+     * @notice Returns the Chainlink feed used to price a token.
+     * @param token The token address to check the price feed of.
+     * @return The address of the Chainlink price feed.
+     */
+    function getPriceFeed(address token) public view returns (address) {
+        return _priceFeeds[token].feed;
     }
 
     /**
@@ -176,52 +195,47 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
      * @return decimals The number of decimals of the token.
      */
     function _getPriceInUsd(address token) internal view returns (uint256 answer, uint8 decimals) {
-        IFeedRegistry registry = getFeedRegistry();
-
         uint256 maxDelayTime = _timeGaps[token];
         if (maxDelayTime == 0) revert Errors.NO_MAX_DELAY(token);
 
-        if (_isQuotedInEth[token] == true) {
-            uint256 tokenPriceInEth = _getTokenPrice(registry, token, _ETH, maxDelayTime);
-            uint8 feedDecimals = registry.decimals(token, _ETH);
+        PriceFeed memory tokenPriceFeed = _priceFeeds[token];
 
-            uint256 ethUsdPrice = _getTokenPrice(registry, _ETH, _USD, maxDelayTime);
-            uint256 ethUsdDecimals = registry.decimals(_ETH, _USD);
+        if (_isQuotedInEth[token] == true) {
+
+            uint256 tokenPriceInEth = _getTokenPrice(tokenPriceFeed.feed, maxDelayTime);
+
+            PriceFeed memory ethPriceFeed = _priceFeeds[_ETH];
+
+            uint256 ethUsdPrice = _getTokenPrice(ethPriceFeed.feed, maxDelayTime);
+            uint256 ethUsdDecimals = ethPriceFeed.decimals;
             uint256 scaledEthUsdPrice = (ethUsdPrice * Constants.PRICE_PRECISION) / 10 ** ethUsdDecimals;
 
-            answer = (tokenPriceInEth * scaledEthUsdPrice) / 10 ** feedDecimals;
+            answer = (tokenPriceInEth * scaledEthUsdPrice) / 10 ** tokenPriceFeed.decimals;
 
             // Decimals will always be 18 since we are scaling the ETH/USD price by 18 decimals
             //    and token's price feed decimals will cancel out with the token's return value
             return (answer, 18);
         } else {
-            decimals = registry.decimals(token, _USD);
-            answer = _getTokenPrice(registry, token, _USD, maxDelayTime);
+            decimals = tokenPriceFeed.decimals;
+            answer = _getTokenPrice(tokenPriceFeed.feed, maxDelayTime);
         }
     }
 
     /**
      * @notice Gets the token price from the Chainlink registry and validates it.
-     * @param registry The Chainlink feed registry to use.
-     * @param base The base token address.
-     * @param quote The quote token address.
+     * @param priceFeed The Chainlink feed to use.
      * @param maxDelayTime The max delay allowed for price feed updates
      * @return The price of the token.
      */
     function _getTokenPrice(
-        IFeedRegistry registry,
-        address base,
-        address quote,
+        address priceFeed,
         uint256 maxDelayTime
     ) internal view returns (uint256) {
-        (uint80 roundID, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = registry.latestRoundData(
-            base,
-            quote
-        );
+        (uint80 roundID, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = IAggregatorV3Interface(priceFeed).latestRoundData();
 
-        if (updatedAt < block.timestamp - maxDelayTime) revert Errors.PRICE_OUTDATED(base);
-        if (answer <= 0) revert Errors.PRICE_NEGATIVE(base);
-        if (answeredInRound < roundID) revert Errors.PRICE_OUTDATED(base);
+        if (updatedAt < block.timestamp - maxDelayTime) revert Errors.PRICE_OUTDATED(priceFeed);
+        if (answer <= 0) revert Errors.PRICE_NEGATIVE(priceFeed);
+        if (answeredInRound < roundID) revert Errors.PRICE_OUTDATED(priceFeed);
 
         return answer.toUint256();
     }

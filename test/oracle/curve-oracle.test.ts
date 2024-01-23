@@ -33,7 +33,7 @@ describe('Curve LP Oracle', () => {
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
       ChainlinkAdapterOracle,
-      [ADDRESS.ChainlinkRegistry, admin.address],
+      [admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }
@@ -153,7 +153,12 @@ describe('Curve LP Oracle', () => {
     it('Crv Lp Price', async () => {
       await chainlinkAdapterOracle.setTokenRemappings(
         [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.WBTC],
-        [ADDRESS.CHAINLINK_ETH, ADDRESS.CHAINLINK_ETH, ADDRESS.CHAINLINK_BTC]
+        [ADDRESS.CHAINLINK_ETH, ADDRESS.CHAINLINK_ETH, ADDRESS.CHAINLINK_BTC_USD_FEED]
+      );
+
+      await chainlinkAdapterOracle.setPriceFeeds(
+        [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.WBTC],
+        [ADDRESS.CHAINLINK_ETH_USD_FEED, ADDRESS.CHAINLINK_ETH_USD_FEED, ADDRESS.CHAINLINK_BTC_USD_FEED]
       );
 
       await coreOracle.setRoutes(
