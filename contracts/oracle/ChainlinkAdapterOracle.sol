@@ -112,6 +112,7 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
     function setTokenRemappings(address[] calldata tokens, address[] calldata remappedTokens) external onlyOwner {
         uint256 tokensLength = tokens.length;
         if (tokensLength != remappedTokens.length) revert Errors.INPUT_ARRAY_MISMATCH();
+
         for (uint256 i = 0; i < tokensLength; ++i) {
             if (tokens[i] == address(0)) revert Errors.ZERO_ADDRESS();
 
@@ -132,7 +133,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         for (uint256 i = 0; i < tokensLength; ++i) {
             if (tokens[i] == address(0)) revert Errors.ZERO_ADDRESS();
             if (priceFeeds[i] == address(0)) revert Errors.ZERO_ADDRESS();
+
             uint8 decimals = IAggregatorV3Interface(priceFeeds[i]).decimals();
+
             _priceFeeds[tokens[i]] = PriceFeed(priceFeeds[i], decimals);
 
             emit SetTokenPriceFeed(tokens[i], priceFeeds[i]);

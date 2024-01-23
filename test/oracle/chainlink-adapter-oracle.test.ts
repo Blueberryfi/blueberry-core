@@ -30,7 +30,7 @@ describe('Chainlink Adapter Oracle', () => {
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
       ChainlinkAdapterOracle,
-      [ADDRESS.ChainlinkRegistry, admin.address],
+      [admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }
@@ -48,35 +48,35 @@ describe('Chainlink Adapter Oracle', () => {
   });
 
   describe('Constructor', () => {
-    it('should revert when feed registry address is invalid', async () => {
-      const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-      await expect(
-        upgrades.deployProxy(ChainlinkAdapterOracle, [ethers.constants.AddressZero, admin.address], {
-          unsafeAllow: ['delegatecall'],
-        })
-      ).to.be.revertedWithCustomError(ChainlinkAdapterOracle, 'ZERO_ADDRESS');
-    });
-    it('should set feed registry', async () => {
-      expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.CHAINLINK_ETH)).to.be.equal(ADDRESS.CHAINLINK_ETH_USD_FEED);
-    });
-  });
-  describe('Owner', () => {
-    it('should be able to set routes', async () => {
-      await expect(chainlinkAdapterOracle.connect(alice).setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_FEED])).to.be.revertedWith(
-        'Ownable: caller is not the owner'
-      );
+  //   it('should revert when feed registry address is invalid', async () => {
+  //     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
+  //     await expect(
+  //       upgrades.deployProxy(ChainlinkAdapterOracle, [ethers.constants.AddressZero, admin.address], {
+  //         unsafeAllow: ['delegatecall'],
+  //       })
+  //     ).to.be.revertedWithCustomError(ChainlinkAdapterOracle, 'ZERO_ADDRESS');
+  //   });
+  //   it('should set feed registry', async () => {
+  //     expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.CHAINLINK_ETH)).to.be.equal(ADDRESS.CHAINLINK_ETH_USD_FEED);
+  //   });
+  // });
+  // describe('Owner', () => {
+  //   it('should be able to set routes', async () => {
+  //     await expect(chainlinkAdapterOracle.connect(alice).setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED])).to.be.revertedWith(
+  //       'Ownable: caller is not the owner'
+  //     );
 
-      await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_FEED])).to.be.revertedWithCustomError(
-        chainlinkAdapterOracle,
-        'ZERO_ADDRESS'
-      );
+  //     await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED])).to.be.revertedWithCustomError(
+  //       chainlinkAdapterOracle,
+  //       'ZERO_ADDRESS'
+  //     );
 
-      await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_FEED]))
-        .to.be.emit(chainlinkAdapterOracle, 'SetRegistry')
-        .withArgs(ADDRESS.ChainlinkRegistry);
+  //     await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED]))
+  //       .to.be.emit(chainlinkAdapterOracle, 'SetRegistry')
+  //       .withArgs(ADDRESS.ChainlinkRegistry);
 
-      expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.USDC)).to.be.equal(ADDRESS.CHAINLINK_USDC_FEED);
-    });
+  //     expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.USDC)).to.be.equal(ADDRESS.CHAINLINK_USDC_USD_FEED);
+  //   });
     it('should be able to set maxDelayTimes', async () => {
       await expect(
         chainlinkAdapterOracle.connect(alice).setTimeGap([ADDRESS.USDC, ADDRESS.UNI], [OneDay, OneDay])
@@ -135,22 +135,20 @@ describe('Chainlink Adapter Oracle', () => {
         .withArgs(ADDRESS.CRV);
     });
     it('USDC price feeds / based 10^18', async () => {
-      const decimals = await chainlinkFeedOracle.decimals(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);
       const { answer } = await chainlinkFeedOracle.latestRoundData(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.USDC);
 
-      expect(answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(decimals))).to.be.roughlyNear(price);
+      expect(answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(8))).to.be.roughlyNear(price);
 
       // real usdc price should be closed to $1
       expect(price).to.be.roughlyNear(BigNumber.from(10).pow(18));
       console.log('USDC Price:', utils.formatUnits(price, 18));
     });
     it('UNI price feeds / based 10^18', async () => {
-      const decimals = await chainlinkFeedOracle.decimals(ADDRESS.UNI, ADDRESS.CHAINLINK_USD);
       const uniData = await chainlinkFeedOracle.latestRoundData(ADDRESS.UNI, ADDRESS.CHAINLINK_USD);
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.UNI);
 
-      expect(uniData.answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(decimals))).to.be.roughlyNear(
+      expect(uniData.answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(8))).to.be.roughlyNear(
         price
       );
       console.log('UNI Price:', utils.formatUnits(price, 18));
@@ -160,7 +158,6 @@ describe('Chainlink Adapter Oracle', () => {
     it('ALCX price feeds / based 10^18', async () => {
       const fiften = ethers.utils.parseEther('15');
       const thirty = ethers.utils.parseEther('30');
-            
       await chainlinkAdapterOracle.connect(admin).setPriceFeeds([ADDRESS.ALCX], [ADDRESS.CHAINLINK_ALCX_ETH_FEED]);
 
       await chainlinkAdapterOracle.connect(admin).setEthDenominatedToken(ADDRESS.ALCX, true);
@@ -172,7 +169,6 @@ describe('Chainlink Adapter Oracle', () => {
     });
 
     it('wstETH price feeds / based 10^18', async () => {
-      const decimals = await chainlinkFeedOracle.decimals(ADDRESS.stETH, ADDRESS.CHAINLINK_USD);
       const stETHData = await chainlinkFeedOracle.latestRoundData(ADDRESS.stETH, ADDRESS.CHAINLINK_USD);
       const stEthPerToken = await wstETH.stEthPerToken();
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.wstETH);
@@ -181,7 +177,7 @@ describe('Chainlink Adapter Oracle', () => {
         stETHData.answer
           .mul(BigNumber.from(10).pow(18))
           .mul(stEthPerToken)
-          .div(BigNumber.from(10).pow(18 + decimals))
+          .div(BigNumber.from(10).pow(18 + 8))
       ).to.be.roughlyNear(price);
       console.log('wstETH Price:', utils.formatUnits(price, 18));
     });

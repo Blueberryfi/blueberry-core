@@ -16,7 +16,7 @@ const OneDay = 86400;
 const DEVIATION = 500; // 5%
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-describe('Aggregator Oracle', () => {
+describe('Aggregator Oracle2', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
 
@@ -42,10 +42,11 @@ describe('Aggregator Oracle', () => {
       }
     );
     await chainlinkOracle.deployed();
-    
-    await chainlinkOracle.setTimeGap([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV], [OneDay, OneDay, OneDay]);
-    await chainlinkOracle.setPriceFeeds([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV], [ADDRESS.CHAINLINK_USDC_FEED, ADDRESS.CHAINLINK_UNI_FEED, ADDRESS.CHAINLINK_CRV_FEED]);
 
+    await chainlinkOracle.setTimeGap([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV], [OneDay, OneDay, OneDay]);
+    console.log('2');
+    await chainlinkOracle.setPriceFeeds([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV], [ADDRESS.CHAINLINK_USDC_USD_FEED, ADDRESS.CHAINLINK_UNI_USD_FEED, ADDRESS.CHAINLINK_CRV_USD_FEED]);
+    console.log('3');
     // Mock Oracle
     const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
     mockOracle1 = <MockOracle>await MockOracle.deploy();

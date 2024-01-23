@@ -32,7 +32,7 @@ describe('Core Oracle', () => {
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
       ChainlinkAdapterOracle,
-      [ADDRESS.ChainlinkRegistry, admin.address],
+      [admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }

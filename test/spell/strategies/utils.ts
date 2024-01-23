@@ -30,7 +30,7 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
   const chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
     ChainlinkAdapterOracle,
-    [ADDRESS.ChainlinkRegistry, admin.address],
+    [admin.address],
     {
       unsafeAllow: ['delegatecall'],
     }
@@ -65,7 +65,6 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.FRAX,
       ADDRESS.CRV,
       ADDRESS.LINK,
-      ADDRESS.SUSHI,
       ADDRESS.CHAINLINK_BTC,
       ADDRESS.stETH,
     ],

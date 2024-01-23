@@ -24,7 +24,7 @@ describe('Balancer Weighted Pool BPT Oracle', () => {
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
       ChainlinkAdapterOracle,
-      [ADDRESS.ChainlinkRegistry, admin.address],
+      [admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }
