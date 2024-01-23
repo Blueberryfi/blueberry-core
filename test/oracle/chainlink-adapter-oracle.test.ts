@@ -4,7 +4,6 @@ import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { ChainlinkAdapterOracle, IFeedRegistry, IWstETH } from '../../typechain-types';
-import ChainlinkFeedABI from '../../abi/IFeedRegistry.json';
 import WstETHABI from '../../abi/IWstETH.json';
 
 import { near } from '../assertions/near';
@@ -24,7 +23,6 @@ describe('Chainlink Adapter Oracle', () => {
   let wstETH: IWstETH;
   before(async () => {
     [admin, alice] = await ethers.getSigners();
-    chainlinkFeedOracle = <IFeedRegistry>await ethers.getContractAt(ChainlinkFeedABI, ADDRESS.ChainlinkRegistry);
     wstETH = <IWstETH>await ethers.getContractAt(WstETHABI, ADDRESS.wstETH);
   });
 
@@ -40,6 +38,8 @@ describe('Chainlink Adapter Oracle', () => {
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setTokenRemappings([ADDRESS.wstETH], [ADDRESS.stETH]);
+    
+    await chainlinkAdapterOracle.connect(admin).setPriceFeeds([ADDRESS.CHAINLINK_ETH], [ADDRESS.CHAINLINK_ETH_USD_FEED]);
 
     await chainlinkAdapterOracle.setTimeGap(
       [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.stETH, ADDRESS.ALCX],
@@ -57,25 +57,25 @@ describe('Chainlink Adapter Oracle', () => {
       ).to.be.revertedWithCustomError(ChainlinkAdapterOracle, 'ZERO_ADDRESS');
     });
     it('should set feed registry', async () => {
-      expect(await chainlinkAdapterOracle.getFeedRegistry()).to.be.equal(ADDRESS.ChainlinkRegistry);
+      expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.CHAINLINK_ETH)).to.be.equal(ADDRESS.CHAINLINK_ETH_USD_FEED);
     });
   });
   describe('Owner', () => {
-    it('should be able to set feed registry', async () => {
-      await expect(chainlinkAdapterOracle.connect(alice).setFeedRegistry(ADDRESS.ChainlinkRegistry)).to.be.revertedWith(
+    it('should be able to set routes', async () => {
+      await expect(chainlinkAdapterOracle.connect(alice).setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_FEED])).to.be.revertedWith(
         'Ownable: caller is not the owner'
       );
 
-      await expect(chainlinkAdapterOracle.setFeedRegistry(ethers.constants.AddressZero)).to.be.revertedWithCustomError(
+      await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_FEED])).to.be.revertedWithCustomError(
         chainlinkAdapterOracle,
         'ZERO_ADDRESS'
       );
 
-      await expect(chainlinkAdapterOracle.setFeedRegistry(ADDRESS.ChainlinkRegistry))
+      await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_FEED]))
         .to.be.emit(chainlinkAdapterOracle, 'SetRegistry')
         .withArgs(ADDRESS.ChainlinkRegistry);
 
-      expect(await chainlinkAdapterOracle.getFeedRegistry()).to.be.equal(ADDRESS.ChainlinkRegistry);
+      expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.USDC)).to.be.equal(ADDRESS.CHAINLINK_USDC_FEED);
     });
     it('should be able to set maxDelayTimes', async () => {
       await expect(
@@ -160,6 +160,8 @@ describe('Chainlink Adapter Oracle', () => {
     it('ALCX price feeds / based 10^18', async () => {
       const fiften = ethers.utils.parseEther('15');
       const thirty = ethers.utils.parseEther('30');
+            
+      await chainlinkAdapterOracle.connect(admin).setPriceFeeds([ADDRESS.ALCX], [ADDRESS.CHAINLINK_ALCX_ETH_FEED]);
 
       await chainlinkAdapterOracle.connect(admin).setEthDenominatedToken(ADDRESS.ALCX, true);
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.ALCX);

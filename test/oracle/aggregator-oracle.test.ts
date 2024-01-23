@@ -36,14 +36,15 @@ describe('Aggregator Oracle', () => {
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
       ChainlinkAdapterOracle,
-      [ADDRESS.ChainlinkRegistry, admin.address],
+      [admin.address],
       {
         unsafeAllow: ['delegatecall'],
       }
     );
     await chainlinkOracle.deployed();
-
+    
     await chainlinkOracle.setTimeGap([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV], [OneDay, OneDay, OneDay]);
+    await chainlinkOracle.setPriceFeeds([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV], [ADDRESS.CHAINLINK_USDC_FEED, ADDRESS.CHAINLINK_UNI_FEED, ADDRESS.CHAINLINK_CRV_FEED]);
 
     // Mock Oracle
     const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
