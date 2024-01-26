@@ -46,6 +46,18 @@ describe('Balancer Stable Pool BPT Oracle', () => {
       [ADDRESS.CHAINLINK_ETH, ADDRESS.stETH]
     );
 
+    await chainlinkAdapterOracle.setPriceFeeds(
+      [ADDRESS.USDC, ADDRESS.USDT, ADDRESS.DAI, ADDRESS.GHO, ADDRESS.WETH, ADDRESS.wstETH],
+      [
+        ADDRESS.CHAINLINK_USDC_USD_FEED,
+        ADDRESS.CHAINLINK_USDT_USD_FEED,
+        ADDRESS.CHAINLINK_DAI_USD_FEED,
+        ADDRESS.CHAINLINK_GHO_USD_FEED,
+        ADDRESS.CHAINLINK_ETH_USD_FEED,
+        ADDRESS.CHAINLINK_STETH_USD_FEED,
+      ]
+    );
+
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
     coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
     await coreOracle.deployed();

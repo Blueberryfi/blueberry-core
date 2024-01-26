@@ -1,7 +1,7 @@
 import chai, { assert } from 'chai';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { ChainlinkAdapterOracle, CoreOracle, StableBPTOracle, WeightedBPTOracle } from '../../typechain-types';
+import { ChainlinkAdapterOracle, CoreOracle, StableBPTOracle, WeightedBPTOracle, chainlink } from '../../typechain-types';
 import { roughlyNear } from '../assertions/roughlyNear';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { fork } from '../helpers';
@@ -37,6 +37,17 @@ describe('Balancer Weighted Pool BPT Oracle', () => {
     );
 
     await chainlinkAdapterOracle.setTokenRemappings([ADDRESS.WETH], [ADDRESS.CHAINLINK_ETH]);
+
+    await chainlinkAdapterOracle.setPriceFeeds(
+      [ADDRESS.USDC, ADDRESS.USDT, ADDRESS.DAI, ADDRESS.BAL, ADDRESS.WETH],
+      [
+        ADDRESS.CHAINLINK_USDC_USD_FEED,
+        ADDRESS.CHAINLINK_USDT_USD_FEED,
+        ADDRESS.CHAINLINK_DAI_USD_FEED,
+        ADDRESS.CHAINLINK_BAL_USD_FEED,
+        ADDRESS.CHAINLINK_ETH_USD_FEED,
+      ]
+    );
 
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
     coreOracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });

@@ -65,6 +65,7 @@ describe('Ichi Vault Oracle', () => {
     );
     await chainlinkAdapterOracle.deployed();
     await chainlinkAdapterOracle.setTimeGap([USDC], [86400]);
+    await chainlinkAdapterOracle.setPriceFeeds([USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED]);
 
     ichiVault = <IICHIVault>await ethers.getContractAt(CONTRACT_NAMES.IICHIVault, ADDRESS.ICHI_VAULT_USDC);
 

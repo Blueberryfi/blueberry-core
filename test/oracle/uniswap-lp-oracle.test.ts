@@ -27,6 +27,11 @@ describe('Uniswap V2 LP Oracle', () => {
 
     await chainlinkAdapterOracle.setTimeGap([ADDRESS.USDC, ADDRESS.CRV], [OneDay, OneDay]);
 
+    await chainlinkAdapterOracle.setPriceFeeds(
+      [ADDRESS.USDC, ADDRESS.CRV],
+      [ADDRESS.CHAINLINK_USDC_USD_FEED, ADDRESS.CHAINLINK_CRV_USD_FEED]
+    );
+
     const UniswapOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.UniswapV2Oracle);
     uniswapOracle = <UniswapV2Oracle>await upgrades.deployProxy(
       UniswapOracleFactory,

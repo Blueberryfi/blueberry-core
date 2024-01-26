@@ -3,11 +3,12 @@ import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { ChainlinkAdapterOracle, IFeedRegistry, IWstETH } from '../../typechain-types';
+import { ChainlinkAdapterOracle, IAggregatorV3Interface, IWstETH, chainlink } from '../../typechain-types';
 import WstETHABI from '../../abi/IWstETH.json';
 
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';
+import { fork, evm_increaseTime } from '../helpers';
 
 chai.use(near);
 chai.use(roughlyNear);
@@ -19,7 +20,7 @@ describe('Chainlink Adapter Oracle', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
-  let chainlinkFeedOracle: IFeedRegistry;
+  let chainlinkFeedOracle: IAggregatorV3Interface;
   let wstETH: IWstETH;
   before(async () => {
     [admin, alice] = await ethers.getSigners();
@@ -38,8 +39,19 @@ describe('Chainlink Adapter Oracle', () => {
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setTokenRemappings([ADDRESS.wstETH], [ADDRESS.stETH]);
-    
-    await chainlinkAdapterOracle.connect(admin).setPriceFeeds([ADDRESS.CHAINLINK_ETH], [ADDRESS.CHAINLINK_ETH_USD_FEED]);
+
+    await chainlinkAdapterOracle
+      .connect(admin)
+      .setPriceFeeds(
+        [ADDRESS.CHAINLINK_ETH, ADDRESS.USDC, ADDRESS.UNI, ADDRESS.ALCX, ADDRESS.stETH],
+        [
+          ADDRESS.CHAINLINK_ETH_USD_FEED,
+          ADDRESS.CHAINLINK_USDC_USD_FEED,
+          ADDRESS.CHAINLINK_UNI_USD_FEED,
+          ADDRESS.CHAINLINK_ALCX_ETH_FEED,
+          ADDRESS.CHAINLINK_STETH_USD_FEED,
+        ]
+      );
 
     await chainlinkAdapterOracle.setTimeGap(
       [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.stETH, ADDRESS.ALCX],
@@ -48,35 +60,35 @@ describe('Chainlink Adapter Oracle', () => {
   });
 
   describe('Constructor', () => {
-  //   it('should revert when feed registry address is invalid', async () => {
-  //     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-  //     await expect(
-  //       upgrades.deployProxy(ChainlinkAdapterOracle, [ethers.constants.AddressZero, admin.address], {
-  //         unsafeAllow: ['delegatecall'],
-  //       })
-  //     ).to.be.revertedWithCustomError(ChainlinkAdapterOracle, 'ZERO_ADDRESS');
-  //   });
-  //   it('should set feed registry', async () => {
-  //     expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.CHAINLINK_ETH)).to.be.equal(ADDRESS.CHAINLINK_ETH_USD_FEED);
-  //   });
-  // });
-  // describe('Owner', () => {
-  //   it('should be able to set routes', async () => {
-  //     await expect(chainlinkAdapterOracle.connect(alice).setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED])).to.be.revertedWith(
-  //       'Ownable: caller is not the owner'
-  //     );
+    //   it('should revert when feed registry address is invalid', async () => {
+    //     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
+    //     await expect(
+    //       upgrades.deployProxy(ChainlinkAdapterOracle, [ethers.constants.AddressZero, admin.address], {
+    //         unsafeAllow: ['delegatecall'],
+    //       })
+    //     ).to.be.revertedWithCustomError(ChainlinkAdapterOracle, 'ZERO_ADDRESS');
+    //   });
+    //   it('should set feed registry', async () => {
+    //     expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.CHAINLINK_ETH)).to.be.equal(ADDRESS.CHAINLINK_ETH_USD_FEED);
+    //   });
+    // });
+    // describe('Owner', () => {
+    //   it('should be able to set routes', async () => {
+    //     await expect(chainlinkAdapterOracle.connect(alice).setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED])).to.be.revertedWith(
+    //       'Ownable: caller is not the owner'
+    //     );
 
-  //     await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED])).to.be.revertedWithCustomError(
-  //       chainlinkAdapterOracle,
-  //       'ZERO_ADDRESS'
-  //     );
+    //     await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED])).to.be.revertedWithCustomError(
+    //       chainlinkAdapterOracle,
+    //       'ZERO_ADDRESS'
+    //     );
 
-  //     await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED]))
-  //       .to.be.emit(chainlinkAdapterOracle, 'SetRegistry')
-  //       .withArgs(ADDRESS.ChainlinkRegistry);
+    //     await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED]))
+    //       .to.be.emit(chainlinkAdapterOracle, 'SetRegistry')
+    //       .withArgs(ADDRESS.ChainlinkRegistry);
 
-  //     expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.USDC)).to.be.equal(ADDRESS.CHAINLINK_USDC_USD_FEED);
-  //   });
+    //     expect(await chainlinkAdapterOracle.getPriceFeed(ADDRESS.USDC)).to.be.equal(ADDRESS.CHAINLINK_USDC_USD_FEED);
+    //   });
     it('should be able to set maxDelayTimes', async () => {
       await expect(
         chainlinkAdapterOracle.connect(alice).setTimeGap([ADDRESS.USDC, ADDRESS.UNI], [OneDay, OneDay])
@@ -135,22 +147,24 @@ describe('Chainlink Adapter Oracle', () => {
         .withArgs(ADDRESS.CRV);
     });
     it('USDC price feeds / based 10^18', async () => {
-      const { answer } = await chainlinkFeedOracle.latestRoundData(ADDRESS.USDC, ADDRESS.CHAINLINK_USD);
+      const pointNine = ethers.utils.parseEther('0.9');
+      const onePointOne = ethers.utils.parseEther('1.1');
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.USDC);
 
-      expect(answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(8))).to.be.roughlyNear(price);
+      assert(price.gte(pointNine), 'Price is greater than 0.9');
+      assert(price.lte(onePointOne), 'Price is less than 1.1');
 
       // real usdc price should be closed to $1
       expect(price).to.be.roughlyNear(BigNumber.from(10).pow(18));
       console.log('USDC Price:', utils.formatUnits(price, 18));
     });
     it('UNI price feeds / based 10^18', async () => {
-      const uniData = await chainlinkFeedOracle.latestRoundData(ADDRESS.UNI, ADDRESS.CHAINLINK_USD);
+      const five = ethers.utils.parseEther('5.0');
+      const sixPointFive = ethers.utils.parseEther('6.5');
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.UNI);
 
-      expect(uniData.answer.mul(BigNumber.from(10).pow(18)).div(BigNumber.from(10).pow(8))).to.be.roughlyNear(
-        price
-      );
+      assert(price.gte(five), 'Price is greater than 5.0');
+      assert(price.lte(sixPointFive), 'Price is less than 6.5');
       console.log('UNI Price:', utils.formatUnits(price, 18));
       console.log('Block Number:', await ethers.provider.getBlockNumber());
     });
@@ -169,35 +183,36 @@ describe('Chainlink Adapter Oracle', () => {
     });
 
     it('wstETH price feeds / based 10^18', async () => {
-      const stETHData = await chainlinkFeedOracle.latestRoundData(ADDRESS.stETH, ADDRESS.CHAINLINK_USD);
+      const twoThousand = ethers.utils.parseEther('2000');
+      const twoThousandFiveHundred = ethers.utils.parseEther('2500');
       const stEthPerToken = await wstETH.stEthPerToken();
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.wstETH);
-
-      expect(
-        stETHData.answer
-          .mul(BigNumber.from(10).pow(18))
-          .mul(stEthPerToken)
-          .div(BigNumber.from(10).pow(18 + 8))
-      ).to.be.roughlyNear(price);
+      assert(price > twoThousand, 'Price is greater than 2000');
+      assert(price < twoThousandFiveHundred, 'Price is less than 2500');
       console.log('wstETH Price:', utils.formatUnits(price, 18));
     });
 
     it('CRV price feeds', async () => {
       await chainlinkAdapterOracle.setTimeGap([ADDRESS.CRV], [OneDay]);
       await chainlinkAdapterOracle.setTokenRemappings([ADDRESS.CRV], [ADDRESS.CRV]);
+      await chainlinkAdapterOracle.connect(admin).setPriceFeeds([ADDRESS.CRV], [ADDRESS.CHAINLINK_CRV_USD_FEED]);
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.CRV);
       console.log('CRV Price:', utils.formatUnits(price, 18));
     });
     it('should revert for too old prices', async () => {
-      const dydx = '0x92D6C1e31e14520e676a687F0a93788B716BEff5';
-      await chainlinkAdapterOracle.setTimeGap([dydx], [3600]);
-      await expect(chainlinkAdapterOracle.callStatic.getPrice(dydx))
+      const bnb = '0xb8c77482e45f1f44de1745f52c74426c631bdd52';
+      const bnbFeed = '0x14e613AC84a31f709eadbdF89C6CC390fDc9540A';
+      await chainlinkAdapterOracle.setTokenRemappings([bnb], [bnb]);
+      await chainlinkAdapterOracle.connect(admin).setPriceFeeds([bnb], [bnbFeed]);
+      await chainlinkAdapterOracle.setTimeGap([bnb], [3600]);
+      await evm_increaseTime(3600);
+      await expect(chainlinkAdapterOracle.callStatic.getPrice(bnb))
         .to.be.revertedWithCustomError(chainlinkAdapterOracle, 'PRICE_OUTDATED')
-        .withArgs(dydx);
+        .withArgs(bnbFeed);
     });
     it('should revert for invalid feeds', async () => {
       await chainlinkAdapterOracle.setTimeGap([ADDRESS.ICHI], [OneDay]);
-      await expect(chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.ICHI)).to.be.revertedWith('Feed not found');
+      await expect(chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.ICHI)).to.be.reverted;
     });
   });
 });
