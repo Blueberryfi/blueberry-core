@@ -40,7 +40,7 @@ export const fork = async (chainId: number = 1, blockNumber: number = 18695050) 
       ],
     });
   } else if (chainId === 42161) {
-    await network.provider.request({
+    let req = await network.provider.request({
       method: 'hardhat_reset',
       params: [
         {

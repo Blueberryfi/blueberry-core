@@ -37,13 +37,8 @@ describe('Balancer Stable Pool BPT Oracle', () => {
     await chainlinkAdapterOracle.deployed();
 
     await chainlinkAdapterOracle.setTimeGap(
-      [ADDRESS.USDC, ADDRESS.USDT, ADDRESS.DAI, ADDRESS.GHO, ADDRESS.CHAINLINK_ETH, ADDRESS.stETH],
+      [ADDRESS.USDC, ADDRESS.USDT, ADDRESS.DAI, ADDRESS.GHO, ADDRESS.WETH, ADDRESS.wstETH],
       [OneDay, OneDay, OneDay, OneDay, OneDay, OneDay]
-    );
-
-    await chainlinkAdapterOracle.setTokenRemappings(
-      [ADDRESS.WETH, ADDRESS.wstETH],
-      [ADDRESS.CHAINLINK_ETH, ADDRESS.stETH]
     );
 
     await chainlinkAdapterOracle.setPriceFeeds(

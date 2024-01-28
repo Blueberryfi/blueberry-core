@@ -45,14 +45,15 @@ describe('Curve LP Oracle', () => {
         ADDRESS.USDC,
         ADDRESS.USDT,
         ADDRESS.DAI,
-        ADDRESS.FRAX,
+        ADDRESS.WETH,
         ADDRESS.FRXETH,
-        ADDRESS.CHAINLINK_ETH,
-        ADDRESS.CHAINLINK_BTC,
+        ADDRESS.WBTC,
+        ADDRESS.FRAX,
         ADDRESS.CVX,
         ADDRESS.CRV,
+        ADDRESS.ETH,
       ],
-      [OneDay, OneDay, OneDay, OneDay, OneDay, OneDay, OneDay, OneDay, OneDay]
+      [OneDay, OneDay, OneDay, OneDay, OneDay, OneDay, OneDay, OneDay, OneDay, OneDay]
     );
 
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
@@ -151,14 +152,31 @@ describe('Curve LP Oracle', () => {
     });
 
     it('Crv Lp Price', async () => {
-      await chainlinkAdapterOracle.setTokenRemappings(
-        [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.WBTC],
-        [ADDRESS.CHAINLINK_ETH, ADDRESS.CHAINLINK_ETH, ADDRESS.CHAINLINK_BTC_USD_FEED]
-      );
-
       await chainlinkAdapterOracle.setPriceFeeds(
-        [ADDRESS.WETH, ADDRESS.FRXETH, ADDRESS.WBTC],
-        [ADDRESS.CHAINLINK_ETH_USD_FEED, ADDRESS.CHAINLINK_ETH_USD_FEED, ADDRESS.CHAINLINK_BTC_USD_FEED]
+        [
+          ADDRESS.USDC,
+          ADDRESS.USDT,
+          ADDRESS.DAI,
+          ADDRESS.WETH,
+          ADDRESS.FRXETH,
+          ADDRESS.WBTC,
+          ADDRESS.FRAX,
+          ADDRESS.CVX,
+          ADDRESS.CRV,
+          ADDRESS.ETH,
+        ],
+        [
+          ADDRESS.CHAINLINK_USDC_USD_FEED,
+          ADDRESS.CHAINLINK_USDT_USD_FEED,
+          ADDRESS.CHAINLINK_DAI_USD_FEED,
+          ADDRESS.CHAINLINK_ETH_USD_FEED,
+          ADDRESS.CHAINLINK_ETH_USD_FEED,
+          ADDRESS.CHAINLINK_BTC_USD_FEED,
+          ADDRESS.CHAINLINK_FRAX_USD_FEED,
+          ADDRESS.CHAINLINK_CVX_USD_FEED,
+          ADDRESS.CHAINLINK_CRV_USD_FEED,
+          ADDRESS.CHAINLINK_ETH_USD_FEED,
+        ]
       );
 
       await coreOracle.setRoutes(
@@ -166,13 +184,13 @@ describe('Curve LP Oracle', () => {
           ADDRESS.USDC,
           ADDRESS.USDT,
           ADDRESS.DAI,
-          ADDRESS.FRAX,
-          ADDRESS.FRXETH,
-          ADDRESS.ETH,
           ADDRESS.WETH,
+          ADDRESS.FRXETH,
           ADDRESS.WBTC,
+          ADDRESS.FRAX,
           ADDRESS.CVX,
           ADDRESS.CRV,
+          ADDRESS.ETH,
         ],
         [
           chainlinkAdapterOracle.address,

@@ -43,10 +43,6 @@ describe('Aggregator Oracle', () => {
     await chainlinkAdapterOracle.setTimeGap([ADDRESS.USDC_ARB, ADDRESS.UNI_ARB], [OneDay, OneDay]);
   });
 
-  after(async () => {
-    await fork(1, 17089048);
-  });
-
   describe('Constructor', () => {
     it('should revert when sequencer address is invalid', async () => {
       const ChainlinkAdapterOracleL2 = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracleL2);
