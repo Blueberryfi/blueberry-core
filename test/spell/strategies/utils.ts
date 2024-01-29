@@ -35,14 +35,11 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       unsafeAllow: ['delegatecall'],
     }
   );
-  await chainlinkAdapterOracle.setTokenRemappings(
-    [ADDRESS.WETH, ADDRESS.WBTC, ADDRESS.wstETH],
-    [ADDRESS.ETH, ADDRESS.CHAINLINK_BTC, ADDRESS.stETH]
-  );
 
   await chainlinkAdapterOracle.setTimeGap(
     [
       ADDRESS.ETH,
+      ADDRESS.WETH,
       ADDRESS.DAI,
       ADDRESS.USDC,
       ADDRESS.BAL,
@@ -51,36 +48,42 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.LINK,
       ADDRESS.SUSHI,
       ADDRESS.CHAINLINK_BTC,
-      ADDRESS.stETH,
+      ADDRESS.wstETH,
+      ADDRESS.MIM,
+      ADDRESS.WBTC,
     ],
-    [TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays]
+    [TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays]
   );
 
   await chainlinkAdapterOracle.setPriceFeeds(
     [
       ADDRESS.ETH,
+      ADDRESS.WETH,
       ADDRESS.DAI,
       ADDRESS.USDC,
       ADDRESS.BAL,
       ADDRESS.FRAX,
       ADDRESS.CRV,
       ADDRESS.LINK,
-      ADDRESS.CHAINLINK_BTC,
-      ADDRESS.stETH,
+      ADDRESS.WBTC,
+      ADDRESS.wstETH,
+      ADDRESS.MIM,
     ],
     [
       ADDRESS.CHAINLINK_ETH_USD_FEED,
+      ADDRESS.CHAINLINK_ETH_USD_FEED,
       ADDRESS.CHAINLINK_DAI_USD_FEED,
-      ADDRESS.CHAINLINK_USDC_FEED,
+      ADDRESS.CHAINLINK_USDC_USD_FEED,
       ADDRESS.CHAINLINK_BAL_USD_FEED,
       ADDRESS.CHAINLINK_FRAX_USD_FEED,
-      ADDRESS.CHAINLINK_CRV_FEED,
+      ADDRESS.CHAINLINK_CRV_USD_FEED,
       ADDRESS.CHAINLINK_LINK_USD_FEED,
       ADDRESS.CHAINLINK_BTC_USD_FEED,
       ADDRESS.CHAINLINK_STETH_USD_FEED,
+      ADDRESS.CHAINLINK_MIM_USD_FEED,
     ]
   );
-
+  console.log('chainlink oracle setup');
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   const oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
 
