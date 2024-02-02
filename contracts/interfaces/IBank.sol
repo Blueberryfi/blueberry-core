@@ -410,4 +410,14 @@ interface IBank {
     function SPELL() external view returns (address);
 
     /* solhint-enable func-name-mixedcase */
+
+    /**
+     * @notice Checks if a position can be liquidated.
+     * @dev Due to `isLiquidatable` modifying state, this function is view-only
+     *     and provides a read-only version of the `isLiquidatable` function.
+     *     This value might be out of sync with the actual state of the position.
+     * @param positionId The unique identifier of the position to liquidate.
+     * @return True if the position can be liquidated; otherwise, false.
+     */
+    function isLiquidatableStored(uint256 positionId) external view returns (bool);
 }
