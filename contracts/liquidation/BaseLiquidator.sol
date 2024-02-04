@@ -38,8 +38,11 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, Ownable2StepUpgradeabl
     /// @dev The address of the spell that this liquidator is for
     address internal _spell;
 
+    /// @dev The address of the treasury that will receive the profits of this bot
+    address internal _treasury;
+
     /// @dev paraswap AugustusSwapper Address
-    address internal _augustusSwapper;
+    address internal _augustusSwapper; // TODO: Replace with a new base dex to swap with
 
     /// @dev paraswap TokenTransferProxy Address
     address internal _tokenTransferProxy;
@@ -131,15 +134,17 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, Ownable2StepUpgradeabl
         debtToken.approve(address(_bank), debtAmount);
         _bank.liquidate(POS_ID, address(debtToken), debtAmount);
 
-        // check if collToken, uVaultShare are received after liquidation
-        uVaultShare = IERC20(bankInfo.softVault).balanceOf(address(this)) - uVaultShare;
+        // check if collToken (debtToken), uVaultShare are received after liquidation
+        uint256 uVaultShareAfter = IERC20(bankInfo.softVault).balanceOf(address(this));
+        uVaultShare = uVaultShareAfter - uVaultShare;
+
         require(
-            uVaultShare != 0 &&
+            uVaultShare > 0 &&
                 IERC1155(posInfo.collToken).balanceOf(address(this), posInfo.collId) >= posInfo.collateralSize,
             "Liquidation Error"
         );
 
-        // Withdraw SoftVault share
+        // Withdraw SoftVault share to receive underlying token
         ISoftVault(bankInfo.softVault).withdraw(uVaultShare);
 
         // Unwind position
@@ -153,6 +158,8 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, Ownable2StepUpgradeabl
 
         // reset position id
         POS_ID = 0;
+
+        // Send Profits to treasury
 
         return true;
     }
