@@ -33,7 +33,7 @@ import { IBalancerV2Pool } from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
-
+import {console} from "hardhat/console.sol";
 /**
  * @title WAuraBooster
  * @author BlueberryProtocol
@@ -221,7 +221,9 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
             if (_rewardToken == address(getAuraToken())) {
                 auraBalance -= rewardAmount;
             }
-
+            console.log("token address", _rewardToken);
+            console.log("balance of reward token", IERC20Upgradeable(_rewardToken).balanceOf(address(escrow)));
+            console.log("reward amount", rewardAmount);
             IPoolEscrow(escrow).transferToken(_rewardToken, msg.sender, rewardAmount);
         }
 
