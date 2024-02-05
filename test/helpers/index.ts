@@ -167,7 +167,6 @@ export const revertToSnapshot = async (snapshotId: number) => {
 };
 
 export * from './setup-ichi-protocol';
-export * from './setup-curve-protocol';
 export * from './setup-convex-protocol';
 export * from './setup-aura-protocol';
 export * from './setup-short-long-protocol';
