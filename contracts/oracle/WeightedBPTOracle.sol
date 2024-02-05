@@ -94,7 +94,7 @@ contract WeightedBPTOracle is IBaseOracle, UsingBaseOracle {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address token) public override balancerNonReentrant returns (uint256) {
+    function getPrice(address token) public view override balancerNonReentrant returns (uint256) {
         IBalancerV2WeightedPool pool = IBalancerV2WeightedPool(token);
 
         TokenInfo memory tokenInfo = getBptInfo(token);
@@ -165,7 +165,7 @@ contract WeightedBPTOracle is IBaseOracle, UsingBaseOracle {
      * @param token Address of the token to fetch the price for.
      * @return The Market price of the given token
      */
-    function _getMarketPrice(address token) internal returns (uint256) {
+    function _getMarketPrice(address token) internal view returns (uint256) {
         try _base.getPrice(token) returns (uint256 price) {
             return price;
         } catch {

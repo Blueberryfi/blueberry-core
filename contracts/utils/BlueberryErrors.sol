@@ -108,6 +108,9 @@ error INCORRECT_LIMITS();
 /// @notice Thrown when Curve LP is already registered.
 error CRV_LP_ALREADY_REGISTERED(address lp);
 
+/// @notice Thrown when a pool is subject to read-only reentrancy manipulation.
+error REENTRANCY_RISK(address pool);
+
 /*//////////////////////////////////////////////////////////////////////////
                             GENERAL SPELL ERRORS
 //////////////////////////////////////////////////////////////////////////*/

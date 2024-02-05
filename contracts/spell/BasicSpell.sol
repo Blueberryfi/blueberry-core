@@ -265,7 +265,7 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
      * @dev If the debtValue of the position is greater than permissible, the transaction will revert.
      * @param strategyId Strategy ID to validate against.
      */
-    function _validateMaxLTV(uint256 strategyId) internal {
+    function _validateMaxLTV(uint256 strategyId) internal view {
         IBank bank = getBank();
 
         uint256 positionId = bank.POSITION_ID();
@@ -282,7 +282,7 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
      * @notice Internal function to validate if the current position size is within the strategy's bounds.
      * @param strategyId Strategy ID to validate against.
      */
-    function _validatePosSize(uint256 strategyId) internal {
+    function _validatePosSize(uint256 strategyId) internal view {
         IBank bank = getBank();
         Strategy memory strategy = _strategies[strategyId];
         IBank.Position memory pos = bank.getCurrentPositionInfo();

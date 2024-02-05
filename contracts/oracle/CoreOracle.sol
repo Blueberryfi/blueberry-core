@@ -89,17 +89,17 @@ contract CoreOracle is ICoreOracle, Ownable2StepUpgradeable, PausableUpgradeable
     }
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address token) external override returns (uint256) {
+    function getPrice(address token) external view override returns (uint256) {
         return _getPrice(token);
     }
 
     /// @inheritdoc ICoreOracle
-    function isTokenSupported(address token) external override returns (bool) {
+    function isTokenSupported(address token) external view override returns (bool) {
         return _isTokenSupported(token);
     }
 
     /// @inheritdoc ICoreOracle
-    function isWrappedTokenSupported(address token, uint256 tokenId) external override returns (bool) {
+    function isWrappedTokenSupported(address token, uint256 tokenId) external view override returns (bool) {
         address uToken = IERC20Wrapper(token).getUnderlyingToken(tokenId);
         return _isTokenSupported(uToken);
     }
@@ -109,13 +109,13 @@ contract CoreOracle is ICoreOracle, Ownable2StepUpgradeable, PausableUpgradeable
         address token,
         uint256 id,
         uint256 amount
-    ) external override returns (uint256 positionValue) {
+    ) external view override returns (uint256 positionValue) {
         address uToken = IERC20Wrapper(token).getUnderlyingToken(id);
         positionValue = _getTokenValue(uToken, amount);
     }
 
     /// @inheritdoc ICoreOracle
-    function getTokenValue(address token, uint256 amount) external override returns (uint256) {
+    function getTokenValue(address token, uint256 amount) external view override returns (uint256) {
         return _getTokenValue(token, amount);
     }
 
@@ -125,7 +125,7 @@ contract CoreOracle is ICoreOracle, Ownable2StepUpgradeable, PausableUpgradeable
     }
 
     /// @notice logic for `getPrice`
-    function _getPrice(address token) internal whenNotPaused returns (uint256) {
+    function _getPrice(address token) internal view whenNotPaused returns (uint256) {
         address route = _routes[token];
         if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
 
@@ -136,7 +136,7 @@ contract CoreOracle is ICoreOracle, Ownable2StepUpgradeable, PausableUpgradeable
     }
 
     /// @notice logic for `isTokenSupported` and `isWrappedTokenSupported`
-    function _isTokenSupported(address token) internal returns (bool) {
+    function _isTokenSupported(address token) internal view returns (bool) {
         address route = _routes[token];
         if (route == address(0)) return false;
 
@@ -148,7 +148,7 @@ contract CoreOracle is ICoreOracle, Ownable2StepUpgradeable, PausableUpgradeable
     }
 
     /// @notice logic for `getTokenValue` and `getWrappedTokenValue`
-    function _getTokenValue(address token, uint256 amount) internal returns (uint256 value) {
+    function _getTokenValue(address token, uint256 amount) internal view returns (uint256 value) {
         uint256 decimals = IERC20MetadataUpgradeable(token).decimals();
         value = (_getPrice(token) * amount) / 10 ** decimals;
     }

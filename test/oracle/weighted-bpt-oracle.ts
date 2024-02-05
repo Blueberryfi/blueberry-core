@@ -1,7 +1,7 @@
 import chai, { assert } from 'chai';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { ChainlinkAdapterOracle, CoreOracle, StableBPTOracle, WeightedBPTOracle, chainlink } from '../../typechain-types';
+import { ChainlinkAdapterOracle, CoreOracle, StableBPTOracle, WeightedBPTOracle } from '../../typechain-types';
 import { roughlyNear } from '../assertions/roughlyNear';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { fork } from '../helpers';

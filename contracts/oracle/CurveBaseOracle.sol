@@ -212,5 +212,5 @@ abstract contract CurveBaseOracle is ICurveOracle, UsingBaseOracle {
      * @param pool The address of the Curve pool to check.
      * @param numTokens The number of tokens in the pool.
      */
-    function _checkReentrant(address pool, uint256 numTokens) internal virtual;
+    function _checkReentrant(address pool, uint256 numTokens) internal view virtual returns (bool);
 }

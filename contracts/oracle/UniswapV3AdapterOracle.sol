@@ -88,7 +88,7 @@ contract UniswapV3AdapterOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     }
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address token) external override returns (uint256) {
+    function getPrice(address token) external view override returns (uint256) {
         TokenInfo memory tokenInfo = getTokenInfo(token);
         address stablePool = tokenInfo.stablePool;
         if (stablePool == address(0)) revert Errors.ORACLE_NOT_SUPPORT_LP(token);
