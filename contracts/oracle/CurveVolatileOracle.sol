@@ -18,7 +18,7 @@ import "../utils/BlueberryErrors.sol" as Errors;
 
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
-import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
+import { ICurveReentrencyWrapper } from "../interfaces/ICurveReentrencyWrapper.sol";
 
 /**
  * @title CurveVolatileOracle
@@ -37,6 +37,13 @@ contract CurveVolatileOracle is CurveBaseOracle {
 
     /// @dev LP Token to lower bound of token-to-underlying exchange rate
     mapping(address => uint256) private _lowerBound;
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      CONSTANTS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Max gas for reentrancy check.
+    uint256 internal constant _MAX_GAS = 10_000;
 
     /// @dev Event emitted when the bounds for the token-to-underlying exchange rate is changed.
     event NewLimiterParams(uint256 lowerBound, uint256 upperBound);
@@ -65,9 +72,10 @@ contract CurveVolatileOracle is CurveBaseOracle {
     }
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address crvLp) external override returns (uint256) {
+    function getPrice(address crvLp) external view override returns (uint256) {
         (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
-        _checkReentrant(pool, tokens.length);
+
+        if (_checkReentrant(pool, tokens.length)) revert Errors.REENTRANCY_RISK(pool);
 
         uint256 nTokens = tokens.length;
 
@@ -156,8 +164,21 @@ contract CurveVolatileOracle is CurveBaseOracle {
     }
 
     /// @inheritdoc CurveBaseOracle
-    function _checkReentrant(address _pool, uint256) internal override {
-        ICurvePool pool = ICurvePool(_pool);
-        pool.claim_admin_fees();
+    function _checkReentrant(address _pool, uint256) internal view override returns (bool) {
+        ICurveReentrencyWrapper pool = ICurveReentrencyWrapper(_pool);
+
+        uint256 gasStart = gasleft();
+
+        //  solhint-disable no-empty-blocks
+        try pool.claim_admin_fees{ gas: _MAX_GAS }() {} catch (bytes memory) {}
+
+        uint256 gasSpent;
+        unchecked {
+            gasSpent = gasStart - gasleft();
+        }
+
+        // If the gas spent is greater than the maximum gas, then the call is not-vulnerable to
+        // read-only reentrancy
+        return gasSpent > _MAX_GAS ? false : true;
     }
 }

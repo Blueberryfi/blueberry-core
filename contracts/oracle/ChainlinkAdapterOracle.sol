@@ -201,7 +201,6 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
         PriceFeed memory tokenPriceFeed = _priceFeeds[token];
 
         if (_isQuotedInEth[token] == true) {
-
             uint256 tokenPriceInEth = _getTokenPrice(tokenPriceFeed.feed, maxDelayTime);
 
             PriceFeed memory ethPriceFeed = _priceFeeds[_ETH];
@@ -227,11 +226,9 @@ contract ChainlinkAdapterOracle is IBaseOracle, BaseAdapter {
      * @param maxDelayTime The max delay allowed for price feed updates
      * @return The price of the token.
      */
-    function _getTokenPrice(
-        address priceFeed,
-        uint256 maxDelayTime
-    ) internal view returns (uint256) {
-        (uint80 roundID, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = IAggregatorV3Interface(priceFeed).latestRoundData();
+    function _getTokenPrice(address priceFeed, uint256 maxDelayTime) internal view returns (uint256) {
+        (uint80 roundID, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = IAggregatorV3Interface(priceFeed)
+            .latestRoundData();
 
         if (updatedAt < block.timestamp - maxDelayTime) revert Errors.PRICE_OUTDATED(priceFeed);
         if (answer <= 0) revert Errors.PRICE_NEGATIVE(priceFeed);

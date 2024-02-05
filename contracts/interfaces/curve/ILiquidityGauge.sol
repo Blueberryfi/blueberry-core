@@ -15,5 +15,5 @@ interface ILiquidityGauge {
 
     function withdraw(uint256 value) external;
 
-    function claimable_tokens(address user) external returns (uint256);
+    function claimable_tokens(address user) external view returns (uint256);
 }

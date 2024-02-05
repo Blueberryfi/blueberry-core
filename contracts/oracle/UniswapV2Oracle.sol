@@ -76,7 +76,7 @@ contract UniswapV2Oracle is IBaseOracle, UsingBaseOracle {
     }
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address pair) external override returns (uint256) {
+    function getPrice(address pair) external view override returns (uint256) {
         TokenInfo memory tokenInfo = getTokenInfo(pair);
 
         IUniswapV2Pair pool = IUniswapV2Pair(pair);

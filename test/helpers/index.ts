@@ -40,7 +40,7 @@ export const fork = async (chainId: number = 1, blockNumber: number = 18695050) 
       ],
     });
   } else if (chainId === 42161) {
-    let req = await network.provider.request({
+    await network.provider.request({
       method: 'hardhat_reset',
       params: [
         {
@@ -167,7 +167,6 @@ export const revertToSnapshot = async (snapshotId: number) => {
 };
 
 export * from './setup-ichi-protocol';
-export * from './setup-curve-protocol';
 export * from './setup-convex-protocol';
 export * from './setup-aura-protocol';
 export * from './setup-short-long-protocol';

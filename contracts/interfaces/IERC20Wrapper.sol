@@ -23,5 +23,5 @@ interface IERC20Wrapper {
      * @return tokens A list of addresses representing reward tokens.
      * @return amounts A list of amounts corresponding to each reward token in the `tokens` list.
      */
-    function pendingRewards(uint256 id, uint256 amount) external returns (address[] memory, uint256[] memory);
+    function pendingRewards(uint256 id, uint256 amount) external view returns (address[] memory, uint256[] memory);
 }

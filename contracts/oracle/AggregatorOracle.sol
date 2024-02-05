@@ -108,7 +108,7 @@ contract AggregatorOracle is IBaseOracle, Ownable2StepUpgradeable, BaseOracleExt
     }
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address token) external override returns (uint256) {
+    function getPrice(address token) external view override returns (uint256) {
         uint256 candidateSourceCount = getPrimarySourceCount(token);
         if (candidateSourceCount == 0) revert Errors.NO_PRIMARY_SOURCE(token);
 
