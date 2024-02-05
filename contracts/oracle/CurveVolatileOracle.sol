@@ -75,7 +75,8 @@ contract CurveVolatileOracle is CurveBaseOracle {
     /// @inheritdoc IBaseOracle
     function getPrice(address crvLp) external view override returns (uint256) {
         (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
-        _checkReentrant(pool, tokens.length);
+        
+        if (_checkReentrant(pool, tokens.length)) revert Errors.REENTRANCY_RISK(pool);
 
         uint256 nTokens = tokens.length;
 

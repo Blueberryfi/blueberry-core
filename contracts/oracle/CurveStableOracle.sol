@@ -13,6 +13,7 @@ pragma solidity 0.8.22;
 import { CurveBaseOracle } from "./CurveBaseOracle.sol";
 
 import "../utils/BlueberryConst.sol" as Constants;
+import "../utils/BlueberryErrors.sol" as Errors;
 
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
@@ -56,7 +57,8 @@ contract CurveStableOracle is CurveBaseOracle {
     /// @inheritdoc IBaseOracle
     function getPrice(address crvLp) external view override returns (uint256) {
         (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
-        _checkReentrant(pool, tokens.length);
+
+        if (_checkReentrant(pool, tokens.length)) revert Errors.REENTRANCY_RISK(pool);
 
         uint256 minPrice = type(uint256).max;
         for (uint256 i = 0; i < tokens.length; ++i) {
