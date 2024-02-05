@@ -155,7 +155,7 @@ contract WCurveGauge is IWCurveGauge, BaseWrapper, ReentrancyGuardUpgradeable, O
     function pendingRewards(
         uint256 tokenId,
         uint256 amount
-    ) public override returns (address[] memory tokens, uint256[] memory rewards) {
+    ) public view override returns (address[] memory tokens, uint256[] memory rewards) {
         (uint256 gid, uint256 stCrvPerShare) = decodeId(tokenId);
 
         ILiquidityGauge gauge = ILiquidityGauge(_gaugeController.gauges(gid));

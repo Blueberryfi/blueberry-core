@@ -234,7 +234,7 @@ interface IBank {
      * @param positionId ID of the position to compute the debt value for.
      * @return debtValue Total USD value of the position's debt.
      */
-    function getDebtValue(uint256 positionId) external returns (uint256 debtValue);
+    function getDebtValue(uint256 positionId) external view returns (uint256 debtValue);
 
     /**
      * @notice Gets the repay resumed timestamp of the bank
@@ -250,7 +250,7 @@ interface IBank {
      * @param positionId ID of the position to assess risk for.
      * @return risk The risk ratio of the position (based on a scale of 1e4).
      */
-    function getPositionRisk(uint256 positionId) external returns (uint256 risk);
+    function getPositionRisk(uint256 positionId) external view returns (uint256 risk);
 
     /**
      * @notice Retrieve the debt of a given position, considering the stored debt interest.
@@ -264,7 +264,7 @@ interface IBank {
      * @param positionId ID of the position to check.
      * @return True if the position can be liquidated; otherwise, false.
      */
-    function isLiquidatable(uint256 positionId) external returns (bool);
+    function isLiquidatable(uint256 positionId) external view returns (bool);
 
     /**
      * @notice Computes the total USD value of the collateral of a given position.
@@ -272,7 +272,7 @@ interface IBank {
      * @param positionId ID of the position to compute the value for.
      * @return positionValue Total USD value of the collateral and pending rewards.
      */
-    function getPositionValue(uint256 positionId) external returns (uint256);
+    function getPositionValue(uint256 positionId) external view returns (uint256);
 
     /**
      * @notice Computes the isolated collateral value for a particular position.
@@ -280,7 +280,7 @@ interface IBank {
      * @param positionId The unique ID of the position.
      * @return icollValue The value of the isolated collateral in USD.
      */
-    function getIsolatedCollateralValue(uint256 positionId) external returns (uint256 icollValue);
+    function getIsolatedCollateralValue(uint256 positionId) external view returns (uint256 icollValue);
 
     /**
      * @notice Provides comprehensive details about a position using its ID.

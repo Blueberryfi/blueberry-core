@@ -591,7 +591,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function getPositionValue(uint256 positionId) public override returns (uint256 positionValue) {
+    function getPositionValue(uint256 positionId) public view override returns (uint256 positionValue) {
         Position memory pos = _positions[positionId];
         if (pos.collateralSize == 0) {
             return 0;
@@ -616,14 +616,14 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function getDebtValue(uint256 positionId) public override returns (uint256 debtValue) {
+    function getDebtValue(uint256 positionId) public view override returns (uint256 debtValue) {
         Position memory pos = _positions[positionId];
         uint256 debt = getPositionDebt(positionId);
         debtValue = _oracle.getTokenValue(pos.debtToken, debt);
     }
 
     /// @inheritdoc IBank
-    function getIsolatedCollateralValue(uint256 positionId) public override returns (uint256 icollValue) {
+    function getIsolatedCollateralValue(uint256 positionId) public view override returns (uint256 icollValue) {
         Position memory pos = _positions[positionId];
         /// NOTE: exchangeRateStored has 18 decimals.
         uint256 underlyingAmount;
@@ -638,7 +638,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function getPositionRisk(uint256 positionId) public override returns (uint256 risk) {
+    function getPositionRisk(uint256 positionId) public view override returns (uint256 risk) {
         uint256 pv = getPositionValue(positionId);
         uint256 ov = getDebtValue(positionId);
         uint256 cv = getIsolatedCollateralValue(positionId);
@@ -656,7 +656,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function isLiquidatable(uint256 positionId) public override returns (bool) {
+    function isLiquidatable(uint256 positionId) public view override returns (bool) {
         return getPositionRisk(positionId) >= _banks[_positions[positionId].underlyingToken].liqThreshold;
     }
 

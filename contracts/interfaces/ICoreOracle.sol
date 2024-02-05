@@ -29,7 +29,7 @@ interface ICoreOracle is IBaseOracle {
      * @param token The ERC20 token to check support for.
      * @return A boolean indicating whether the token is supported or not.
      */
-    function isTokenSupported(address token) external returns (bool);
+    function isTokenSupported(address token) external view returns (bool);
 
     /**
      * @notice Check if the oracle supports the underlying token of a given ERC1155 wrapper.
@@ -38,7 +38,7 @@ interface ICoreOracle is IBaseOracle {
      * @param tokenId ERC1155 token id to check support for.
      * @return A boolean indicating whether the wrapped token is supported or not.
      */
-    function isWrappedTokenSupported(address token, uint256 tokenId) external returns (bool);
+    function isWrappedTokenSupported(address token, uint256 tokenId) external view returns (bool);
 
     /**
      * @notice Returns the USD value of a specific wrapped ERC1155 token.
@@ -47,7 +47,7 @@ interface ICoreOracle is IBaseOracle {
      * @param amount Amount of the token for which to get the USD value, normalized to 1e18 decimals.
      * @return The USD value of the given wrapped token amount.
      */
-    function getWrappedTokenValue(address token, uint256 id, uint256 amount) external returns (uint256);
+    function getWrappedTokenValue(address token, uint256 id, uint256 amount) external view returns (uint256);
 
     /**
      * @notice Returns the USD value of a given amount of a specific ERC20 token.
@@ -55,12 +55,12 @@ interface ICoreOracle is IBaseOracle {
      * @param amount Amount of the ERC20 token for which to get the USD value.
      * @return The USD value of the given token amount.
      */
-    function getTokenValue(address token, uint256 amount) external returns (uint256);
+    function getTokenValue(address token, uint256 amount) external view returns (uint256);
 
     /**
      * @notice Fetches the oracle route for the given token.
      * @param token Address of the token to get the route for.
      * @return The address of the oracle route for the given token.
      */
-    function getRoute(address token) external returns (address);
+    function getRoute(address token) external view returns (address);
 }

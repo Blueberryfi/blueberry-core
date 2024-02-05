@@ -18,6 +18,7 @@ import "../utils/BlueberryConst.sol" as Constants;
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
 import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
+import { ICurveReentrencyWrapper } from "../interfaces/ICurveReentrencyWrapper.sol";
 
 /**
  * @title CurveTricryptoOracle
@@ -25,6 +26,13 @@ import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
  * @notice Oracle contract that provides price feeds for Curve volatile pool LP tokens.
  */
 contract CurveTricryptoOracle is CurveBaseOracle {
+    /*//////////////////////////////////////////////////////////////////////////
+                                      CONSTANTS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /// @dev Max gas for reentrancy check.
+    uint256 internal constant MAX_GAS = 10_000;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -48,7 +56,7 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     }
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address crvLp) external override returns (uint256) {
+    function getPrice(address crvLp) external view override returns (uint256) {
         (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
         _checkReentrant(pool, tokens.length);
 
@@ -91,8 +99,18 @@ contract CurveTricryptoOracle is CurveBaseOracle {
     }
 
     /// @inheritdoc CurveBaseOracle
-    function _checkReentrant(address _pool, uint256) internal override {
-        ICurvePool pool = ICurvePool(_pool);
-        pool.claim_admin_fees();
+    function _checkReentrant(address _pool, uint256) internal view override returns (bool) {
+        ICurveReentrencyWrapper pool = ICurveReentrencyWrapper(_pool);
+
+        uint256 gasStart = gasleft();
+
+        try pool.claim_admin_fees{gas: MAX_GAS}() {} catch (bytes memory) {}
+
+        uint256 gasSpent;
+        unchecked { gasSpent = gasStart - gasleft(); }
+
+        // If the gas spent is greater than the maximum gas, then the call is vulnerable to 
+        // read-only reentrancy
+        return gasSpent > MAX_GAS ? false : true;   
     }
 }

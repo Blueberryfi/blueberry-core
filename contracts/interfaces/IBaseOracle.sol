@@ -19,5 +19,5 @@ interface IBaseOracle {
      * @param token Address of the ERC-20 token for which the price is requested.
      * @return The USD price of the given token, multiplied by 10**18.
      */
-    function getPrice(address token) external returns (uint256);
+    function getPrice(address token) external view returns (uint256);
 }

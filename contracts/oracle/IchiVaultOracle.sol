@@ -171,7 +171,7 @@ contract IchiVaultOracle is IBaseOracle, UsingBaseOracle, BaseOracleExt {
     }
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address token) external override returns (uint256) {
+    function getPrice(address token) external view override returns (uint256) {
         IICHIVault vault = IICHIVault(token);
         VaultInfo memory vaultInfo = getVaultInfo(token);
 

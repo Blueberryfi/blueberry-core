@@ -90,7 +90,7 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle {
     }
 
     /// @inheritdoc IBaseOracle
-    function getPrice(address token) public override balancerNonReentrant returns (uint256) {
+    function getPrice(address token) public view override balancerNonReentrant returns (uint256) {
         TokenInfo memory tokenInfo = getBptInfo(token);
         uint256 tokenLength = tokenInfo.tokens.length;
 
@@ -176,7 +176,7 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle {
         address[] memory tokens,
         address[] memory rateProviders,
         uint256 length
-    ) internal returns (uint256) {
+    ) internal view returns (uint256) {
         uint256 minPrice;
         address minToken;
 
@@ -200,7 +200,7 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle {
      * @param minCandidate The token to calculate the minimum price for
      * @return The price of the given token
      */
-    function _calculateMinCandidatePrice(IRateProvider rateProvider, address minCandidate) internal returns (uint256) {
+    function _calculateMinCandidatePrice(IRateProvider rateProvider, address minCandidate) internal view returns (uint256) {
         uint256 minCandidatePrice = _getMarketPrice(minCandidate);
 
         if (address(rateProvider) != address(0)) {
@@ -218,7 +218,7 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle {
      * @param token Address of the token to fetch the price for.
      * @return The Market price of the given token
      */
-    function _getMarketPrice(address token) internal returns (uint256) {
+    function _getMarketPrice(address token) internal view returns (uint256) {
         try _base.getPrice(token) returns (uint256 price) {
             return price;
         } catch {
