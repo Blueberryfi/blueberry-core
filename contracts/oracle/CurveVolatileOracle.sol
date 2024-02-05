@@ -18,7 +18,6 @@ import "../utils/BlueberryErrors.sol" as Errors;
 
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
-import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 import { ICurveReentrencyWrapper } from "../interfaces/ICurveReentrencyWrapper.sol";
 
 /**
@@ -44,7 +43,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Max gas for reentrancy check.
-    uint256 internal constant MAX_GAS = 10_000;
+    uint256 internal constant _MAX_GAS = 10_000;
 
     /// @dev Event emitted when the bounds for the token-to-underlying exchange rate is changed.
     event NewLimiterParams(uint256 lowerBound, uint256 upperBound);
@@ -75,7 +74,7 @@ contract CurveVolatileOracle is CurveBaseOracle {
     /// @inheritdoc IBaseOracle
     function getPrice(address crvLp) external view override returns (uint256) {
         (address pool, address[] memory tokens, uint256 virtualPrice) = _getPoolInfo(crvLp);
-        
+
         if (_checkReentrant(pool, tokens.length)) revert Errors.REENTRANCY_RISK(pool);
 
         uint256 nTokens = tokens.length;
@@ -170,13 +169,16 @@ contract CurveVolatileOracle is CurveBaseOracle {
 
         uint256 gasStart = gasleft();
 
-        try pool.claim_admin_fees{gas: MAX_GAS}() {} catch (bytes memory) {}
+        //  solhint-disable no-empty-blocks
+        try pool.claim_admin_fees{ gas: _MAX_GAS }() {} catch (bytes memory) {}
 
         uint256 gasSpent;
-        unchecked { gasSpent = gasStart - gasleft(); }
+        unchecked {
+            gasSpent = gasStart - gasleft();
+        }
 
-        // If the gas spent is greater than the maximum gas, then the call is vulnerable to 
+        // If the gas spent is greater than the maximum gas, then the call is not-vulnerable to
         // read-only reentrancy
-        return gasSpent > MAX_GAS ? false : true;   
+        return gasSpent > _MAX_GAS ? false : true;
     }
 }

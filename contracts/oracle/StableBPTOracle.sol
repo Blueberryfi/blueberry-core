@@ -200,7 +200,10 @@ contract StableBPTOracle is IBaseOracle, UsingBaseOracle {
      * @param minCandidate The token to calculate the minimum price for
      * @return The price of the given token
      */
-    function _calculateMinCandidatePrice(IRateProvider rateProvider, address minCandidate) internal view returns (uint256) {
+    function _calculateMinCandidatePrice(
+        IRateProvider rateProvider,
+        address minCandidate
+    ) internal view returns (uint256) {
         uint256 minCandidatePrice = _getMarketPrice(minCandidate);
 
         if (address(rateProvider) != address(0)) {

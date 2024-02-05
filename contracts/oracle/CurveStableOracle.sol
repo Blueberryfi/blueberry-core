@@ -17,7 +17,6 @@ import "../utils/BlueberryErrors.sol" as Errors;
 
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
-import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 import { ICurveReentrencyWrapper } from "../interfaces/ICurveReentrencyWrapper.sol";
 
 /**
@@ -31,7 +30,7 @@ contract CurveStableOracle is CurveBaseOracle {
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev Max gas for reentrancy check.
-    uint256 internal constant MAX_GAS = 10_000;
+    uint256 private constant _MAX_GAS = 10_000;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -76,15 +75,16 @@ contract CurveStableOracle is CurveBaseOracle {
 
         uint256 gasStart = gasleft();
 
+        //  solhint-disable no-empty-blocks
         if (_numTokens == 2) {
             uint256[2] memory amounts;
-            try pool.remove_liquidity{ gas: MAX_GAS }(0, amounts) {} catch (bytes memory) {}
+            try pool.remove_liquidity{ gas: _MAX_GAS }(0, amounts) {} catch (bytes memory) {}
         } else if (_numTokens == 3) {
             uint256[3] memory amounts;
-            try pool.remove_liquidity{ gas: MAX_GAS }(0, amounts) {} catch (bytes memory) {}
+            try pool.remove_liquidity{ gas: _MAX_GAS }(0, amounts) {} catch (bytes memory) {}
         } else if (_numTokens == 4) {
             uint256[4] memory amounts;
-            try pool.remove_liquidity{ gas: MAX_GAS }(0, amounts) {} catch (bytes memory) {}
+            try pool.remove_liquidity{ gas: _MAX_GAS }(0, amounts) {} catch (bytes memory) {}
         }
 
         uint256 gasSpent;
@@ -92,9 +92,9 @@ contract CurveStableOracle is CurveBaseOracle {
             gasSpent = gasStart - gasleft();
         }
 
-        // If the gas spent is greater than the maximum gas, then the call is vulnerable to
+        // If the gas spent is greater than the maximum gas, then the call is not-vulnerable to
         // read-only reentrancy
-        return gasSpent > MAX_GAS ? false : true;
+        return gasSpent > _MAX_GAS ? false : true;
     }
 
     /// @notice Fallback function to receive Ether.

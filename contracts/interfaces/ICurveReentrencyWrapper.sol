@@ -11,8 +11,12 @@ pragma solidity 0.8.22;
  *      in order to verify that price data is accurate and not being manipulated by a malicious actor.
  */
 interface ICurveReentrencyWrapper {
+    //  solhint-disable func-name-mixedcase
     function remove_liquidity(uint256 tokenAmount, uint256[2] calldata amounts) external view;
+
     function remove_liquidity(uint256 tokenAmount, uint256[3] calldata amounts) external view;
+
     function remove_liquidity(uint256 tokenAmount, uint256[4] calldata amounts) external view;
+
     function claim_admin_fees() external view;
 }
