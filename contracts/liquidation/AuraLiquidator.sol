@@ -87,7 +87,7 @@ contract AuraLiquidator is BaseLiquidator {
     }
 
     /// @inheritdoc BaseLiquidator
-    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken) internal override {
+    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken, uint256 debtAmount) internal override {
         // Withdraw ERC1155 liquidiation
         (address[] memory rewardTokens, uint256[] memory rewards) = IWAuraBooster(posInfo.collToken).burn(
             posInfo.collId,
@@ -105,12 +105,28 @@ contract AuraLiquidator is BaseLiquidator {
         // Withdraw token from BalancerPool
         _exit(IERC20(lpToken));
 
-        uint256 _stableAssetAmt = IERC20(_stableAsset).balanceOf(address(this));
+        /// Holding Reward Tokens, Underlying Tokens and Debt Tokens
+        uint256 debtAmtReceived = IERC20(debtToken).balanceOf(address(this));
         uint256 auraAmt = IERC20(_auraToken).balanceOf(address(this));
         uint256 uTokenAmt = IERC20Upgradeable(ISoftVault(softVault).getUnderlyingToken()).balanceOf(address(this));
 
-        // Swap all tokens to the debtToken
-        // Future optimization would be to swap only the needed tokens to debtToken and the rest Stables.
+        // Liquidate all reward tokens to debtTokens
+        for (uint256 i = 0; i < rewardTokens.length; i++) {
+            if (debtAmount >= debtAmtReceived) {
+                if (rewardTokens[i] != address(debtToken) && rewards[i] != 0) {
+                    debtAmount -= _swap(rewardTokens[i], address(debtToken), rewards[i]);
+                }
+            } else {
+                break;
+            }
+        }
+
+        if (debtAmount >= debtAmtReceived) {
+            if (address(ISoftVault(softVault).getUnderlyingToken()) != address(debtToken) && uTokenAmt != 0) {
+                _swap(address(ISoftVault(softVault).getUnderlyingToken()), address(debtToken), uTokenAmt);
+            }
+        }
+        // Swap all tokens to the debtToken until we have enough to repay the debt
         if (_stableAsset != address(debtToken) && _stableAssetAmt != 0) {
             _swap(_stableAsset, address(debtToken), _stableAssetAmt);
         }
@@ -119,31 +135,6 @@ contract AuraLiquidator is BaseLiquidator {
         }
         if (address(ISoftVault(softVault).getUnderlyingToken()) != address(debtToken) && uTokenAmt != 0) {
             _swap(address(ISoftVault(softVault).getUnderlyingToken()), address(debtToken), uTokenAmt);
-        }
-    }
-
-    // Should be able to swap on any market
-    function _swap(address srcToken, address dstToken, uint256 amount) internal {
-        if (IERC20(srcToken).balanceOf(address(this)) >= amount) {
-            if (srcToken == _auraToken) {
-                IERC20(srcToken).approve(address(_balancerVault), amount);
-
-                IBalancerVault.SingleSwap memory singleSwap;
-                singleSwap.poolId = _balancerPool.getPoolId();
-                singleSwap.kind = IBalancerVault.SwapKind.GIVEN_IN;
-                singleSwap.assetIn = IAsset(srcToken);
-                singleSwap.assetOut = IAsset(address(_balancerVault.WETH()));
-                singleSwap.amount = amount;
-
-                IBalancerVault.FundManagement memory funds;
-                funds.sender = address(this);
-                funds.recipient = payable(address(this));
-
-                amount = _balancerVault.swap(singleSwap, funds, 0, block.timestamp);
-                srcToken = address(_balancerVault.WETH());
-            }
-
-            _swapOnParaswap(srcToken, dstToken, amount);
         }
     }
 

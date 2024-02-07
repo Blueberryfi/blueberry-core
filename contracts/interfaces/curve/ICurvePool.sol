@@ -37,6 +37,8 @@ interface ICurvePool {
 
     function get_dy(uint256 i, uint256 j, uint256 dx) external view returns (uint256);
 
+    function exchange(int128 i, int128 j, uint256 dx, uint256 min_dy, bool use_eth, address receiver) external;
+
     // 3crv pool specific functions
 
     function owner() external view returns (address);

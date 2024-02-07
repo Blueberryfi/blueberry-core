@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: MIT
+/*
+██████╗ ██╗     ██╗   ██╗███████╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║     ██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║     ██║   ██║█████╗  ██████╔╝█████╗  ██████╔╝██████╔╝ ╚████╔╝
+██╔══██╗██║     ██║   ██║██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+██████╔╝███████╗╚██████╔╝███████╗██████╔╝███████╗██║  ██║██║  ██║   ██║
+╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
+*/
+pragma solidity 0.8.22;
+
+interface ISwapRegistry {
+    /// @dev Enum representing the different DEXs that can be used for liquidation swaps
+    enum DexRoute {
+        Empty, // 0
+        Balancer, // 1
+        Curve, // 2
+        UniswapV3 // 3
+    }
+
+    /**
+     * @notice Registers a Balancer route for a token pair to be used for liquidation swaps
+     * @dev These swaps convert assets received from liquidations to the debt token
+     * @param srcToken The address of the token to swap from
+     * @param dstToken The address of the token to swap to
+     * @param poolId The PoolId for a given token pair
+     */
+    function registerBalancerRoute(address srcToken, address dstToken, bytes32 poolId) external;
+
+    /**
+     * @notice Registers a Balancer route for a token pair to be used for liquidation swaps
+     * @dev These swaps convert assets received from liquidations to the debt token
+     * @param srcToken The address of the token to swap from
+     * @param dstToken The address of the token to swap to
+     * @param pool The Pool address for a given token pair
+     */
+    function registerCurveRoute(address srcToken, address dstToken, address pool) external;
+
+    /**
+     * @notice Registers a Uniswap route for a token to be used for liquidation swaps
+     * @param srcToken The address of the token to swap from
+     */
+    function registerUniswapRoute(address srcToken) external;
+}

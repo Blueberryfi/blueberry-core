@@ -9,17 +9,17 @@
 */
 pragma solidity 0.8.22;
 
-import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-
-import { IPool } from "@aave/core-v3/contracts/interfaces/IPool.sol";
-import { IPoolAddressesProvider } from "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
-
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IPool } from "@aave/core-v3/contracts/interfaces/IPool.sol";
+import { IPoolAddressesProvider } from "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
+import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../libraries/Paraswap/PSwapLib.sol";
+import "../libraries/UniV3/LiquidityAmounts.sol" as UniLiquidity;
+
+import { SwapRegistry } "./SwapRegistry.sol";
 
 import { IBank } from "../interfaces/IBank.sol";
 import { IBlueberryLiquidator, AutomationCompatibleInterface } from "../interfaces/IBlueberryLiquidator.sol";
@@ -31,7 +31,7 @@ import { ISoftVault } from "../interfaces/ISoftVault.sol";
  * @notice This contract is the base contract for all liquidators to inherit from
  * @dev Each spell will have its own liquidator contract
  */
-abstract contract BaseLiquidator is IBlueberryLiquidator, Ownable2StepUpgradeable {
+abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry {
     /// @dev The instance of the BlueberryBank contract
     IBank internal _bank;
 
@@ -41,23 +41,23 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, Ownable2StepUpgradeabl
     /// @dev The address of the treasury that will receive the profits of this bot
     address internal _treasury;
 
-    /// @dev paraswap AugustusSwapper Address
-    address internal _augustusSwapper; // TODO: Replace with a new base dex to swap with
-
-    /// @dev paraswap TokenTransferProxy Address
-    address internal _tokenTransferProxy;
-
     /// @dev The position id of the liquidation
-    uint256 public POS_ID;
+    uint256 internal POS_ID;
 
     /// @dev Aave LendingPool
-    IPool public _pool;
+    IPool private _pool;
 
     /// @dev The address of the stable token used for liquidation profits
-    address public _stableAsset;
+    address internal _stableAsset;
 
     /// @dev aave pool addresses provider
-    IPoolAddressesProvider public _poolAddressesProvider;
+    IPoolAddressesProvider private _poolAddressesProvider;
+
+    /// @dev The Balancer Vault address
+    address private _balancerVault;
+
+    /// @dev The address of the swap router
+    ISwapRouter private _swapRouter;
 
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
@@ -73,7 +73,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, Ownable2StepUpgradeabl
         /// @audit: Is there a way to read the health score of a position directly from the bank contract.
         /// @audit: False positives on closed positions?
         for (uint i = 1; i < nextPositionId; ++i) {
-            if (_bank.isLiquidatableStored(i)) {
+            if (_bank.isLiquidatable(i)) {
                 upkeepNeeded = true;
                 performData = abi.encode(i);
                 break;
@@ -148,7 +148,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, Ownable2StepUpgradeabl
         ISoftVault(bankInfo.softVault).withdraw(uVaultShare);
 
         // Unwind position
-        _unwindPosition(posInfo, bankInfo.softVault, asset);
+        _unwindPosition(posInfo, bankInfo.softVault, asset, debtAmount + fee);
 
         // approve aave pool to get back debt
         debtToken.approve(address(_pool), debtAmount + fee);
@@ -174,27 +174,107 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, Ownable2StepUpgradeabl
     }
 
     /**
-     * @notice Swaps two assets with paraswaps augustus swapper
-     * @param srcToken Address of the source token
-     * @param dstToken Address of the destination token
-     * @param amount Amount of source tokens to swap for
-     */
-    function _swapOnParaswap(address srcToken, address dstToken, uint256 amount) internal {
-        if(
-            !PSwapLib.swap(_augustusSwapper, _tokenTransferProxy, srcToken, amount, )
-        ) {
-            revert Errors.SWAP_FAILED(srcToken);
-        }
-    }
-
-    /**
      * @notice Unwinds the users position, by burning the wrapper token and liquidating into the debt token
      * @dev This function will be implemented by the child liquidator contract for a specific integration
      * @param posInfo The Position information struct for the position that is being liquidated
      * @param softVault Address of the SoftVault contract that the position is using
      * @param debtToken The address of the debt token, this will be the same asset that will be flash-borrowed
+     * @param debtAmount The amount of debt that needs to be repaid for the flash loan
      */
-    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken) internal virtual {
+    function _unwindPosition(
+        IBank.Position memory posInfo,
+        address softVault,
+        address debtToken,
+        uint256 debtAmount
+    ) internal virtual {
         // unwind position
+    }
+
+    function _swap(address srcToken, address dstToken, uint256 amount) internal {
+        DexRoute route = _dexRoutes[srcToken];
+        if (route == DexRoute.Balancer) {
+            _swapOnBalancer(srcToken, dstToken, amount);
+        } else if (route == DexRoute.Curve) {
+            _swapOnCurve(srcToken, dstToken, amount);
+        } else {
+            _swapOnUniswap(srcToken, dstToken, amount);
+        }
+    }
+
+    function _swapOnBalancer(address srcToken, address dstToken, uint256 amount) internal return (address dstToken, uint256 amount) {
+        if (IERC20(srcToken).balanceOf(address(this)) >= amount) {
+            if (srcToken == _auraToken || srcToken == _balToken) {
+                dstToken == address(_weth);
+            }
+
+            IERC20(srcToken).approve(address(_balancerVault), amount);
+
+            uint256 poolId = _balancerRoutes[srcToken][dstToken];
+
+            if (poolId == bytes32(0)) {
+                revert Errors.ZERO_AMOUNT();
+            }
+
+            IBalancerVault.SingleSwap memory singleSwap;
+            singleSwap.poolId = poolId; 
+            singleSwap.kind = IBalancerVault.SwapKind.GIVEN_IN;
+            singleSwap.assetIn = IAsset(srcToken);
+            singleSwap.assetOut = IAsset(dstToken);
+            singleSwap.amount = amount;
+
+            IBalancerVault.FundManagement memory funds;
+            funds.sender = address(this);
+            funds.recipient = payable(address(this));
+            
+            amount = _balancerVault.swap(singleSwap, funds, 0, block.timestamp);
+        }
+    }
+
+    function _swapOnCurve(address srcToken, address dstToken, uint256 amount) internal (address dstToken, uint256 amountReceived) {
+        if (IERC20(srcToken).balanceOf(address(this)) >= amount) {
+            if (srcToken == _crvToken || srcToken == _convexToken) {
+                dstToken == address(_weth);
+            }
+            
+            ICurvePool pool = ICurvePool(_curveRoutes[srcToken][dstToken]);
+            IERC20(srcToken).approve(address(pool), amount);
+            
+            uint256 srcIndex;
+            uint256 dstIndex;
+            for (uint256 i=0; i<3; i++) {
+                try pool.coins(i) returns (address coin) {
+                    if (coin == srcToken) {
+                        srcIndex = i;
+                    } else if (coin == dstToken) {
+                        dstIndex = i;
+                    }
+                } catch {}
+
+                if (srcIndex != 0 && dstIndex != 0) {
+                    break;
+                }
+            }
+
+            amountReceived = pool.exchange(srcIndex, dstIndex, amount, 0, false, address(this));
+        }
+    }
+
+    function _swapOnUniswap(address srcToken, address dstToken, uint256 amount) internal returns (uint256 amountReceived) {
+        if (IERC20(srcToken).balanceOf(address(this)) >= amount) {
+            IERC20(srcToken).approve(address(_swapRouter), amount);
+
+            uint256 amountReceived = _swapRouter.exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: srcToken,
+                    tokenOut: dstToken,
+                    fee: 3000,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: amount,
+                    amountOutMinimum: 0,
+                    sqrtPriceLimitX96: 0
+                })
+            );
+        }
     }
 }

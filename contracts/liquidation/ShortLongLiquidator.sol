@@ -53,7 +53,8 @@ contract ShortLongLiquidator is BaseLiquidator {
         address treasury,
         address poolAddressesProvider,
         address stableAsset,
-        address shortLongSpell
+        address shortLongSpell,
+        address owner
     ) external initializer {
         __Ownable2Step_init();
 
@@ -70,18 +71,18 @@ contract ShortLongLiquidator is BaseLiquidator {
     }
 
     /// @inheritdoc BaseLiquidator
-    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken) internal overide {
+    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken) internal override {
         // Withdraw ERC1155 liquidiation
         IWERC20(posInfo.collToken).burn(posInfo.collId, posInfo.collateralSize);
 
         uint256 usdcAmt = IERC20(_stableAsset).balanceOf(address(this));
-        uint256 uTokenAmt = IERC20Upgradeable(ISoftVault(bankInfo.softVault).uToken()).balanceOf(address(this));
+        uint256 uTokenAmt = IERC20Upgradeable(ISoftVault(softVault).uToken()).balanceOf(address(this));
 
         if (_stableAsset != address(debtToken) && usdcAmt != 0) {
             _swap(_stableAsset, address(debtToken), usdcAmt);
         }
-        if (address(ISoftVault(bankInfo.softVault).uToken()) != address(debtToken) && uTokenAmt != 0) {
-            _swap(address(ISoftVault(bankInfo.softVault).uToken()), address(debtToken), uTokenAmt);
+        if (address(ISoftVault(softVault).uToken()) != address(debtToken) && uTokenAmt != 0) {
+            _swap(address(ISoftVault(softVault).uToken()), address(debtToken), uTokenAmt);
         }
     }
 

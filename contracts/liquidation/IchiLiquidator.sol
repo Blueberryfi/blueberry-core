@@ -61,7 +61,8 @@ contract IchiLiquidator is BaseLiquidator {
         address stableAsset,
         address ichiSpell,
         address swapRouter,
-        address ichiV2Token
+        address ichiV2Token,
+        address owner
     ) external initializer {
         __Ownable2Step_init();
 
