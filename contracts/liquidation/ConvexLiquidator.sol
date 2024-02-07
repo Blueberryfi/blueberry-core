@@ -20,11 +20,9 @@ import { IBank } from "../interfaces/IBank.sol";
 import { ICvxBooster } from "../interfaces/convex/ICvxBooster.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
+import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
 
 contract ConvexLiquidator is BaseLiquidator {
-    /// @dev The address of the CVX token
-    address public _cvxToken;
-
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -43,22 +41,14 @@ contract ConvexLiquidator is BaseLiquidator {
      * @param bank Address of the Blueberry Bank
      * @param treasury Address of the treasury that receives liquidator bot profits
      * @param poolAddressesProvider AAVE poolAdddressesProvider address
-     * @param augustusSwapper Address for Paraswaps AugustusSwapper
-     * @param stableAsset Address of the stable asset
      * @param convexSpell Address of the ConvexSpell
-     * @param cvxToken Address of the CVX token
-     * @param curvePool Curve/WETH Weighted Pool // TODO: FIX pool
      * @param owner The owner of the contract
      */
     function initialize(
         IBank bank,
         address treasury,
         address poolAddressesProvider,
-        address augustusSwapper, // TODO: Replace with a different swap
-        address stableAsset,
         address convexSpell,
-        address cvxToken,
-        address curvePool,
         address owner
     ) external initializer {
         __Ownable2Step_init();
@@ -68,15 +58,17 @@ contract ConvexLiquidator is BaseLiquidator {
         _bank = bank;
         _spell = convexSpell;
         _treasury = treasury;
-        _stableAsset = stableAsset;
-
-        _cvxToken = cvxToken;
 
         _transferOwnership(owner);
     }
 
     /// @inheritdoc BaseLiquidator
-    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken) internal override {
+    function _unwindPosition(
+        IBank.Position memory posInfo,
+        address softVault,
+        address debtToken,
+        uint256 debtAmount
+    ) internal override {
         // Withdraw ERC1155 liquidiation
         (address[] memory rewardTokens, uint256[] memory rewards) = IWConvexBooster(posInfo.collToken).burn(
             posInfo.collId,
@@ -91,33 +83,47 @@ contract ConvexLiquidator is BaseLiquidator {
         IERC20(token).approve(address(convexBooster), IERC20(token).balanceOf(address(this)));
         convexBooster.withdraw(pid, IERC20(token).balanceOf(address(this)));
 
-        // Withdraw token from BalancerPool
-        _exit(IERC20(lpToken));
+        // Withdraw token from Curve Pool
+        _exit(IERC20(lpToken), debtToken);
 
-        uint256 _stableAssetAmt = IERC20(_stableAsset).balanceOf(address(this));
-        uint256 cvxAmt = IERC20(_cvxToken).balanceOf(address(this));
-        uint256 uTokenAmt = IERC20Upgradeable(ISoftVault(softVault).getUnderlyingToken()).balanceOf(address(this));
+        address underlyingToken = address(ISoftVault(softVault).getUnderlyingToken());
+        /// Holding Reward Tokens, Underlying Tokens and Debt Tokens
+        uint256 debtTokenBalance = IERC20(debtToken).balanceOf(address(this));
+        uint256 uTokenAmt = IERC20Upgradeable(underlyingToken).balanceOf(address(this));
 
-        // Swap all tokens to the debtToken
-        // Future optimization would be to swap only the needed tokens to debtToken and the rest Stables.
-        if (_stableAsset != address(debtToken) && _stableAssetAmt != 0) {
-            _swap(_stableAsset, address(debtToken), _stableAssetAmt);
+        // Liquidate all reward tokens to debtTokens until we have enough to repay the debt
+        uint256 rewardLength = rewardTokens.length;
+        for (uint256 i = 0; i < rewardLength; ++i) {
+            if (debtAmount > debtTokenBalance) {
+                if (rewardTokens[i] != address(debtToken) && rewards[i] != 0) {
+                    debtTokenBalance += _swap(rewardTokens[i], address(debtToken), rewards[i]);
+                }
+            } else {
+                break;
+            }
         }
-        if (_cvxToken != address(debtToken) && cvxAmt != 0) {
-            _swap(_cvxToken, address(debtToken), cvxAmt);
-        }
-        if (address(ISoftVault(softVault).getUnderlyingToken()) != address(debtToken) && uTokenAmt != 0) {
-            _swap(address(ISoftVault(softVault).getUnderlyingToken()), address(debtToken), uTokenAmt);
+
+        // liquidate all remaining tokens if we still don't have enough to repay the debt
+        if (debtAmount > debtTokenBalance) {
+            if (underlyingToken != address(debtToken) && uTokenAmt != 0) {
+                debtTokenBalance += _swap(underlyingToken, address(debtToken), uTokenAmt);
+            }
         }
     }
 
-    // TODO: Implement Swap
-    function _swap(address srcToken, address dstToken, uint256 amount) internal {
-    
-    }
+    /// @inheritdoc BaseLiquidator
+    function _exit(IERC20 lpToken, address dstToken) internal override {
+        ICurvePool curvePool = ICurvePool(address(lpToken));
 
-    // TODO: Exit the curve pool
-    function _exit(IERC20 lpToken) internal {
+        uint256 tokenIndex;
+        for (uint256 i = 0; i < 4; i++) {
+            try curvePool.coins(i) returns (address coin) {
+                if (coin == dstToken) {
+                    tokenIndex = i;
+                }
+            } catch {}
+        }
 
+        curvePool.remove_liquidity_one_coin(lpToken.balanceOf(address(this)), tokenIndex, 0, false, address(this));
     }
 }

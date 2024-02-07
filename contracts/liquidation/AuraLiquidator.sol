@@ -25,15 +25,6 @@ import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWAuraBooster } from "../interfaces/IWAuraBooster.sol";
 
 contract AuraLiquidator is BaseLiquidator {
-    /// @dev The address of the AURA token
-    address public _auraToken;
-
-    /// @dev balancer pool
-    IBalancerV2Pool public _balancerPool;
-
-    /// @dev balancer vault
-    IBalancerVault public _balancerVault;
-
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -52,22 +43,15 @@ contract AuraLiquidator is BaseLiquidator {
      * @param bank Address of the Blueberry Bank
      * @param treasury Address of the treasury that receives liquidator bot profits
      * @param poolAddressesProvider AAVE poolAdddressesProvider address
-     * @param augustusSwapper Address for Paraswaps AugustusSwapper
-     * @param stableAsset Address of the stable asset
      * @param auraSpell Address of the AuraSpell
-     * @param auraToken Address of the AURA token
-     * @param balancerPool Balancer AURA/WETH Weighted Pool
      * @param owner The owner of the contract
      */
     function initialize(
         IBank bank,
         address treasury,
         address poolAddressesProvider,
-        address augustusSwapper, // TODO: Replace with a different swap
-        address stableAsset,
         address auraSpell,
-        address auraToken,
-        address balancerPool,
+        address balancerVault,
         address owner
     ) external initializer {
         __Ownable2Step_init();
@@ -77,17 +61,19 @@ contract AuraLiquidator is BaseLiquidator {
         _bank = bank;
         _spell = auraSpell;
         _treasury = treasury;
-        _stableAsset = stableAsset;
 
-        _auraToken = auraToken;
-        _balancerPool = IBalancerV2Pool(balancerPool);
-        _balancerVault = IBalancerVault(IBalancerV2Pool(balancerPool).getVault());
+        _balancerVault = IBalancerVault(balancerVault);
 
         _transferOwnership(owner);
     }
 
     /// @inheritdoc BaseLiquidator
-    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken, uint256 debtAmount) internal override {
+    function _unwindPosition(
+        IBank.Position memory posInfo,
+        address softVault,
+        address debtToken,
+        uint256 debtAmount
+    ) internal override {
         // Withdraw ERC1155 liquidiation
         (address[] memory rewardTokens, uint256[] memory rewards) = IWAuraBooster(posInfo.collToken).burn(
             posInfo.collId,
@@ -103,42 +89,35 @@ contract AuraLiquidator is BaseLiquidator {
         auraBooster.withdraw(pid, IERC20(token).balanceOf(address(this)));
 
         // Withdraw token from BalancerPool
-        _exit(IERC20(lpToken));
+        _exit(IERC20(lpToken), debtToken);
 
+        address underlyingToken = address(ISoftVault(softVault).getUnderlyingToken());
         /// Holding Reward Tokens, Underlying Tokens and Debt Tokens
-        uint256 debtAmtReceived = IERC20(debtToken).balanceOf(address(this));
-        uint256 auraAmt = IERC20(_auraToken).balanceOf(address(this));
-        uint256 uTokenAmt = IERC20Upgradeable(ISoftVault(softVault).getUnderlyingToken()).balanceOf(address(this));
+        uint256 debtTokenBalance = IERC20(debtToken).balanceOf(address(this));
+        uint256 uTokenAmt = IERC20Upgradeable(underlyingToken).balanceOf(address(this));
 
-        // Liquidate all reward tokens to debtTokens
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
-            if (debtAmount >= debtAmtReceived) {
+        // Liquidate all reward tokens to debtTokens until we have enough to repay the debt
+        uint256 rewardLength = rewardTokens.length;
+        for (uint256 i = 0; i < rewardLength; ++i) {
+            if (debtAmount > debtTokenBalance) {
                 if (rewardTokens[i] != address(debtToken) && rewards[i] != 0) {
-                    debtAmount -= _swap(rewardTokens[i], address(debtToken), rewards[i]);
+                    debtTokenBalance += _swap(rewardTokens[i], address(debtToken), rewards[i]);
                 }
             } else {
                 break;
             }
         }
 
-        if (debtAmount >= debtAmtReceived) {
-            if (address(ISoftVault(softVault).getUnderlyingToken()) != address(debtToken) && uTokenAmt != 0) {
-                _swap(address(ISoftVault(softVault).getUnderlyingToken()), address(debtToken), uTokenAmt);
+        // liquidate all remaining tokens if we still don't have enough to repay the debt
+        if (debtAmount > debtTokenBalance) {
+            if (underlyingToken != address(debtToken) && uTokenAmt != 0) {
+                debtTokenBalance += _swap(underlyingToken, address(debtToken), uTokenAmt);
             }
-        }
-        // Swap all tokens to the debtToken until we have enough to repay the debt
-        if (_stableAsset != address(debtToken) && _stableAssetAmt != 0) {
-            _swap(_stableAsset, address(debtToken), _stableAssetAmt);
-        }
-        if (_auraToken != address(debtToken) && auraAmt != 0) {
-            _swap(_auraToken, address(debtToken), auraAmt);
-        }
-        if (address(ISoftVault(softVault).getUnderlyingToken()) != address(debtToken) && uTokenAmt != 0) {
-            _swap(address(ISoftVault(softVault).getUnderlyingToken()), address(debtToken), uTokenAmt);
         }
     }
 
-    function _exit(IERC20 lpToken) internal {
+    /// @inheritdoc BaseLiquidator
+    function _exit(IERC20 lpToken, address debtToken) internal override {
         bytes32 poolId = IBalancerV2Pool(address(lpToken)).getPoolId();
         (address[] memory assets, , ) = _balancerVault.getPoolTokens(poolId);
 
@@ -148,7 +127,7 @@ contract AuraLiquidator is BaseLiquidator {
         for (uint256 i = 0; i < length; i++) {
             if (assets[i] == address(lpToken)) {
                 offset = 1;
-            } else if (assets[i] == _stableAsset) {
+            } else if (assets[i] == debtToken) {
                 tokenIndex = i - offset;
                 break;
             }

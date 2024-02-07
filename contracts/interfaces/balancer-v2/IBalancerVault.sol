@@ -3,7 +3,6 @@
 pragma solidity 0.8.22;
 
 import { IAsset } from "./IAsset.sol";
-import { IWETH } from "./IWETH.sol";
 
 interface IBalancerVault {
     enum SwapKind {
@@ -96,6 +95,4 @@ interface IBalancerVault {
     function getPool(bytes32 pid) external view returns (address pool, uint256 poolType);
 
     function manageUserBalance(UserBalanceOp[] memory ops) external;
-
-    function WETH() external view returns (IWETH);
 }

@@ -22,10 +22,6 @@ import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 
 contract ShortLongLiquidator is BaseLiquidator {
-    /// @dev temperory state used to store uni v3 pool when swapping on uni v3
-    //// @audit: Why temporary
-    ISwapRouter private swapRouter;
-
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -44,7 +40,6 @@ contract ShortLongLiquidator is BaseLiquidator {
      * @param bank Address of the Blueberry Bank
      * @param treasury Address of the treasury that receives liquidator bot profits
      * @param poolAddressesProvider AAVE poolAdddressesProvider address
-     * @param stableAsset Address of the stable asset to take fees in
      * @param shortLongSpell Address of the ShortLong Spell Contract
      * @param owner The owner of the contract
      */
@@ -52,7 +47,6 @@ contract ShortLongLiquidator is BaseLiquidator {
         IBank bank,
         address treasury,
         address poolAddressesProvider,
-        address stableAsset,
         address shortLongSpell,
         address owner
     ) external initializer {
@@ -63,45 +57,14 @@ contract ShortLongLiquidator is BaseLiquidator {
         _bank = bank;
         _spell = shortLongSpell;
         _treasury = treasury;
-        _stableAsset = stableAsset;
-
-        swapRouter = ISwapRouter(_swapRouter);
 
         _transferOwnership(owner);
     }
 
     /// @inheritdoc BaseLiquidator
-    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken) internal override {
+    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken, uint256 debtAmount) internal override {
         // Withdraw ERC1155 liquidiation
-        IWERC20(posInfo.collToken).burn(posInfo.collId, posInfo.collateralSize);
-
-        uint256 usdcAmt = IERC20(_stableAsset).balanceOf(address(this));
-        uint256 uTokenAmt = IERC20Upgradeable(ISoftVault(softVault).uToken()).balanceOf(address(this));
-
-        if (_stableAsset != address(debtToken) && usdcAmt != 0) {
-            _swap(_stableAsset, address(debtToken), usdcAmt);
-        }
-        if (address(ISoftVault(softVault).uToken()) != address(debtToken) && uTokenAmt != 0) {
-            _swap(address(ISoftVault(softVault).uToken()), address(debtToken), uTokenAmt);
-        }
-    }
-
-    function _swap(address _srcToken, address _dstToken, uint256 _amount) internal {
-        if (IERC20(_srcToken).balanceOf(address(this)) >= _amount) {
-            IERC20(_srcToken).approve(address(swapRouter), _amount);
-
-            swapRouter.exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: _srcToken,
-                    tokenOut: _dstToken,
-                    fee: 1e4,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: _amount,
-                    amountOutMinimum: 0,
-                    sqrtPriceLimitX96: 0
-                })
-            );
-        }
+        address token = address(uint160(posInfo.collId));
+        IWERC20(posInfo.collToken).burn(token, posInfo.collateralSize);
     }
 }

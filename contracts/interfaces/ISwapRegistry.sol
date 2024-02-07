@@ -41,4 +41,14 @@ interface ISwapRegistry {
      * @param srcToken The address of the token to swap from
      */
     function registerUniswapRoute(address srcToken) external;
+
+    /**
+     * @notice Registers a token as a protocol token
+     * @dev Due to lack of liquidity depth traditionally protocol tokens do not have smooth swap routes to most other tokens
+     *      This function allows the system to know which tokens are protocol tokens and should be treated differently
+     *      resulting in swapping to WETH before swapping to the debt token
+     * @param token The address of the token to register
+     * @param isProtocolToken A boolean indicating if the token is a protocol token
+     */
+    function setProtocolToken(address token, bool isProtocolToken) external;
 }
