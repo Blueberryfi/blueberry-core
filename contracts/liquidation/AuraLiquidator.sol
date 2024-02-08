@@ -52,6 +52,7 @@ contract AuraLiquidator is BaseLiquidator {
         address poolAddressesProvider,
         address auraSpell,
         address balancerVault,
+        address swapRouter,
         address owner
     ) external initializer {
         __Ownable2Step_init();
@@ -63,6 +64,7 @@ contract AuraLiquidator is BaseLiquidator {
         _treasury = treasury;
 
         _balancerVault = balancerVault;
+        _swapRouter = swapRouter;
 
         _transferOwnership(owner);
     }

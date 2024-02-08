@@ -71,7 +71,8 @@ export enum CONTRACT_NAMES {
   IUniswapV3Router = 'IUniswapV3Router',
   IICHIVault = 'IICHIVault',
   ShortLongLiquidator = "ShortLongLiquidator",
-  IchiLiquidator = "IchiLiquidator"
+  IchiLiquidator = "IchiLiquidator",
+  AuraLiquidator = "AuraLiquidator"
 }
 
 export const ADDRESS_GOERLI = {
