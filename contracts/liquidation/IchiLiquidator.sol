@@ -69,7 +69,7 @@ contract IchiLiquidator is BaseLiquidator {
         _treasury = treasury;
 
         _ichiV2Token = ichiV2Token;
-        _swapRouter = ISwapRouter(swapRouter);
+        _swapRouter = swapRouter;
 
         _transferOwnership(owner);
     }

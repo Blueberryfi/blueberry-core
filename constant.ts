@@ -70,6 +70,8 @@ export enum CONTRACT_NAMES {
   IUniswapV3Pool = 'IUniswapV3Pool',
   IUniswapV3Router = 'IUniswapV3Router',
   IICHIVault = 'IICHIVault',
+  ShortLongLiquidator = "ShortLongLiquidator",
+  IchiLiquidator = "IchiLiquidator"
 }
 
 export const ADDRESS_GOERLI = {
@@ -235,6 +237,9 @@ export const ADDRESS = {
   UNI_V2_ROUTER: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
   UNI_V3_ROUTER: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
   SUSHI_ROUTER: '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f',
+
+  // Aave Flash Loans
+  POOL_ADDRESSES_PROVIDER: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e",
 
   // Curve
   CRV_3Crv: '0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490',

@@ -62,7 +62,7 @@ contract AuraLiquidator is BaseLiquidator {
         _spell = auraSpell;
         _treasury = treasury;
 
-        _balancerVault = IBalancerVault(balancerVault);
+        _balancerVault = balancerVault;
 
         _transferOwnership(owner);
     }
@@ -119,7 +119,7 @@ contract AuraLiquidator is BaseLiquidator {
     /// @inheritdoc BaseLiquidator
     function _exit(IERC20 lpToken, address debtToken) internal override {
         bytes32 poolId = IBalancerV2Pool(address(lpToken)).getPoolId();
-        (address[] memory assets, , ) = _balancerVault.getPoolTokens(poolId);
+        (address[] memory assets, , ) = IBalancerVault(_balancerVault).getPoolTokens(poolId);
 
         uint256 tokenIndex;
         uint256 length = assets.length;
@@ -148,6 +148,6 @@ contract AuraLiquidator is BaseLiquidator {
 
         lpToken.approve(address(_balancerVault), lpTokenAmt);
 
-        _balancerVault.exitPool(poolId, address(this), payable(address(this)), exitPoolRequest);
+        IBalancerVault(_balancerVault).exitPool(poolId, address(this), payable(address(this)), exitPoolRequest);
     }
 }

@@ -40,6 +40,7 @@ contract ShortLongLiquidator is BaseLiquidator {
      * @param bank Address of the Blueberry Bank
      * @param treasury Address of the treasury that receives liquidator bot profits
      * @param poolAddressesProvider AAVE poolAdddressesProvider address
+     * @param swapRouter Address of the Uniswap V3 SwapRouter
      * @param shortLongSpell Address of the ShortLong Spell Contract
      * @param owner The owner of the contract
      */
@@ -47,6 +48,8 @@ contract ShortLongLiquidator is BaseLiquidator {
         IBank bank,
         address treasury,
         address poolAddressesProvider,
+        address balancerVault,
+        address swapRouter,
         address shortLongSpell,
         address owner
     ) external initializer {
@@ -57,14 +60,23 @@ contract ShortLongLiquidator is BaseLiquidator {
         _bank = bank;
         _spell = shortLongSpell;
         _treasury = treasury;
+        _balancerVault = balancerVault;
+        _swapRouter = swapRouter;
 
         _transferOwnership(owner);
     }
 
     /// @inheritdoc BaseLiquidator
-    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken, uint256 debtAmount) internal override {
+    function _unwindPosition(
+        IBank.Position memory posInfo,
+        address /*softVault*/,
+        address debtToken,
+        uint256 /*debtAmount*/
+    ) internal override {
         // Withdraw ERC1155 liquidiation
-        address token = address(uint160(posInfo.collId));
-        IWERC20(posInfo.collToken).burn(token, posInfo.collateralSize);
+        uint256 balance = IERC1155(posInfo.collToken).balanceOf(address(this), posInfo.collId);
+        IWERC20(posInfo.collToken).burn(address(uint160(posInfo.collId)), balance);
+        
+        _swap(posInfo.underlyingToken, debtToken, IERC20(posInfo.underlyingToken).balanceOf(address(this)));
     }
 }

@@ -14,20 +14,20 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import "../utils/BlueberryErrors.sol" as Errors;
 import { IBalancerVault, IAsset } from "../interfaces/balancer-v2/IBalancerVault.sol";
 import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
-
+import { SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ISwapRegistry } from "../interfaces/ISwapRegistry.sol";
 import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import "hardhat/console.sol";
 abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
     /// @notice The address of the WETH token
     address internal _weth;
 
     /// @dev The Balancer Vault address
-    IBalancerVault internal _balancerVault;
+    address internal _balancerVault;
 
     /// @dev The address of the swap router
-    ISwapRouter internal _swapRouter;
+    address internal _swapRouter;
 
     /// @notice Mapping of a token to the DEX to use for liquidation swaps
     mapping(address => DexRoute) internal _tokenToExchange;
@@ -88,7 +88,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
                 dstToken == address(_weth);
             }
 
-            IERC20(srcToken).approve(address(_balancerVault), amount);
+            IERC20(srcToken).approve(_balancerVault, amount);
 
             bytes32 poolId = _balancerRoutes[srcToken][dstToken];
 
@@ -107,7 +107,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
             funds.sender = address(this);
             funds.recipient = payable(address(this));
 
-            amountReceived = _balancerVault.swap(singleSwap, funds, 0, block.timestamp);
+            amountReceived = IBalancerVault(_balancerVault).swap(singleSwap, funds, 0, block.timestamp);
         }
         return (dstToken, amountReceived);
     }
@@ -153,13 +153,12 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
         uint256 amount
     ) internal returns (address tokenReceived, uint256 amountReceived) {
         if (IERC20(srcToken).balanceOf(address(this)) >= amount) {
-            IERC20(srcToken).approve(address(_swapRouter), amount);
-
-            amountReceived = _swapRouter.exactInputSingle(
+            IERC20(srcToken).approve(_swapRouter, amount);
+            amountReceived = ISwapRouter(_swapRouter).exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
                     tokenIn: srcToken,
                     tokenOut: dstToken,
-                    fee: 3000,
+                    fee: 1e4,
                     recipient: address(this),
                     deadline: block.timestamp,
                     amountIn: amount,
