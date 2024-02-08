@@ -17,14 +17,20 @@ import { BaseLiquidator } from "./BaseLiquidator.sol";
 
 import { IBank } from "../interfaces/IBank.sol";
 
+import { ICurveAddressProvider } from "../interfaces/curve/ICurveAddressProvider.sol";
+import { ICurveOracle } from "../interfaces/ICurveOracle.sol";
+import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
+import { IConvexSpell } from "../interfaces/spell/IConvexSpell.sol";
 import { ICvxBooster } from "../interfaces/convex/ICvxBooster.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
-import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
-import {IConvexSpell} from "../interfaces/spell/IConvexSpell.sol";
-import {ICurveOracle} from "../interfaces/ICurveOracle.sol";
-import {ICurveAddressProvider} from "../interfaces/curve/ICurveAddressProvider.sol";
 
+/**
+ * @title AuraLiquidator
+ * @author Blueberry Protocol
+ * @notice This contract is the liquidator for Convex Spells
+ * @dev Due to the complexity of Curve, a separate deployment for each unique Curve Spell is required
+ */
 contract ConvexLiquidator is BaseLiquidator {
     /// @dev The address of the associated Curve Oracle
     ICurveOracle internal _curveOracle;
@@ -48,6 +54,9 @@ contract ConvexLiquidator is BaseLiquidator {
      * @param treasury Address of the treasury that receives liquidator bot profits
      * @param poolAddressesProvider AAVE poolAdddressesProvider address
      * @param convexSpell Address of the ConvexSpell
+     * @param balancerVault Address of the Balancer Vault
+     * @param swapRouter Address of the Uniswap V3 SwapRouter
+     * @param weth Address of the WETH token
      * @param owner The owner of the contract
      */
     function initialize(
@@ -71,9 +80,6 @@ contract ConvexLiquidator is BaseLiquidator {
         _swapRouter = swapRouter;
 
         _curveOracle = IConvexSpell(convexSpell).getCrvOracle();
-        ICurveAddressProvider provider = ICurveOracle(_curveOracle).getAddressProvider();
-
-        _curveRegistry = address(provider.get_address(2));
 
         _weth = weth;
         _transferOwnership(owner);
@@ -131,7 +137,7 @@ contract ConvexLiquidator is BaseLiquidator {
     /// @inheritdoc BaseLiquidator
     function _exit(IERC20 lpToken, address dstToken) internal override {
         (address curvePool, , ) = _curveOracle.getPoolInfo(address(lpToken));
-        
+
         uint256 tokenIndex;
         for (uint256 i = 0; i < 4; i++) {
             try ICurvePool(curvePool).coins(i) returns (address coin) {
@@ -140,13 +146,10 @@ contract ConvexLiquidator is BaseLiquidator {
                 }
             } catch {}
         }
-        _removeLiquidityOneCoin(ICurvePool(curvePool), lpToken, tokenIndex);
-    }
-
-    function _removeLiquidityOneCoin(ICurvePool curvePool, IERC20 lpToken, uint256 tokenIndex) internal {
+        
         uint256 lpTokenAmt = lpToken.balanceOf(address(this));
         lpToken.approve(address(curvePool), lpTokenAmt);
 
-        curvePool.remove_liquidity_one_coin(lpTokenAmt, int128(uint128(tokenIndex)), 0);
+        ICurvePool(curvePool).remove_liquidity_one_coin(lpTokenAmt, int128(uint128(tokenIndex)), 0);
     }
 }

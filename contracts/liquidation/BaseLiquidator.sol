@@ -61,9 +61,6 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
     ) external view override returns (bool upkeepNeeded, bytes memory performData) {
         uint nextPositionId = IBank(_bank).getNextPositionId();
 
-        /// @audit: Will PositionID ever be 1
-        /// @audit: Is there a way to read the health score of a position directly from the bank contract.
-        /// @audit: False positives on closed positions?
         for (uint i = 1; i < nextPositionId; ++i) {
             if (_bank.isLiquidatable(i)) {
                 upkeepNeeded = true;
@@ -213,6 +210,10 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
     function _exit(IERC20 lpToken, address debtToken) internal virtual {
         // exit from the pool
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                            Required ERC1155 Overrides
+    //////////////////////////////////////////////////////////////////////////*/
 
     function onERC1155Received(
         address /*operator*/,

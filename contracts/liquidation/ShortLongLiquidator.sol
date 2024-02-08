@@ -21,6 +21,11 @@ import { IBank } from "../interfaces/IBank.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 
+/**
+ * @title ShortLongLiquidator
+ * @author Blueberry Protocol
+ * @notice This contract is the liquidator for all ShortLong Spells
+ */
 contract ShortLongLiquidator is BaseLiquidator {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -40,17 +45,19 @@ contract ShortLongLiquidator is BaseLiquidator {
      * @param bank Address of the Blueberry Bank
      * @param treasury Address of the treasury that receives liquidator bot profits
      * @param poolAddressesProvider AAVE poolAdddressesProvider address
-     * @param swapRouter Address of the Uniswap V3 SwapRouter
      * @param shortLongSpell Address of the ShortLong Spell Contract
+     * @param balancerVault Address of the Balancer Vault
+     * @param swapRouter Address of the Uniswap V3 SwapRouter
+     * @param weth Address of the WETH token
      * @param owner The owner of the contract
      */
     function initialize(
         IBank bank,
         address treasury,
         address poolAddressesProvider,
+        address shortLongSpell,
         address balancerVault,
         address swapRouter,
-        address shortLongSpell,
         address weth,
         address owner
     ) external initializer {

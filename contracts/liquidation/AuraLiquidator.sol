@@ -14,7 +14,6 @@ import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import { BaseLiquidator } from "./BaseLiquidator.sol";
-
 import { StablePoolUserData } from "../libraries/balancer-v2/StablePoolUserData.sol";
 
 import { IBank } from "../interfaces/IBank.sol";
@@ -24,6 +23,11 @@ import { ICvxBooster } from "../interfaces/convex/ICvxBooster.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWAuraBooster } from "../interfaces/IWAuraBooster.sol";
 
+/**
+ * @title AuraLiquidator
+ * @author Blueberry Protocol
+ * @notice This contract is the liquidator for all Aura Spells
+ */
 contract AuraLiquidator is BaseLiquidator {
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -44,6 +48,9 @@ contract AuraLiquidator is BaseLiquidator {
      * @param treasury Address of the treasury that receives liquidator bot profits
      * @param poolAddressesProvider AAVE poolAdddressesProvider address
      * @param auraSpell Address of the AuraSpell
+     * @param balancerVault Address of the Balancer Vault
+     * @param swapRouter Address of the Uniswap V3 SwapRouter
+     * @param weth Address of the WETH token
      * @param owner The owner of the contract
      */
     function initialize(
@@ -67,6 +74,7 @@ contract AuraLiquidator is BaseLiquidator {
         _balancerVault = balancerVault;
         _swapRouter = swapRouter;
         _weth = weth;
+
         _transferOwnership(owner);
     }
 
@@ -94,8 +102,8 @@ contract AuraLiquidator is BaseLiquidator {
         // Withdraw token from BalancerPool
         _exit(IERC20(lpToken), debtToken);
 
-        address underlyingToken = address(ISoftVault(softVault).getUnderlyingToken());
         /// Holding Reward Tokens, Underlying Tokens and Debt Tokens
+        address underlyingToken = address(ISoftVault(softVault).getUnderlyingToken());
         uint256 debtTokenBalance = IERC20(debtToken).balanceOf(address(this));
         uint256 uTokenAmt = IERC20Upgradeable(underlyingToken).balanceOf(address(this));
 

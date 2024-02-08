@@ -25,6 +25,11 @@ import { IWIchiFarm } from "../interfaces/IWIchiFarm.sol";
 import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 
+/**
+ * @title IchiLiquidator
+ * @author Blueberry Protocol
+ * @notice This contract is the liquidator for all Ichi Spells
+ */
 contract IchiLiquidator is BaseLiquidator {
     /// @dev address of ICHI token
     address private _ichiV2Token;
@@ -48,7 +53,7 @@ contract IchiLiquidator is BaseLiquidator {
      * @param treasury Address of the treasury that receives liquidator bot profits
      * @param poolAddressesProvider AAVE poolAdddressesProvider address
      * @param ichiSpell Address of the Ichi Spell Contract
-     * @param swapRouter /// TODO: Align with other spells
+     * @param swapRouter Address of the Uniswap V3 SwapRouter
      * @param ichiV2Token Address of the Ichi V2 token
      * @param owner The owner of the contract
      */

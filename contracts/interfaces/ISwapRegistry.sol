@@ -12,10 +12,9 @@ pragma solidity 0.8.22;
 interface ISwapRegistry {
     /// @dev Enum representing the different DEXs that can be used for liquidation swaps
     enum DexRoute {
-        Empty, // 0
+        UniswapV3, // 0 Uniswap is the default DexRoute
         Balancer, // 1
-        Curve, // 2
-        UniswapV3 // 3
+        Curve // 2
     }
 
     /**
