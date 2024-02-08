@@ -19,12 +19,13 @@ import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 
 import { IBank } from "../interfaces/IBank.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
-import { IIchiFarm } from "../interfaces/IWIchiFarm.sol";
+import { IIchiSpell } from "../interfaces/spell/IIchiSpell.sol";
+import { IIchiFarm } from "../interfaces/ichi/IIchiFarm.sol";
 import { IWIchiFarm } from "../interfaces/IWIchiFarm.sol";
 import { IICHIVault } from "../interfaces/ichi/IICHIVault.sol";
+import { IWERC20 } from "../interfaces/IWERC20.sol";
 
 contract IchiLiquidator is BaseLiquidator {
-    
     /// @dev address of ICHI token
     address private _ichiV2Token;
 
@@ -75,15 +76,16 @@ contract IchiLiquidator is BaseLiquidator {
     }
 
     /// @inheritdoc BaseLiquidator
-    function _unwindPosition(IBank.Position memory posInfo, address softVault, address debtToken, uint256 debtAmount) internal override {
-        // Withdraw ERC1155 liquidiation
-        IWIchiFarm(posInfo.collToken).burn(posInfo.collId, posInfo.collateralSize);
+    function _unwindPosition(
+        IBank.Position memory posInfo,
+        address softVault,
+        address debtToken,
+        uint256 debtAmount
+    ) internal override {
+        address lpToken = _unwrapLpToken(posInfo);
 
-        // Withdraw lp from ichiFarm
-        (uint256 pid, ) = IWIchiFarm(posInfo.collToken).decodeId(posInfo.collId);
-        address lpToken = IIchiFarm(IWIchiFarm(posInfo.collToken).getIchiFarm()).lpToken(pid);
         IICHIVault(lpToken).withdraw(IERC20(lpToken).balanceOf(address(this)), address(this));
-        
+
         address underlyingToken = address(ISoftVault(softVault).getUnderlyingToken());
         uint256 ichiAmt = IERC20(_ichiV2Token).balanceOf(address(this));
         uint256 uTokenAmt = IERC20Upgradeable(underlyingToken).balanceOf(address(this));
@@ -91,13 +93,35 @@ contract IchiLiquidator is BaseLiquidator {
 
         if (debtAmount > debtTokenBalance) {
             if (_ichiV2Token != address(debtToken) && ichiAmt != 0) {
-                _swap(_ichiV2Token, address(debtToken), ichiAmt);
+                debtTokenBalance += _swap(_ichiV2Token, address(debtToken), ichiAmt);
             }
         }
+
         if (debtAmount > debtTokenBalance) {
             if (underlyingToken != address(debtToken) && uTokenAmt != 0) {
-                _swap(underlyingToken, address(debtToken), uTokenAmt);
+                debtTokenBalance += _swap(underlyingToken, address(debtToken), uTokenAmt);
             }
+        }
+    }
+
+    /**
+     * @notice Unwraps the LP token and sends it to the caller
+     * @dev This function can handle both Farming and regular positions
+     * @param posInfo The position info for the liquidation
+     * @return The address of the Ichi LP token
+     */
+    function _unwrapLpToken(IBank.Position memory posInfo) internal returns (address) {
+        // Withdraw ERC1155 liquidiation
+        if (posInfo.collToken == address(IIchiSpell(_spell).getWIchiFarm())) {
+            IWIchiFarm(posInfo.collToken).burn(posInfo.collId, type(uint256).max);
+            (uint256 pid, ) = IWIchiFarm(posInfo.collToken).decodeId(posInfo.collId);
+
+            return IIchiFarm(IWIchiFarm(posInfo.collToken).getIchiFarm()).lpToken(pid);
+        } else {
+            uint256 balance = IERC1155(posInfo.collToken).balanceOf(address(this), posInfo.collId);
+            IWERC20(posInfo.collToken).burn(address(uint160(posInfo.collId)), balance);
+
+            return IWERC20(posInfo.collToken).getUnderlyingToken(posInfo.collId);
         }
     }
 }

@@ -101,7 +101,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
             abi.encode(msg.sender),
             0
         );
-
+        console.log("Flash Loan Complete");
     }
 
     /// @inheritdoc IBlueberryLiquidator
