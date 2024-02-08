@@ -51,6 +51,7 @@ contract ShortLongLiquidator is BaseLiquidator {
         address balancerVault,
         address swapRouter,
         address shortLongSpell,
+        address weth,
         address owner
     ) external initializer {
         __Ownable2Step_init();
@@ -62,7 +63,7 @@ contract ShortLongLiquidator is BaseLiquidator {
         _treasury = treasury;
         _balancerVault = balancerVault;
         _swapRouter = swapRouter;
-
+        _weth = weth;
         _transferOwnership(owner);
     }
 

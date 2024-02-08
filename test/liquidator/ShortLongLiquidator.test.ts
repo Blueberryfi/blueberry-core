@@ -57,6 +57,7 @@ describe("ShortLong Liquidator", () => {
             BALANCER_VAULT,
             SWAP_ROUTER,
             spell.address,
+            WETH,
             admin.address
         ],
         {

@@ -25,7 +25,6 @@ import { SwapRegistry } from "./SwapRegistry.sol";
 import { IBank } from "../interfaces/IBank.sol";
 import { IBlueberryLiquidator, AutomationCompatibleInterface } from "../interfaces/IBlueberryLiquidator.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
-import "hardhat/console.sol";
 
 /**
  * @title BaseLiquidator
@@ -101,7 +100,6 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
             abi.encode(msg.sender),
             0
         );
-        console.log("Flash Loan Complete");
     }
 
     /// @inheritdoc IBlueberryLiquidator
@@ -186,7 +184,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         // If the token received is not the same as the desired destination token, recursively swap until we
         // get the desired token. This will only happen in the event of a multi-hop swap
         if (tokenReceived != dstToken) {
-            _swap(tokenReceived, dstToken, amountReceived);
+            amountReceived = _swap(tokenReceived, dstToken, amountReceived);
         }
     }
 

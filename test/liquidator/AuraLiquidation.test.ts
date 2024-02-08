@@ -113,6 +113,7 @@ describe('Aura Liquidator', () => {
             spell.address,
             BALANCER_VAULT,
             UNISWAP_V3_ROUTER,
+            WETH,
             admin.address
         ],
         {
@@ -163,5 +164,4 @@ describe('Aura Liquidator', () => {
     expect(await usdc.balanceOf(liquidator.address)).to.be.equal(0);
     expect(await usdc.balanceOf(treasury.address)).to.be.greaterThan(0);
   });
-
 });

@@ -21,8 +21,14 @@ import { ICvxBooster } from "../interfaces/convex/ICvxBooster.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
 import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
+import {IConvexSpell} from "../interfaces/spell/IConvexSpell.sol";
+import {ICurveOracle} from "../interfaces/ICurveOracle.sol";
+import {ICurveAddressProvider} from "../interfaces/curve/ICurveAddressProvider.sol";
 
 contract ConvexLiquidator is BaseLiquidator {
+    /// @dev The address of the associated Curve Oracle
+    ICurveOracle internal _curveOracle;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -49,6 +55,9 @@ contract ConvexLiquidator is BaseLiquidator {
         address treasury,
         address poolAddressesProvider,
         address convexSpell,
+        address balancerVault,
+        address swapRouter,
+        address weth,
         address owner
     ) external initializer {
         __Ownable2Step_init();
@@ -58,7 +67,15 @@ contract ConvexLiquidator is BaseLiquidator {
         _bank = bank;
         _spell = convexSpell;
         _treasury = treasury;
+        _balancerVault = balancerVault;
+        _swapRouter = swapRouter;
 
+        _curveOracle = IConvexSpell(convexSpell).getCrvOracle();
+        ICurveAddressProvider provider = ICurveOracle(_curveOracle).getAddressProvider();
+
+        _curveRegistry = address(provider.get_address(2));
+
+        _weth = weth;
         _transferOwnership(owner);
     }
 
@@ -103,27 +120,33 @@ contract ConvexLiquidator is BaseLiquidator {
             }
         }
 
-        // liquidate all remaining tokens if we still don't have enough to repay the debt
+        // liquidate underlying token if we still don't have enough to repay the debt
         if (debtAmount > debtTokenBalance) {
             if (underlyingToken != address(debtToken) && uTokenAmt != 0) {
-                debtTokenBalance += _swap(underlyingToken, address(debtToken), uTokenAmt);
+                _swap(underlyingToken, address(debtToken), uTokenAmt);
             }
         }
     }
 
     /// @inheritdoc BaseLiquidator
     function _exit(IERC20 lpToken, address dstToken) internal override {
-        ICurvePool curvePool = ICurvePool(address(lpToken));
-
+        (address curvePool, , ) = _curveOracle.getPoolInfo(address(lpToken));
+        
         uint256 tokenIndex;
         for (uint256 i = 0; i < 4; i++) {
-            try curvePool.coins(i) returns (address coin) {
+            try ICurvePool(curvePool).coins(i) returns (address coin) {
                 if (coin == dstToken) {
                     tokenIndex = i;
                 }
             } catch {}
         }
+        _removeLiquidityOneCoin(ICurvePool(curvePool), lpToken, tokenIndex);
+    }
 
-        curvePool.remove_liquidity_one_coin(lpToken.balanceOf(address(this)), tokenIndex, 0, false, address(this));
+    function _removeLiquidityOneCoin(ICurvePool curvePool, IERC20 lpToken, uint256 tokenIndex) internal {
+        uint256 lpTokenAmt = lpToken.balanceOf(address(this));
+        lpToken.approve(address(curvePool), lpTokenAmt);
+
+        curvePool.remove_liquidity_one_coin(lpTokenAmt, int128(uint128(tokenIndex)), 0);
     }
 }

@@ -72,7 +72,8 @@ export enum CONTRACT_NAMES {
   IICHIVault = 'IICHIVault',
   ShortLongLiquidator = "ShortLongLiquidator",
   IchiLiquidator = "IchiLiquidator",
-  AuraLiquidator = "AuraLiquidator"
+  AuraLiquidator = "AuraLiquidator",
+  ConvexLiquidator = "ConvexLiquidator"
 }
 
 export const ADDRESS_GOERLI = {

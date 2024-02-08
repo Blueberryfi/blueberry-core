@@ -12,6 +12,7 @@ const ICHI = ADDRESS.ICHI;
 const ICHIV1 = ADDRESS.ICHI_FARM;
 const POOL_ADDRESSES_PROVIDER = ADDRESS.POOL_ADDRESSES_PROVIDER;
 const UNISWAP_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
+const WETH = ADDRESS.WETH;
 
 describe('Ichi Liquidator', () => {
   const depositAmount = utils.parseUnits('100', 18); // worth of $400
@@ -89,6 +90,7 @@ describe('Ichi Liquidator', () => {
             spell.address,
             UNISWAP_V3_ROUTER,
             ichi.address,
+            WETH,
             admin.address
         ],
         {

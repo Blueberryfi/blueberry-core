@@ -18,7 +18,8 @@ import { SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.so
 import { ISwapRegistry } from "../interfaces/ISwapRegistry.sol";
 import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
+import { ICurveRegistry } from "../interfaces/curve/ICurveRegistry.sol";
+
 abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
     /// @notice The address of the WETH token
     address internal _weth;
@@ -28,6 +29,9 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
 
     /// @dev The address of the swap router
     address internal _swapRouter;
+
+    /// @dev The address of the Curve Registry
+    address internal _curveRegistry;
 
     /// @notice Mapping of a token to the DEX to use for liquidation swaps
     mapping(address => DexRoute) internal _tokenToExchange;
@@ -119,7 +123,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
     ) internal returns (address tokenReceived, uint256 amountReceived) {
         if (IERC20(srcToken).balanceOf(address(this)) >= amount) {
             if (_isProtocolToken[srcToken]) {
-                dstToken == address(_weth);
+                dstToken = address(_weth);
             }
 
             ICurvePool pool = ICurvePool(_curveRoutes[srcToken][dstToken]);
@@ -140,8 +144,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
                     break;
                 }
             }
-
-            amountReceived = pool.exchange(srcIndex, dstIndex, amount, 0, false, address(this));
+            amountReceived = pool.exchange(srcIndex, dstIndex, amount, 0);
 
             return (dstToken, amountReceived);
         }
@@ -154,6 +157,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
     ) internal returns (address tokenReceived, uint256 amountReceived) {
         if (IERC20(srcToken).balanceOf(address(this)) >= amount) {
             IERC20(srcToken).approve(_swapRouter, amount);
+            
             amountReceived = ISwapRouter(_swapRouter).exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
                     tokenIn: srcToken,
@@ -167,7 +171,6 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
                 })
             );
         }
-
         return (dstToken, amountReceived);
     }
 }
