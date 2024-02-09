@@ -14,6 +14,7 @@ import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import { BaseLiquidator } from "./BaseLiquidator.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { StablePoolUserData } from "../libraries/balancer-v2/StablePoolUserData.sol";
 
 import { IBank } from "../interfaces/IBank.sol";
@@ -29,6 +30,8 @@ import { IWAuraBooster } from "../interfaces/IWAuraBooster.sol";
  * @notice This contract is the liquidator for all Aura Spells
  */
 contract AuraLiquidator is BaseLiquidator {
+    using SafeERC20 for IERC20;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -96,7 +99,7 @@ contract AuraLiquidator is BaseLiquidator {
         ICvxBooster auraBooster = IWAuraBooster(posInfo.collToken).getAuraBooster();
 
         (address lpToken, address token, , , , ) = auraBooster.poolInfo(pid);
-        IERC20(token).approve(address(auraBooster), IERC20(token).balanceOf(address(this)));
+        IERC20(token).forceApprove(address(auraBooster), IERC20(token).balanceOf(address(this)));
         auraBooster.withdraw(pid, IERC20(token).balanceOf(address(this)));
 
         // Withdraw token from BalancerPool
@@ -157,7 +160,7 @@ contract AuraLiquidator is BaseLiquidator {
             tokenIndex
         );
 
-        lpToken.approve(address(_balancerVault), lpTokenAmt);
+        lpToken.forceApprove(address(_balancerVault), lpTokenAmt);
 
         IBalancerVault(_balancerVault).exitPool(poolId, address(this), payable(address(this)), exitPoolRequest);
     }

@@ -20,6 +20,7 @@ import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 import "../utils/BlueberryErrors.sol" as Errors;
 import "../libraries/UniV3/LiquidityAmounts.sol" as UniLiquidity;
 
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { SwapRegistry } from "./SwapRegistry.sol";
 
 import { IBank } from "../interfaces/IBank.sol";
@@ -33,6 +34,8 @@ import { ISoftVault } from "../interfaces/ISoftVault.sol";
  * @dev Each spell will have its own liquidator contract
  */
 abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155Receiver {
+    using SafeERC20 for IERC20;
+
     /// @dev The instance of the BlueberryBank contract
     IBank internal _bank;
 
@@ -115,8 +118,8 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         // liquidate from bank
         uint256 uVaultShare = IERC20(bankInfo.softVault).balanceOf(address(this));
 
-        // approve debtToken for bank and liquidate
-        IERC20(asset).approve(address(_bank), amount);
+        // forceApprove debtToken for bank and liquidate
+        IERC20(asset).forceApprove(address(_bank), amount);
 
         _bank.liquidate(POS_ID, address(asset), amount);
 
@@ -129,8 +132,8 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         // Unwind position
         _unwindPosition(posInfo, bankInfo.softVault, asset, amount + premium);
 
-        // approve aave pool to get back debt
-        IERC20(asset).approve(address(_pool), amount + premium);
+        // forceApprove aave pool to get back debt
+        IERC20(asset).forceApprove(address(_pool), amount + premium);
 
         // reset position id
         POS_ID = 0;

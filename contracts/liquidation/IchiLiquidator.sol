@@ -30,7 +30,7 @@ import { IWERC20 } from "../interfaces/IWERC20.sol";
  * @author Blueberry Protocol
  * @notice This contract is the liquidator for all Ichi Spells
  */
-contract IchiLiquidator is BaseLiquidator {
+contract IchiLiquidator is BaseLiquidator {   
     /// @dev address of ICHI token
     address private _ichiV2Token;
 

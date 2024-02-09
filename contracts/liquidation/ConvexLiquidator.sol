@@ -14,6 +14,7 @@ import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import { BaseLiquidator } from "./BaseLiquidator.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IBank } from "../interfaces/IBank.sol";
 
@@ -32,6 +33,8 @@ import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
  * @dev Due to the complexity of Curve, a separate deployment for each unique Curve Spell is required
  */
 contract ConvexLiquidator is BaseLiquidator {
+    using SafeERC20 for IERC20;
+
     /// @dev The address of the associated Curve Oracle
     ICurveOracle internal _curveOracle;
 
@@ -103,7 +106,7 @@ contract ConvexLiquidator is BaseLiquidator {
         ICvxBooster convexBooster = IWConvexBooster(posInfo.collToken).getCvxBooster();
 
         (address lpToken, address token, , , , ) = convexBooster.poolInfo(pid);
-        IERC20(token).approve(address(convexBooster), IERC20(token).balanceOf(address(this)));
+        IERC20(token).forceApprove(address(convexBooster), IERC20(token).balanceOf(address(this)));
         convexBooster.withdraw(pid, IERC20(token).balanceOf(address(this)));
 
         // Withdraw token from Curve Pool
@@ -148,7 +151,7 @@ contract ConvexLiquidator is BaseLiquidator {
         }
         
         uint256 lpTokenAmt = lpToken.balanceOf(address(this));
-        lpToken.approve(address(curvePool), lpTokenAmt);
+        lpToken.forceApprove(address(curvePool), lpTokenAmt);
 
         ICurvePool(curvePool).remove_liquidity_one_coin(lpTokenAmt, int128(uint128(tokenIndex)), 0);
     }

@@ -29,6 +29,8 @@ import { ISwapRegistry } from "../interfaces/ISwapRegistry.sol";
  *         well as handle all execution of swaps.
  */
 abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
+    using SafeERC20 for IERC20;
+
     /// @notice The address of the WETH token
     address internal _weth;
 
@@ -107,7 +109,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
                 dstToken == address(_weth);
             }
 
-            IERC20(srcToken).approve(_balancerVault, amount);
+            IERC20(srcToken).forceApprove(_balancerVault, amount);
 
             bytes32 poolId = _balancerRoutes[srcToken][dstToken];
 
@@ -151,7 +153,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
             }
 
             ICurvePool pool = ICurvePool(_curveRoutes[srcToken][dstToken]);
-            IERC20(srcToken).approve(address(pool), amount);
+            IERC20(srcToken).forceApprove(address(pool), amount);
 
             uint256 srcIndex;
             uint256 dstIndex;
@@ -189,7 +191,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
         uint256 amount
     ) internal returns (address tokenReceived, uint256 amountReceived) {
         if (IERC20(srcToken).balanceOf(address(this)) >= amount) {
-            IERC20(srcToken).approve(_swapRouter, amount);
+            IERC20(srcToken).forceApprove(_swapRouter, amount);
 
             amountReceived = ISwapRouter(_swapRouter).exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
