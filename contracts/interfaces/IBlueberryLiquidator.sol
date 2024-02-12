@@ -9,8 +9,9 @@
 */
 pragma solidity 0.8.22;
 
-import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+/* solhint-disable max-line-length */
 import { AutomationCompatibleInterface } from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
+/* solhint-enable max-line-length */
 
 interface IBlueberryLiquidator is AutomationCompatibleInterface {
     /**

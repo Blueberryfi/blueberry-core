@@ -11,14 +11,10 @@ pragma solidity 0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import { BaseLiquidator } from "./BaseLiquidator.sol";
 
-import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-
 import { IBank } from "../interfaces/IBank.sol";
-import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 
 /**
@@ -84,7 +80,6 @@ contract ShortLongLiquidator is BaseLiquidator {
         // Withdraw ERC1155 liquidiation
         uint256 balance = IERC1155(posInfo.collToken).balanceOf(address(this), posInfo.collId);
         IWERC20(posInfo.collToken).burn(address(uint160(posInfo.collId)), balance);
-        
         _swap(posInfo.underlyingToken, debtToken, IERC20(posInfo.underlyingToken).balanceOf(address(this)));
     }
 }

@@ -19,7 +19,6 @@ import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 
 import { IBalancerVault, IAsset } from "../interfaces/balancer-v2/IBalancerVault.sol";
 import { ICurvePool } from "../interfaces/curve/ICurvePool.sol";
-import { ICurveRegistry } from "../interfaces/curve/ICurveRegistry.sol";
 import { ISwapRegistry } from "../interfaces/ISwapRegistry.sol";
 
 /**
@@ -164,6 +163,7 @@ abstract contract SwapRegistry is ISwapRegistry, Ownable2StepUpgradeable {
                     } else if (coin == dstToken) {
                         dstIndex = i;
                     }
+                    // solhint-disable-next-line no-empty-blocks
                 } catch {}
 
                 if (srcIndex != 0 && dstIndex != 0) {

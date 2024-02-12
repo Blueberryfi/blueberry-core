@@ -1,11 +1,21 @@
-import { BigNumber, utils } from "ethers";
-import { ethers, upgrades } from "hardhat";
-import { Protocol, evm_increaseTime, evm_mine_blocks, fork, setupIchiProtocol } from "../helpers";
-import { BlueberryBank, CoreOracle, ERC20, IchiLiquidator, IchiSpell, MockIchiFarm, MockIchiV2, MockIchiVault, MockOracle, ProtocolConfig, SoftVault, WERC20, WIchiFarm } from "../../typechain-types";
-import { ADDRESS, CONTRACT_NAMES } from "../../constant";
+import { BigNumber, utils } from 'ethers';
+import { ethers, upgrades } from 'hardhat';
+import { evm_increaseTime, evm_mine_blocks, fork, setupIchiProtocol } from '../helpers';
+import {
+  BlueberryBank,
+  ERC20,
+  IchiLiquidator,
+  IchiSpell,
+  MockIchiFarm,
+  MockIchiV2,
+  MockIchiVault,
+  MockOracle,
+  WIchiFarm,
+} from '../../typechain-types';
+import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import SpellABI from '../../abi/IchiSpell.json';
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { expect } from "chai";
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { expect } from 'chai';
 
 const USDC = ADDRESS.USDC;
 const ICHI = ADDRESS.ICHI;
@@ -44,7 +54,7 @@ describe('Ichi Liquidator', () => {
     ichi = <MockIchiV2>await ethers.getContractAt('MockIchiV2', ICHI);
     ichiV1 = <ERC20>await ethers.getContractAt('ERC20', ICHIV1);
 
-    let protocol = await setupIchiProtocol();
+    const protocol = await setupIchiProtocol();
     bank = protocol.bank;
     spell = protocol.ichiSpell;
     ichiFarm = protocol.ichiFarm;
@@ -78,24 +88,22 @@ describe('Ichi Liquidator', () => {
     );
     positionId = (await bank.getNextPositionId()).sub(1);
 
-    const LiquidatorFactory = await ethers.getContractFactory(
-      CONTRACT_NAMES.IchiLiquidator
-    );
+    const LiquidatorFactory = await ethers.getContractFactory(CONTRACT_NAMES.IchiLiquidator);
     liquidator = <IchiLiquidator>await upgrades.deployProxy(
-        LiquidatorFactory,
-        [
-            bank.address,
-            treasury.address,
-            POOL_ADDRESSES_PROVIDER,
-            spell.address,
-            UNISWAP_V3_ROUTER,
-            ichi.address,
-            WETH,
-            admin.address
-        ],
-        {
-            unsafeAllow: ["delegatecall"],
-        }
+      LiquidatorFactory,
+      [
+        bank.address,
+        treasury.address,
+        POOL_ADDRESSES_PROVIDER,
+        spell.address,
+        UNISWAP_V3_ROUTER,
+        ichi.address,
+        WETH,
+        admin.address,
+      ],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
     );
   });
   it('should be able to liquidate the position => (OV - PV)/CV = LT', async () => {
@@ -126,16 +134,18 @@ describe('Ichi Liquidator', () => {
     expect((await bank.getPositionInfo(positionId)).at(4)).is.equal(0);
     expect((await bank.getPositionInfo(positionId)).at(6)).is.equal(0);
     expect((await bank.getPositionInfo(positionId)).at(7)).is.equal(0);
-    
+
     // Expect the liquidator to have some CRV
     expect(await usdc.balanceOf(liquidator.address)).to.be.greaterThan(0);
 
     // Expect withdraws to revert if a non-admin tries to withdraw
-    await expect(liquidator.connect(alice).withdraw([usdc.address])).to.be.revertedWith("Ownable: caller is not the owner");
-    
+    await expect(liquidator.connect(alice).withdraw([usdc.address])).to.be.revertedWith(
+      'Ownable: caller is not the owner'
+    );
+
     // Withdraw the CRV to the treasury
     await liquidator.connect(admin).withdraw([usdc.address]);
-    
+
     expect(await usdc.balanceOf(liquidator.address)).to.be.equal(0);
     expect(await usdc.balanceOf(treasury.address)).to.be.greaterThan(0);
   });

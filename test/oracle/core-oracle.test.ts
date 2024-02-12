@@ -30,13 +30,9 @@ describe('Core Oracle', () => {
     mockOracle = <MockOracle>await MockOracle.deploy();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
-    chainlinkOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
-      ChainlinkAdapterOracle,
-      [admin.address],
-      {
-        unsafeAllow: ['delegatecall'],
-      }
-    );
+    chainlinkOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(ChainlinkAdapterOracle, [admin.address], {
+      unsafeAllow: ['delegatecall'],
+    });
     await chainlinkOracle.deployed();
 
     const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);

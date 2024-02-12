@@ -43,7 +43,8 @@ interface ISwapRegistry {
 
     /**
      * @notice Registers a token as a protocol token
-     * @dev Due to lack of liquidity depth traditionally protocol tokens do not have smooth swap routes to most other tokens
+     * @dev Due to lack of liquidity depth traditionally protocol tokens do not have smooth swap routes
+     *      to most other tokens.
      *      This function allows the system to know which tokens are protocol tokens and should be treated differently
      *      resulting in swapping to WETH before swapping to the debt token
      * @param token The address of the token to register

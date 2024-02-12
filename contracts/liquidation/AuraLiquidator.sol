@@ -10,7 +10,6 @@
 pragma solidity 0.8.22;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import { BaseLiquidator } from "./BaseLiquidator.sol";
@@ -19,7 +18,7 @@ import { StablePoolUserData } from "../libraries/balancer-v2/StablePoolUserData.
 
 import { IBank } from "../interfaces/IBank.sol";
 import { IBalancerV2Pool } from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
-import { IBalancerVault, IAsset } from "../interfaces/balancer-v2/IBalancerVault.sol";
+import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
 import { ICvxBooster } from "../interfaces/convex/ICvxBooster.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWAuraBooster } from "../interfaces/IWAuraBooster.sol";

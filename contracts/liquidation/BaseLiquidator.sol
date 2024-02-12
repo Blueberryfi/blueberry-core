@@ -9,16 +9,12 @@
 */
 pragma solidity 0.8.22;
 
-import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IPool } from "@aave/core-v3/contracts/interfaces/IPool.sol";
 import { IPoolAddressesProvider } from "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
-import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../libraries/UniV3/LiquidityAmounts.sol" as UniLiquidity;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { SwapRegistry } from "./SwapRegistry.sol";
@@ -46,7 +42,8 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
     address internal _treasury;
 
     /// @dev The position id of the liquidation
-    uint256 internal POS_ID;
+    // solhint-disable-next-line var-name-mixedcase
+    uint256 internal _POS_ID;
 
     /// @dev Aave LendingPool
     IPool private _pool;
@@ -89,9 +86,9 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         IBank.Position memory posInfo = _bank.getPositionInfo(_positionId);
 
         _bank.accrue(posInfo.debtToken);
-        
+
         // flash borrow the reserve tokens
-        POS_ID = _positionId;
+        _POS_ID = _positionId;
 
         _pool.flashLoanSimple(
             address(this),
@@ -110,9 +107,11 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         address /*initiator*/,
         bytes calldata /*data*/
     ) external virtual override returns (bool) {
-        require(msg.sender == address(_pool));
+        if (msg.sender != address(_pool)) {
+            revert Errors.UNAUTHORIZED();
+        }
 
-        IBank.Position memory posInfo = _bank.getPositionInfo(POS_ID);
+        IBank.Position memory posInfo = _bank.getPositionInfo(_POS_ID);
         IBank.Bank memory bankInfo = _bank.getBankInfo(posInfo.underlyingToken);
 
         // liquidate from bank
@@ -121,7 +120,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         // forceApprove debtToken for bank and liquidate
         IERC20(asset).forceApprove(address(_bank), amount);
 
-        _bank.liquidate(POS_ID, address(asset), amount);
+        _bank.liquidate(_POS_ID, address(asset), amount);
 
         // check if collToken (debtToken/asset), uVaultShare are received after liquidation
         uVaultShare = IERC20(bankInfo.softVault).balanceOf(address(this)) - uVaultShare;
@@ -136,7 +135,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         IERC20(asset).forceApprove(address(_pool), amount + premium);
 
         // reset position id
-        POS_ID = 0;
+        _POS_ID = 0;
 
         return true;
     }
@@ -202,7 +201,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         address debtToken,
         uint256 debtAmount
     ) internal virtual {
-        // unwind position
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     /**
@@ -211,7 +210,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
      * @param debtToken The address of the debt token that should be received after exiting the pool
      */
     function _exit(IERC20 lpToken, address debtToken) internal virtual {
-        // exit from the pool
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -234,7 +233,9 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data
-    ) external returns (bytes4) {}
+    ) external returns (bytes4) {
+        // solhint-disable-previous-line no-empty-blocks
+    }
 
     function supportsInterface(bytes4 /*interfaceId*/) external pure returns (bool) {
         return true;

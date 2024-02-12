@@ -15,8 +15,6 @@ import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC
 
 import { BaseLiquidator } from "./BaseLiquidator.sol";
 
-import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-
 import { IBank } from "../interfaces/IBank.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IIchiSpell } from "../interfaces/spell/IIchiSpell.sol";
@@ -30,7 +28,7 @@ import { IWERC20 } from "../interfaces/IWERC20.sol";
  * @author Blueberry Protocol
  * @notice This contract is the liquidator for all Ichi Spells
  */
-contract IchiLiquidator is BaseLiquidator {   
+contract IchiLiquidator is BaseLiquidator {
     /// @dev address of ICHI token
     address private _ichiV2Token;
 
