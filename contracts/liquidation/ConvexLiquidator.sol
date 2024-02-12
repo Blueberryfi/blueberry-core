@@ -25,7 +25,7 @@ import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
 
 /**
- * @title AuraLiquidator
+ * @title ConvexLiquidator
  * @author Blueberry Protocol
  * @notice This contract is the liquidator for Convex Spells
  * @dev Due to the complexity of Curve, a separate deployment for each unique Curve Spell is required
