@@ -52,7 +52,21 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.MIM,
       ADDRESS.WBTC,
     ],
-    [TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays, TwoDays]
+    [
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+      TwoDays,
+    ]
   );
 
   await chainlinkAdapterOracle.setPriceFeeds(

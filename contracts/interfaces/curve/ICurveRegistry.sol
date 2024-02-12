@@ -16,4 +16,6 @@ interface ICurveRegistry {
     function get_gauges(address pool) external view returns (address[10] memory, uint128[10] memory);
 
     function get_lp_token(address pool) external view returns (address);
+
+    function exchange(address _pool, address _from, address _to, uint256 _amount, uint256 _expected) external returns (uint256);
 }

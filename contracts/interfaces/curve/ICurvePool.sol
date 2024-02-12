@@ -23,6 +23,10 @@ interface ICurvePool {
 
     function remove_liquidity_one_coin(uint256, int128, uint256) external;
 
+    function exchange(uint256, uint128, uint256, uint256) external;
+
+    function remove_liquidity_one_coin(uint256, uint256, uint256, bool, address) external;
+
     function get_virtual_price() external view returns (uint256);
 
     function lp_token() external view returns (address); // v1
@@ -36,6 +40,10 @@ interface ICurvePool {
     function claim_admin_fees() external;
 
     function get_dy(uint256 i, uint256 j, uint256 dx) external view returns (uint256);
+
+    function exchange(uint256 i, uint256 j, uint256 dx, uint256 min_dy) external returns (uint256);
+
+    function coins(uint256 i) external view returns (address);
 
     // 3crv pool specific functions
 

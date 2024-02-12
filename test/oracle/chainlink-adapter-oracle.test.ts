@@ -60,14 +60,13 @@ describe('Chainlink Adapter Oracle', () => {
 
   describe('Owner', () => {
     it('should be able to set routes', async () => {
-      await expect(chainlinkAdapterOracle.connect(alice).setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED])).to.be.revertedWith(
-        'Ownable: caller is not the owner'
-      );
+      await expect(
+        chainlinkAdapterOracle.connect(alice).setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED])
+      ).to.be.revertedWith('Ownable: caller is not the owner');
 
-      await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ethers.constants.AddressZero])).to.be.revertedWithCustomError(
-        chainlinkAdapterOracle,
-        'ZERO_ADDRESS'
-      );
+      await expect(
+        chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ethers.constants.AddressZero])
+      ).to.be.revertedWithCustomError(chainlinkAdapterOracle, 'ZERO_ADDRESS');
 
       await expect(chainlinkAdapterOracle.setPriceFeeds([ADDRESS.USDC], [ADDRESS.CHAINLINK_USDC_USD_FEED]))
         .to.be.emit(chainlinkAdapterOracle, 'SetTokenPriceFeed')
