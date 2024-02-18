@@ -74,6 +74,7 @@ export enum CONTRACT_NAMES {
   IchiLiquidator = 'IchiLiquidator',
   AuraLiquidator = 'AuraLiquidator',
   ConvexLiquidator = 'ConvexLiquidator',
+  SoftVaultOracle = 'SoftVaultOracle',
 }
 
 export const ADDRESS_GOERLI = {

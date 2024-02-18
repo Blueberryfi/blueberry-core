@@ -17,6 +17,7 @@ import {
   CurveStableOracle,
   CurveVolatileOracle,
   CurveTricryptoOracle,
+  SoftVaultOracle,
   ShortLongSpell,
   Comptroller,
 } from '../../typechain-types';
@@ -55,6 +56,7 @@ export interface ShortLongProtocol {
   stableOracle: CurveStableOracle;
   volatileOracle: CurveVolatileOracle;
   tricryptoOracle: CurveTricryptoOracle;
+  softVaultOracle: SoftVaultOracle;
   oracle: CoreOracle;
   config: ProtocolConfig;
   bank: BlueberryBank;
@@ -98,6 +100,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   let stableOracle: CurveStableOracle;
   let volatileOracle: CurveVolatileOracle;
   let tricryptoOracle: CurveTricryptoOracle;
+  let softVaultOracle: SoftVaultOracle;
   let oracle: CoreOracle;
   let shortLongSpell: ShortLongSpell;
 
@@ -280,6 +283,17 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   await tricryptoOracle.deployed();
 
+  const SoftVaultOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.SoftVaultOracle);
+  softVaultOracle = <SoftVaultOracle>await upgrades.deployProxy(
+    SoftVaultOracleFactory,
+    [mockOracle.address, admin.address],
+    {
+      unsafeAllow: ['delegatecall'],
+    }
+  );
+
+  await softVaultOracle.deployed();
+
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
   await oracle.deployed();
@@ -418,25 +432,33 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   );
   await wstETHSoftVault.deployed();
 
-  await mockOracle.setPrice(
+  await softVaultOracle.registerSoftVault(daiSoftVault.address);
+  await softVaultOracle.registerSoftVault(wbtcSoftVault.address);
+  await softVaultOracle.registerSoftVault(wethSoftVault.address);
+  await softVaultOracle.registerSoftVault(wstETHSoftVault.address);
+  await softVaultOracle.registerSoftVault(linkSoftVault.address);
+  await softVaultOracle.registerSoftVault(crvSoftVault.address);
+  await softVaultOracle.registerSoftVault(usdcSoftVault.address);
+
+  await oracle.setRoutes(
     [
       daiSoftVault.address,
       wbtcSoftVault.address,
-      wethSoftVault.address,
-      wstETHSoftVault.address,
       linkSoftVault.address,
+      wstETHSoftVault.address,
+      crvSoftVault.address,
+      usdcSoftVault.address,
+      wethSoftVault.address,
     ],
     [
-      BigNumber.from(10).pow(18), // $1
-      BigNumber.from(10).pow(18).mul(BTC_PRICE),
-      BigNumber.from(10).pow(18).mul(ETH_PRICE),
-      BigNumber.from(10).pow(18).mul(ETH_PRICE),
-      BigNumber.from(10).pow(18).mul(LINK_PRICE),
+      softVaultOracle.address,
+      softVaultOracle.address,
+      softVaultOracle.address,
+      softVaultOracle.address,
+      softVaultOracle.address,
+      softVaultOracle.address,
+      softVaultOracle.address,
     ]
-  );
-  await oracle.setRoutes(
-    [daiSoftVault.address, wbtcSoftVault.address, linkSoftVault.address, wstETHSoftVault.address],
-    [mockOracle.address, mockOracle.address, mockOracle.address, mockOracle.address]
   );
 
   await shortLongSpell.addStrategy(daiSoftVault.address, MIN_POS_SIZE, MAX_POS_SIZE);
@@ -517,6 +539,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     stableOracle,
     volatileOracle,
     tricryptoOracle,
+    softVaultOracle,
     oracle,
     config,
     feeManager,

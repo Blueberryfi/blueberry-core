@@ -1,6 +1,13 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { BlueberryBank, ERC20, MockOracle, ShortLongLiquidator, ShortLongSpell } from '../../typechain-types';
+import {
+  BlueberryBank,
+  ERC20,
+  MockOracle,
+  SoftVault,
+  ShortLongLiquidator,
+  ShortLongSpell,
+} from '../../typechain-types';
 import { ethers, upgrades } from 'hardhat';
 import { setupShortLongProtocol } from '../helpers/setup-short-long-protocol';
 import { BigNumber, utils } from 'ethers';
@@ -24,6 +31,7 @@ describe('ShortLong Liquidator', () => {
 
   let usdc: ERC20;
   let crv: ERC20;
+  let softVaultOracle: SoftVaultOracle;
   let mockOracle: MockOracle;
   let spell: ShortLongSpell;
   let bank: BlueberryBank;
@@ -39,6 +47,7 @@ describe('ShortLong Liquidator', () => {
     bank = protocol.bank;
     spell = protocol.shortLongSpell;
     mockOracle = protocol.mockOracle;
+    softVaultOracle = protocol.softVaultOracle;
 
     const LiquidatorFactory = await ethers.getContractFactory(CONTRACT_NAMES.ShortLongLiquidator);
     liquidator = <ShortLongLiquidator>await upgrades.deployProxy(
@@ -59,7 +68,7 @@ describe('ShortLong Liquidator', () => {
     );
 
     const depositAmount = utils.parseUnits('100', 6); // 100 USDC
-    const borrowAmount = utils.parseUnits('10', 18); // 10 CRV
+    const borrowAmount = utils.parseUnits('100', 18); // 100 CRV
     const iface = new ethers.utils.Interface(SpellABI);
 
     await mockOracle.setPrice(

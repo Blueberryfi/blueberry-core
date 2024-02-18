@@ -50,8 +50,8 @@ describe('ShortLong Spell mainnet fork', () => {
   });
 
   describe('Aura Pool Farming Position', () => {
-    const depositAmount = utils.parseUnits('100', 6); // 100 USDC
-    const borrowAmount = utils.parseUnits('10', 18); // 0.1 ETH
+    const depositAmount = utils.parseUnits('120', 6); // 100 USDC
+    const borrowAmount = utils.parseUnits('220', 18); // 200 Dollars
     const iface = new ethers.utils.Interface(SpellABI);
 
     before(async () => {
@@ -72,7 +72,7 @@ describe('ShortLong Spell mainnet fork', () => {
               collToken: USDC,
               borrowToken: CRV,
               collAmount: depositAmount,
-              borrowAmount: borrowAmount.mul(300),
+              borrowAmount: borrowAmount.mul(22),
               farmingPoolId: 0,
             },
             swapData.data,
@@ -147,6 +147,7 @@ describe('ShortLong Spell mainnet fork', () => {
 
     it('should be able to farm DAI', async () => {
       const positionId = await bank.getNextPositionId();
+      console.log('Position ID:', positionId.toString());
       const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
       const swapData = await getParaswapCalldata(CRV, DAI, borrowAmount, spell.address, 100);
 
@@ -167,7 +168,7 @@ describe('ShortLong Spell mainnet fork', () => {
       );
 
       const bankInfo = await bank.getBankInfo(DAI);
-      console.log('USDC Bank Info:', bankInfo);
+      console.log('DAI Bank Info:', bankInfo);
 
       const pos = await bank.getPositionInfo(positionId);
       console.log('Position Info:', pos);
@@ -191,7 +192,7 @@ describe('ShortLong Spell mainnet fork', () => {
       console.log('CV:', utils.formatUnits(cv));
       console.log('Prev Position Risk', utils.formatUnits(risk, 2), '%');
       await mockOracle.setPrice(
-        [daiSoftVault.address, USDC],
+        [DAI, USDC],
         [
           BigNumber.from(10).pow(17).mul(15), // $1.5
           BigNumber.from(10).pow(17).mul(5), // $0.5
@@ -262,11 +263,12 @@ describe('ShortLong Spell mainnet fork', () => {
       await evm_mine_blocks(10000);
       const positionId = (await bank.getNextPositionId()).sub(1);
       const position = await bank.getPositionInfo(positionId);
+      console.log('Position Info:', position);
 
       const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
-
+      console.log('Debt Amount:', utils.formatUnits(debtAmount));
       const swapAmount = (await daiSoftVault.callStatic.withdraw(position.collateralSize)).div(2);
-
+      console.log('Swap Amount:', utils.formatUnits(swapAmount));
       // Manually transfer CRV rewards to spell
       await crv.transfer(spell.address, utils.parseUnits('3', 18));
 
@@ -275,7 +277,7 @@ describe('ShortLong Spell mainnet fork', () => {
       const beforeCrvBalance = await crv.balanceOf(admin.address);
 
       await mockOracle.setPrice(
-        [daiSoftVault.address, USDC],
+        [DAI, USDC],
         [
           BigNumber.from(10).pow(18), // $1
           BigNumber.from(10).pow(18), // $1
@@ -283,7 +285,7 @@ describe('ShortLong Spell mainnet fork', () => {
       );
 
       const swapData = await getParaswapCalldata(DAI, CRV, swapAmount, spell.address, 100);
-
+      console.log('Swap Data:', swapData.data);
       const iface = new ethers.utils.Interface(SpellABI);
       await bank.execute(
         positionId,
@@ -327,7 +329,7 @@ describe('ShortLong Spell mainnet fork', () => {
       await crv.transfer(spell.address, utils.parseUnits('3', 18));
 
       await mockOracle.setPrice(
-        [daiSoftVault.address, USDC],
+        [DAI, USDC],
         [
           BigNumber.from(10).pow(18), // $1
           BigNumber.from(10).pow(18), // $1
@@ -376,7 +378,7 @@ describe('ShortLong Spell mainnet fork', () => {
       const beforeCrvBalance = await crv.balanceOf(admin.address);
 
       await mockOracle.setPrice(
-        [daiSoftVault.address, USDC],
+        [DAI, USDC],
         [
           BigNumber.from(10).pow(18), // $1
           BigNumber.from(10).pow(18), // $1
