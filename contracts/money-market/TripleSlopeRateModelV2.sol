@@ -9,7 +9,7 @@ import "./SafeMath.sol";
  * @title Blueberry's TripleSlopeRateModelV2 Contract
  * @author Compound (Modified by Blueberry)
  */
-contract TripleSlopeRateModel is InterestRateModel {
+contract TripleSlopeRateModelV2 is InterestRateModel {
     using SafeMath for uint256;
 
     event NewInterestParams(
