@@ -19,7 +19,6 @@ env:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-
   # Verify that the code is formatted correctly
   lint:
     runs-on: ubuntu-latest
@@ -28,7 +27,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v1
         with:
-          node-version: 16
+          node-version: 18
       - name: Cache
         uses: actions/cache@v2
         id: cache
@@ -49,7 +48,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v1
         with:
-          node-version: 16
+          node-version: 18
       - name: Cache
         uses: actions/cache@v2
         id: cache
@@ -64,7 +63,7 @@ jobs:
 
   # Verify that integration tests pass
   test:
-    name: "Run Integration Test"
+    name: 'Run Integration Test'
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     defaults:
@@ -86,7 +85,7 @@ jobs:
         uses: actions/cache@v2
         id: cache
         with:
-          path: "**/node_modules"
+          path: '**/node_modules'
           key: npm-v2-${{ hashFiles('**/yarn.lock') }}
           restore-keys: npm-v2-
       - name: Install dependencies
@@ -103,7 +102,7 @@ jobs:
         uses: actions/cache@v2
         id: hardhat-cache
         with:
-          path: "artifacts"
+          path: 'artifacts'
           key: artifacts-${{ hashFiles('contracts/**/*.sol') }}
           restore-keys: |
             artifacts-
