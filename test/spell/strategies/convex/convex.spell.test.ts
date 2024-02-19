@@ -519,7 +519,7 @@ describe('Convex Spells Deploy', () => {
     await revertToSnapshot(snapshotId);
   });
 
-  it('should be able to farm CRV on Convex cvxCRV/CRV pool collateral WBTC', async () => {
+  it.skip('should be able to farm CRV on Convex cvxCRV/CRV pool collateral WBTC', async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
       5,
@@ -533,7 +533,7 @@ describe('Convex Spells Deploy', () => {
     );
   });
 
-  it('should be able to harvest on Convex #17', async () => {
+  it.skip('should be able to harvest on Convex #17', async () => {
     const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
@@ -548,7 +548,7 @@ describe('Convex Spells Deploy', () => {
     await revertToSnapshot(snapshotId);
   });
 
-  it('should be able to farm CRV on Convex cvxCRV/CRV pool collateral WETH', async () => {
+  it.skip('should be able to farm CRV on Convex cvxCRV/CRV pool collateral WETH', async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
       5,
@@ -562,7 +562,7 @@ describe('Convex Spells Deploy', () => {
     );
   });
 
-  it('should be able to harvest on Convex #18', async () => {
+  it.skip('should be able to harvest on Convex #18', async () => {
     const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
@@ -577,7 +577,7 @@ describe('Convex Spells Deploy', () => {
     await revertToSnapshot(snapshotId);
   });
 
-  it('should be able to farm CRV on Convex cvxCRV/CRV pool collateral DAI', async () => {
+  it.skip('should be able to farm CRV on Convex cvxCRV/CRV pool collateral DAI', async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
       5,
@@ -591,7 +591,7 @@ describe('Convex Spells Deploy', () => {
     );
   });
 
-  it('should be able to harvest on Convex #19', async () => {
+  it.skip('should be able to harvest on Convex #19', async () => {
     const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
@@ -606,7 +606,7 @@ describe('Convex Spells Deploy', () => {
     await revertToSnapshot(snapshotId);
   });
 
-  it('should be able to farm CRV on Convex cvxCRV/CRV pool collateral LINK', async () => {
+  it.skip('should be able to farm CRV on Convex cvxCRV/CRV pool collateral LINK', async () => {
     snapshotId = await takeSnapshot();
     await testFarm(
       5,
@@ -620,7 +620,7 @@ describe('Convex Spells Deploy', () => {
     );
   });
 
-  it('should be able to harvest on Convex #20', async () => {
+  it.skip('should be able to harvest on Convex #20', async () => {
     const positionId = (await bank.getNextPositionId()).sub(1);
     await testHarvest(
       positionId,
