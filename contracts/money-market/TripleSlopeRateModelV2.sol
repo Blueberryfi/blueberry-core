@@ -167,9 +167,7 @@ contract TripleSlopeRateModelV2 is InterestRateModel {
             return util.mul(multiplierPerSecond).div(1e18).add(baseRatePerSecond);
         } else if (util <= kink2) {
             return util.mul(jumpMultiplierPerSecond1).div(1e18).add(baseRatePerSecond);
-        }
-          else
-            {
+        } else {
             uint256 normalRate = kink2.mul(multiplierPerSecond).div(1e18).add(baseRatePerSecond);
             uint256 excessUtil = util.sub(kink2);
             return excessUtil.mul(jumpMultiplierPerSecond2).div(1e18).add(normalRate);
