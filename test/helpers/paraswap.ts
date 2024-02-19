@@ -24,9 +24,10 @@ export const getParaswapCalldata = async (
     destToken: toToken,
     amount: amount.toString(),
     options: {
-      includeDEXS: ['UniswapV3', 'UniswapV2', 'SushiSwap', 'BalancerV1', 'BalancerV2'],
+      includeDEXS: ['SushiSwap', 'BalancerV1', 'BalancerV2', 'Curve', 'UniswapV3', 'CurveV2', 'CurveV3'],
       maxImpact: maxImpact,
-      otherExchangePrices: true,
+      otherExchangePrices: false,
+      excludeDEXS: ['UniswapV2'],
     },
   });
 
@@ -76,9 +77,10 @@ export const faucetToken = async (
     destDecimals: await token.decimals(),
     amount: amount.toString(),
     options: {
-      includeDEXS: ['UniswapV2', 'SushiSwap', 'BalancerV1', 'BalancerV2', 'Curve', 'UniswapV3'],
+      includeDEXS: ['SushiSwap', 'BalancerV1', 'BalancerV2', 'Curve', 'UniswapV3', 'CurveV2', 'CurveV3'],
       maxImpact: maxImpact,
-      otherExchangePrices: true,
+      otherExchangePrices: false,
+      excludeDEXS: ['UniswapV2'],
     },
   });
 
@@ -123,9 +125,10 @@ export const getParaswapCalldataToBuy = async (
     amount: toAmount.toString(),
     side: SwapSide.BUY,
     options: {
-      includeDEXS: ['UniswapV3', 'UniswapV2', 'BalancerV1'],
+      includeDEXS: ['SushiSwap', 'BalancerV1', 'BalancerV2', 'Curve', 'UniswapV3', 'CurveV2', 'CurveV3'],
       maxImpact: maxImpact,
-      otherExchangePrices: true,
+      otherExchangePrices: false,
+      excludeDEXS: ['UniswapV2'],
     },
   });
 
