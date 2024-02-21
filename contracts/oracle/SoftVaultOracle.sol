@@ -49,6 +49,9 @@ contract SoftVaultOracle is IBaseOracle, UsingBaseOracle {
     /// @dev mapping of registered Soft Vaults to their VaultInfo Struct
     mapping(address => VaultInfo) private _vaultInfo;
 
+    /// @dev constant to represent the number of decimals in the SoftVault
+    uint256 private constant _VAULT_DECIMALS = 8;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -81,7 +84,7 @@ contract SoftVaultOracle is IBaseOracle, UsingBaseOracle {
 
         return
             (IBErc20(vaultInfo.bToken).exchangeRateStored() * _base.getPrice(vaultInfo.underlyingToken)) /
-            10 ** (18 + vaultInfo.underlyingDecimals - 8);
+            10 ** (18 + vaultInfo.underlyingDecimals - _VAULT_DECIMALS);
     }
 
     /**
