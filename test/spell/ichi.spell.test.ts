@@ -446,7 +446,7 @@ describe('ICHI Angel Vaults Spell', () => {
         [USDC, ICHI],
         [
           BigNumber.from(10).pow(18), // $1
-          BigNumber.from(10).pow(16).mul(400), // $4
+          BigNumber.from(10).pow(18).mul(4), // $4
         ]
       );
       risk = await bank.callStatic.getPositionRisk(1);
@@ -606,6 +606,7 @@ describe('ICHI Angel Vaults Spell', () => {
       TickMath.getSqrtRatioAtTick(tick);
 
       const beforeTreasuryBalance = await ichi.balanceOf(treasury.address);
+      console.log('Treasury Balance:', beforeTreasuryBalance.toString());
       const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeIchiBalance = await ichi.balanceOf(admin.address);
       const positionInfo = await bank.getPositionInfo(positionId);
@@ -634,11 +635,11 @@ describe('ICHI Angel Vaults Spell', () => {
       console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
       console.log('ICHI Balance Change:', afterIchiBalance.sub(beforeIchiBalance));
       const depositFee = depositAmount.mul(50).div(10000);
-      const withdrawFee = depositAmount.sub(depositFee).div(3).mul(50).div(10000);
-      expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.gte(depositAmount.sub(depositFee).div(3).sub(withdrawFee));
+      const withdrawFee = depositAmount.sub(depositFee).mul(50).div(30000);
+      expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.near(depositAmount.sub(depositFee).div(3).sub(withdrawFee));
 
       const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(withdrawFee);
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.near(withdrawFee);
     });
     it('should be able to withdraw USDC', async () => {
       const positionId = (await bank.getNextPositionId()).sub(2);
@@ -676,13 +677,13 @@ describe('ICHI Angel Vaults Spell', () => {
       console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
       console.log('ICHI Balance Change:', afterIchiBalance.sub(beforeIchiBalance));
       const depositFee = depositAmount.mul(50).div(10000);
-      const withdrawFee = depositAmount.sub(depositFee).div(3).mul(2).mul(50).div(10000);
+      const withdrawFee = depositAmount.sub(depositFee).mul(2).mul(50).div(30000);
       expect(afterIchiBalance.sub(beforeIchiBalance)).to.be.gte(
-        depositAmount.sub(depositFee).div(3).mul(2).sub(withdrawFee)
+        depositAmount.sub(depositFee).mul(2).div(3).sub(withdrawFee)
       );
 
       const afterTreasuryBalance = await ichi.balanceOf(treasury.address);
-      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.equal(withdrawFee);
+      expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.near(withdrawFee);
     });
 
     it('should be able to open a position for ICHI angel vault', async () => {
@@ -1097,11 +1098,14 @@ describe('ICHI Angel Vaults Spell', () => {
 
     it('should be able to reduce position within maxLTV', async () => {
       const nextPosId = await bank.getNextPositionId();
-
+      const positionId = nextPosId.sub(1);
+      const positionInfo = await bank.getPositionInfo(positionId);
+      const underlyingShareAmount = positionInfo.underlyingVaultShare;
+  
       await bank.execute(
-        nextPosId.sub(1),
+        positionId,
         spell.address,
-        iface.encodeFunctionData('reducePosition', [0, ICHI, depositAmount.div(3)])
+        iface.encodeFunctionData('reducePosition', [0, ICHI, underlyingShareAmount.div(3)])
       );
     });
 

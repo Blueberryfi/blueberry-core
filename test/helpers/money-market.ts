@@ -160,7 +160,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address,
     'Blueberry USDC',
     'bUSDC',
-    6,
+    8,
     bTokenAdmin.address
   );
   console.log('bUSDC deployed at: ', bUSDC.address);
@@ -172,7 +172,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address,
     'Blueberry ICHI',
     'bICHI',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bICHI deployed at: ', bICHI.address);
@@ -184,7 +184,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address,
     'Blueberry CRV',
     'bCRV',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bCRV deployed at: ', bCRV.address);
@@ -195,7 +195,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address, // IRM.address,
     'Blueberry DAI',
     'bDAI',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bDAI deployed at: ', bDAI.address);
@@ -206,7 +206,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address, // IRM.address,
     'Blueberry MIM',
     'bMIM',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bMIM deployed at: ', bMIM.address);
@@ -217,7 +217,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address, // IRM.address,
     'Blueberry LINK',
     'bLINK',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bLINK deployed at: ', bLINK.address);
@@ -228,7 +228,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address, // IRM.address,
     'Blueberry OHM',
     'bOHM',
-    9,
+    8,
     bTokenAdmin.address
   );
   console.log('bOHM deployed at: ', bOHM.address);
@@ -239,7 +239,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address, // IRM.address,
     'Blueberry SUSHI',
     'bSUSHI',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bSUSHI deployed at: ', bSUSHI.address);
@@ -250,7 +250,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address,
     'Blueberry BAL',
     'bBAL',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bBAL deployed at: ', bBAL.address);
@@ -261,7 +261,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   //  IRM.address,
   //  "Blueberry ALCX",
   //  "bALCX",
-  //  18,
+  //  8,
   //  bTokenAdmin.address
   //);
   //console.log("bALCX deployed at: ", bALCX.address);
@@ -279,7 +279,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address,
     'Blueberry Wrapped Ether',
     'bWETH',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bWETH deployed at: ', bWETH.address);
@@ -308,7 +308,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     IRM.address,
     'Blueberry WstETH',
     'bWstETH',
-    18,
+    8,
     bTokenAdmin.address
   );
   console.log('bWstETH deployed at: ', bWstETH.address);
@@ -319,7 +319,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   //   IRM.address,
   //   "Blueberry CrvSTETH",
   //   "bCrvSTETH",
-  //   18,
+  //   8,
   //   bTokenAdmin.address
   // );
   // console.log("bCrvStEth deployed at: ", bCrvStEth.address);
@@ -330,7 +330,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   //   IRM.address,
   //   "Blueberry CrvFRXETH",
   //   "bCrvFRXETH",
-  //   18,
+  //   8,
   //   bTokenAdmin.address
   // );
   // console.log("bCrvFrxEth deployed at: ", bCrvFrxEth.address);
@@ -341,7 +341,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   //   IRM.address,
   //   "Blueberry CrvMIM3CRV",
   //   "bCrvMIM3CRV",
-  //   18,
+  //   8,
   //   bTokenAdmin.address
   // );
   // console.log("bCrvMim3Crv deployed at: ", bCrvMim3Crv.address);
@@ -352,7 +352,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   //   IRM.address,
   //   "Blueberry CrvCVXCRV",
   //   "bCrvCVXCRV",
-  //   18,
+  //   8,
   //   bTokenAdmin.address
   // );
   // console.log("bCrvCvxCrv deployed at: ", bCrvCvxCrv.address);

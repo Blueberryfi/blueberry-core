@@ -59,7 +59,7 @@ describe('ShortLong Liquidator', () => {
     );
 
     const depositAmount = utils.parseUnits('100', 6); // 100 USDC
-    const borrowAmount = utils.parseUnits('10', 18); // 10 CRV
+    const borrowAmount = utils.parseUnits('100', 18); // 100 CRV
     const iface = new ethers.utils.Interface(SpellABI);
 
     await mockOracle.setPrice(

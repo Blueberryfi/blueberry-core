@@ -79,7 +79,7 @@ describe('ShortLong Spell Test test', () => {
   it('should be able to long DAI + earn wstETH (collateral: WBTC, borrowToken: DAI)', async () => {
     snapshotId = await takeSnapshot();
     console.log('Snapshot ID:', snapshotId);
-    await testFarm(4, WBTC, DAI, WstETH, utils.parseUnits('0.1', 8), utils.parseUnits('1', 18), 0, wbtc);
+    await testFarm(4, WBTC, DAI, WstETH, utils.parseUnits('0.1', 8), utils.parseUnits('100', 18), 0, wbtc);
   });
 
   it('should be able to close position #1', async () => {
