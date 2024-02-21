@@ -13,6 +13,7 @@ pragma solidity 0.8.22;
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
+import "../utils/BlueberryConst.sol" as Const;
 
 import { UsingBaseOracle } from "./UsingBaseOracle.sol";
 
@@ -34,12 +35,10 @@ contract SoftVaultOracle is IBaseOracle, UsingBaseOracle {
      * @dev Struct to store token info related to Balancer Pool tokens
      * @param bToken The bToken associated with the soft vault
      * @param underlyingToken The base ERC20 token associated with the soft vault
-     * @param underlyingDecimals The decimals of the underlying token
      */
     struct VaultInfo {
         address bToken;
         address underlyingToken;
-        uint8 underlyingDecimals;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -48,9 +47,6 @@ contract SoftVaultOracle is IBaseOracle, UsingBaseOracle {
 
     /// @dev mapping of registered Soft Vaults to their VaultInfo Struct
     mapping(address => VaultInfo) private _vaultInfo;
-
-    /// @dev constant to represent the number of decimals in the SoftVault
-    uint256 private constant _VAULT_DECIMALS = 8;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -84,7 +80,7 @@ contract SoftVaultOracle is IBaseOracle, UsingBaseOracle {
 
         return
             (IBErc20(vaultInfo.bToken).exchangeRateStored() * _base.getPrice(vaultInfo.underlyingToken)) /
-            10 ** (18 + vaultInfo.underlyingDecimals - _VAULT_DECIMALS);
+            Const.PRICE_PRECISION;
     }
 
     /**
@@ -101,6 +97,6 @@ contract SoftVaultOracle is IBaseOracle, UsingBaseOracle {
             revert Errors.ZERO_ADDRESS();
         }
 
-        _vaultInfo[softVault] = VaultInfo(bToken, underlyingToken, IERC20Metadata(underlyingToken).decimals());
+        _vaultInfo[softVault] = VaultInfo(bToken, underlyingToken);
     }
 }
