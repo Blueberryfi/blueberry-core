@@ -75,6 +75,7 @@ export enum CONTRACT_NAMES {
   AuraLiquidator = 'AuraLiquidator',
   ConvexLiquidator = 'ConvexLiquidator',
   SoftVaultOracle = 'SoftVaultOracle',
+  ERC4626Oracle = 'ERC4626Oracle',
 }
 
 export const ADDRESS_GOERLI = {
@@ -165,6 +166,7 @@ export const ADDRESS = {
   wstETH: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
   stETH: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
   ankrETH: '0xE95A203B1a91a908F9B9CE46459d101078c2c3cb',
+  pxETH: '0x04C154b66CB340F3Ae24111CC767e0184Ed00Cc6',
   bUSDC: '0xdfd54ac444eEffc121E3937b4EAfc3C27d39Ae64',
   bICHI: '0xBDf1431c153A2A48Ee05C1F24b9Dc476C93F75aE',
   bDAI: '0xcB5C1909074C7ac1956DdaFfA1C2F1cbcc67b932',
@@ -173,6 +175,7 @@ export const ADDRESS = {
   bWBTC: '0x506c190340F786c65548C0eE17c5EcDbba7807e0',
   bWETH: '0x8E09cC1d00c9bd67f99590E1b2433bF4Db5309C3',
   bALCX: '', // TODO: update address after mainnet deploy
+  apxETH: '0x9Ba021B0a9b958B5E75cE9f6dff97C7eE52cb3E6',
   bOHM: '', // TODO: update address after mainnet deploy
   bMIM: '', // TODO: update address after mainnet deploy
   bBAL: '', // TODO: update address after mainnet deploy
@@ -344,8 +347,9 @@ export const DEPLOYMENTS = {
   ibWBTC: '0xCc40ffD2512101c049A62eCE218AA2b5Aa6D2560',
   ibWETH: '0xcCd438a78376955A3b174be619E50Aa3DdD65469',
   ibWSTETH: '0x8DE384d5407ca3477b338Ee7a392caFFDD889F2D',
-  coreOracle: '0xdfe469ACe05C3d0D4461439e6cF5d0f46F33Ec56'
-}
+  coreOracle: '0xdfe469ACe05C3d0D4461439e6cF5d0f46F33Ec56',
+  chainlinkAdapterOracle: '0xC5CEa3f9C92291335076D4C2eC6Ae72E45Fb8937',
+};
 
 export const ADDRESS_DEV = {
   bUSDC: '0x5554dFB8aEbC5A148286fFAF2F84E584b43fF213',
