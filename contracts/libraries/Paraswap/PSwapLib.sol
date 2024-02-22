@@ -32,13 +32,6 @@ library PSwapLib {
         (success, returndata) = augustusSwapper.call(data);
 
         UniversalERC20.universalApprove(IERC20(fromToken), tokenTransferProxy, 0);
-
-        if (returndata.length > 0) {
-            assembly {
-                let returndata_size := mload(returndata)
-                revert(add(32, returndata), returndata_size)
-            }
-        }
     }
 
     function megaSwap(
