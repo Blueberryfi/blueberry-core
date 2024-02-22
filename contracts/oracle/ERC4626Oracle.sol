@@ -50,6 +50,7 @@ contract ERC4626Oracle is IBaseOracle, UsingBaseOracle {
     /// @dev mapping of registered ERC4626 Tokens to their TokenInfo Struct
     mapping(address => TokenInfo) private _tokenInfo;
 
+    /// @dev Address of the APXETH token
     address private constant _APXETH = 0x9Ba021B0a9b958B5E75cE9f6dff97C7eE52cb3E6;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -80,7 +81,6 @@ contract ERC4626Oracle is IBaseOracle, UsingBaseOracle {
         if (tokenInfo.underlyingToken == address(0)) {
             revert Errors.ORACLE_NOT_SUPPORT(token);
         }
-
         uint256 fixedPointOne = 10 ** (18 + tokenInfo.erc4626Decimals - tokenInfo.underlyingDecimals);
 
         return
@@ -109,6 +109,12 @@ contract ERC4626Oracle is IBaseOracle, UsingBaseOracle {
         });
     }
 
+    /**
+     *
+     * @param token The token address of the ERC4626 vault
+     * @param fixedPointOne Fixed point one representing 1 share of the ERC4626 vault
+     * @return The number of underlying assets per 1 share of the ERC4626 vault
+     */
     function _assetsPerShare(address token, uint256 fixedPointOne) internal view returns (uint256) {
         if (token == _APXETH) {
             return IApxEth(_APXETH).assetsPerShare();
