@@ -21,6 +21,8 @@ interface ICurvePool {
 
     function remove_liquidity_imbalance(uint256[4] calldata, uint256) external;
 
+    function remove_liquidity_one_coin(uint256, uint256, uint256) external;
+
     function remove_liquidity_one_coin(uint256, int128, uint256) external;
 
     function exchange(uint256, uint128, uint256, uint256) external;
