@@ -274,11 +274,8 @@ describe('Aura Spell', () => {
       await res.wait();
 
       const bankInfo = await bank.getBankInfo(USDC);
-      console.log('USDC Bank Info:', bankInfo);
 
       const pos = await bank.getPositionInfo(positionId);
-      console.log('Position Info:', pos);
-      console.log('Position Value:', await bank.callStatic.getPositionValue(1));
 
       expect(pos.owner).to.be.equal(admin.address);
       expect(pos.collToken).to.be.equal(waura.address);
@@ -334,10 +331,7 @@ describe('Aura Spell', () => {
       let pv = await bank.callStatic.getPositionValue(1);
       let ov = await bank.callStatic.getDebtValue(1);
       let cv = await bank.callStatic.getIsolatedCollateralValue(1);
-      console.log('PV:', utils.formatUnits(pv));
-      console.log('OV:', utils.formatUnits(ov));
-      console.log('CV:', utils.formatUnits(cv));
-      console.log('Prev Position Risk', utils.formatUnits(risk, 2), '%');
+
       await mockOracle.setPrice(
         [USDC, CRV],
         [
@@ -349,11 +343,6 @@ describe('Aura Spell', () => {
       pv = await bank.callStatic.getPositionValue(1);
       ov = await bank.callStatic.getDebtValue(1);
       cv = await bank.callStatic.getIsolatedCollateralValue(1);
-      console.log('=======');
-      console.log('PV:', utils.formatUnits(pv));
-      console.log('OV:', utils.formatUnits(ov));
-      console.log('CV:', utils.formatUnits(cv));
-      console.log('Position Risk', utils.formatUnits(risk, 2), '%');
     });
     // TODO: Find another USDC curve pool
     // it("should revert increasing existing position when diff pos param given", async () => {
@@ -440,7 +429,6 @@ describe('Aura Spell', () => {
       const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
 
       const totalEarned = await auraRewarder.earned(waura.address);
-      console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));
 
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
 
@@ -461,8 +449,6 @@ describe('Aura Spell', () => {
           }
         })
       );
-
-      console.log('Pending Rewards', pendingRewardsInfo);
 
       // Manually transfer CRV rewards to spell
       //await usdc.transfer(spell.address, utils.parseUnits("10", 6));
@@ -499,7 +485,6 @@ describe('Aura Spell', () => {
       const position = await bank.getPositionInfo(positionId);
 
       const totalEarned = await auraRewarder.earned(waura.address);
-      console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));
 
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
 
@@ -520,8 +505,6 @@ describe('Aura Spell', () => {
           }
         })
       );
-
-      console.log('Pending Rewards', pendingRewardsInfo);
 
       // Manually transfer CRV rewards to spell
       //await usdc.transfer(spell.address, utils.parseUnits("10", 6))
@@ -554,8 +537,7 @@ describe('Aura Spell', () => {
       );
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);
-      console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
-      console.log('CRV Balance Change:', afterCrvBalance.sub(beforeCrvBalance));
+
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
       expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(

@@ -97,7 +97,6 @@ export const setupOracles = async (): Promise<CoreOracle> => {
       ADDRESS.CHAINLINK_MIM_USD_FEED,
     ]
   );
-  console.log('chainlink oracle setup');
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   const oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
 
@@ -239,9 +238,10 @@ export const setupVaults = async (
 
     const underlyingToken = <ERC20>await ethers.getContractAt('ERC20', await bToken.underlying());
     tokens.push(underlyingToken);
+    console.log('token', await underlyingToken.name());
 
     const amount = await faucetToken(underlyingToken.address, utils.parseEther('20'), signer, 100);
-
+    console.log('faucet', amount.toString());
     if (amount == 0) {
       tokens.pop();
       softVaults.pop();
@@ -252,7 +252,9 @@ export const setupVaults = async (
     await underlyingToken.connect(signer).approve(softVault.address, ethers.constants.MaxUint256);
 
     await softVault.connect(signer).deposit(amount);
+    console.log('deposited');
   }
+  console.log('vaults setup');
   return {
     hardVault,
     softVaults,
@@ -274,11 +276,11 @@ export const setupBasicBank = async (): Promise<Protocol> => {
     unsafeAllow: ['delegatecall'],
   });
   await config.setFeeManager(feeManager.address);
-
+  console.log('fee manager set');
   const oracle = await setupOracles();
-
+  console.log('oracle setup');
   const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
-
+  console.log('deploying bank');
   const bank = <BlueberryBank>await upgrades.deployProxy(
     BlueberryBank,
     [oracle.address, config.address, admin.address],
@@ -288,7 +290,7 @@ export const setupBasicBank = async (): Promise<Protocol> => {
   );
 
   const vaults = await setupVaults(bank, oracle, config, admin);
-
+  console.log('settings');
   await bank.whitelistTokens(
     vaults.tokens.map((token) => token.address),
     vaults.tokens.map(() => true)

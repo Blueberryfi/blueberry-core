@@ -67,7 +67,6 @@ export interface AuraProtocol {
   bDAI: Contract;
   bMIM: Contract;
   bLINK: Contract;
-  bSUSHI: Contract;
   bBAL: Contract;
   //bALCX: Contract;
   bWETH: Contract;
@@ -249,7 +248,6 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   bDAI = bTokens.bDAI;
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
-  bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
   //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
@@ -322,7 +320,6 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   await bank.whitelistSpells([auraSpell.address], [true]);
   await bank.whitelistTokens([USDC, DAI, CRV], [true, true, true]);
   await bank.whitelistERC1155([werc20.address, waura.address], true);
-  console.log('Bank address:', bank.address);
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
   hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
@@ -376,10 +373,6 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   await dai.transfer(alice.address, utils.parseUnits('500', 18));
   await daiSoftVault.deposit(utils.parseUnits('5000', 18));
 
-  console.log('CRV Balance:', utils.formatEther(await crv.balanceOf(admin.address)));
-  console.log('USDC Balance:', utils.formatUnits(await usdc.balanceOf(admin.address), 6));
-  console.log('DAI Balance:', utils.formatEther(await dai.balanceOf(admin.address)));
-
   return {
     werc20,
     waura,
@@ -404,7 +397,6 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     bDAI,
     bMIM,
     bLINK,
-    bSUSHI,
     bBAL,
     //bALCX,
     bWETH,

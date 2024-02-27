@@ -634,17 +634,11 @@ describe('Bank', () => {
       let debtValue = await bank.callStatic.getDebtValue(positionId);
       let positionValue = await bank.callStatic.getPositionValue(positionId);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
       const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address);
-      console.log('Pending ICHI:', utils.formatUnits(pendingIchi, 9));
       await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(100));
       await ichiFarm.updatePool(ICHI_VAULT_PID);
 
-      console.log('===ICHI token dumped from $5 to $0.1===');
       await mockOracle.setPrice(
         [ICHI],
         [
@@ -655,16 +649,9 @@ describe('Bank', () => {
       debtValue = await bank.callStatic.getDebtValue(positionId);
       positionValue = await bank.callStatic.getPositionValue(positionId);
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Cur Pos:', positionInfo);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
-      console.log('Is Liquidatable:', await bank.callStatic.isLiquidatable(positionId));
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
 
-      console.log('===Portion Liquidated===');
       const liqAmount = utils.parseUnits('100', 6);
       await usdc.connect(alice).approve(bank.address, liqAmount);
       await expect(bank.connect(alice).liquidate(positionId, USDC, liqAmount)).to.be.revertedWithCustomError(
@@ -680,17 +667,11 @@ describe('Bank', () => {
       let debtValue = await bank.callStatic.getDebtValue(positionId);
       let positionValue = await bank.callStatic.getPositionValue(positionId);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
       const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address);
-      console.log('Pending ICHI:', utils.formatUnits(pendingIchi, 9));
       await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(100));
       await ichiFarm.updatePool(ICHI_VAULT_PID);
 
-      console.log('===ICHI token dumped from $5 to $0.1===');
       await mockOracle.setPrice(
         [ICHI],
         [
@@ -701,16 +682,9 @@ describe('Bank', () => {
       debtValue = await bank.callStatic.getDebtValue(positionId);
       positionValue = await bank.callStatic.getPositionValue(positionId);
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Cur Pos:', positionInfo);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
-      console.log('Is Liquidatable:', await bank.callStatic.isLiquidatable(positionId));
 
-      console.log('===Portion Liquidated===');
       const liqAmount = utils.parseUnits('100', 6);
       await usdc.connect(alice).approve(bank.address, liqAmount);
       await expect(bank.connect(alice).liquidate(positionId, USDC, liqAmount)).to.be.emit(bank, 'Liquidate');
@@ -719,21 +693,10 @@ describe('Bank', () => {
       debtValue = await bank.callStatic.getDebtValue(positionId);
       positionValue = await bank.callStatic.getPositionValue(positionId);
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Cur Pos:', positionInfo);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
       const colToken = await ethers.getContractAt('ERC1155Upgradeable', positionInfo.collToken);
       const uVToken = await ethers.getContractAt('ERC20Upgradeable', ichiSoftVault.address);
-      console.log(
-        "Liquidator's Position Balance:",
-        utils.formatUnits(await colToken.balanceOf(alice.address, positionInfo.collId))
-      );
-      console.log("Liquidator's Collateral Balance:", utils.formatUnits(await uVToken.balanceOf(alice.address)));
 
-      console.log('===Full Liquidate===');
       await usdc.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
       await expect(bank.connect(alice).liquidate(positionId, USDC, ethers.constants.MaxUint256)).to.be.emit(
         bank,
@@ -745,18 +708,10 @@ describe('Bank', () => {
       positionValue = await bank.callStatic.getPositionValue(positionId);
       risk = await bank.callStatic.getPositionRisk(positionId);
       const collateralBalance = await colToken.balanceOf(alice.address, positionInfo.collId);
-      console.log('Cur Pos:', positionInfo);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
-      console.log("Liquidator's Position Balance:", collateralBalance);
-      console.log("Liquidator's Collateral Balance:", await uVToken.balanceOf(alice.address));
 
       const beforeIchiBalance = await ichi.balanceOf(alice.address);
       await wichi.connect(alice).burn(positionInfo.collId, ethers.constants.MaxUint256);
       const afterIchiBalance = await ichi.balanceOf(alice.address);
-      console.log("Liquidator's ICHI Balance:", utils.formatUnits(afterIchiBalance.sub(beforeIchiBalance), 18));
 
       const lpBalance = await ichiVault.balanceOf(alice.address);
       await ichiVault.connect(alice).withdraw(lpBalance, alice.address);
@@ -764,7 +719,6 @@ describe('Bank', () => {
     it('should be able to maintain the position to get rid of liquidation', async () => {
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Position Risk:', risk);
 
       await mockOracle.setPrice(
         [ICHI],
@@ -773,12 +727,10 @@ describe('Bank', () => {
         ]
       );
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Position Risk:', risk);
       const positionInfo = await bank.getPositionInfo(positionId);
       const bankInfo = await bank.getBankInfo(positionInfo.underlyingToken);
-      console.log('Liquidity Threshold:', bankInfo.liqThreshold);
+
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
-      console.log('Is Liquidatable:', await bank.callStatic.isLiquidatable(positionId));
 
       await bank.execute(
         positionId,
@@ -787,7 +739,6 @@ describe('Bank', () => {
       );
 
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Position Risk:', risk);
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.false;
     });
     it('should revert execution when it is liquidateable after execution', async () => {

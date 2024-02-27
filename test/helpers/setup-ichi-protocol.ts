@@ -61,8 +61,6 @@ export interface Protocol {
   bDAI: Contract;
   bMIM: Contract;
   bLINK: Contract;
-  bOHM: Contract;
-  bSUSHI: Contract;
   bBAL: Contract;
   //bALCX: Contract,
   bWETH: Contract;
@@ -310,8 +308,6 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   bDAI = bTokens.bDAI;
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
-  bOHM = bTokens.bOHM;
-  bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
   //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
@@ -380,10 +376,6 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await dai.transfer(alice.address, utils.parseUnits('500', 18));
   await daiSoftVault.deposit(utils.parseUnits('5000', 18));
 
-  console.log('ICHI Balance:', utils.formatEther(await ichi.balanceOf(admin.address)));
-  console.log('USDC Balance:', utils.formatUnits(await usdc.balanceOf(admin.address), 6));
-  console.log('DAI Balance:', utils.formatEther(await dai.balanceOf(admin.address)));
-
   return {
     ichi_USDC_ICHI_Vault,
     ichi_USDC_DAI_Vault,
@@ -409,8 +401,6 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     bDAI,
     bMIM,
     bLINK,
-    bOHM,
-    bSUSHI,
     bBAL,
     //bALCX,
     bWETH,

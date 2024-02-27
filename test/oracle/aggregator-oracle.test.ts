@@ -40,12 +40,10 @@ describe('Aggregator Oracle2', () => {
     await chainlinkOracle.deployed();
 
     await chainlinkOracle.setTimeGap([ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV], [OneDay, OneDay, OneDay]);
-    console.log('2');
     await chainlinkOracle.setPriceFeeds(
       [ADDRESS.USDC, ADDRESS.UNI, ADDRESS.CRV],
       [ADDRESS.CHAINLINK_USDC_USD_FEED, ADDRESS.CHAINLINK_UNI_USD_FEED, ADDRESS.CHAINLINK_CRV_USD_FEED]
     );
-    console.log('3');
     // Mock Oracle
     const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
     mockOracle1 = <MockOracle>await MockOracle.deploy();
@@ -203,28 +201,22 @@ describe('Aggregator Oracle2', () => {
     it('CRV price feeds', async () => {
       const token = ADDRESS.CRV;
       const chainlinkPrice = await chainlinkOracle.callStatic.getPrice(token);
-      console.log('CRV Price (Chainlink):', utils.formatUnits(chainlinkPrice, 18));
 
       const aggregatorPrice = await aggregatorOracle.callStatic.getPrice(token);
-      console.log('CRV Price (Oracle):', utils.formatUnits(aggregatorPrice, 18));
       expect(chainlinkPrice).to.be.equal(aggregatorPrice);
     });
     it('UNI price feeds', async () => {
       const token = ADDRESS.UNI;
       const chainlinkPrice = await chainlinkOracle.callStatic.getPrice(token);
-      console.log('UNI Price (Chainlink):', utils.formatUnits(chainlinkPrice, 18));
 
       const aggregatorPrice = await aggregatorOracle.callStatic.getPrice(token);
-      console.log('USDC Price (Oracle):', utils.formatUnits(aggregatorPrice, 18));
       expect(chainlinkPrice).to.be.equal(aggregatorPrice);
     });
     it('USDC price feeds', async () => {
       const token = ADDRESS.USDC;
       const chainlinkPrice = await chainlinkOracle.callStatic.getPrice(token);
-      console.log('USDC Price (Chainlink):', utils.formatUnits(chainlinkPrice, 18));
 
       const aggregatorPrice = await aggregatorOracle.callStatic.getPrice(token);
-      console.log('USDC Price (Oracle):', utils.formatUnits(aggregatorPrice, 18));
       expect(chainlinkPrice.add(chainlinkPrice).div(2)).to.be.equal(aggregatorPrice);
     });
   });

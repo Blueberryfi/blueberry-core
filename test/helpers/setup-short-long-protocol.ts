@@ -76,8 +76,6 @@ export interface ShortLongProtocol {
   bDAI: Contract;
   bMIM: Contract;
   bLINK: Contract;
-  bOHM: Contract;
-  bSUSHI: Contract;
   bBAL: Contract;
   //bALCX: Contract;
   bWETH: Contract;
@@ -324,8 +322,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   bDAI = bTokens.bDAI;
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
-  bOHM = bTokens.bOHM;
-  bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
   //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
@@ -525,13 +521,8 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await wbtcSoftVault.deposit(utils.parseUnits(wbtcDeposit, 8));
 
   const wstETHDeposit = (parseInt(strategyDepositInUsd) / ETH_PRICE).toFixed(18).toString();
-  console.log('wstETH Deposit:', wstETHDeposit);
   await wstETH.approve(wstETHSoftVault.address, ethers.constants.MaxUint256);
   await wstETHSoftVault.deposit(utils.parseUnits(wstETHDeposit, 18));
-
-  console.log('CRV Balance:', utils.formatEther(await crv.balanceOf(admin.address)));
-  console.log('USDC Balance:', utils.formatUnits(await usdc.balanceOf(admin.address), 6));
-  console.log('DAI Balance:', utils.formatEther(await dai.balanceOf(admin.address)));
 
   return {
     werc20,
@@ -559,8 +550,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     bDAI,
     bMIM,
     bLINK,
-    bOHM,
-    bSUSHI,
     bBAL,
     //bALCX,
     bWETH,

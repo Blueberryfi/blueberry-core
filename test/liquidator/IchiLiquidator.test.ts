@@ -116,7 +116,6 @@ describe('Ichi Liquidator', () => {
     await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(100));
     await ichiFarm.updatePool(ICHI_VAULT_PID);
 
-    console.log('===ICHI token dumped from $5 to $0.1===');
     await mockOracle.setPrice(
       [ICHI],
       [

@@ -231,10 +231,8 @@ describe('Ichi Vault Oracle', () => {
   it('USDC/ICHI Angel Vault Price', async () => {
     await uniswapV3Oracle.registerToken(ICHI);
     const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
-    console.log('ICHI Price', utils.formatUnits(ichiPrice));
     await ichiOracle.connect(admin).registerVault(ADDRESS.ICHI_VAULT_USDC);
     const lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
-    console.log('USDC/ICHI Vault Price: \t', utils.formatUnits(lpPrice, 18));
 
     // calculate lp price manually.
     const reserveData = await ichiVault.getTotalAmounts();
@@ -250,8 +248,6 @@ describe('Ichi Vault Oracle', () => {
     const reserve1 = BigNumber.from(reserveData[0].mul(ichiPrice).div(BigNumber.from(10).pow(token0Decimal)));
     const reserve2 = BigNumber.from(reserveData[1].mul(usdcPrice).div(BigNumber.from(10).pow(token1Decimal)));
     const lpPriceM = reserve1.add(reserve2).mul(BigNumber.from(10).pow(18)).div(totalSupply);
-
-    console.log('Manual Price:\t\t', utils.formatUnits(lpPriceM));
 
     expect(lpPrice.eq(lpPriceM)).to.be.true;
   });
@@ -276,25 +272,18 @@ describe('Ichi Vault Oracle', () => {
         admin.address,
         ethers.constants.MaxUint256
       );
-      console.log('USDC Balance: ', utils.formatUnits(await usdc.balanceOf(admin.address), 6));
-      console.log('\n=== Before ===');
+
       await uniswapV3Oracle.registerToken(ICHI);
       const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
-      console.log('ICHI Price', utils.formatUnits(ichiPrice));
 
       let lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
-      console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
 
-      console.log('\n=== Deposit $1,000 USDC on the ICHI Vault ===');
       await usdc.approve(ichiVault.address, ethers.constants.MaxUint256);
       await ichiVault.deposit(0, utils.parseUnits('1000', 6), admin.address);
       lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
-      console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
 
-      console.log('\n=== Deposit $1,000,000 USDC on the ICHI Vault ===');
       await ichiVault.deposit(0, utils.parseUnits('1000000', 6), admin.address);
       lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
-      console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
     });
 
     it('Swap tokens on Uni V3 Pool to manipulate pool reserves', async () => {
@@ -316,17 +305,12 @@ describe('Ichi Vault Oracle', () => {
         admin.address,
         ethers.constants.MaxUint256
       );
-      console.log('USDC Balance: ', utils.formatUnits(await usdc.balanceOf(admin.address), 6));
 
-      console.log('\n=== Before ===');
       const ichiPrice = await uniswapV3Oracle.callStatic.getPrice(ICHI);
-      console.log('ICHI Price', utils.formatUnits(ichiPrice));
 
       const lpPrice = await ichiOracle.callStatic.getPrice(ADDRESS.ICHI_VAULT_USDC);
-      console.log('USDC/ICHI Lp Price: \t', utils.formatUnits(lpPrice, 18));
 
       // Swap $1K USDC to ICHI on Uni V3
-      console.log('=== Swap $1K USDC to ICHI ===');
       await usdc.approve(ADDRESS.UNI_V3_ROUTER, ethers.constants.MaxUint256);
       await swapRouter.exactInputSingle({
         tokenIn: USDC,
@@ -340,8 +324,6 @@ describe('Ichi Vault Oracle', () => {
       });
 
       // Swap $10K USDC to ICHI on Uni V3
-      console.log('=== Swap $10K USDC to ICHI (Reverted) ===');
-      console.log('Price Deviation Config:', await ichiOracle.getMaxPriceDeviation(ICHI));
       await swapRouter.exactInputSingle({
         tokenIn: USDC,
         tokenOut: ICHI,
