@@ -46,13 +46,15 @@ describe('Aura Liquidator', () => {
     spell = protocol.auraSpell;
     mockOracle = protocol.mockOracle;
 
-    const depositAmount = utils.parseUnits('100', 18); // CRV => $100
-    const borrowAmount = utils.parseUnits('250', 6); // USDC
+    const depositAmount = utils.parseUnits('20', 18); // DAI => $20
+    const borrowAmount = utils.parseUnits('50', 6); // USDC
     const iface = new ethers.utils.Interface(SpellABI);
 
     await usdc.approve(bank.address, ethers.constants.MaxUint256);
     await dai.approve(bank.address, ethers.constants.MaxUint256);
-
+    
+    await dai.connect(alice).transfer(admin.address, depositAmount);
+    
     await bank.execute(
       0,
       spell.address,

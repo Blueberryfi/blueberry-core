@@ -14,18 +14,30 @@ import {
   ProtocolConfig,
   IAuraStashToken,
   MockVirtualBalanceRewardPool,
+  IBasicSpell,
 } from '../../../../typechain-types';
 import { ADDRESS } from '../../../../constant';
-import { setupStrategy, strategies } from './utils';
 import { getParaswapCalldataToBuy } from '../../../helpers/paraswap';
-import { addEthToContract, evm_mine_blocks, fork, setTokenBalance } from '../../../helpers';
-import { getTokenAmountFromUSD } from '../utils';
+import { addEthToContract, evm_mine_blocks, fork, setTokenBalance, setupAuraProtocol } from '../../../helpers';
+import { StrategyInfo, getTokenAmountFromUSD } from '../utils';
 
 const DAI = ADDRESS.DAI;
 const AURA = ADDRESS.AURA;
 
+export const strategies: StrategyInfo[] = [
+  {
+    type: 'Pseudo-Neutral',
+    address: ADDRESS.BAL_WSTETH_WETH,
+    poolId: ADDRESS.AURA_WSTETH_WETH_POOL_ID,
+    borrowAssets: [ADDRESS.wstETH /*, ADDRESS.WETH*/],
+    collateralAssets: [ADDRESS.DAI],
+    maxLtv: 500,
+    maxStrategyBorrow: 5_000_000,
+  },
+];
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
-describe('Aura Spell Strategy test', () => {
+describe('Aura Spell Strategy test', async () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -55,12 +67,12 @@ describe('Aura Spell Strategy test', () => {
 
     [admin, alice, bob] = await ethers.getSigners();
 
-    const strat = await setupStrategy();
-    bank = strat.protocol.bank;
-    oracle = strat.protocol.oracle;
+    const strat = await setupAuraProtocol();
+    bank = strat.bank;
+    oracle = strat.oracle;
     spell = strat.auraSpell;
     waura = strat.waura;
-    config = strat.protocol.config;
+    config = strat.config;
     auraBooster = strat.auraBooster;
     rewardFeePct = await config.getRewardFee();
 
@@ -70,18 +82,19 @@ describe('Aura Spell Strategy test', () => {
     await addEthToContract(admin, utils.parseEther('1'), auraBooster.address);
   });
 
-  for (let i = 0; i < strategies.length; i += 1) {
+  for (let i = 0; i < strategies.length; i++) {
     const strategyInfo = strategies[i];
-    for (let j = 0; j < strategyInfo.collateralAssets.length; j += 1) {
-      for (let l = 0; l < strategyInfo.borrowAssets.length; l += 1) {
+    for (let j = 0; j < strategyInfo.collateralAssets.length; j++) {
+      for (let l = 0; l < strategyInfo.borrowAssets.length; l++) {
         describe(`Aura Spell Test(collateral: ${strategyInfo.collateralAssets[j]}, borrow: ${strategyInfo.borrowAssets[l]})`, () => {
           before(async () => {
             collateralToken = <ERC20>await ethers.getContractAt('ERC20', strategyInfo.collateralAssets[j]);
             borrowToken = <ERC20>await ethers.getContractAt('ERC20', strategyInfo.borrowAssets[l]);
+            console.log('collateralToken', collateralToken.address);
             depositAmount = await getTokenAmountFromUSD(collateralToken, oracle, '10000');
             borrowAmount = await getTokenAmountFromUSD(borrowToken, oracle, '10000');
             const poolInfo = await auraBooster.poolInfo(strategyInfo.poolId ?? 0);
-
+            console.log('poolInfo', poolInfo);
             auraRewarder = <IRewarder>await ethers.getContractAt('IRewarder', poolInfo.crvRewards);
 
             await addEthToContract(admin, utils.parseEther('1'), await auraRewarder.rewardManager());
@@ -96,8 +109,9 @@ describe('Aura Spell Strategy test', () => {
 
             await setTokenBalance(collateralToken, alice, utils.parseEther('1000000000000'));
             await setTokenBalance(collateralToken, bob, utils.parseEther('1000000000000'));
+            console.log('collateralToken', collateralToken.address);
             await collateralToken.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
-
+            console.log('borrowToken', borrowToken.address);
             await collateralToken.connect(bob).approve(bank.address, ethers.constants.MaxUint256);
           });
 

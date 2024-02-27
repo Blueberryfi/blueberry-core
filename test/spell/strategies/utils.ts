@@ -18,6 +18,7 @@ import { ADDRESS, CONTRACT_NAMES } from '../../../constant';
 import { deployBTokens } from '../../helpers/money-market';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { faucetToken } from '../../helpers/paraswap';
+import { deploySoftVaults } from '../../helpers/markets';
 
 const OneDay = 86400;
 // Use Two days time gap for chainlink, because we may increase timestamp manually to test reward amount
@@ -191,123 +192,6 @@ export const setupOracles = async (): Promise<CoreOracle> => {
   );
 
   return oracle;
-};
-
-export const setupVaults = async (
-  bank: BlueberryBank,
-  oracle: CoreOracle,
-  config: ProtocolConfig,
-  signer: SignerWithAddress
-): Promise<Vaults> => {
-  const [admin] = await ethers.getSigners();
-  const bTokens = await deployBTokens(signer.address, oracle.address);
-
-  const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
-    unsafeAllow: ['delegatecall'],
-  });
-
-  const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
-
-  const softVaults: SoftVault[] = [];
-  const bTokenList: BErc20Delegator[] = [];
-  const tokens: ERC20[] = [];
-
-  for (const key of Object.keys(bTokens)) {
-    if (key === 'comptroller') continue;
-    if (key === 'extraBTokens') continue;
-    const bToken = (bTokens as any)[key] as any as BErc20Delegator;
-    const softVault = <SoftVault>(
-      await upgrades.deployProxy(
-        SoftVault,
-        [
-          config.address,
-          bToken.address,
-          `Interest Bearing ${(await bToken.name()).split(' ')[1]}`,
-          `i${await bToken.symbol()}`,
-          admin.address,
-        ],
-        { unsafeAllow: ['delegatecall'] }
-      )
-    );
-
-    softVaults.push(softVault);
-    bTokenList.push(bToken);
-
-    await bTokens.comptroller._setCreditLimit(bank.address, bToken.address, utils.parseEther('3000000'));
-
-    const underlyingToken = <ERC20>await ethers.getContractAt('ERC20', await bToken.underlying());
-    tokens.push(underlyingToken);
-
-    const amount = await faucetToken(underlyingToken.address, utils.parseEther('20'), signer, 100);
-    if (amount == 0) {
-      tokens.pop();
-      softVaults.pop();
-      bTokenList.pop();
-      continue;
-    }
-
-    await underlyingToken.connect(signer).approve(softVault.address, ethers.constants.MaxUint256);
-
-    await softVault.connect(signer).deposit(amount);
-  }
-  return {
-    hardVault,
-    softVaults,
-    bTokens: bTokenList,
-    tokens,
-  };
-};
-
-export const setupBasicBank = async (): Promise<Protocol> => {
-  const [admin, alice, treasury] = await ethers.getSigners();
-
-  const Config = await ethers.getContractFactory('ProtocolConfig');
-  const config = <ProtocolConfig>await upgrades.deployProxy(Config, [treasury.address, admin.address], {
-    unsafeAllow: ['delegatecall'],
-  });
-
-  const FeeManager = await ethers.getContractFactory('FeeManager');
-  const feeManager = <FeeManager>await upgrades.deployProxy(FeeManager, [config.address, admin.address], {
-    unsafeAllow: ['delegatecall'],
-  });
-  await config.setFeeManager(feeManager.address);
-
-  const oracle = await setupOracles();
-
-  const BlueberryBank = await ethers.getContractFactory(CONTRACT_NAMES.BlueberryBank);
-
-  const bank = <BlueberryBank>await upgrades.deployProxy(
-    BlueberryBank,
-    [oracle.address, config.address, admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-
-  const vaults = await setupVaults(bank, oracle, config, admin);
-
-  await bank.whitelistTokens(
-    vaults.tokens.map((token) => token.address),
-    vaults.tokens.map(() => true)
-  );
-
-  for (let i = 0; i < vaults.softVaults.length; i += 1) {
-    const softVault = vaults.softVaults[i];
-
-    await bank.addBank(vaults.tokens[i].address, softVault.address, vaults.hardVault.address, 8500);
-  }
-
-  return {
-    bank,
-    oracle,
-    config,
-    feeManager,
-    vaults,
-    admin,
-    alice,
-    treasury,
-  };
 };
 
 export const getTokenAmountFromUSD = async (

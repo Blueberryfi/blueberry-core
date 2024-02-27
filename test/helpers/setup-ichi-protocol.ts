@@ -21,9 +21,14 @@ import {
   FeeManager,
   UniV3WrappedLib,
   Comptroller,
+  BToken,
+  BErc20Delegator,
+  IBank,
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from './money-market';
+import { deploySoftVaults } from './markets';
+import { faucetToken } from './paraswap';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
@@ -48,23 +53,11 @@ export interface Protocol {
   config: ProtocolConfig;
   bank: BlueberryBank;
   ichiSpell: IchiSpell;
-  usdcSoftVault: SoftVault;
-  ichiSoftVault: SoftVault;
-  daiSoftVault: SoftVault;
-  wethSoftVault: SoftVault;
-  hardVault: HardVault;
   feeManager: FeeManager;
   uniV3Lib: UniV3WrappedLib;
-  bUSDC: Contract;
-  bICHI: Contract;
-  bCRV: Contract;
-  bDAI: Contract;
-  bMIM: Contract;
-  bLINK: Contract;
-  bBAL: Contract;
-  //bALCX: Contract,
-  bWETH: Contract;
-  bWBTC: Contract;
+  hardVault: HardVault;
+  softVaults: SoftVault[];
+  bTokens: BErc20Delegator[];
 }
 
 export const setupIchiProtocol = async (): Promise<Protocol> => {
@@ -87,28 +80,11 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   let config: ProtocolConfig;
   let feeManager: FeeManager;
   let bank: BlueberryBank;
-  let usdcSoftVault: SoftVault;
-  let ichiSoftVault: SoftVault;
-  let daiSoftVault: SoftVault;
-  let wethSoftVault: SoftVault;
-  let hardVault: HardVault;
   let ichiFarm: MockIchiFarm;
   let ichi_USDC_ICHI_Vault: MockIchiVault;
   let ichi_USDC_DAI_Vault: MockIchiVault;
 
   let comptroller: Comptroller;
-  let bUSDC: Contract;
-  let bICHI: Contract;
-  let bCRV: Contract;
-  let bDAI: Contract;
-  let bMIM: Contract;
-  let bLINK: Contract;
-  let bOHM: Contract;
-  let bSUSHI: Contract;
-  let bBAL: Contract;
-  //let bALCX: Contract;
-  let bWETH: Contract;
-  let bWBTC: Contract;
 
   [admin, alice, treasury] = await ethers.getSigners();
   usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
@@ -118,9 +94,9 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
 
   // Prepare USDC
-  // deposit 100 eth -> 100 WETH
-  await weth.deposit({ value: utils.parseUnits('100') });
-
+  // deposit 200 eth -> 200 WETH
+  await weth.deposit({ value: utils.parseUnits('200') });
+  console.log('WETH balance', (await weth.balanceOf(admin.address)).toString());
   // swap 30 WETH -> USDC, 30 WETH -> DAI
   await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
   const uniV2Router = <IUniswapV2Router02>(
@@ -133,6 +109,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     admin.address,
     ethers.constants.MaxUint256
   );
+  console.log('USDC balance', (await usdc.balanceOf(admin.address)).toString());
   await uniV2Router.swapExactTokensForTokens(
     utils.parseUnits('30'),
     0,
@@ -152,6 +129,8 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     admin.address,
     ethers.constants.MaxUint256
   );
+  await faucetToken(wstETH, utils.parseUnits('40'), admin, 100);
+
   await ichiV1.approve(ICHI, ethers.constants.MaxUint256);
   const ichiV1Balance = await ichiV1.balanceOf(admin.address);
   await ichi.convertToV2(ichiV1Balance.div(2));
@@ -292,89 +271,21 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiSpell.deployed();
   await ichiSpell.addStrategy(ichi_USDC_ICHI_Vault.address, utils.parseUnits('10', 18), utils.parseUnits('2000', 18));
   await ichiSpell.addStrategy(ichi_USDC_DAI_Vault.address, utils.parseUnits('10', 18), utils.parseUnits('2000', 18));
-  await ichiSpell.setCollateralsMaxLTVs(0, [USDC, ICHI, DAI, wstETH, WETH], [30000, 30000, 30000, 30000, 30000]);
-  await ichiSpell.setCollateralsMaxLTVs(1, [USDC, ICHI, DAI, wstETH, WETH], [30000, 30000, 30000, 30000, 30000]);
+  await ichiSpell.setCollateralsMaxLTVs(0, [USDC, DAI, wstETH, WETH], [30000, 30000, 30000, 30000, 30000]);
+  await ichiSpell.setCollateralsMaxLTVs(1, [USDC, DAI, wstETH, WETH], [30000, 30000, 30000, 30000, 30000]);
 
   // Setup Bank
   await bank.whitelistSpells([ichiSpell.address], [true]);
-  await bank.whitelistTokens([USDC, ICHI, DAI, wstETH, WETH], [true, true, true, true, true]);
+  await bank.whitelistTokens([USDC, DAI, wstETH, WETH], [true, true, true, true, true]);
   await bank.whitelistERC1155([werc20.address, wichi.address], true);
 
   const bTokens = await deployBTokens(admin.address, oracle.address);
   comptroller = bTokens.comptroller;
-  bUSDC = bTokens.bUSDC;
-  bICHI = bTokens.bICHI;
-  bCRV = bTokens.bCRV;
-  bDAI = bTokens.bDAI;
-  bMIM = bTokens.bMIM;
-  bLINK = bTokens.bLINK;
-  bBAL = bTokens.bBAL;
-  //bALCX = bTokens.bALCX;
-  bWETH = bTokens.bWETH;
-  bWBTC = bTokens.bWBTC;
 
-  const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
-    unsafeAllow: ['delegatecall'],
-  });
+  const softVaults = await deploySoftVaults(config, bank, comptroller, bTokens.bTokens, admin, alice);
+  const bankInfo = <IBank.BankStructOutput>await bank.getBankInfo(USDC);
 
-  const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
-  usdcSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bUSDC.address, 'Interest Bearing USDC', 'ibUSDC', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await usdcSoftVault.deployed();
-  await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
-
-  daiSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bDAI.address, 'Interest Bearing DAI', 'ibDAI', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await daiSoftVault.deployed();
-  await bank.addBank(DAI, daiSoftVault.address, hardVault.address, 8500);
-
-  ichiSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bICHI.address, 'Interest Bearing ICHI', 'ibICHI', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await ichiSoftVault.deployed();
-  await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address, 9000);
-
-  wethSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bWETH.address, 'Interest Bearing WETH', 'ibWETH', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await wethSoftVault.deployed();
-
-  // Whitelist bank contract on compound
-  await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
-  await comptroller._setCreditLimit(bank.address, bICHI.address, utils.parseUnits('3000000'));
-  await comptroller._setCreditLimit(bank.address, bDAI.address, utils.parseUnits('3000000'));
-  await comptroller._setCreditLimit(bank.address, bWETH.address, utils.parseUnits('3000000'));
-
-  await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
-  await usdc.transfer(alice.address, utils.parseUnits('500', 6));
-  await usdcSoftVault.deposit(utils.parseUnits('5000', 6));
-
-  await ichi.approve(ichiSoftVault.address, ethers.constants.MaxUint256);
-  await ichi.transfer(alice.address, utils.parseUnits('500', 18));
-  await ichiSoftVault.deposit(utils.parseUnits('5000', 18));
-
-  await dai.approve(daiSoftVault.address, ethers.constants.MaxUint256);
-  await dai.transfer(alice.address, utils.parseUnits('500', 18));
-  await daiSoftVault.deposit(utils.parseUnits('5000', 18));
+  const hardVault = <HardVault>await ethers.getContractAt('HardVault', bankInfo.hardVault);
 
   return {
     ichi_USDC_ICHI_Vault,
@@ -389,21 +300,11 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     feeManager,
     bank,
     ichiSpell,
-    usdcSoftVault,
-    ichiSoftVault,
-    daiSoftVault,
-    wethSoftVault,
-    hardVault,
     uniV3Lib: LibInstance,
-    bUSDC,
-    bICHI,
-    bCRV,
-    bDAI,
-    bMIM,
-    bLINK,
-    bBAL,
-    //bALCX,
-    bWETH,
-    bWBTC,
+    hardVault,
+    softVaults,
+    bTokens: bTokens.bTokens,
   };
 };
+
+

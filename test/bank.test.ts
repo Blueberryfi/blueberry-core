@@ -25,6 +25,7 @@ import { roughlyNear } from './assertions/roughlyNear';
 import { Protocol, setupIchiProtocol } from './helpers/setup-ichi-protocol';
 import { evm_mine_blocks, evm_increaseTime, fork } from './helpers';
 import { TickMath } from '@uniswap/v3-sdk';
+import { getBToken, getSoftVault } from './helpers/markets';
 
 chai.use(near);
 chai.use(roughlyNear);
@@ -60,7 +61,7 @@ describe('Bank', () => {
   let bCRV: Contract;
 
   before(async () => {
-    await fork();
+    await fork(1);
 
     [admin, alice] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
@@ -77,14 +78,13 @@ describe('Bank', () => {
     werc20 = protocol.werc20;
     oracle = protocol.oracle;
     mockOracle = protocol.mockOracle;
-    usdcSoftVault = protocol.usdcSoftVault;
-    ichiSoftVault = protocol.ichiSoftVault;
-    wethSoftVault = protocol.wethSoftVault;
-    hardVault = protocol.hardVault;
-    bCRV = protocol.bCRV;
-  });
 
-  beforeEach(async () => {});
+    usdcSoftVault = await getSoftVault(protocol.softVaults, USDC);
+    ichiSoftVault = await getSoftVault(protocol.softVaults, ICHI);
+    wethSoftVault = await getSoftVault(protocol.softVaults, WETH);
+    hardVault = protocol.hardVault;
+    bCRV = await getBToken(protocol.bTokens, ADDRESS.CRV);
+  });
 
   describe('Constructor', () => {
     it('should revert Bank deployment when invalid args provided', async () => {

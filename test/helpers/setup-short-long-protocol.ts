@@ -24,6 +24,7 @@ import {
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from './money-market';
 import { impersonateAccount } from '.';
+import { deploySoftVaults } from './markets';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
@@ -61,25 +62,8 @@ export interface ShortLongProtocol {
   config: ProtocolConfig;
   bank: BlueberryBank;
   shortLongSpell: ShortLongSpell;
-  usdcSoftVault: SoftVault;
-  crvSoftVault: SoftVault;
-  daiSoftVault: SoftVault;
-  linkSoftVault: SoftVault;
-  wbtcSoftVault: SoftVault;
-  wstETHSoftVault: SoftVault;
-  hardVault: HardVault;
   feeManager: FeeManager;
   uniV3Lib: UniV3WrappedLib;
-  bUSDC: Contract;
-  bICHI: Contract;
-  bCRV: Contract;
-  bDAI: Contract;
-  bMIM: Contract;
-  bLINK: Contract;
-  bBAL: Contract;
-  //bALCX: Contract;
-  bWETH: Contract;
-  bWBTC: Contract;
 }
 
 export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
@@ -316,17 +300,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
 
   const bTokens = await deployBTokens(admin.address, oracle.address);
   comptroller = bTokens.comptroller;
-  bUSDC = bTokens.bUSDC;
-  bICHI = bTokens.bICHI;
-  bCRV = bTokens.bCRV;
-  bDAI = bTokens.bDAI;
-  bMIM = bTokens.bMIM;
-  bLINK = bTokens.bLINK;
-  bBAL = bTokens.bBAL;
-  //bALCX = bTokens.bALCX;
-  bWETH = bTokens.bWETH;
-  bWBTC = bTokens.bWBTC;
-  bWstETH = bTokens.bWstETH;
 
   // Deploy Bank
   const Config = await ethers.getContractFactory('ProtocolConfig');
@@ -363,112 +336,23 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     )
   );
   await shortLongSpell.deployed();
-  const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
 
-  usdcSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bUSDC.address, 'Interest Bearing USDC', 'ibUSDC', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
+  const softVaults: SoftVault[] = await deploySoftVaults(config, bank, comptroller, bTokens.bTokens, admin, alice);
+  const strategyUnderlying = new Set([DAI, LINK, WBTC, WstETH]);
+
+  for (let i = 0; i < softVaults.length; i++) {
+    await softVaultOracle.registerSoftVault(softVaults[i].address);
+    await oracle.setRoutes([softVaults[i].address], [softVaultOracle.address]);
+
+    if (strategyUnderlying.has(await softVaults[i].getUnderlyingToken())) {
+      await shortLongSpell.addStrategy(softVaults[i].address, MIN_POS_SIZE, MAX_POS_SIZE);
     }
-  );
-  await usdcSoftVault.deployed();
-
-  daiSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bDAI.address, 'Interest Bearing DAI', 'ibDAI', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await daiSoftVault.deployed();
-
-  crvSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bCRV.address, 'Interest Bearing CRV', 'ibCRV', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await crvSoftVault.deployed();
-
-  linkSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bLINK.address, 'Interest Bearing LINK', 'ibLINK', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await linkSoftVault.deployed();
-
-  wbtcSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bWBTC.address, 'Interest Bearing WBTC', 'ibWBTC', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await wbtcSoftVault.deployed();
-
-  wethSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bWETH.address, 'Interest Bearing WETH', 'ibWETH', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await wethSoftVault.deployed();
-
-  wstETHSoftVault = <SoftVault>await upgrades.deployProxy(
-    SoftVault,
-    [config.address, bWstETH.address, 'Interest Bearing WstETH', 'ibWstETH', admin.address],
-    {
-      unsafeAllow: ['delegatecall'],
-    }
-  );
-  await wstETHSoftVault.deployed();
-
-  await softVaultOracle.registerSoftVault(daiSoftVault.address);
-  await softVaultOracle.registerSoftVault(wbtcSoftVault.address);
-  await softVaultOracle.registerSoftVault(wethSoftVault.address);
-  await softVaultOracle.registerSoftVault(wstETHSoftVault.address);
-  await softVaultOracle.registerSoftVault(linkSoftVault.address);
-  await softVaultOracle.registerSoftVault(crvSoftVault.address);
-  await softVaultOracle.registerSoftVault(usdcSoftVault.address);
-
-  await oracle.setRoutes(
-    [
-      daiSoftVault.address,
-      wbtcSoftVault.address,
-      linkSoftVault.address,
-      wstETHSoftVault.address,
-      crvSoftVault.address,
-      usdcSoftVault.address,
-      wethSoftVault.address,
-    ],
-    [
-      softVaultOracle.address,
-      softVaultOracle.address,
-      softVaultOracle.address,
-      softVaultOracle.address,
-      softVaultOracle.address,
-      softVaultOracle.address,
-      softVaultOracle.address,
-    ]
-  );
-
-  await shortLongSpell.addStrategy(daiSoftVault.address, MIN_POS_SIZE, MAX_POS_SIZE);
+  }
 
   await shortLongSpell.setCollateralsMaxLTVs(0, [USDC, USDT, DAI], [MAX_LTV, MAX_LTV, MAX_LTV]);
-
-  await shortLongSpell.addStrategy(linkSoftVault.address, MIN_POS_SIZE, MAX_POS_SIZE);
   await shortLongSpell.setCollateralsMaxLTVs(1, [WBTC, DAI, WETH], [MAX_LTV, MAX_LTV, MAX_LTV]);
-  await shortLongSpell.addStrategy(daiSoftVault.address, MIN_POS_SIZE, MAX_POS_SIZE);
   await shortLongSpell.setCollateralsMaxLTVs(2, [WBTC, DAI, WETH, WstETH], [MAX_LTV, MAX_LTV, MAX_LTV, MAX_LTV]);
-
-  await shortLongSpell.addStrategy(wbtcSoftVault.address, MIN_POS_SIZE, MAX_POS_SIZE);
   await shortLongSpell.setCollateralsMaxLTVs(3, [WBTC, DAI, WETH], [MAX_LTV, MAX_LTV, MAX_LTV]);
-  await shortLongSpell.addStrategy(wstETHSoftVault.address, MIN_POS_SIZE, MAX_POS_SIZE);
   await shortLongSpell.setCollateralsMaxLTVs(4, [WBTC, DAI, WETH, WstETH], [MAX_LTV, MAX_LTV, MAX_LTV, MAX_LTV]);
 
   // Setup Bank
@@ -478,51 +362,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     [true, true, true, true, true, true, true, true]
   );
   await bank.whitelistERC1155([werc20.address], true);
-
-  const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
-  hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
-    unsafeAllow: ['delegatecall'],
-  });
-
-  await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
-  await bank.addBank(DAI, daiSoftVault.address, hardVault.address, 8500);
-  await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
-  await bank.addBank(LINK, linkSoftVault.address, hardVault.address, 9000);
-  await bank.addBank(WBTC, wbtcSoftVault.address, hardVault.address, 9000);
-  await bank.addBank(WETH, wethSoftVault.address, hardVault.address, 9000);
-  await bank.addBank(WstETH, wstETHSoftVault.address, hardVault.address, 9000);
-
-  // Whitelist bank contract on compound
-  await comptroller._setCreditLimit(bank.address, bUSDC.address, CREDIT_LIMIT);
-  await comptroller._setCreditLimit(bank.address, bCRV.address, CREDIT_LIMIT);
-  await comptroller._setCreditLimit(bank.address, bDAI.address, CREDIT_LIMIT);
-  await comptroller._setCreditLimit(bank.address, bLINK.address, CREDIT_LIMIT);
-  await comptroller._setCreditLimit(bank.address, bWBTC.address, CREDIT_LIMIT);
-  await comptroller._setCreditLimit(bank.address, bWstETH.address, CREDIT_LIMIT);
-
-  await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
-  await usdc.transfer(alice.address, utils.parseUnits(strategyDepositInUsd, 6));
-  await usdcSoftVault.deposit(utils.parseUnits(vaultLiquidityInUsd, 6));
-
-  await crv.approve(crvSoftVault.address, ethers.constants.MaxUint256);
-  await crv.transfer(alice.address, utils.parseUnits(strategyDepositInUsd, 18));
-  await crvSoftVault.deposit(utils.parseUnits(vaultLiquidityInUsd, 18));
-
-  await dai.approve(daiSoftVault.address, ethers.constants.MaxUint256);
-  await dai.transfer(alice.address, utils.parseUnits(strategyDepositInUsd, 18));
-  await daiSoftVault.deposit(utils.parseUnits(vaultLiquidityInUsd, 18));
-
-  const linkDeposit = (parseInt(strategyDepositInUsd) / LINK_PRICE).toFixed(18).toString();
-  await link.approve(linkSoftVault.address, ethers.constants.MaxUint256);
-  await linkSoftVault.deposit(utils.parseUnits(linkDeposit, 18));
-
-  const wbtcDeposit = (parseInt(strategyDepositInUsd) / BTC_PRICE).toFixed(8).toString();
-  await wbtc.approve(wbtcSoftVault.address, ethers.constants.MaxUint256);
-  await wbtcSoftVault.deposit(utils.parseUnits(wbtcDeposit, 8));
-
-  const wstETHDeposit = (parseInt(strategyDepositInUsd) / ETH_PRICE).toFixed(18).toString();
-  await wstETH.approve(wstETHSoftVault.address, ethers.constants.MaxUint256);
-  await wstETHSoftVault.deposit(utils.parseUnits(wstETHDeposit, 18));
 
   return {
     werc20,
@@ -536,23 +375,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     feeManager,
     bank,
     shortLongSpell,
-    usdcSoftVault,
-    crvSoftVault,
-    daiSoftVault,
-    linkSoftVault,
-    wbtcSoftVault,
-    wstETHSoftVault,
-    hardVault,
     uniV3Lib: LibInstance,
-    bUSDC,
-    bICHI,
-    bCRV,
-    bDAI,
-    bMIM,
-    bLINK,
-    bBAL,
-    //bALCX,
-    bWETH,
-    bWBTC,
   };
 };

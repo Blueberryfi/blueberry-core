@@ -1,6 +1,6 @@
 import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
-
+import { blueberryMarkets } from '../../test/helpers/markets';
 import { ADDRESS } from '../../constant';
 
 async function deployUnitroller() {
@@ -121,6 +121,8 @@ async function deployWrapped(
 }
 
 export async function deployBTokens(admin: string, baseOracle: string) {
+  let bTokens = [];
+
   const unitroller = await deployUnitroller();
   const comptroller = await deployComptroller();
   const bTokenAdmin = await deployBTokenAdmin(admin);
@@ -142,236 +144,34 @@ export async function deployBTokens(admin: string, baseOracle: string) {
 
   await comptroller._setPriceOracle(oracle.address);
 
+  // TODO: Fix to add both interest rate models.
   let baseRate = 0;
   let multiplier = utils.parseEther('0.2');
   let jump = utils.parseEther('5');
   let kink1 = utils.parseEther('0.7');
   let roof = utils.parseEther('2');
   let IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof, admin);
+  
+  for (let i = 0; i < blueberryMarkets.length; i++) {
+    const market = blueberryMarkets[i];
 
-  // Deploy USDC
-  const bUSDC = await deployBToken(
-    ADDRESS.USDC,
-    comptroller.address,
-    IRM.address,
-    'Blueberry USDC',
-    'bUSDC',
-    8,
-    bTokenAdmin.address
-  );
+    let bToken = await deployBToken(
+      market.underlyingAddress, // Underlying token
+      comptroller.address, // Comptroller
+      IRM.address, // Interest rate model
+      market.bTokenName, // bToken name
+      market.bTokenSymbol, // bToken symbol
+      8, // bToken decimal
+      bTokenAdmin.address // bToken admin
+    );
 
-  // Deploy ICHI Token
-  const bICHI = await deployBToken(
-    ADDRESS.ICHI,
-    comptroller.address,
-    IRM.address,
-    'Blueberry ICHI',
-    'bICHI',
-    8,
-    bTokenAdmin.address
-  );
+    await comptroller._supportMarket(bToken.address, 0);
 
-  // Deploy CRV
-  const bCRV = await deployBToken(
-    ADDRESS.CRV,
-    comptroller.address,
-    IRM.address,
-    'Blueberry CRV',
-    'bCRV',
-    8,
-    bTokenAdmin.address
-  );
-
-  const bDAI = await deployBToken(
-    ADDRESS.DAI,
-    comptroller.address,
-    IRM.address, // IRM.address,
-    'Blueberry DAI',
-    'bDAI',
-    8,
-    bTokenAdmin.address
-  );
-
-  const bMIM = await deployBToken(
-    ADDRESS.MIM,
-    comptroller.address,
-    IRM.address, // IRM.address,
-    'Blueberry MIM',
-    'bMIM',
-    8,
-    bTokenAdmin.address
-  );
-
-  const bLINK = await deployBToken(
-    ADDRESS.LINK,
-    comptroller.address,
-    IRM.address, // IRM.address,
-    'Blueberry LINK',
-    'bLINK',
-    8,
-    bTokenAdmin.address
-  );
-
-  const bOHM = await deployBToken(
-    ADDRESS.OHM,
-    comptroller.address,
-    IRM.address, // IRM.address,
-    'Blueberry OHM',
-    'bOHM',
-    8,
-    bTokenAdmin.address
-  );
-
-  const bSUSHI = await deployBToken(
-    ADDRESS.SUSHI,
-    comptroller.address,
-    IRM.address, // IRM.address,
-    'Blueberry SUSHI',
-    'bSUSHI',
-    8,
-    bTokenAdmin.address
-  );
-
-  const bBAL = await deployBToken(
-    ADDRESS.BAL,
-    comptroller.address,
-    IRM.address,
-    'Blueberry BAL',
-    'bBAL',
-    8,
-    bTokenAdmin.address
-  );
-
-  //const bALCX = await deployBToken(
-  //  ADDRESS.ALCX,
-  //  comptroller.address,
-  //  IRM.address,
-  //  "Blueberry ALCX",
-  //  "bALCX",
-  //  8,
-  //  bTokenAdmin.address
-  //);
-
-  // Deploy WETH
-  baseRate = 0;
-  multiplier = utils.parseEther('0.125');
-  jump = utils.parseEther('2.5');
-  kink1 = utils.parseEther('0.8');
-  roof = utils.parseEther('2');
-  IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof, admin);
-  const bWETH = await deployWrapped(
-    ADDRESS.WETH,
-    comptroller.address,
-    IRM.address,
-    'Blueberry Wrapped Ether',
-    'bWETH',
-    8,
-    bTokenAdmin.address
-  );
-
-  // Deploy WBTC
-  baseRate = 0;
-  multiplier = utils.parseEther('0.175');
-  jump = utils.parseEther('2');
-  kink1 = utils.parseEther('0.8');
-  roof = utils.parseEther('2');
-  IRM = await deployInterestRateModel(baseRate, multiplier, jump, kink1, roof, admin);
-  const bWBTC = await deployBToken(
-    ADDRESS.WBTC,
-    comptroller.address,
-    IRM.address,
-    'Blueberry Wrapped Bitcoin',
-    'bWBTC',
-    8,
-    bTokenAdmin.address
-  );
-
-  const bWstETH = await deployBToken(
-    ADDRESS.wstETH,
-    comptroller.address,
-    IRM.address,
-    'Blueberry WstETH',
-    'bWstETH',
-    8,
-    bTokenAdmin.address
-  );
-
-  // const bCrvStEth = await deployBToken(
-  //   ADDRESS.CRV_STETH,
-  //   comptroller.address,
-  //   IRM.address,
-  //   "Blueberry CrvSTETH",
-  //   "bCrvSTETH",
-  //   8,
-  //   bTokenAdmin.address
-  // );
-
-  // const bCrvFrxEth = await deployBToken(
-  //   ADDRESS.CRV_FRXETH,
-  //   comptroller.address,
-  //   IRM.address,
-  //   "Blueberry CrvFRXETH",
-  //   "bCrvFRXETH",
-  //   8,
-  //   bTokenAdmin.address
-  // );
-
-  // const bCrvMim3Crv = await deployBToken(
-  //   ADDRESS.CRV_MIM3CRV,
-  //   comptroller.address,
-  //   IRM.address,
-  //   "Blueberry CrvMIM3CRV",
-  //   "bCrvMIM3CRV",
-  //   8,
-  //   bTokenAdmin.address
-  // );
-
-  // const bCrvCvxCrv = await deployBToken(
-  //   ADDRESS.CRV_CVXCRV_CRV,
-  //   comptroller.address,
-  //   IRM.address,
-  //   "Blueberry CrvCVXCRV",
-  //   "bCrvCVXCRV",
-  //   8,
-  //   bTokenAdmin.address
-  // );
-
-  await comptroller._supportMarket(bUSDC.address, 0);
-  await comptroller._supportMarket(bICHI.address, 0);
-  await comptroller._supportMarket(bCRV.address, 0);
-  await comptroller._supportMarket(bDAI.address, 0);
-  await comptroller._supportMarket(bMIM.address, 0);
-  await comptroller._supportMarket(bLINK.address, 0);
-  await comptroller._supportMarket(bOHM.address, 0);
-  await comptroller._supportMarket(bSUSHI.address, 0);
-  await comptroller._supportMarket(bBAL.address, 0);
-  //await comptroller._supportMarket(bALCX.address, 0);
-  await comptroller._supportMarket(bWETH.address, 0);
-  await comptroller._supportMarket(bWBTC.address, 0);
-  await comptroller._supportMarket(bWstETH.address, 0);
-  //await comptroller._supportMarket(bCrvStEth.address, 0);
-  // await comptroller._supportMarket(bCrvFrxEth.address, 0);
-  // await comptroller._supportMarket(bCrvMim3Crv.address, 0);
-  // await comptroller._supportMarket(bCrvCvxCrv.address, 0);
+    bTokens.push(bToken);
+  }
 
   return {
     comptroller,
-    bUSDC,
-    bICHI,
-    bCRV,
-    bDAI,
-    bMIM,
-    bLINK,
-    // bOHM,
-    // bSUSHI,
-    bBAL,
-    //bALCX,
-    bWETH,
-    bWBTC,
-    bWstETH,
-    // //bCrvStEth,
-    // bCrvFrxEth,
-    // bCrvMim3Crv,
-    // bCrvCvxCrv,
+    bTokens
   };
 }
