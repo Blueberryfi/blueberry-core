@@ -41,6 +41,8 @@ const wstETH = ADDRESS.wstETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const ICHI = ADDRESS.ICHI;
+const WBTC = ADDRESS.WBTC;
+const ALCX = ADDRESS.ALCX;
 const ICHIV1 = ADDRESS.ICHI_FARM;
 const UNI_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
 const ETH_PRICE = 1600;
@@ -63,14 +65,18 @@ export interface Protocol {
   bTokens: BErc20Delegator[];
 }
 
-const addStrategies = async (vaultFactory: MockIchiVault__factory, spell: IchiSpell, ichiFarm: MockIchiFarm, admin: SignerWithAddress): Promise<IchiStrategy[]> => {
-
+const addStrategies = async (
+  vaultFactory: MockIchiVault__factory,
+  spell: IchiSpell,
+  ichiFarm: MockIchiFarm,
+  admin: SignerWithAddress
+): Promise<IchiStrategy[]> => {
   for (let i = 0; i < ichiStrategies.length; i++) {
     let vault = <MockIchiVault>(
-      await vaultFactory.deploy(ichiStrategies[i].vaultAddress, true, true, admin.address, admin.address, 3600)
+      await vaultFactory.deploy(ichiStrategies[i].poolAddress, true, true, admin.address, admin.address, 3600)
     );
     await vault.deployed();
-    
+
     let token0 = <ERC20>await ethers.getContractAt('ERC20', await vault.token0());
     let token0Decimals = await token0.decimals();
     let token1 = <ERC20>await ethers.getContractAt('ERC20', await vault.token1());
@@ -78,12 +84,12 @@ const addStrategies = async (vaultFactory: MockIchiVault__factory, spell: IchiSp
 
     await token0.approve(vault.address, utils.parseUnits('1000', token0Decimals));
     await token1.approve(vault.address, utils.parseUnits('1000', token1Decimals));
-    
+
     let token0Amount = utils.parseUnits('1000', token0Decimals);
     let token1Amount = utils.parseUnits('1000', token1Decimals);
 
     await vault.deposit(token0Amount, token1Amount, admin.address);
-    console.log("deposited");
+
     await ichiFarm.add(100, vault.address);
 
     await spell.addStrategy(vault.address, ichiStrategies[i].minPosition, ichiStrategies[i].maxPosition);
@@ -91,7 +97,7 @@ const addStrategies = async (vaultFactory: MockIchiVault__factory, spell: IchiSp
   }
 
   return ichiStrategies;
-}
+};
 
 export const setupIchiProtocol = async (): Promise<Protocol> => {
   let admin: SignerWithAddress;
@@ -103,6 +109,8 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   let ichi: MockIchiV2;
   let ichiV1: ERC20;
   let weth: IWETH;
+  let wbtc: ERC20;
+  let alcx: ERC20;
   let werc20: WERC20;
   let wichi: WIchiFarm;
   let mockOracle: MockOracle;
@@ -125,13 +133,14 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   ichi = <MockIchiV2>await ethers.getContractAt('MockIchiV2', ICHI);
   ichiV1 = <ERC20>await ethers.getContractAt('ERC20', ICHIV1);
   weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
+  wbtc = <ERC20>await ethers.getContractAt('ERC20', ADDRESS.WBTC);
 
   // Mint tokens to admin
-  await faucetToken(DAI, utils.parseUnits('10000'), admin, 100);
-  await faucetToken(WETH, utils.parseUnits('10000'), admin, 100);
-  await faucetToken(usdc, utils.parseUnits('10000', 6), admin, 100);
-  await faucetToken(wstETH, utils.parseUnits('10000'), admin, 100);
-  
+  await faucetToken(DAI, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(WETH, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(USDC, utils.parseUnits('100000', 6), admin, 100);
+  await faucetToken(wstETH, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(WBTC, utils.parseUnits('100000', 8), admin, 100);
   await weth.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
   // Get IchiV1 tokens from the sudhi router
   const sushiRouter = <IUniswapV2Router02>(
@@ -173,13 +182,15 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();
   await mockOracle.setPrice(
-    [WETH, USDC, ICHI, DAI, wstETH],
+    [WETH, USDC, ICHI, DAI, wstETH, WBTC, ALCX],
     [
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18).mul(5), // $5
       BigNumber.from(10).pow(18), // $1
       BigNumber.from(10).pow(18).mul(ETH_PRICE),
+      BigNumber.from(10).pow(18).mul(50000), // $50,000
+      BigNumber.from(10).pow(18).mul(20), // $20
     ]
   );
 
@@ -197,14 +208,18 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiOracle.setPriceDeviation(USDC, 500);
   await ichiOracle.setPriceDeviation(DAI, 500);
   await ichiOracle.setPriceDeviation(wstETH, 500);
+  await ichiOracle.setPriceDeviation(WBTC, 500);
+  await ichiOracle.setPriceDeviation(ALCX, 500);
 
   const CoreOracle = await ethers.getContractFactory(CONTRACT_NAMES.CoreOracle);
   oracle = <CoreOracle>await upgrades.deployProxy(CoreOracle, [admin.address], { unsafeAllow: ['delegatecall'] });
   await oracle.deployed();
 
   await oracle.setRoutes(
-    [WETH, USDC, ICHI, DAI, wstETH],
+    [WETH, USDC, ICHI, DAI, wstETH, WBTC, ALCX],
     [
+      mockOracle.address,
+      mockOracle.address,
       mockOracle.address,
       mockOracle.address,
       mockOracle.address,
@@ -276,7 +291,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await ichiSpell.deployed();
 
   const strats: IchiStrategy[] = await addStrategies(IchiVault, ichiSpell, ichiFarm, admin);
-  console.log("strats", strats.length);
+  console.log('strats', strats.length);
   // Register Ichi Vaults within the core oracle
   for (let i = 0; i < strats.length; i++) {
     await ichiOracle.registerVault(strats[i].vaultAddress);
@@ -285,7 +300,10 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
 
   // Setup Bank
   await bank.whitelistSpells([ichiSpell.address], [true]);
-  await bank.whitelistTokens([USDC, DAI, wstETH, WETH, ADDRESS.ALCX, ADDRESS.WBTC], [true, true, true, true, true, true]);
+  await bank.whitelistTokens(
+    [USDC, DAI, wstETH, WETH, ADDRESS.ALCX, ADDRESS.WBTC, ADDRESS.ALCX],
+    [true, true, true, true, true, true, true]
+  );
   await bank.whitelistERC1155([werc20.address, wichi.address], true);
 
   const bTokens = await deployBTokens(admin.address, oracle.address);

@@ -5,6 +5,7 @@ export type IchiStrategy = {
     strategyId: number;
     strategyName: string;
     vaultAddress: string;
+    poolAddress: string;
     minPosition: BigNumber;
     maxPosition: BigNumber;
     collTokens: string[];
@@ -13,10 +14,22 @@ export type IchiStrategy = {
 }
   
 export const ichiStrategies: IchiStrategy[] = [
+    // {
+    //     strategyId: 0,
+    //     strategyName: 'ICHI_VAULT_ALCX_ETH',
+    //     vaultAddress: ADDRESS.ICHI_VAULT_ALCX_ETH,
+    //     poolAddress: ADDRESS.UNI_V3_ALCX_ETH,
+    //     minPosition: utils.parseUnits('4000', 18),
+    //     maxPosition: utils.parseUnits('488794', 18),
+    //     collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH],
+    //     maxLTVs: [20000, 20000, 20000, 20000],
+    //     borrowAsset: ADDRESS.ALCX,
+    // },
     {
         strategyId: 0,
-        strategyName: 'ICHI_VAULT_ALCX_ETH',
-        vaultAddress: ADDRESS.ICHI_VAULT_ALCX_ETH,
+        strategyName: 'ICHI_VAULT_ALCX_USDC',
+        vaultAddress: ADDRESS.ICHI_VAULT_ALCX_USDC,
+        poolAddress: ADDRESS.UNI_V3_ALCX_USDC,
         minPosition: utils.parseUnits('4000', 18),
         maxPosition: utils.parseUnits('488794', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH],
@@ -25,18 +38,9 @@ export const ichiStrategies: IchiStrategy[] = [
     },
     {
         strategyId: 1,
-        strategyName: 'ICHI_VAULT_ALCX_ETH',
-        vaultAddress: ADDRESS.ICHI_VAULT_ALCX_USDC,
-        minPosition: utils.parseUnits('4000', 18),
-        maxPosition: utils.parseUnits('488794', 18),
-        collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH],
-        maxLTVs: [20000, 20000, 20000, 20000],
-        borrowAsset: ADDRESS.ALCX,
-    },
-    {
-        strategyId: 2,
         strategyName: 'ICHI_VAULT_USDC_ALCX',
         vaultAddress: ADDRESS.ICHI_VAULT_USDC_ALCX,
+        poolAddress: ADDRESS.UNI_V3_ALCX_USDC,
         minPosition: utils.parseUnits('4000', 18),
         maxPosition: utils.parseUnits('488794', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH],
@@ -44,9 +48,10 @@ export const ichiStrategies: IchiStrategy[] = [
         borrowAsset: ADDRESS.USDC,
     },
     {
-        strategyId: 3,
+        strategyId: 2,
         strategyName: 'ICHI_VAULT_ETH_USDC',
         vaultAddress: ADDRESS.ICHI_VAULT_ETH_USDC,
+        poolAddress: ADDRESS.UNI_V3_WETH_USDC,
         minPosition: utils.parseUnits('4000', 18),
         maxPosition: utils.parseUnits('750000', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH],
@@ -54,9 +59,10 @@ export const ichiStrategies: IchiStrategy[] = [
         borrowAsset: ADDRESS.WETH,
     },
     {
-        strategyId: 4,
+        strategyId: 3,
         strategyName: 'ICHI_VAULT_USDC_ETH',
         vaultAddress: ADDRESS.ICHI_VAULT_USDC_ETH,
+        poolAddress: ADDRESS.UNI_V3_WETH_USDC,
         minPosition: utils.parseUnits('4000', 18),
         maxPosition: utils.parseUnits('750000', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH],
@@ -64,9 +70,10 @@ export const ichiStrategies: IchiStrategy[] = [
         borrowAsset: ADDRESS.USDC,
     },
     {
-        strategyId: 5,
+        strategyId: 4,
         strategyName: 'ICHI_VAULT_WBTC_USDC',
         vaultAddress: ADDRESS.ICHI_VAULT_WBTC_USDC,
+        poolAddress: ADDRESS.UNI_V3_WBTC_USDC,
         minPosition: utils.parseUnits('4000', 18),
         maxPosition: utils.parseUnits('750000', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH, ADDRESS.WBTC],
@@ -74,9 +81,10 @@ export const ichiStrategies: IchiStrategy[] = [
         borrowAsset: ADDRESS.WBTC,
     },
     {
-        strategyId: 6,
+        strategyId: 5,
         strategyName: 'ICHI_VAULT_USDC_WBTC',
         vaultAddress: ADDRESS.ICHI_VAULT_USDC_WBTC,
+        poolAddress: ADDRESS.UNI_V3_WBTC_USDC,
         minPosition: utils.parseUnits('4000', 18),
         maxPosition: utils.parseUnits('750000', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH, ADDRESS.WBTC],
@@ -84,9 +92,10 @@ export const ichiStrategies: IchiStrategy[] = [
         borrowAsset: ADDRESS.USDC,
     },
     {
-        strategyId: 7,
+        strategyId: 6,
         strategyName: 'ICHI_VAULT_WBTC_ETH',
         vaultAddress: ADDRESS.ICHI_VAULT_WBTC_ETH,
+        poolAddress: ADDRESS.UNI_V3_WBTC_WETH,
         minPosition: utils.parseUnits('4000', 18),
         maxPosition: utils.parseUnits('750000', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH, ADDRESS.WBTC],
@@ -94,9 +103,10 @@ export const ichiStrategies: IchiStrategy[] = [
         borrowAsset: ADDRESS.WBTC,
     },
     {
-        strategyId: 8,
+        strategyId: 7,
         strategyName: 'ICHI_VAULT_ETH_WBTC',
         vaultAddress: ADDRESS.ICHI_VAULT_ETH_WBTC,
+        poolAddress: ADDRESS.UNI_V3_WBTC_WETH,
         minPosition: utils.parseUnits('4000', 18),
         maxPosition: utils.parseUnits('750000', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WETH, ADDRESS.wstETH, ADDRESS.WBTC],
