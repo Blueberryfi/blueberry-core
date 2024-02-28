@@ -126,7 +126,6 @@ describe('Ichi Liquidator', () => {
       ]
     );
     
-    console.log('isLiquidatable', await bank.isLiquidatable(positionId));
     // Check if a position is liquidatable
     expect(await bank.isLiquidatable(positionId)).to.be.true;
 

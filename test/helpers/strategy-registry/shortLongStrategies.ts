@@ -9,6 +9,7 @@ export type ShortLongStrategy = {
     collTokens: string[];
     maxLTVs: number[];
     borrowAssets: string[];
+    softVaultUnderlying: string;
 }
   
 export const shortLongStrategies: ShortLongStrategy[] = [
@@ -20,6 +21,7 @@ export const shortLongStrategies: ShortLongStrategy[] = [
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WBTC, ADDRESS.WETH, ADDRESS.wstETH],
         maxLTVs: [20000, 20000, 20000, 20000, 20000],
         borrowAssets: [ADDRESS.DAI],
+        softVaultUnderlying: ADDRESS.wstETH,
     },
     {
         strategyId: 1,
@@ -28,7 +30,8 @@ export const shortLongStrategies: ShortLongStrategy[] = [
         maxPosition: utils.parseUnits('750000', 18),
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WBTC, ADDRESS.WETH, ADDRESS.wstETH],
         maxLTVs: [20000, 20000, 20000, 20000, 20000],
-        borrowAssets: [ADDRESS.WETH, ADDRESS.WBTC, ADDRESS.LINK],
+        borrowAssets: [ADDRESS.WETH, ADDRESS.WBTC, ADDRESS.LINK],  // Swapping to DAI to short one of these 3 assets
+        softVaultUnderlying: ADDRESS.DAI,
     },
     {
         strategyId: 2,
@@ -38,6 +41,7 @@ export const shortLongStrategies: ShortLongStrategy[] = [
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WBTC, ADDRESS.WETH],
         maxLTVs: [20000, 20000, 20000, 20000],
         borrowAssets: [ADDRESS.DAI],
+        softVaultUnderlying: ADDRESS.WBTC,
     },
     {
         strategyId: 3,
@@ -47,5 +51,6 @@ export const shortLongStrategies: ShortLongStrategy[] = [
         collTokens: [ADDRESS.DAI, ADDRESS.USDC, ADDRESS.WBTC, ADDRESS.WETH],
         maxLTVs: [20000, 20000, 20000, 20000],
         borrowAssets: [ADDRESS.DAI],
+        softVaultUnderlying: ADDRESS.LINK,
     },
 ]; 

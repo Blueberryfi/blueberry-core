@@ -16,7 +16,7 @@ import { BaseLiquidator } from "./BaseLiquidator.sol";
 
 import { IBank } from "../interfaces/IBank.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
-
+import "hardhat/console.sol";
 /**
  * @title ShortLongLiquidator
  * @author Blueberry Protocol
@@ -77,9 +77,17 @@ contract ShortLongLiquidator is BaseLiquidator {
         address debtToken,
         uint256 /*debtAmount*/
     ) internal override {
+        console.log("Unwinding position");
         // Withdraw ERC1155 liquidiation
         uint256 balance = IERC1155(posInfo.collToken).balanceOf(address(this), posInfo.collId);
+        console.log("Balance: %s", balance);
         IWERC20(posInfo.collToken).burn(address(uint160(posInfo.collId)), balance);
+        console.log('debtToken: %s', debtToken);
+        console.log('debtToken balance: %s', IERC20(debtToken).balanceOf(address(this)));
+        console.log('udnerlyingToken: %s', posInfo.underlyingToken);
+        console.log('udnerlyingToken balance: %s', IERC20(posInfo.underlyingToken).balanceOf(address(this)));
         _swap(posInfo.underlyingToken, debtToken, IERC20(posInfo.underlyingToken).balanceOf(address(this)));
+        console.log('udnerlyingToken balance: %s', IERC20(posInfo.underlyingToken).balanceOf(address(this)));
+        console.log('debtToken balance: %s', IERC20(debtToken).balanceOf(address(this)));
     }
 }

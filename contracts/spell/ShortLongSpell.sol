@@ -25,6 +25,7 @@ import { IBank } from "../interfaces/IBank.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IShortLongSpell } from "../interfaces/spell/IShortLongSpell.sol";
+import "hardhat/console.sol";
 
 /**
  * @title Short/Long Spell

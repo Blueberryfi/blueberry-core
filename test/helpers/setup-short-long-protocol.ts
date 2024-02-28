@@ -26,6 +26,7 @@ import { deployBTokens } from './money-market';
 import { impersonateAccount } from '.';
 import { deploySoftVaults } from './markets';
 import { faucetToken } from './paraswap';
+import { ShortLongStrategy, shortLongStrategies } from './strategy-registry/shortLongStrategies';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
@@ -43,21 +44,13 @@ const CRV = ADDRESS.CRV;
 const AURA = ADDRESS.AURA;
 const BAL = ADDRESS.BAL;
 const LINK = ADDRESS.LINK;
-const ETH_PRICE = 1600;
-const BTC_PRICE = 26000;
-const LINK_PRICE = 7;
-
-const MIN_POS_SIZE = utils.parseUnits('20', 18); // 20 USD
-const MAX_POS_SIZE = utils.parseUnits('2000000', 18); // 2000000 USD
-const MAX_LTV = 300000; // 300,000 USD
-const CREDIT_LIMIT = utils.parseUnits('3000000000'); // 300M USD
+const ETH_PRICE = 3200;
+const BTC_PRICE = 60000;
+const LINK_PRICE = 14;
 
 export interface ShortLongProtocol {
   werc20: WERC20;
   mockOracle: MockOracle;
-  stableOracle: CurveStableOracle;
-  volatileOracle: CurveVolatileOracle;
-  tricryptoOracle: CurveTricryptoOracle;
   softVaultOracle: SoftVaultOracle;
   oracle: CoreOracle;
   config: ProtocolConfig;
@@ -65,6 +58,8 @@ export interface ShortLongProtocol {
   shortLongSpell: ShortLongSpell;
   feeManager: FeeManager;
   uniV3Lib: UniV3WrappedLib;
+  strategies: ShortLongStrategy[];
+  underlyingToSoftVault: Map<string, string>;
 }
 
 export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
@@ -80,9 +75,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   let weth: IWETH;
   let werc20: WERC20;
   let mockOracle: MockOracle;
-  let stableOracle: CurveStableOracle;
-  let volatileOracle: CurveVolatileOracle;
-  let tricryptoOracle: CurveTricryptoOracle;
   let softVaultOracle: SoftVaultOracle;
   let oracle: CoreOracle;
   let shortLongSpell: ShortLongSpell;
@@ -131,83 +123,33 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   // deposit 200 eth -> 200 WETH
   await weth.deposit({ value: initialDeposit });
 
-  // swap 40 WETH -> USDC, 40 WETH -> DAI
-  await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
-
-  const uniV2Router = <IUniswapV2Router02>(
-    await ethers.getContractAt(CONTRACT_NAMES.IUniswapV2Router02, ADDRESS.UNI_V2_ROUTER)
-  );
-
-  // WETH -> USDC
-  await uniV2Router.swapExactTokensForTokens(
-    initialSwapAmount,
-    0,
-    [WETH, USDC],
-    admin.address,
-    ethers.constants.MaxUint256
-  );
-  // WETH -> DAI
-  await uniV2Router.swapExactTokensForTokens(
-    initialSwapAmount,
-    0,
-    [WETH, DAI],
-    admin.address,
-    ethers.constants.MaxUint256
-  );
-  // WETH -> LINK
-  await uniV2Router.swapExactTokensForTokens(
-    initialSwapAmount,
-    0,
-    [WETH, LINK],
-    admin.address,
-    ethers.constants.MaxUint256
-  );
-  // WETH -> WBTC
-  await uniV2Router.swapExactTokensForTokens(
-    initialSwapAmount,
-    0,
-    [WETH, WBTC],
-    admin.address,
-    ethers.constants.MaxUint256
-  );
-  // Swap 40 weth -> crv
-  await weth.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
-
-  const sushiRouter = <IUniswapV2Router02>(
-    await ethers.getContractAt(CONTRACT_NAMES.IUniswapV2Router02, ADDRESS.SUSHI_ROUTER)
-  );
-  // WETH -> CRV
-  await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits('10'),
-    0,
-    [WETH, CRV],
-    admin.address,
-    ethers.constants.MaxUint256
-  );
-  // Try to swap some crv to usdc -> Swap router test
-  await crv.approve(ADDRESS.SUSHI_ROUTER, 0);
-  await crv.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
-  await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits('10'),
-    0,
-    [CRV, WETH, USDC],
-    admin.address,
-    ethers.constants.MaxUint256
-  );
-
   // Transfer wstETH from whale
   const wstETHWhale = '0x5fEC2f34D80ED82370F733043B6A536d7e9D7f8d';
+  const crvWhale = '0x6cC5F688a315f3dC28A7781717a9A798a59fDA7b';
+  const daiWhale = '0x60FaAe176336dAb62e284Fe19B885B095d29fB7F';
 
   await admin.sendTransaction({
     to: wstETHWhale,
+    value: utils.parseEther('10'),
+  });
+
+  await admin.sendTransaction({
+    to: crvWhale,
     value: utils.parseEther('10'),
   });
   
   await impersonateAccount(wstETHWhale);
   const whale1 = await ethers.getSigner(wstETHWhale);
   const wstETH = <ERC20>await ethers.getContractAt('ERC20', WstETH);
+  await wstETH.connect(whale1).transfer(admin.address, utils.parseUnits('100000'));
 
-  await wstETH.connect(whale1).transfer(admin.address, utils.parseUnits('5000'));
+  await impersonateAccount(crvWhale);
+  const whale2 = await ethers.getSigner(crvWhale);
+  await crv.connect(whale2).transfer(admin.address, utils.parseUnits('100000'));
+
+  await impersonateAccount(daiWhale);
+  const whale3 = await ethers.getSigner(daiWhale);
+  await dai.connect(whale3).transfer(admin.address, utils.parseUnits('100000'));
 
   await faucetToken(CRV, utils.parseUnits('100000'), admin, 100);
   await faucetToken(USDC, utils.parseUnits('100000', 6), admin, 100);
@@ -239,39 +181,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
       BigNumber.from(10).pow(18), // $1
     ]
   );
-
-  const CurveStableOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveStableOracle);
-  stableOracle = <CurveStableOracle>(
-    await upgrades.deployProxy(
-      CurveStableOracleFactory,
-      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
-      { unsafeAllow: ['delegatecall'] }
-    )
-  );
-
-  await stableOracle.deployed();
-
-  const CurveVolatileOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveVolatileOracle);
-  volatileOracle = <CurveVolatileOracle>(
-    await upgrades.deployProxy(
-      CurveVolatileOracleFactory,
-      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
-      { unsafeAllow: ['delegatecall'] }
-    )
-  );
-
-  await volatileOracle.deployed();
-
-  const CurveTricryptoOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.CurveTricryptoOracle);
-  tricryptoOracle = <CurveTricryptoOracle>(
-    await upgrades.deployProxy(
-      CurveTricryptoOracleFactory,
-      [ADDRESS.CRV_ADDRESS_PROVIDER, mockOracle.address, admin.address],
-      { unsafeAllow: ['delegatecall'] }
-    )
-  );
-
-  await tricryptoOracle.deployed();
 
   const SoftVaultOracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.SoftVaultOracle);
   softVaultOracle = <SoftVaultOracle>await upgrades.deployProxy(
@@ -353,30 +262,28 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await bank.whitelistERC1155([werc20.address], true);
 
   const softVaults: SoftVault[] = await deploySoftVaults(config, bank, comptroller, bTokens.bTokens, admin, alice);
-  const strategyUnderlying = new Set([DAI, LINK, WBTC, WstETH]);
+  
+  let softVaultToUnderlying = new Map<string, string>();
+  let underlyingToSoftVault = new Map<string, string>();
 
   for (let i = 0; i < softVaults.length; i++) {
+    underlyingToSoftVault.set(await softVaults[i].getUnderlyingToken(), softVaults[i].address);
     await softVaultOracle.registerSoftVault(softVaults[i].address);
     await oracle.setRoutes([softVaults[i].address], [softVaultOracle.address]);
-    const underlyingToken = await softVaults[i].getUnderlyingToken();
-
-    if (strategyUnderlying.has(underlyingToken)) {
-      await shortLongSpell.addStrategy(softVaults[i].address, MIN_POS_SIZE, MAX_POS_SIZE);
-    }
   }
 
-  await shortLongSpell.setCollateralsMaxLTVs(0, [USDC, USDT, DAI], [MAX_LTV, MAX_LTV, MAX_LTV]);
-  await shortLongSpell.setCollateralsMaxLTVs(1, [WBTC, DAI, WETH], [MAX_LTV, MAX_LTV, MAX_LTV]);
-  await shortLongSpell.setCollateralsMaxLTVs(2, [WBTC, DAI, WETH, WstETH], [MAX_LTV, MAX_LTV, MAX_LTV, MAX_LTV]);
-  await shortLongSpell.setCollateralsMaxLTVs(3, [WBTC, DAI, WETH], [MAX_LTV, MAX_LTV, MAX_LTV]);
-  await shortLongSpell.setCollateralsMaxLTVs(4, [WBTC, DAI, WETH, WstETH], [MAX_LTV, MAX_LTV, MAX_LTV, MAX_LTV]);
+  for (let i=0; i < shortLongStrategies.length; i++) {
+    let softVault = underlyingToSoftVault.get(shortLongStrategies[i].softVaultUnderlying);
+    
+    if (softVault != undefined) {
+      await shortLongSpell.addStrategy(softVault, shortLongStrategies[i].minPosition, shortLongStrategies[i].maxPosition);
+      await shortLongSpell.setCollateralsMaxLTVs(i, shortLongStrategies[i].collTokens, shortLongStrategies[i].maxLTVs);
+    }    
+  }
 
   return {
     werc20,
     mockOracle,
-    stableOracle,
-    volatileOracle,
-    tricryptoOracle,
     softVaultOracle,
     oracle,
     config,
@@ -384,5 +291,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     bank,
     shortLongSpell,
     uniV3Lib: LibInstance,
+    strategies: shortLongStrategies,
+    underlyingToSoftVault,
   };
 };

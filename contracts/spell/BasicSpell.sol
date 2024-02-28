@@ -27,7 +27,7 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IWETH } from "../interfaces/IWETH.sol";
 import { IBasicSpell } from "../interfaces/spell/IBasicSpell.sol";
-
+import "hardhat/console.sol";
 /**
  * @title BasicSpell
  * @author BlueberryProtocol
@@ -298,9 +298,11 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
         IERC20 lpToken = IERC20(strategy.vault);
         uint256 lpBalance = lpToken.balanceOf(address(this));
         uint256 lpPrice = bank.getOracle().getPrice(address(lpToken));
-
+        console.log("lpToken: %s", address(lpToken));
+        console.log("lpPrice: %s", lpPrice);
+        console.log("lpBalance: %s", lpBalance);
         addedPosSize = (lpPrice * lpBalance) / 10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
-
+        console.log("position size: %s", addedPosSize);
         // Check if position size is within bounds
         if (prevPosSize + addedPosSize > strategy.maxPositionSize) {
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);

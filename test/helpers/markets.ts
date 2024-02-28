@@ -176,10 +176,10 @@ export const deploySoftVaults = async (config: any, bank: any, comptroller: any,
         await comptroller._setCreditLimit(bank.address, bToken.address, utils.parseUnits('3000000'));
 
         const UnderlyingToken: ERC20 = await ethers.getContractAt('ERC20', bTokenInfo.underlyingAddress); 
-        
-        await UnderlyingToken.approve(softVault.address, ethers.constants.MaxUint256);
+        const depositAmount = utils.parseUnits('50000', await UnderlyingToken.decimals());
 
-        await softVault.deposit(utils.parseUnits('5000', await UnderlyingToken.decimals()));
+        await UnderlyingToken.approve(softVault.address, ethers.constants.MaxUint256);
+        await softVault.deposit(depositAmount);
 
         softVaults.push(softVault);
     }

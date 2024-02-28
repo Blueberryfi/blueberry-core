@@ -8,11 +8,13 @@ import SpellABI from '../../abi/ShortLongSpell.json';
 import { getParaswapCalldata } from '../helpers/paraswap';
 import { evm_increaseTime, evm_mine_blocks } from '../helpers';
 import { expect } from 'chai';
+import { wstETH } from '../helpers/markets';
 
 const WETH = ADDRESS.WETH;
 const USDC = ADDRESS.USDC;
 const DAI = ADDRESS.DAI;
 const CRV = ADDRESS.CRV;
+const WSTETH = ADDRESS.wstETH;
 const SWAP_ROUTER = ADDRESS.UNI_V3_ROUTER;
 const POOL_ADDRESSES_PROVIDER = ADDRESS.POOL_ADDRESSES_PROVIDER;
 const BALANCER_VAULT = ADDRESS.BALANCER_VAULT;
@@ -23,7 +25,7 @@ describe('ShortLong Liquidator', () => {
   let treasury: SignerWithAddress;
 
   let usdc: ERC20;
-  let crv: ERC20;
+  let dai: ERC20;
   let mockOracle: MockOracle;
   let spell: ShortLongSpell;
   let bank: BlueberryBank;
@@ -33,10 +35,9 @@ describe('ShortLong Liquidator', () => {
   before(async () => {
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
-    crv = <ERC20>await ethers.getContractAt('ERC20', CRV);
-    console.log('setupShortLongProtocol');
+    dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     const protocol = await setupShortLongProtocol();
-    console.log('protocol');
+
     bank = protocol.bank;
     spell = protocol.shortLongSpell;
     mockOracle = protocol.mockOracle;
@@ -59,21 +60,21 @@ describe('ShortLong Liquidator', () => {
       }
     );
 
-    const depositAmount = utils.parseUnits('100', 6); // 100 USDC
-    const borrowAmount = utils.parseUnits('100', 18); // 100 CRV
+    const depositAmount = utils.parseUnits('5000', 6); // 100 USDC
+    const borrowAmount = utils.parseUnits('5000', 18); // 100 DAI
     const iface = new ethers.utils.Interface(SpellABI);
 
     await mockOracle.setPrice(
-      [CRV],
+      [DAI],
       [
-        BigNumber.from(10).pow(17).mul(4), // $0.4
+        BigNumber.from(10).pow(18).mul(1), // $1
       ]
     );
 
     await usdc.approve(bank.address, ethers.constants.MaxUint256);
-    await crv.approve(bank.address, ethers.constants.MaxUint256);
-    const swapData = await getParaswapCalldata(CRV, DAI, borrowAmount, spell.address, 100);
-
+    await dai.approve(bank.address, ethers.constants.MaxUint256);
+    const swapData = await getParaswapCalldata(DAI, WSTETH, borrowAmount, spell.address, 100);
+    
     await bank.execute(
       0,
       spell.address,
@@ -81,7 +82,7 @@ describe('ShortLong Liquidator', () => {
         {
           strategyId: 0,
           collToken: USDC,
-          borrowToken: CRV,
+          borrowToken: DAI,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
           farmingPoolId: 0,
@@ -95,15 +96,15 @@ describe('ShortLong Liquidator', () => {
 
   it('should be able to liquidate the position => (OV - PV)/CV = LT', async () => {
     await mockOracle.setPrice(
-      [CRV],
+      [DAI],
       [
-        BigNumber.from(10).pow(18).mul(63), // $63
+        BigNumber.from(10).pow(18).mul(2), // $63
       ]
     );
 
     await evm_increaseTime(4 * 3600);
     await evm_mine_blocks(10);
-
+    console.log('Is liquidatable', await bank.isLiquidatable(positionId));
     // Check if a position is liquidatable
     expect(await bank.isLiquidatable(positionId)).to.be.true;
 
@@ -115,18 +116,18 @@ describe('ShortLong Liquidator', () => {
     expect((await bank.getPositionInfo(positionId)).at(6)).is.equal(0);
     expect((await bank.getPositionInfo(positionId)).at(7)).is.equal(0);
 
-    // Expect the liquidator to have some CRV
-    expect(await crv.balanceOf(liquidator.address)).to.be.greaterThan(0);
+    // Expect the liquidator to have some DAI
+    expect(await dai.balanceOf(liquidator.address)).to.be.greaterThan(0);
 
     // Expect withdraws to revert if a non-admin tries to withdraw
-    await expect(liquidator.connect(alice).withdraw([crv.address])).to.be.revertedWith(
+    await expect(liquidator.connect(alice).withdraw([dai.address])).to.be.revertedWith(
       'Ownable: caller is not the owner'
     );
 
     // Withdraw the CRV to the treasury
-    await liquidator.connect(admin).withdraw([crv.address]);
+    await liquidator.connect(admin).withdraw([dai.address]);
 
-    expect(await crv.balanceOf(liquidator.address)).to.be.equal(0);
-    expect(await crv.balanceOf(treasury.address)).to.be.greaterThan(0);
+    expect(await dai.balanceOf(liquidator.address)).to.be.equal(0);
+    expect(await dai.balanceOf(treasury.address)).to.be.greaterThan(0);
   });
 });
