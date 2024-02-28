@@ -17,6 +17,7 @@ import {
   CurveStableOracle,
   CurveVolatileOracle,
   CurveTricryptoOracle,
+  StableBPTOracle,
   WAuraBooster,
   AuraSpell,
   Comptroller,
@@ -111,8 +112,8 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   weth = <IWETH>await ethers.getContractAt(CONTRACT_NAMES.IWETH, WETH);
   console.log('Deployed WETH');
   // Prepare USDC
-  // deposit 200 eth -> 200 WETH
-  await weth.deposit({ value: utils.parseUnits('200') });
+  // deposit 1000 eth -> 1000 WETH
+  await weth.deposit({ value: utils.parseUnits('1000') });
 
   // swap 40 WETH -> USDC, 40 WETH -> DAI
   await weth.approve(ADDRESS.UNI_V2_ROUTER, ethers.constants.MaxUint256);
@@ -120,28 +121,33 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     await ethers.getContractAt(CONTRACT_NAMES.IUniswapV2Router02, ADDRESS.UNI_V2_ROUTER)
   );
   await uniV2Router.swapExactTokensForTokens(
-    utils.parseUnits('30'),
+    utils.parseUnits('100'),
     0,
     [WETH, USDC],
     admin.address,
     ethers.constants.MaxUint256
   );
   await uniV2Router.swapExactTokensForTokens(
-    utils.parseUnits('30'),
+    utils.parseUnits('100'),
     0,
     [WETH, DAI],
     admin.address,
     ethers.constants.MaxUint256
   );
+  
+  await faucetToken(CRV, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(USDC, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(DAI, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(WSTETH, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(WETH, utils.parseUnits('100000'), admin, 100);
 
-  await faucetToken(WSTETH, utils.parseUnits('40'), admin, 100);
   // Swap 40 weth -> crv
   await weth.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
   const sushiRouter = <IUniswapV2Router02>(
     await ethers.getContractAt(CONTRACT_NAMES.IUniswapV2Router02, ADDRESS.SUSHI_ROUTER)
   );
   await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits('40'),
+    utils.parseUnits('100'),
     0,
     [WETH, CRV],
     admin.address,
@@ -151,7 +157,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   await crv.approve(ADDRESS.SUSHI_ROUTER, 0);
   await crv.approve(ADDRESS.SUSHI_ROUTER, ethers.constants.MaxUint256);
   await sushiRouter.swapExactTokensForTokens(
-    utils.parseUnits('10'),
+    utils.parseUnits('100'),
     0,
     [CRV, WETH, USDC],
     admin.address,
@@ -234,6 +240,22 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     ]
   );
 
+  const StableBPTOracle = await ethers.getContractFactory(CONTRACT_NAMES.StableBPTOracle);
+
+  const stableBptOracle = <StableBPTOracle>(
+    await upgrades.deployProxy(
+      StableBPTOracle,
+      [ADDRESS.BALANCER_VAULT, oracle.address, admin.address],
+      {
+        unsafeAllow: ['delegatecall'],
+      }
+    )
+  );
+
+  stableBptOracle.registerBpt(ADDRESS.BAL_WSTETH_WETH);
+
+  oracle.setRoutes([ADDRESS.BAL_WSTETH_WETH], [stableBptOracle.address]);
+  
   const bTokens = await deployBTokens(admin.address, oracle.address);
   comptroller = bTokens.comptroller;
   
@@ -294,18 +316,19 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
 
   const auraBooster = <IAuraBooster>await ethers.getContractAt('IAuraBooster', ADDRESS.AURA_BOOSTER);
 
-  await auraSpell.addStrategy(ADDRESS.BAL_UDU, utils.parseUnits('100', 18), utils.parseUnits('2000', 18));
-  await auraSpell.addStrategy(ADDRESS.BAL_AURA_STABLE, utils.parseUnits('100', 18), utils.parseUnits('2000', 18));
+  await auraSpell.addStrategy(ADDRESS.BAL_UDU, utils.parseUnits('10', 18), utils.parseUnits('20000', 18));
+  await auraSpell.addStrategy(ADDRESS.BAL_AURA_STABLE, utils.parseUnits('10', 18), utils.parseUnits('20000', 18));
+  await auraSpell.addStrategy(ADDRESS.BAL_WSTETH_WETH, utils.parseUnits('10', 18), utils.parseUnits('20000', 18));
   await auraSpell.setCollateralsMaxLTVs(0, [USDC, CRV, DAI], [30000, 30000, 30000]);
   await auraSpell.setCollateralsMaxLTVs(1, [USDC, CRV, DAI], [30000, 30000, 30000]);
+  await auraSpell.setCollateralsMaxLTVs(2, [USDC, CRV, DAI], [30000, 30000, 30000]);
 
   // Setup Bank
   await bank.whitelistSpells([auraSpell.address], [true]);
-  await bank.whitelistTokens([USDC, DAI, CRV], [true, true, true]);
+  await bank.whitelistTokens([USDC, DAI, CRV, WSTETH], [true, true, true, true]);
   await bank.whitelistERC1155([werc20.address, waura.address], true);
-  console.log('Deploying Soft Vaults');
+
   await deploySoftVaults(config, bank, comptroller, bTokens.bTokens, admin, alice);
-  console.log('Deployed Soft Vaults');
   return {
     werc20,
     waura,

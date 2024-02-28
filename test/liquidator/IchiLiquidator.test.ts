@@ -19,14 +19,15 @@ import { expect } from 'chai';
 
 const USDC = ADDRESS.USDC;
 const ICHI = ADDRESS.ICHI;
+const DAI = ADDRESS.DAI;
 const ICHIV1 = ADDRESS.ICHI_FARM;
 const POOL_ADDRESSES_PROVIDER = ADDRESS.POOL_ADDRESSES_PROVIDER;
 const UNISWAP_V3_ROUTER = ADDRESS.UNI_V3_ROUTER;
 const WETH = ADDRESS.WETH;
 
 describe('Ichi Liquidator', () => {
-  const depositAmount = utils.parseUnits('100', 18); // worth of $400
-  const borrowAmount = utils.parseUnits('300', 6);
+  const depositAmount = utils.parseUnits('100', 18); // worth of $1
+  const borrowAmount = utils.parseUnits('200', 6);
   const iface = new ethers.utils.Interface(SpellABI);
 
   let positionId: BigNumber;
@@ -35,6 +36,7 @@ describe('Ichi Liquidator', () => {
   let treasury: SignerWithAddress;
 
   let usdc: ERC20;
+  let dai: ERC20;
   let ichi: MockIchiV2;
   let ichiV1: ERC20;
   let mockOracle: MockOracle;
@@ -44,13 +46,14 @@ describe('Ichi Liquidator', () => {
   let ichiFarm: MockIchiFarm;
   let ichiVault: MockIchiVault;
   let liquidator: IchiLiquidator;
-  const ICHI_VAULT_PID = 0; // ICHI/USDC Vault PoolId
+  const ICHI_VAULT_PID = 4; // USDC/WETH Vault PoolId
 
   before(async () => {
     await fork();
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
+    dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     ichi = <MockIchiV2>await ethers.getContractAt('MockIchiV2', ICHI);
     ichiV1 = <ERC20>await ethers.getContractAt('ERC20', ICHIV1);
 
@@ -58,27 +61,27 @@ describe('Ichi Liquidator', () => {
     bank = protocol.bank;
     spell = protocol.ichiSpell;
     ichiFarm = protocol.ichiFarm;
-    ichiVault = protocol.ichi_USDC_ICHI_Vault;
+    ichiVault = protocol.ichiStrategies[ICHI_VAULT_PID];
     wichi = protocol.wichi;
     mockOracle = protocol.mockOracle;
   });
 
   beforeEach(async () => {
     await mockOracle.setPrice(
-      [ICHI],
+      [DAI],
       [
-        BigNumber.from(10).pow(18).mul(5), // $5
+        BigNumber.from(10).pow(18).mul(1), // $1
       ]
     );
     await usdc.approve(bank.address, ethers.constants.MaxUint256);
-    await ichi.approve(bank.address, ethers.constants.MaxUint256);
+    await dai.approve(bank.address, ethers.constants.MaxUint256);
     await bank.execute(
       0,
       spell.address,
       iface.encodeFunctionData('openPositionFarm', [
         {
           strategyId: 0,
-          collToken: ICHI,
+          collToken: DAI,
           borrowToken: USDC,
           collAmount: depositAmount,
           borrowAmount: borrowAmount,
@@ -117,12 +120,13 @@ describe('Ichi Liquidator', () => {
     await ichiFarm.updatePool(ICHI_VAULT_PID);
 
     await mockOracle.setPrice(
-      [ICHI],
+      [USDC],
       [
-        BigNumber.from(10).pow(17).mul(8), // $0.5
+        BigNumber.from(10).pow(18).mul(8), // $8
       ]
     );
-
+    
+    console.log('isLiquidatable', await bank.isLiquidatable(positionId));
     // Check if a position is liquidatable
     expect(await bank.isLiquidatable(positionId)).to.be.true;
 
@@ -134,7 +138,7 @@ describe('Ichi Liquidator', () => {
     expect((await bank.getPositionInfo(positionId)).at(6)).is.equal(0);
     expect((await bank.getPositionInfo(positionId)).at(7)).is.equal(0);
 
-    // Expect the liquidator to have some CRV
+    // Expect the liquidator to have some USDC
     expect(await usdc.balanceOf(liquidator.address)).to.be.greaterThan(0);
 
     // Expect withdraws to revert if a non-admin tries to withdraw
@@ -142,9 +146,9 @@ describe('Ichi Liquidator', () => {
       'Ownable: caller is not the owner'
     );
 
-    // Withdraw the CRV to the treasury
+    // Withdraw the USDC to the treasury
     await liquidator.connect(admin).withdraw([usdc.address]);
-
+      
     expect(await usdc.balanceOf(liquidator.address)).to.be.equal(0);
     expect(await usdc.balanceOf(treasury.address)).to.be.greaterThan(0);
   });

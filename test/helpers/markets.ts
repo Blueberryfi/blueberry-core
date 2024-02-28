@@ -152,7 +152,7 @@ export const deploySoftVaults = async (config: any, bank: any, comptroller: any,
     const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
       unsafeAllow: ['delegatecall'],
     });
-    
+
     const SoftVault = await ethers.getContractFactory(CONTRACT_NAMES.SoftVault);
 
     for (let i = 0; i < bTokens.length; i++) {
@@ -178,10 +178,8 @@ export const deploySoftVaults = async (config: any, bank: any, comptroller: any,
         const UnderlyingToken: ERC20 = await ethers.getContractAt('ERC20', bTokenInfo.underlyingAddress); 
         
         await UnderlyingToken.approve(softVault.address, ethers.constants.MaxUint256);
-        await softVault.deposit(utils.parseUnits('50', await UnderlyingToken.decimals()));
 
-        const amount = await UnderlyingToken.balanceOf(admin.address);
-        await UnderlyingToken.transfer(user.address, amount);
+        await softVault.deposit(utils.parseUnits('5000', await UnderlyingToken.decimals()));
 
         softVaults.push(softVault);
     }

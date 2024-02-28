@@ -34,8 +34,9 @@ describe('ShortLong Liquidator', () => {
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
     crv = <ERC20>await ethers.getContractAt('ERC20', CRV);
+    console.log('setupShortLongProtocol');
     const protocol = await setupShortLongProtocol();
-
+    console.log('protocol');
     bank = protocol.bank;
     spell = protocol.shortLongSpell;
     mockOracle = protocol.mockOracle;

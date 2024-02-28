@@ -90,11 +90,11 @@ describe('Aura Spell Strategy test', async () => {
           before(async () => {
             collateralToken = <ERC20>await ethers.getContractAt('ERC20', strategyInfo.collateralAssets[j]);
             borrowToken = <ERC20>await ethers.getContractAt('ERC20', strategyInfo.borrowAssets[l]);
-            console.log('collateralToken', collateralToken.address);
-            depositAmount = await getTokenAmountFromUSD(collateralToken, oracle, '10000');
-            borrowAmount = await getTokenAmountFromUSD(borrowToken, oracle, '10000');
+
+            depositAmount = await getTokenAmountFromUSD(collateralToken, oracle, '1000');
+            borrowAmount = await getTokenAmountFromUSD(borrowToken, oracle, '1000');
             const poolInfo = await auraBooster.poolInfo(strategyInfo.poolId ?? 0);
-            console.log('poolInfo', poolInfo);
+
             auraRewarder = <IRewarder>await ethers.getContractAt('IRewarder', poolInfo.crvRewards);
 
             await addEthToContract(admin, utils.parseEther('1'), await auraRewarder.rewardManager());
@@ -109,9 +109,8 @@ describe('Aura Spell Strategy test', async () => {
 
             await setTokenBalance(collateralToken, alice, utils.parseEther('1000000000000'));
             await setTokenBalance(collateralToken, bob, utils.parseEther('1000000000000'));
-            console.log('collateralToken', collateralToken.address);
+
             await collateralToken.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
-            console.log('borrowToken', borrowToken.address);
             await collateralToken.connect(bob).approve(bank.address, ethers.constants.MaxUint256);
           });
 
@@ -210,7 +209,7 @@ describe('Aura Spell Strategy test', async () => {
               data: '0x',
             }));
 
-            await setTokenBalance(borrowToken, spell, utils.parseEther('1000'));
+            await setTokenBalance(borrowToken, spell, utils.parseEther('100000'));
 
             const aliceAuraBalanceBefore = await aura.balanceOf(alice.address);
             const bobAuraBalanceBefore = await aura.balanceOf(bob.address);
@@ -393,12 +392,14 @@ describe('Aura Spell Strategy test', async () => {
             _borrowAmount: BigNumberish,
             _poolId: BigNumberish
           ): Promise<BigNumber> => {
+            await collateralToken.transfer(_account.address, _depositAmount);
+
             await bank.connect(_account).execute(
               0,
               spell.address,
               spell.interface.encodeFunctionData('openPositionFarm', [
                 {
-                  strategyId: i,
+                  strategyId: 2,
                   collToken: collateralToken.address,
                   borrowToken: borrowToken.address,
                   collAmount: _depositAmount,
@@ -431,7 +432,7 @@ describe('Aura Spell Strategy test', async () => {
               spell.address,
               spell.interface.encodeFunctionData('closePositionFarm', [
                 {
-                  strategyId: i,
+                  strategyId: 2,
                   collToken: collateralToken.address,
                   borrowToken: borrowToken.address,
                   amountRepay,

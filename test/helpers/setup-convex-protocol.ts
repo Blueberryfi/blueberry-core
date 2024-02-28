@@ -27,6 +27,7 @@ import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from './money-market';
 import { impersonateAccount } from '.';
 import { deploySoftVaults } from './markets';
+import { faucetToken } from './paraswap';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
@@ -192,7 +193,11 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
 
   const LinkedLibFactory = await ethers.getContractFactory('UniV3WrappedLib');
   const LibInstance = await LinkedLibFactory.deploy();
-
+  await faucetToken(CRV, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(USDC, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(DAI, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(wstETH, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(WETH, utils.parseUnits('100000'), admin, 100);
   const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
   mockOracle = <MockOracle>await MockOracle.deploy();
   await mockOracle.deployed();

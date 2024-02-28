@@ -25,6 +25,7 @@ import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { deployBTokens } from './money-market';
 import { impersonateAccount } from '.';
 import { deploySoftVaults } from './markets';
+import { faucetToken } from './paraswap';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
@@ -201,12 +202,19 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     to: wstETHWhale,
     value: utils.parseEther('10'),
   });
-
+  
   await impersonateAccount(wstETHWhale);
   const whale1 = await ethers.getSigner(wstETHWhale);
   const wstETH = <ERC20>await ethers.getContractAt('ERC20', WstETH);
 
-  await wstETH.connect(whale1).transfer(admin.address, utils.parseUnits('30'));
+  await wstETH.connect(whale1).transfer(admin.address, utils.parseUnits('5000'));
+
+  await faucetToken(CRV, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(USDC, utils.parseUnits('100000', 6), admin, 100);
+  await faucetToken(DAI, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(WETH, utils.parseUnits('100000'), admin, 100);
+  await faucetToken(WBTC, utils.parseUnits('100000', 8), admin, 100);
+  await faucetToken(LINK, utils.parseUnits('100000'), admin, 100);
 
   const LinkedLibFactory = await ethers.getContractFactory('UniV3WrappedLib');
   const LibInstance = await LinkedLibFactory.deploy();
@@ -336,6 +344,13 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     )
   );
   await shortLongSpell.deployed();
+  // Setup Bank
+  await bank.whitelistSpells([shortLongSpell.address], [true]);
+  await bank.whitelistTokens(
+    [USDC, USDT, DAI, CRV, WETH, WBTC, LINK, WstETH],
+    [true, true, true, true, true, true, true, true]
+  );
+  await bank.whitelistERC1155([werc20.address], true);
 
   const softVaults: SoftVault[] = await deploySoftVaults(config, bank, comptroller, bTokens.bTokens, admin, alice);
   const strategyUnderlying = new Set([DAI, LINK, WBTC, WstETH]);
@@ -343,8 +358,9 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   for (let i = 0; i < softVaults.length; i++) {
     await softVaultOracle.registerSoftVault(softVaults[i].address);
     await oracle.setRoutes([softVaults[i].address], [softVaultOracle.address]);
+    const underlyingToken = await softVaults[i].getUnderlyingToken();
 
-    if (strategyUnderlying.has(await softVaults[i].getUnderlyingToken())) {
+    if (strategyUnderlying.has(underlyingToken)) {
       await shortLongSpell.addStrategy(softVaults[i].address, MIN_POS_SIZE, MAX_POS_SIZE);
     }
   }
@@ -354,14 +370,6 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await shortLongSpell.setCollateralsMaxLTVs(2, [WBTC, DAI, WETH, WstETH], [MAX_LTV, MAX_LTV, MAX_LTV, MAX_LTV]);
   await shortLongSpell.setCollateralsMaxLTVs(3, [WBTC, DAI, WETH], [MAX_LTV, MAX_LTV, MAX_LTV]);
   await shortLongSpell.setCollateralsMaxLTVs(4, [WBTC, DAI, WETH, WstETH], [MAX_LTV, MAX_LTV, MAX_LTV, MAX_LTV]);
-
-  // Setup Bank
-  await bank.whitelistSpells([shortLongSpell.address], [true]);
-  await bank.whitelistTokens(
-    [USDC, USDT, DAI, CRV, WETH, WBTC, LINK, WstETH],
-    [true, true, true, true, true, true, true, true]
-  );
-  await bank.whitelistERC1155([werc20.address], true);
 
   return {
     werc20,

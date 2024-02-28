@@ -168,7 +168,6 @@ describe('Aura Spell', () => {
 
     beforeEach(async () => {
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
-      await crv.approve(bank.address, 0);
       await crv.approve(bank.address, ethers.constants.MaxUint256);
     });
 
