@@ -23,10 +23,10 @@ abstract contract BaseTest is Test {
     address public treasury;
 
     function setUp() public {
-        deploy(address(this));
+        _deploy(address(this));
     }
 
-    function deploy(address _owner) internal {
+    function _deploy(address _owner) internal {
         owner = _owner;
         treasury = _owner;
         underlying = new ERC20PresetMinterPauser("Token", "TOK");
@@ -69,6 +69,7 @@ abstract contract BaseTest is Test {
         );
     }
 
+    // solhint-disable-next-line private-vars-leading-underscore
     function assertEq(uint256 a, uint256 b, uint256 c) internal {
         assertEq(a, b);
         assertEq(a, c);
