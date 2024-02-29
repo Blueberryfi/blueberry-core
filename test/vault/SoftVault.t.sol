@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import {BaseTest} from "@test/BaseTest.t.sol";
+import { BaseTest } from "@test/BaseTest.t.sol";
 
 contract SoftVaultTest is BaseTest {
     function test_SoftVault_getters() public {
@@ -10,5 +10,4 @@ contract SoftVaultTest is BaseTest {
         assertEq(address(vault.getUnderlyingToken()), address(underlying));
         assertEq(address(vault.getConfig()), address(config));
     }
-
 }

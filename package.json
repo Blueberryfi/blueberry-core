@@ -13,9 +13,9 @@
     "release:minor": "standard-version --release-as minor",
     "release:major": "standard-version --release-as major",
     "lint": "yarn lint:solidity && yarn lint:typescript",
-    "lint:solidity": "solhint 'contracts/**/*.sol' --fix",
+    "lint:solidity": "solhint 'contracts/**/*.sol' 'test/**/*.sol' 'script/**/*.sol' --fix",
     "lint:typescript": "eslint . --fix --ext .ts --ignore-path ./.eslintignore  --max-warnings 0",
-    "prettier": "prettier --write 'contracts/**/*.sol'"
+    "prettier": "prettier --write 'contracts/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'"
   },
   "dependencies": {
     "@aave/core-v3": "^1.18.0",
