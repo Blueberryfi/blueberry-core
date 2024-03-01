@@ -2,9 +2,11 @@
 pragma solidity 0.8.22;
 
 /* solhint-disable func-name-mixedcase */
+/* solhint-disable no-console */
 
 import "@contracts/utils/BlueberryConst.sol" as Constants;
 import { SoftVaultBaseTest, State } from "@test/SoftVaultBaseTest.t.sol";
+import { console2 as console } from "forge-std/console2.sol";
 
 /// @title SoftVaultTest
 /// @notice Test common vault properties
@@ -136,6 +138,67 @@ contract SoftVaultTest is SoftVaultBaseTest {
         vm.prank(alice);
         vm.expectRevert(abi.encodePacked("ERC20: burn amount exceeds balance"));
         vault.withdraw(sharesAmount + 1);
+    }
+
+    /// @notice Accounting system must not be vulnerable to share price inflation attacks
+    function testForkFuzz_SoftVault_share_price_inflation_attack(uint256 inflateAmount, uint256 delta) public {
+        // this has to be changed if there's deposit/withdraw fees
+        uint256 lossThreshold = 0.999e18;
+
+        // vault is fresh
+        assertEq(underlying.balanceOf(address(vault)), 0);
+        assertEq(vault.totalSupply(), 0);
+
+        // these minimums are to prevent 1-wei rounding errors from triggering the property
+        inflateAmount = bound(inflateAmount, 10_000, type(uint128).max);
+        delta = bound(delta, 0, type(uint128).max);
+
+        uint256 victimDeposit = inflateAmount + delta;
+        address attacker = bob;
+        // fund account
+        underlying.mint(attacker, inflateAmount);
+
+        vm.prank(attacker);
+        underlying.approve(address(vault), 1);
+        vm.prank(attacker);
+        uint256 shares = vault.deposit(1);
+        console.log(shares);
+
+        // attack only works when pps=1:1 + new vault
+        assertEq(underlying.balanceOf(address(bToken)), 1);
+        if (shares != 1) return;
+
+        // inflate pps
+        vm.prank(attacker);
+        underlying.transfer(address(vault), inflateAmount - 1);
+
+        // fund victim
+        underlying.mint(alice, victimDeposit);
+        vm.prank(alice);
+        underlying.approve(address(vault), victimDeposit);
+
+        console.log("Amount of alice's deposit:", victimDeposit);
+        vm.prank(alice);
+        underlying.approve(address(vault), victimDeposit);
+        vm.prank(alice);
+        uint256 aliceShares = vault.deposit(victimDeposit);
+        console.log("Alice Shares:", aliceShares);
+        vm.prank(alice);
+        uint256 aliceWithdrawnFunds = vault.withdraw(aliceShares);
+        console.log("Amount of tokens alice withdrew:", aliceWithdrawnFunds);
+
+        uint256 victimLoss = victimDeposit - aliceWithdrawnFunds;
+        console.log("Alice Loss:", victimLoss);
+
+        uint256 minRedeemedAmountNorm = (victimDeposit * lossThreshold) / 1e18;
+
+        console.log("lossThreshold", lossThreshold);
+        console.log("minRedeemedAmountNorm", minRedeemedAmountNorm);
+        assertGt(
+            aliceWithdrawnFunds,
+            minRedeemedAmountNorm,
+            "Share inflation attack possible, victim lost an amount over lossThreshold%"
+        );
     }
 
     function testForkFuzz_SoftVault_deposit_withdraw_3_users(

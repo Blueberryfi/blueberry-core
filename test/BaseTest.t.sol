@@ -10,8 +10,6 @@ import { ProtocolConfig } from "@contracts/ProtocolConfig.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
 import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
-import { IComptroller } from "@contracts/interfaces/money-market/IComptroller.sol";
-import { IInterestRateModel } from "@contracts/interfaces/money-market/IInterestRateModel.sol";
 import { FeeManager } from "@contracts/FeeManager.sol";
 
 interface IUSDC {
@@ -30,8 +28,6 @@ abstract contract BaseTest is Test {
     FeeManager public feeManager;
     SoftVault public vault;
     ERC20PresetMinterPauser public underlying;
-    IComptroller public comptroller;
-    IInterestRateModel public interestRateModel;
     IBErc20 public bToken;
     address public owner;
 
@@ -41,6 +37,7 @@ abstract contract BaseTest is Test {
 
     function setUp() public {
         vm.createSelectFork("mainnet");
+        vm.rollFork(19341149);
 
         owner = address(this);
 
