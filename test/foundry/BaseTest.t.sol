@@ -3,6 +3,9 @@ pragma solidity 0.8.22;
 
 import { Test } from "forge-std/Test.sol";
 
+// solhint-disable-next-line
+import { console2 } from "forge-std/console2.sol";
+
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { CoreOracle } from "@contracts/oracle/CoreOracle.sol";
 import { BlueberryBank } from "@contracts/BlueberryBank.sol";
@@ -21,8 +24,13 @@ abstract contract BaseTest is Test {
     MockBToken public bToken;
     address public owner;
     address public treasury;
+    address alice;
+    address bob;
+    address steve;
+    address clarice;
 
-    function setUp() public {
+    function setUp() public virtual {
+        _generateAndLabel();
         _deploy(address(this));
     }
 
@@ -73,5 +81,17 @@ abstract contract BaseTest is Test {
     function assertEq(uint256 a, uint256 b, uint256 c) internal {
         assertEq(a, b);
         assertEq(a, c);
+    }
+
+    function _generateAndLabel() private {
+        // Random addresses to avoid doing addr(01).. and so on.
+        alice = 0x4242561C1E631Db687A204161c78aeDbbE7C9D0D;
+        bob = 0x42421Eb930A5028707Faf55e90745d9bf2bfc611;
+        steve = 0x424266bbF3f6F3a7336F91323197b0cEea239E95;
+        clarice = 0x42428662256Cb74b24054514c693584F395DA1EE;
+        vm.label(alice, "alice");
+        vm.label(bob, "bob");
+        vm.label(steve, "steve");
+        vm.label(clarice, "clarice");
     }
 }
