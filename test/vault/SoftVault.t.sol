@@ -10,7 +10,7 @@ import { SoftVaultBaseTest, State } from "@test/SoftVaultBaseTest.t.sol";
 /// @notice Test common vault properties
 /// @dev Inspired by https://github.com/crytic/properties/tree/125fa4135c8ad5e7599d1bf2dd2aa055d35a1ab6/contracts/ERC4626
 contract SoftVaultTest is SoftVaultBaseTest {
-    function testForkFuzz_SoftVault_getters() public {
+    function testFork_SoftVault_getters() public {
         assertEq(vault.decimals(), underlying.decimals(), bToken.decimals());
         assertEq(address(vault.getBToken()), address(bToken));
         assertEq(address(vault.getUnderlyingToken()), address(underlying));
