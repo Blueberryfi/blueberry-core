@@ -84,3 +84,7 @@ ETHERSCAN_API_KEY=
 ### Displays the coverage of the contracts
 > yarn hardhat coverage
 
+### Runs the foundry tests
+
+> yarn build
+> forge test
