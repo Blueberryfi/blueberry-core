@@ -10,7 +10,7 @@ import { console2 as console } from "forge-std/console2.sol";
 
 /// @title SoftVaultTest
 /// @notice Test common vault properties
-/// @dev Inspired by https://github.com/crytic/properties/tree/125fa4135c8ad5e7599d1bf2dd2aa055d35a1ab6/contracts/ERC4626
+/// @dev See https://github.com/crytic/properties/tree/125fa4135c8ad5e7599d1bf2dd2aa055d35a1ab6/contracts/ERC4626
 contract SoftVaultTest is SoftVaultBaseTest {
     function testFork_SoftVault_getters() public {
         assertEq(vault.decimals(), underlying.decimals(), bToken.decimals());

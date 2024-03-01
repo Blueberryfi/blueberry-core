@@ -12,4 +12,8 @@ typechain-types
 .vscode/
 .deps/
 .openzeppelin/
+
+# foundry
 out/
+lcov.info
+report/
