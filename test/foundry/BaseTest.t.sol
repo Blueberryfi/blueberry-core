@@ -9,28 +9,45 @@ import { BlueberryBank } from "@contracts/BlueberryBank.sol";
 import { ProtocolConfig } from "@contracts/ProtocolConfig.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
 import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
-import { MockBToken } from "@contracts/mock/MockBToken.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
+import { FeeManager } from "@contracts/FeeManager.sol";
+
+interface IUSDC {
+    function masterMinter() external view returns (address);
+    function configureMinter(address minter, uint256 minterAllowedAmount) external;
+}
 
 abstract contract BaseTest is Test {
+    address public constant USDC_OWNER = 0xFcb19e6a322b27c06842A71e8c725399f049AE3a;
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant BUSDC = 0xdfd54ac444eEffc121E3937b4EAfc3C27d39Ae64;
+
     BlueberryBank public bank;
     CoreOracle public oracle;
     ProtocolConfig public config;
+    FeeManager public feeManager;
     SoftVault public vault;
     ERC20PresetMinterPauser public underlying;
-    MockBToken public bToken;
+    IBErc20 public bToken;
     address public owner;
-    address public treasury;
+
+    address public alice = address(0x10000);
+    address public bob = address(0x20000);
+    address public carol = address(0x30000);
+    address public treasury = address(0x40000);
 
     function setUp() public {
-        _deploy(address(this));
-    }
+        vm.createSelectFork("mainnet");
+        vm.rollFork(19341149);
 
-    function _deploy(address _owner) internal {
-        owner = _owner;
-        treasury = _owner;
-        underlying = new ERC20PresetMinterPauser("Token", "TOK");
-        bToken = new MockBToken(address(underlying));
+        owner = address(this);
+
+        underlying = ERC20PresetMinterPauser(USDC);
+        bToken = IBErc20(BUSDC);
+
+        vm.prank(IUSDC(address(underlying)).masterMinter());
+        IUSDC(address(underlying)).configureMinter(address(this), type(uint256).max);
+
         config = ProtocolConfig(
             address(
                 new ERC1967Proxy(
@@ -39,9 +56,17 @@ abstract contract BaseTest is Test {
                 )
             )
         );
+
+        feeManager = FeeManager(
+            address(new ERC1967Proxy(address(new FeeManager()), abi.encodeCall(FeeManager.initialize, (config, owner))))
+        );
+
+        config.setFeeManager(address(feeManager));
+
         oracle = CoreOracle(
             address(new ERC1967Proxy(address(new CoreOracle()), abi.encodeCall(CoreOracle.initialize, (owner))))
         );
+
         bank = BlueberryBank(
             address(
                 new ERC1967Proxy(
@@ -50,6 +75,7 @@ abstract contract BaseTest is Test {
                 )
             )
         );
+
         vault = SoftVault(
             address(
                 new ERC1967Proxy(
@@ -67,6 +93,11 @@ abstract contract BaseTest is Test {
                 )
             )
         );
+
+        vm.label(alice, "alice");
+        vm.label(bob, "bob");
+        vm.label(carol, "carol");
+        vm.label(treasury, "treasury");
     }
 
     // solhint-disable-next-line private-vars-leading-underscore
