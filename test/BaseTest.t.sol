@@ -33,6 +33,7 @@ abstract contract BaseTest is Test {
 
     address public alice = address(0x10000);
     address public bob = address(0x20000);
+    address public carol = address(0x30000);
     address public treasury = address(0x40000);
 
     function setUp() public {
@@ -95,6 +96,7 @@ abstract contract BaseTest is Test {
 
         vm.label(alice, "alice");
         vm.label(bob, "bob");
+        vm.label(carol, "carol");
         vm.label(treasury, "treasury");
     }
 

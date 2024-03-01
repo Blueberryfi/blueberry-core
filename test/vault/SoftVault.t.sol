@@ -201,8 +201,41 @@ contract SoftVaultTest is SoftVaultBaseTest {
         );
     }
 
-    function testForkFuzz_SoftVault_deposit_withdraw_3_users(
-        uint256[3] memory amounts,
-        uint256[3] memory shareAmounts
-    ) private {}
+    function testForkFuzz_SoftVault_deposit_full_withdraw_3_users(uint256[3] memory amounts) public {
+        address[3] memory users = [alice, bob, carol];
+        uint256 totalSupply;
+        uint256 totalAssets;
+        uint256 totalAssetsBefore = underlying.balanceOf(address(bToken));
+        for (uint256 i = 0; i < 3; i++) {
+            amounts[i] = bound(amounts[i], 1, type(uint128).max);
+            underlying.mint(users[i], amounts[i]);
+
+            totalAssets += amounts[i];
+
+            vm.prank(users[i]);
+            underlying.approve(address(vault), amounts[i]);
+            vm.prank(users[i]);
+            vault.deposit(amounts[i]);
+
+            totalSupply += vault.balanceOf(users[i]);
+        }
+        uint256 totalAssetsAfter = underlying.balanceOf(address(bToken));
+
+        assertEq(
+            totalAssetsAfter - totalAssetsBefore,
+            totalAssets,
+            "Total assets must be equal to the sum of users' deposits"
+        );
+        assertEq(vault.totalSupply(), totalSupply, "Total supply must be equal to the sum of users' balances");
+
+        for (uint256 i = 0; i < 3; i++) {
+            uint256 shareAmount = vault.balanceOf(users[i]);
+            vm.prank(users[i]);
+            vault.withdraw(shareAmount);
+        }
+        uint256 totalassetsFinal = underlying.balanceOf(address(bToken));
+
+        assertEq(totalassetsFinal, totalAssetsBefore, "Total assets must be equal to the initial amount");
+        assertEq(vault.totalSupply(), 0, "Total supply must be equal to 0");
+    }
 }
