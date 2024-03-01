@@ -121,10 +121,22 @@ contract SoftVaultTest is SoftVaultBaseTest {
         );
     }
 
-    function testForkFuzz_SoftVault_withdraw_must_revert_if_not_enough_shares(
-        uint256 amount,
-        uint256 shareAmount
-    ) private {}
+    function testForkFuzz_SoftVault_RevertWith_withdraw_must_revert_if_not_enough_shares(uint256 amount) public {
+        // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
+        amount = bound(amount, 1, type(uint128).max);
+        underlying.mint(alice, amount);
+
+        vm.prank(alice);
+        underlying.approve(address(vault), amount);
+        vm.prank(alice);
+        vault.deposit(amount);
+
+        uint256 sharesAmount = vault.balanceOf(alice);
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodePacked("ERC20: burn amount exceeds balance"));
+        vault.withdraw(sharesAmount + 1);
+    }
 
     function testForkFuzz_SoftVault_deposit_withdraw_3_users(
         uint256[3] memory amounts,
