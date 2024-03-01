@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import {console2 as console} from "forge-std/console2.sol";
 import { Test } from "forge-std/Test.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -13,84 +12,58 @@ import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/pre
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 import { IComptroller } from "@contracts/interfaces/money-market/IComptroller.sol";
 import { IInterestRateModel } from "@contracts/interfaces/money-market/IInterestRateModel.sol";
+import { FeeManager } from "@contracts/FeeManager.sol";
+
+interface IUSDC {
+    function masterMinter() external view returns (address);
+    function configureMinter(address minter, uint256 minterAllowedAmount) external;
+}
 
 abstract contract BaseTest is Test {
+    address public constant USDC_OWNER = 0xFcb19e6a322b27c06842A71e8c725399f049AE3a;
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant BUSDC = 0xdfd54ac444eEffc121E3937b4EAfc3C27d39Ae64;
+
     BlueberryBank public bank;
     CoreOracle public oracle;
     ProtocolConfig public config;
+    FeeManager public feeManager;
     SoftVault public vault;
     ERC20PresetMinterPauser public underlying;
     IComptroller public comptroller;
     IInterestRateModel public interestRateModel;
     IBErc20 public bToken;
     address public owner;
-    address public treasury;
 
-    address alice = address(0x10000);
-    address bob = address(0x20000);
-    address carol = address(0x30000);
+    address public alice = address(0x10000);
+    address public bob = address(0x20000);
+    address public treasury = address(0x40000);
 
     function setUp() public {
-        _deploy(address(this));
-
-        vm.label(alice, "alice");
-        vm.label(bob, "bob");
-        vm.label(carol, "carol");
-    }
-
-    function _deploy(address _owner) internal {
         vm.createSelectFork("mainnet");
 
-        owner = _owner;
-        treasury = _owner;
+        owner = address(this);
 
-        underlying = new ERC20PresetMinterPauser("Token", "TOK");
+        underlying = ERC20PresetMinterPauser(USDC);
+        bToken = IBErc20(BUSDC);
 
-        // address comptrollerAddress = makeAddr("Comptroller");
-        // vm.etch(comptrollerAddress, vm.getCode("./artifacts/contracts/money-market/Comptroller.sol/Comptroller.json"));
-        // comptroller = IComptroller(comptrollerAddress);
-
-        // address interestRateModelAddress = makeAddr("JumpRateModelV2");
-        // vm.etch(
-        //     interestRateModelAddress,
-        //     vm.getCode("./artifacts/contracts/money-market/JumpRateModelV2.sol/JumpRateModelV2.json")
-        // );
-        // interestRateModel = IInterestRateModel(interestRateModelAddress);
-
-        // console.log(interestRateModel.isInterestRateModel());
-
-        // address bTokenAddress = makeAddr("BToken");
-        // vm.etch(bTokenAddress, vm.getCode("./artifacts/contracts/money-market/BErc20.sol/BErc20.json"));
-        // bToken = IBErc20(
-        //     address(
-        //         new ERC1967Proxy(
-        //             bTokenAddress,
-        //             abi.encodeWithSignature(
-        //                 "initialize(address,address,address,uint256,string,string,uint8)",
-        //                 underlying,
-        //                 comptroller,
-        //                 interestRateModel,
-        //                 10 ** underlying.decimals(),
-        //                 string.concat("b", underlying.name()),
-        //                 string.concat("b", underlying.symbol()),
-        //                 underlying.decimals()
-        //             )
-        //         )
-        //     )
-        // );
-
-        bToken = IBErc20(0xdfd54ac444eEffc121E3937b4EAfc3C27d39Ae64);
-
-        console.log(bToken.underlying());
+        vm.prank(IUSDC(address(underlying)).masterMinter());
+        IUSDC(address(underlying)).configureMinter(address(this), type(uint256).max);
 
         config = ProtocolConfig(
             address(
                 new ERC1967Proxy(
                     address(new ProtocolConfig()),
-                    abi.encodeCall(ProtocolConfig.initialize, (owner, treasury))
+                    abi.encodeCall(ProtocolConfig.initialize, (treasury, owner))
                 )
             )
         );
+
+        feeManager = FeeManager(
+            address(new ERC1967Proxy(address(new FeeManager()), abi.encodeCall(FeeManager.initialize, (config, owner))))
+        );
+
+        config.setFeeManager(address(feeManager));
 
         oracle = CoreOracle(
             address(new ERC1967Proxy(address(new CoreOracle()), abi.encodeCall(CoreOracle.initialize, (owner))))
@@ -122,6 +95,10 @@ abstract contract BaseTest is Test {
                 )
             )
         );
+
+        vm.label(alice, "alice");
+        vm.label(bob, "bob");
+        vm.label(treasury, "treasury");
     }
 
     // solhint-disable-next-line private-vars-leading-underscore

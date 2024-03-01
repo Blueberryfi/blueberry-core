@@ -86,5 +86,4 @@ ETHERSCAN_API_KEY=
 
 ### Runs the foundry tests
 
-> yarn build
 > forge test
