@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.22;
 
-
 /**
  * @title IOwnable
  * @notice 2Step Ownable
