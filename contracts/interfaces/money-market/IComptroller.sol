@@ -8,4 +8,6 @@ interface IComptroller {
     function supportMarket(address bToken, uint8 version) external;
 
     function enterMarkets(address[] memory bTokens) external returns (uint256[] memory);
+
+    function _setMarketBorrowCaps(address[] memory bTokens, uint256[] memory newBorrowCaps) external;
 }

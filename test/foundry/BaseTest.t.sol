@@ -11,6 +11,7 @@ import { SoftVault } from "@contracts/vault/SoftVault.sol";
 import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 import { FeeManager } from "@contracts/FeeManager.sol";
+import {IComptroller} from "@contracts/interfaces/money-market/IComptroller.sol";
 
 interface IUSDC {
     function masterMinter() external view returns (address);
@@ -18,9 +19,11 @@ interface IUSDC {
 }
 
 abstract contract BaseTest is Test {
-    address public constant USDC_OWNER = 0xFcb19e6a322b27c06842A71e8c725399f049AE3a;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant BUSDC = 0xdfd54ac444eEffc121E3937b4EAfc3C27d39Ae64;
+
+    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address public constant BDAI = 0xcB5C1909074C7ac1956DdaFfA1C2F1cbcc67b932;
 
     BlueberryBank public bank;
     CoreOracle public oracle;
@@ -29,6 +32,7 @@ abstract contract BaseTest is Test {
     SoftVault public vault;
     ERC20PresetMinterPauser public underlying;
     IBErc20 public bToken;
+    IComptroller public comptroller = IComptroller(0x37697298481d1B07B0AfFc9Ef5e9cDeec829EFc8);
     address public owner;
 
     address public alice = address(0x10000);
@@ -38,7 +42,7 @@ abstract contract BaseTest is Test {
 
     function setUp() public {
         vm.createSelectFork("mainnet");
-        vm.rollFork(19341149);
+        vm.rollFork(17023956);
 
         owner = address(this);
 
