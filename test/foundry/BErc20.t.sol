@@ -18,6 +18,11 @@ contract BErc20Test is BaseTest {
         (, uint256 bTokenBalanceSnapshotBefore, , ) = bToken.getAccountSnapshot(alice);
         assertEq(bTokenBefore, bTokenBalanceSnapshotBefore, "bToken balance must equal to account snapshot before");
 
+        address[] memory markets = new address[](1);
+        markets[0] = address(bToken);
+        vm.prank(alice);
+        comptroller.enterMarkets(markets);
+
         vm.prank(alice);
         underlying.approve(address(bToken), amount);
         vm.prank(alice);
@@ -30,9 +35,16 @@ contract BErc20Test is BaseTest {
 
         assertLt(underlyingAfter, underlyingBefore, "Mint must deduct underlying from the sender");
         assertGt(bTokenAfter, bTokenBefore, "Mint must credit bToken to the sender");
-        assertEq(bTokenAfter, (1e18 / exchangeRate) * underlyingBefore, "Mint must credit bToken to the sender equal to underlying scaled by exchange rate");
-        assertGt(bTokenBalanceSnapshotAfter, bTokenBalanceSnapshotBefore, "Mint must credit bToken balance snapshot to the sender");
+        assertEq(
+            bTokenAfter,
+            (1e18 / exchangeRate) * underlyingBefore,
+            "Mint must credit bToken to the sender equal to underlying scaled by exchange rate"
+        );
+        assertGt(
+            bTokenBalanceSnapshotAfter,
+            bTokenBalanceSnapshotBefore,
+            "Mint must credit bToken balance snapshot to the sender"
+        );
         assertEq(bTokenAfter, bTokenBalanceSnapshotAfter, "bToken balance must equal to bToken balance snapshot after");
     }
-
 }
