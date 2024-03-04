@@ -31,6 +31,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
         uint256 underlyingBefore = underlying.balanceOf(alice);
         uint256 sharesBefore = vault.balanceOf(alice);
+        uint256 bTokenBefore = bToken.balanceOf(address(vault));
 
         vm.prank(alice);
         underlying.approve(address(vault), amount);
@@ -39,9 +40,11 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
         uint256 underlyingAfter = underlying.balanceOf(alice);
         uint256 sharesAfter = vault.balanceOf(alice);
+        uint256 bTokenAfter = bToken.balanceOf(address(vault));
 
         assertLt(underlyingAfter, underlyingBefore, "Deposit must deduct underlying from the sender");
         assertGt(sharesAfter, sharesBefore, "Deposit must credit shares to the sender");
+        assertGt(bTokenAfter, bTokenBefore, "Deposit must credit bToken to the vault");
         assertEq(vault.totalSupply(), vault.balanceOf(alice), "Total supply must be equal to the sender's balance");
     }
 
@@ -371,16 +374,32 @@ contract SoftVaultTest is SoftVaultBaseTest {
         assertEq(vault.totalSupply(), 0, "Total supply must be equal to 0");
     }
 
-    // TODO: not working
-    function testForkFuzz_SoftVault_deposit_pass_time_withdraw(uint256 amount) internal {
+    // TODO reverting due to `getAccountSnapshot` issue
+    function testForkFuzz_SoftVault_deposit_pass_time_withdraw(uint256 amount) public {
         // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
-        amount = bound(amount, type(uint128).max, type(uint128).max);
+        amount = bound(amount, type(uint32).max / 2, type(uint32).max);
         underlying.mint(alice, amount);
 
         vm.prank(alice);
         underlying.approve(address(vault), amount);
         vm.prank(alice);
         vault.deposit(amount);
+
+        underlying.mint(bob, amount);
+
+        vm.prank(bob);
+        underlying.approve(address(bToken), amount);
+        vm.prank(bob);
+        bToken.mint(amount);
+
+        console.log(bToken.balanceOf(bob));
+        (, uint256 tokens, , ) = bToken.getAccountSnapshot(bob);
+
+        assertGt(
+            tokens,
+            0,
+            "Can only borrow if getAccountSnapshot returns a positive value for the token as collateral"
+        );
 
         uint256 collateralAmount = amount * 1e12 * 10;
         deal(DAI, bob, collateralAmount);
@@ -396,6 +415,12 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
         vm.prank(bob);
         comptroller.enterMarkets(markets);
+
+        address[] memory assets = comptroller.getAssetsIn(bob);
+        for (uint256 i = 0; i < assets.length; i++) {
+            console.log("Assets:", assets[i]);
+        }
+
         vm.prank(bob);
         IBErc20(BUSDC).borrow(borrowAmount);
 

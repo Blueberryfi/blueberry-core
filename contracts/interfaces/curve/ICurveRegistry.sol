@@ -17,5 +17,11 @@ interface ICurveRegistry {
 
     function get_lp_token(address pool) external view returns (address);
 
-    function exchange(address _pool, address _from, address _to, uint256 _amount, uint256 _expected) external returns (uint256);
+    function exchange(
+        address _pool,
+        address _from,
+        address _to,
+        uint256 _amount,
+        uint256 _expected
+    ) external returns (uint256);
 }
