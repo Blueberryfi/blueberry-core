@@ -14,4 +14,8 @@ interface IComptroller {
     function getAssetsIn(address account) external returns (address[] memory);
 
     function _setMarketBorrowCaps(address[] memory bTokens, uint256[] memory newBorrowCaps) external;
+
+    function admin() external view returns (address);
+
+    function _setBorrowPaused(address bToken, bool state) external;
 }
