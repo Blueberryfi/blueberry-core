@@ -9,5 +9,9 @@ interface IComptroller {
 
     function enterMarkets(address[] memory bTokens) external returns (uint256[] memory);
 
+    function isMarketListed(address bToken) external view returns (bool);
+
+    function getAssetsIn(address account) external returns (address[] memory);
+
     function _setMarketBorrowCaps(address[] memory bTokens, uint256[] memory newBorrowCaps) external;
 }
