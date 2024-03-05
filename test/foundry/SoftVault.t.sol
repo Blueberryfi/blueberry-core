@@ -195,6 +195,59 @@ contract SoftVaultTest is SoftVaultBaseTest {
         }
     }
 
+    function testForkFuzz_SoftVault_deposit_is_order_independent_with_borrow(uint256[2] memory amounts) public {
+        vm.rollFork(19073030);
+        _setupFork();
+        address[2] memory users = [alice, bob];
+        uint256[2] memory shares = [type(uint256).max, type(uint256).max];
+        uint256 sum;
+        for (uint256 i = 0; i < users.length; i++) {
+            // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
+            amounts[i] = bound(amounts[i], type(uint128).max / 2, type(uint128).max);
+            underlying.mint(users[i], amounts[i]);
+
+            vm.prank(users[i]);
+            underlying.approve(address(vault), amounts[i]);
+            vm.prank(users[i]);
+            shares[i] = vault.deposit(amounts[i]);
+
+            sum += amounts[i];
+        }
+
+        uint256 amount = sum * 100;
+
+        // borrow
+        underlying.mint(carol, amount);
+        address[] memory markets = new address[](1);
+        markets[0] = address(bToken);
+        vm.prank(carol);
+        comptroller.enterMarkets(markets);
+
+        vm.prank(carol);
+        underlying.approve(address(bToken), amount);
+        vm.prank(carol);
+        bToken.mint(amount);
+
+        uint256 borrowAmount = amount / 10;
+        vm.prank(carol);
+        bToken.borrow(borrowAmount);
+
+        users = [bob, alice];
+        amounts = [amounts[1], amounts[0]];
+        shares = [shares[1], shares[0]];
+
+        for (uint256 i = 0; i < users.length; i++) {
+            underlying.mint(users[i], amounts[i]);
+
+            vm.prank(users[i]);
+            underlying.approve(address(vault), amounts[i]);
+            vm.prank(users[i]);
+            uint256 s = vault.deposit(amounts[i]);
+
+            assertEq(s, shares[i], "Deposit must be order independent");
+        }
+    }
+
     function testForkFuzz_SoftVault_deposit_withdraw_with_fees(
         uint256 amount,
         uint256 shareAmountAlice,
@@ -271,6 +324,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
     /// @notice Accounting system must not be vulnerable to share price inflation attacks
     function testForkFuzz_SoftVault_share_price_inflation_attack(uint256 inflateAmount, uint256 delta) public {
+        // vm.rollFork(19068161);
         // this has to be changed if there's deposit/withdraw fees
         uint256 lossThreshold = 0.999e18;
         uint256 percent = 1e18;
@@ -349,7 +403,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
         uint256 minRedeemedAmountNorm = (victimDeposit * lossThreshold) / percent;
 
-        console.log("lossThreshold", lossThreshold);
+        console.log("lossThreshold%", lossThreshold);
         console.log("minRedeemedAmountNorm", minRedeemedAmountNorm);
         assertGt(
             aliceWithdrawnFunds,
@@ -396,37 +450,30 @@ contract SoftVaultTest is SoftVaultBaseTest {
         assertEq(vault.totalSupply(), 0, "Total supply must be equal to 0");
     }
 
-    // TODO reverting on `borrow`
     function testForkFuzz_SoftVault_deposit_pass_time_withdraw(uint256 amount) public {
+        vm.rollFork(19073030);
+        _setupFork();
         // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
         amount = bound(amount, type(uint32).max / 2, type(uint32).max);
         underlying.mint(alice, amount);
+        underlying.mint(bob, amount);
 
         vm.prank(alice);
         underlying.approve(address(vault), amount);
         vm.prank(alice);
         vault.deposit(amount);
 
-        address[] memory markets = new address[](2);
-        markets[0] = address(BDAI);
-        markets[1] = address(BUSDC);
+        address[] memory markets = new address[](1);
+        markets[0] = address(bToken);
         vm.prank(bob);
         comptroller.enterMarkets(markets);
 
-        uint256 collateralAmount = amount * 1e12 * 10;
-        deal(DAI, bob, collateralAmount);
         vm.prank(bob);
-        IERC20(DAI).approve(address(BDAI), collateralAmount);
+        underlying.approve(address(bToken), amount);
         vm.prank(bob);
-        IBErc20(BDAI).mint(collateralAmount);
+        bToken.mint(amount);
 
-        uint256 borrowAmount = amount / 2;
-
-        address[] memory assets = comptroller.getAssetsIn(bob);
-        for (uint256 i = 0; i < assets.length; i++) {
-            console.log("Assets:", assets[i]);
-        }
-
+        uint256 borrowAmount = amount / 10;
         vm.prank(bob);
         bToken.borrow(borrowAmount);
 

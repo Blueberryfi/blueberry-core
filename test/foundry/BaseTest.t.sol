@@ -42,6 +42,15 @@ abstract contract BaseTest is Test {
         vm.createSelectFork("mainnet");
         vm.rollFork(19068161);
 
+        _setupFork();
+
+        vm.label(alice, "alice");
+        vm.label(bob, "bob");
+        vm.label(carol, "carol");
+        vm.label(treasury, "treasury");
+    }
+
+    function _setupFork() internal {
         owner = address(this);
 
         underlying = ERC20PresetMinterPauser(USDC);
@@ -54,6 +63,14 @@ abstract contract BaseTest is Test {
         comptroller._setBorrowPaused(BUSDC, false);
         vm.prank(comptroller.admin());
         comptroller._setBorrowPaused(BDAI, false);
+        address[] memory markets = new address[](2);
+        markets[0] = BUSDC;
+        markets[1] = BDAI;
+        uint256[] memory newBorrowCaps = new uint256[](2);
+        newBorrowCaps[0] = type(uint256).max;
+        newBorrowCaps[1] = type(uint256).max;
+        vm.prank(comptroller.admin());
+        comptroller._setMarketBorrowCaps(markets, newBorrowCaps);
 
         config = ProtocolConfig(
             address(
@@ -101,10 +118,6 @@ abstract contract BaseTest is Test {
             )
         );
 
-        vm.label(alice, "alice");
-        vm.label(bob, "bob");
-        vm.label(carol, "carol");
-        vm.label(treasury, "treasury");
     }
 
     // solhint-disable-next-line private-vars-leading-underscore

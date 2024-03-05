@@ -6,10 +6,10 @@ pragma solidity 0.8.22;
 
 import { BaseTest } from "@test/BaseTest.t.sol";
 
-/// @title BErc20
-/// @notice Test BErc20 properties
-contract BErc20Test is BaseTest {
-    function testForkFuzz_BErc20_mint_balanceOf_getAccountSnapshot(uint256 amount) public {
+/// @title BCollateralCapErc20
+/// @notice Test BCollateralCapErc20 properties
+contract BCollateralCapErc20Test is BaseTest {
+    function testForkFuzz_BCollateralCapErc20_mint_balanceOf_getAccountSnapshot(uint256 amount) public {
         amount = bound(amount, type(uint128).max / 2, type(uint128).max);
         underlying.mint(alice, amount);
 
@@ -46,5 +46,25 @@ contract BErc20Test is BaseTest {
             "Mint must credit bToken balance snapshot to the sender"
         );
         assertEq(bTokenAfter, bTokenBalanceSnapshotAfter, "bToken balance must equal to bToken balance snapshot after");
+    }
+
+    function testForkFuzz_BCollateralCapErc20_borrow(uint256 amount) public {
+        vm.rollFork(19073030);
+        _setupFork();
+        amount = bound(amount, type(uint128).max / 2, type(uint128).max);
+        underlying.mint(alice, amount);
+
+        address[] memory markets = new address[](1);
+        markets[0] = address(bToken);
+        vm.prank(alice);
+        comptroller.enterMarkets(markets);
+
+        vm.prank(alice);
+        underlying.approve(address(bToken), amount);
+        vm.prank(alice);
+        bToken.mint(amount);
+
+        vm.prank(alice);
+        bToken.borrow(amount / 10);
     }
 }
