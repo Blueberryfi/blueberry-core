@@ -11,7 +11,6 @@ import { CoreOracle } from "@contracts/oracle/CoreOracle.sol";
 import { BlueberryBank } from "@contracts/BlueberryBank.sol";
 import { ProtocolConfig } from "@contracts/ProtocolConfig.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
-import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 import { FeeManager } from "@contracts/FeeManager.sol";
 import { IWETH } from "@contracts/interfaces/IWETH.sol";
@@ -29,6 +28,13 @@ abstract contract BaseTest is Test {
     address public constant USDC_OWNER = 0xFcb19e6a322b27c06842A71e8c725399f049AE3a;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant BUSDC = 0xdfd54ac444eEffc121E3937b4EAfc3C27d39Ae64;
+    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address public constant BDAI = 0x23388Cca2BdFC994D75999667E09cc0F5fF1cc88;
+    address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
+    address public constant BWSTETH = 0xB387fd973358d2DfdE4F3795Bc9d2CCeE6449A40;
+    address public constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address public constant BWBTC = 0xE61ad5B0E40c856E6C193120Bd3fa28A432911B6;
+
     IWETH public WETH;
     IERC20 public CRV;
 

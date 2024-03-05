@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import { BaseTest, BlueberryBank, console2, ERC20PresetMinterPauser } from "@test/BaseTest.t.sol";
+import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import { BaseTest, BlueberryBank, console2 } from "@test/BaseTest.t.sol";
 import { SpellBaseTest } from "@test/fork/spell/SpellBaseTest.t.sol";
 import { IOwnable } from "@test/interfaces/IOwnable.sol";
 import { ConvexSpell } from "@contracts/spell/ConvexSpell.sol";

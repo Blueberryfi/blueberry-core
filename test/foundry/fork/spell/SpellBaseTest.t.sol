@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import { BaseTest, BlueberryBank, console2, ERC20PresetMinterPauser } from "@test/BaseTest.t.sol";
+import { BaseTest, BlueberryBank } from "@test/BaseTest.t.sol";
 
 abstract contract SpellBaseTest is BaseTest {
     BlueberryBank internal _intBankImpl; // Needed for vm.etch => debug inside the contracts
