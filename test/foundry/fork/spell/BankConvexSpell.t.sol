@@ -84,14 +84,10 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 borrowAmount,
         uint256 slippagePercent
     ) external {
-        if (collateralAmount > type(uint128).max || borrowAmount > type(uint96).max) return;
-        vm.assume(collateralAmount > 0);
-        vm.assume(collateralAmount < type(uint128).max);
-        vm.assume(slippagePercent >= 10); // slippage >= 0.1%
-        vm.assume(slippagePercent <= 500); // slippage <= 5%
+        collateralAmount = bound(collateralAmount, 1, type(uint128).max - 1);
+        borrowAmount = bound(borrowAmount, 1, type(uint96).max - 1);
+        slippagePercent = bound(slippagePercent, 10 /* 0.1% */, 500 /* 5% */);
 
-        vm.assume(borrowAmount > 0);
-        vm.assume(borrowAmount < type(uint96).max);
         uint256 borrowValue = coreOracle.getTokenValue(address(WETH), borrowAmount);
         uint256 icollValue = coreOracle.getTokenValue(USDC, collateralAmount);
         uint256 maxLTV = convexSpell.getMaxLTV(0, USDC);
