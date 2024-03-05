@@ -2,6 +2,7 @@
 pragma solidity 0.8.22;
 
 import { BaseTest, BlueberryBank, console2, ERC20PresetMinterPauser } from "@test/BaseTest.t.sol";
+import { IBank } from "@contracts/interfaces/IBank.sol";
 
 abstract contract SpellBaseTest is BaseTest {
     BlueberryBank internal _intBankImpl; // Needed for vm.etch => debug inside the contracts
@@ -21,7 +22,7 @@ abstract contract SpellBaseTest is BaseTest {
      * @param amount Mew amount that should be added
      */
     function _validateReceivedBorrowAndPosition(
-        uint256 previousPosition,
+        IBank.Position memory previousPosition,
         uint256 positionId,
         uint256 amount
     ) internal virtual;
@@ -33,14 +34,14 @@ abstract contract SpellBaseTest is BaseTest {
      * @param lpToken The LP token created
      * @param positionId Current position id
      * @return If is valid
-     * @return Current position size, used to verify the afterwards position size update
+     * @return Current position used in validate received borrow and position
      */
     function _validatePositionSize(
         uint256 lpTokenAmount,
         address lpToken,
         uint256 maxPositionSize,
         uint256 positionId
-    ) internal view virtual returns (bool, uint256);
+    ) internal view virtual returns (bool, IBank.Position memory);
 
     function _assignDeployedContracts() internal virtual override {
         super._assignDeployedContracts();

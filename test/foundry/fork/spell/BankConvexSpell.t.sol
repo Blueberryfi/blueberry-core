@@ -2,15 +2,13 @@
 pragma solidity 0.8.22;
 
 import { BaseTest, BlueberryBank, console2, ERC20PresetMinterPauser } from "@test/BaseTest.t.sol";
-import { SpellBaseTest } from "@test/fork/spell/SpellBaseTest.t.sol";
+import { SpellBaseTest, IBank } from "@test/fork/spell/SpellBaseTest.t.sol";
 import { IOwnable } from "@test/interfaces/IOwnable.sol";
 import { ConvexSpell } from "@contracts/spell/ConvexSpell.sol";
 import { IBasicSpell } from "@contracts/interfaces/spell/IBasicSpell.sol";
 import { IWConvexBooster } from "@contracts/interfaces/IWConvexBooster.sol";
 import { ICurveOracle } from "@contracts/interfaces/ICurveOracle.sol";
 import { ICoreOracle } from "@contracts/interfaces/ICoreOracle.sol";
-import { IBank } from "@contracts/interfaces/IBank.sol";
-
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
@@ -73,8 +71,8 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 balanceBefore = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
         bank.execute(0, address(convexSpell), data);
         uint256 balanceAfter = _getLpBalance(poolId, lpToken);
-
-        _validateReceivedBorrowAndPosition(0, 1, slippage);
+        IBank.Position memory position;
+        _validateReceivedBorrowAndPosition(position, 1, slippage);
         // Check if the right amount of LP landed at destination
         assertApproxEqRel(balanceAfter - balanceBefore, slippage, 0.000001e18);
     }
@@ -119,7 +117,7 @@ contract BankConvexSpell is SpellBaseTest {
 
         uint256 slippage = _calculateSlippageCurve(pool, borrowAmount); // calculate the lp token received by curve
         slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
-        (bool valid, uint256 positionSize) = _validatePositionSize(
+        (bool valid, IBank.Position memory previousPosition) = _validatePositionSize(
             slippage,
             lpToken,
             strategy.maxPositionSize,
@@ -131,7 +129,10 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
 
         bank.execute(1, address(convexSpell), data);
-        _validateReceivedBorrowAndPosition(positionSize, positionId, slippage);
+
+        // Validate that the position was updated correctly
+        _validateReceivedBorrowAndPosition(previousPosition, positionId, slippage);
+
         uint256 balanceAfterLP = _getLpBalance(poolId, lpToken);
         uint256 balanceAfterUSDC = ERC20PresetMinterPauser(address(USDC)).balanceOf(owner);
 
@@ -146,7 +147,7 @@ contract BankConvexSpell is SpellBaseTest {
         address lpToken,
         uint256 maxPositionSize,
         uint256 positionId
-    ) internal view override returns (bool, uint256) {
+    ) internal view override returns (bool, IBank.Position memory) {
         IBank.Position memory currentPosition = bank.getPositionInfo(positionId);
 
         uint256 lpBalance = lpTokenAmount;
@@ -159,11 +160,11 @@ contract BankConvexSpell is SpellBaseTest {
             currentPosition.collateralSize
         );
 
-        return (currentPositionColValue + addedPosSize <= maxPositionSize, currentPosition.collateralSize);
+        return (currentPositionColValue + addedPosSize <= maxPositionSize, currentPosition);
     }
 
     function _validateReceivedBorrowAndPosition(
-        uint256 previousPosition,
+        IBank.Position memory previousPosition,
         uint256 positionId,
         uint256 amount
     ) internal override {
@@ -176,7 +177,7 @@ contract BankConvexSpell is SpellBaseTest {
 
         assertApproxEqRel(
             currentPosition.collateralSize,
-            previousPosition + amount,
+            previousPosition.collateralSize + amount,
             0.1e18, // NOTE investigate this mismatch
             "Position collateral size mismatch"
         );
