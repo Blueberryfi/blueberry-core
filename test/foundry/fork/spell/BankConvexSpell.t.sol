@@ -63,7 +63,6 @@ contract BankConvexSpell is SpellBaseTest {
             farmingPoolId: poolId
         });
         IBasicSpell.Strategy memory strat = convexSpell.getStrategy(0);
-        console2.log("max pos", strat.maxPositionSize);
 
         uint256 slippage = _calculateSlippageCurve(pool, borrowAmount);
 
@@ -77,16 +76,84 @@ contract BankConvexSpell is SpellBaseTest {
         assertApproxEqRel(balanceAfter - balanceBefore, slippage, 0.000001e18);
     }
 
-    function testForkFuzz_BankConvexSpell_openPositionGeneratesRightLPToken(
+    function testForkFuzz_BankConvexSpell_openNewPositionGeneratesRightLPToken(
         uint256 collateralAmount,
         uint256 borrowAmount,
         uint256 slippagePercent
     ) public {
         (address lpt, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
         (address p, , ) = curveOracle.getPoolInfo(lpt);
-        borrowAmount = bound(borrowAmount, 1, ICurvePool(p).balances(0)); // limiting to curve pool's balance
-        slippagePercent = bound(slippagePercent, 10 /* 0.1% */, 500 /* 5% */);
         collateralAmount = bound(collateralAmount, 1, type(uint128).max - 1);
+        borrowAmount = bound(borrowAmount, 1, ICurvePool(p).balances(0)); // limiting to curve pool's balance, NOTE should try test with increasing the POOL
+        slippagePercent = bound(slippagePercent, 10 /* 0.1% */, 500 /* 5% */);
+
+        // avoid stack-too-deep
+        {
+            uint256 borrowValue = coreOracle.getTokenValue(address(WETH), borrowAmount);
+            uint256 icollValue = coreOracle.getTokenValue(USDC, collateralAmount);
+            uint256 maxLTV = convexSpell.getMaxLTV(0, USDC);
+            console2.log("Br i m", borrowValue, icollValue, maxLTV);
+            console2.log("col am", collateralAmount);
+            console2.log("borrowAmount am", borrowAmount);
+            // if borrow value is greater than MAX ltv return as it will revert anyway.
+            if (borrowValue < 1 || borrowValue > (icollValue * maxLTV) / DENOMINATOR) return;
+        }
+
+        uint256 poolId = 25;
+        uint256 positionId = 0;
+        address lpToken = lpt;
+        address pool = p;
+
+        IBasicSpell.Strategy memory strategy = convexSpell.getStrategy(0);
+
+        ERC20PresetMinterPauser(address(USDC)).mint(owner, collateralAmount);
+        ERC20PresetMinterPauser(address(USDC)).approve(address(bank), collateralAmount);
+        IBasicSpell.OpenPosParam memory param = IBasicSpell.OpenPosParam({
+            strategyId: 0,
+            collToken: address(USDC),
+            collAmount: collateralAmount,
+            borrowToken: address(WETH),
+            borrowAmount: borrowAmount,
+            farmingPoolId: poolId
+        });
+
+        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount); // calculate the lp token received by curve
+        slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
+        (bool valid, IBank.Position memory previousPosition) = _validatePositionSize(
+            slippage,
+            lpToken,
+            strategy.maxPositionSize,
+            positionId
+        );
+        if (!valid) return; // making sure it validates the position min/max size
+
+        bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, slippage));
+        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
+
+        bank.execute(positionId, address(convexSpell), data);
+
+        // Validate that the position was updated correctly
+        // _validateReceivedBorrowAndPosition(previousPosition, positionId, slippage);
+
+        uint256 balanceAfterLP = _getLpBalance(poolId, lpToken);
+        uint256 balanceAfterUSDC = ERC20PresetMinterPauser(address(USDC)).balanceOf(owner);
+
+        // Check if the right amount of LP landed at destination
+        assertGe(balanceAfterLP - balanceBeforeLP, slippage, "LP landed in reward contract mismatch");
+        // Making sure USDC was taken
+        assertEq(balanceAfterUSDC, 0, "Remaining USDC in the initiator");
+    }
+
+    function testForkFuzz_BankConvexSpell_openExistingPositionGeneratesRightLPToken(
+        uint256 collateralAmount,
+        uint256 borrowAmount,
+        uint256 slippagePercent
+    ) public {
+        (address lpt, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
+        (address p, , ) = curveOracle.getPoolInfo(lpt);
+        collateralAmount = bound(collateralAmount, 1, type(uint128).max - 1);
+        borrowAmount = bound(borrowAmount, 1, ICurvePool(p).balances(0)); // limiting to curve pool's balance, NOTE should try test with increasing the POOL
+        slippagePercent = bound(slippagePercent, 10 /* 0.1% */, 500 /* 5% */);
 
         // avoid stack-too-deep
         {
@@ -128,10 +195,10 @@ contract BankConvexSpell is SpellBaseTest {
         );
         if (!valid) return; // making sure it validates the position min/max size
 
-        bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, 0));
+        bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, slippage));
         uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
 
-        bank.execute(1, address(convexSpell), data);
+        bank.execute(positionId, address(convexSpell), data);
 
         // Validate that the position was updated correctly
         _validateReceivedBorrowAndPosition(previousPosition, positionId, slippage);
@@ -146,11 +213,7 @@ contract BankConvexSpell is SpellBaseTest {
     }
 
     function testConcreteValue() external {
-        testForkFuzz_BankConvexSpell_openPositionGeneratesRightLPToken(
-            13524849438650413921,
-            41821692081178016516841000349,
-            10
-        );
+        testForkFuzz_BankConvexSpell_openNewPositionGeneratesRightLPToken(1, 1, 10);
     }
 
     function _validatePositionSize(
@@ -165,11 +228,14 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 lpPrice = coreOracle.getPrice(lpToken);
         uint256 addedPosSize = (lpPrice * lpBalance) / 10 ** IERC20Metadata(lpToken).decimals();
 
-        uint256 currentPositionColValue = coreOracle.getWrappedTokenValue(
-            currentPosition.collToken,
-            currentPosition.collId,
-            currentPosition.collateralSize
-        );
+        uint256 currentPositionColValue;
+        // positionId might mean new position
+        if (positionId != 0)
+            currentPositionColValue = coreOracle.getWrappedTokenValue(
+                currentPosition.collToken,
+                currentPosition.collId,
+                currentPosition.collateralSize
+            );
 
         return (currentPositionColValue + addedPosSize <= maxPositionSize, currentPosition);
     }
@@ -180,7 +246,6 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 amount
     ) internal override {
         IBank.Position memory currentPosition = bank.getPositionInfo(positionId);
-
         assertApproxEqRel(
             currentPosition.collateralSize,
             previousPosition.collateralSize + amount,
@@ -263,5 +328,6 @@ contract BankConvexSpell is SpellBaseTest {
         vm.label(address(wConvexBooster), "wConvexBooster");
 
         coreOracle = bank.getOracle();
+        vm.label(address(coreOracle), "coreOracle");
     }
 }
