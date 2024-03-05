@@ -81,26 +81,29 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 collateralAmount,
         uint256 borrowAmount,
         uint256 slippagePercent
-    ) external {
-        collateralAmount = bound(collateralAmount, 1, type(uint128).max - 1);
-        borrowAmount = bound(borrowAmount, 1, type(uint96).max - 1);
+    ) public {
+        (address lpt, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
+        (address p, , ) = curveOracle.getPoolInfo(lpt);
+        borrowAmount = bound(borrowAmount, 1, ICurvePool(p).balances(0)); // limiting to curve pool's balance
         slippagePercent = bound(slippagePercent, 10 /* 0.1% */, 500 /* 5% */);
+        collateralAmount = bound(collateralAmount, 1, type(uint128).max - 1);
 
-        uint256 borrowValue = coreOracle.getTokenValue(address(WETH), borrowAmount);
-        uint256 icollValue = coreOracle.getTokenValue(USDC, collateralAmount);
-        uint256 maxLTV = convexSpell.getMaxLTV(0, USDC);
+        // avoid stack-too-deep
+        {
+            uint256 borrowValue = coreOracle.getTokenValue(address(WETH), borrowAmount);
+            uint256 icollValue = coreOracle.getTokenValue(USDC, collateralAmount);
+            uint256 maxLTV = convexSpell.getMaxLTV(0, USDC);
 
-        uint256 collMaxLTV = (icollValue * maxLTV) / DENOMINATOR;
-
-        bound(borrowValue, 1, collMaxLTV);
-        if (borrowValue < 1 || borrowValue > collMaxLTV) return;
+            // if borrow value is greater than MAX ltv return as it will revert anyway.
+            if (borrowValue < 1 || borrowValue > (icollValue * maxLTV) / DENOMINATOR) return;
+        }
 
         uint256 poolId = 25;
         uint256 positionId = 1;
+        address lpToken = lpt;
+        address pool = p;
+        // Opening initial position
         _openInitialPosition(poolId, 1e18, 1.5e18);
-
-        (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(poolId);
-        (address pool, , ) = curveOracle.getPoolInfo(lpToken);
 
         IBasicSpell.Strategy memory strategy = convexSpell.getStrategy(0);
 
@@ -137,9 +140,17 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 balanceAfterUSDC = ERC20PresetMinterPauser(address(USDC)).balanceOf(owner);
 
         // Check if the right amount of LP landed at destination
-        assertGe(balanceAfterLP - balanceBeforeLP, slippage);
+        assertGe(balanceAfterLP - balanceBeforeLP, slippage, "LP landed in reward contract mismatch");
         // Making sure USDC was taken
-        assertEq(balanceAfterUSDC, 0);
+        assertEq(balanceAfterUSDC, 0, "Remaining USDC in the initiator");
+    }
+
+    function testConcreteValue() external {
+        testForkFuzz_BankConvexSpell_openPositionGeneratesRightLPToken(
+            13524849438650413921,
+            41821692081178016516841000349,
+            10
+        );
     }
 
     function _validatePositionSize(
@@ -169,11 +180,6 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 amount
     ) internal override {
         IBank.Position memory currentPosition = bank.getPositionInfo(positionId);
-        uint256 currentPositionColValue = coreOracle.getWrappedTokenValue(
-            currentPosition.collToken,
-            currentPosition.collId,
-            currentPosition.collateralSize
-        );
 
         assertApproxEqRel(
             currentPosition.collateralSize,
@@ -228,7 +234,7 @@ contract BankConvexSpell is SpellBaseTest {
         return slippage;
     }
 
-    function _calculateSlippage(uint256 amount, uint256 slippagePercentage) internal view override returns (uint256) {
+    function _calculateSlippage(uint256 amount, uint256 slippagePercentage) internal pure override returns (uint256) {
         return (amount * (DENOMINATOR - slippagePercentage)) / DENOMINATOR;
     }
 
