@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
-import {console2 as console} from "forge-std/console2.sol";
+import { console2 as console } from "forge-std/console2.sol";
 import { SpellBaseTest } from "@test/fork/spell/SpellBaseTest.t.sol";
 import { IOwnable } from "@test/interfaces/IOwnable.sol";
 import { ShortLongSpell } from "@contracts/spell/ShortLongSpell.sol";
 import { ICoreOracle } from "@contracts/interfaces/ICoreOracle.sol";
-import {IBasicSpell} from "@contracts/interfaces/spell/IBasicSpell.sol";
-import {IBErc20} from "@contracts/interfaces/money-market/IBErc20.sol";
+import { IBasicSpell } from "@contracts/interfaces/spell/IBasicSpell.sol";
+import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 
 contract BankShortLongTest is SpellBaseTest {
     ShortLongSpell public shortLongSpell;
@@ -27,17 +27,15 @@ contract BankShortLongTest is SpellBaseTest {
 
         _assignDeployedContracts();
 
-        _enableBToken(
-            IBErc20(BDAI)
-        );
+        _enableBToken(IBErc20(BDAI));
 
         spellOwner = IOwnable(address(shortLongSpell)).owner();
     }
 
     function testFork_BankShortLong_openPosition_success() external {
         uint256 strategyId = WSTETH_STRATEGY_ID;
-        address collToken = WBTC; 
-        uint256 collAmount  = 0.1e8;
+        address collToken = WBTC;
+        uint256 collAmount = 0.1e8;
         address borrowToken = DAI;
         uint256 borrowAmount = 100e18;
         uint256 farmingPoolId = 0;
@@ -57,9 +55,16 @@ contract BankShortLongTest is SpellBaseTest {
         });
         IBasicSpell.Strategy memory strategy = shortLongSpell.getStrategy(0);
 
+        console.log("minPositionSize", strategy.minPositionSize);
         console.log("maxPositionSize", strategy.maxPositionSize);
 
-        bytes memory swapData = _getParaswapData(borrowToken, swapToken, borrowAmount, address(shortLongSpell), maxImpact);
+        bytes memory swapData = _getParaswapData(
+            borrowToken,
+            swapToken,
+            borrowAmount,
+            address(shortLongSpell),
+            maxImpact
+        );
 
         bytes memory data = abi.encodeCall(ShortLongSpell.openPosition, (param, swapData));
         uint256 positionId = 0;
@@ -68,26 +73,22 @@ contract BankShortLongTest is SpellBaseTest {
         assertGt(id, positionId, "New position created");
     }
 
-    function _calculateSlippageCurve(address pool, uint256 amount) internal view returns (uint256) {
-    }
+    function _calculateSlippageCurve(address pool, uint256 amount) internal view returns (uint256) {}
 
-    function _calculateSlippage(uint256 amount, uint256 slippagePercentage) internal view override returns (uint256) {
-    }
+    function _calculateSlippage(uint256 amount, uint256 slippagePercentage) internal view override returns (uint256) {}
 
     function _validateReceivedBorrowAndPosition(
         uint256 previousPosition,
         uint256 positionId,
         uint256 amount
-    ) internal override {
-    }
+    ) internal override {}
 
     function _validatePositionSize(
         uint256 lpTokenAmount,
         address lpToken,
         uint256 maxPositionSize,
         uint256 positionId
-    ) internal view override returns (bool, uint256) {
-    }
+    ) internal view override returns (bool, uint256) {}
 
     function _assignDeployedContracts() internal override {
         super._assignDeployedContracts();
@@ -106,7 +107,13 @@ contract BankShortLongTest is SpellBaseTest {
 
     /// @notice Get paraswap data
     /// @dev Using paraswap.ts and `vm.ffi` to get paraswap data with the Node.js SDK
-    function _getParaswapData(address fromToken, address toToken, uint256 amount, address userAddr, uint256 maxImpact) internal returns (bytes memory) {
+    function _getParaswapData(
+        address fromToken,
+        address toToken,
+        uint256 amount,
+        address userAddr,
+        uint256 maxImpact
+    ) internal returns (bytes memory) {
         string[] memory inputs = new string[](8);
 
         inputs[0] = "npx";

@@ -64,7 +64,8 @@ abstract contract BaseTest is Test {
     function setUp() public virtual {
         // Forking Ethereum Mainnet at Feb-29-2024 01:47:47 AM +UTC
         // TODO modularize this to select various networks
-        vm.createSelectFork({ blockNumber: 19_330_000, urlOrAlias: "mainnet" });
+        (string memory urlOrAlias, uint256 blockNumber) = _getFork();
+        vm.createSelectFork({ urlOrAlias: urlOrAlias, blockNumber: blockNumber });
         _generateAndLabel();
         _assignDeployedContracts();
         owner = address(this);
@@ -101,6 +102,10 @@ abstract contract BaseTest is Test {
         );
 
         comptrollerAdmin = comptroller.admin();
+    }
+
+    function _getFork() internal pure virtual returns (string memory, uint256) {
+        return ("mainnet", 19_330_000);
     }
 
     // solhint-disable-next-line private-vars-leading-underscore
