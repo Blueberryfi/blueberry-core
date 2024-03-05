@@ -117,7 +117,6 @@ abstract contract BaseTest is Test {
                 )
             )
         );
-
     }
 
     // solhint-disable-next-line private-vars-leading-underscore

@@ -11,8 +11,6 @@ import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/pre
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
-import { IERC20 } from "forge-std/interfaces/IERC20.sol";
-import { IUSDC } from "@contracts/interfaces/IUSDC.sol";
 
 /// @title SoftVaultTest
 /// @notice Test common vault properties
