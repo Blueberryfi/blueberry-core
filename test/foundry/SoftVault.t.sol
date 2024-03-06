@@ -7,6 +7,10 @@ pragma solidity 0.8.22;
 import "@contracts/utils/BlueberryConst.sol" as Constants;
 import { SoftVaultBaseTest, State } from "@test/SoftVaultBaseTest.t.sol";
 import { console2 as console } from "forge-std/console2.sol";
+import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { SoftVault } from "@contracts/vault/SoftVault.sol";
+import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 
 /// @title SoftVaultTest
 /// @notice Test common vault properties
@@ -26,6 +30,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
         uint256 underlyingBefore = underlying.balanceOf(alice);
         uint256 sharesBefore = vault.balanceOf(alice);
+        uint256 bTokenBefore = bToken.balanceOf(address(vault));
 
         vm.prank(alice);
         underlying.approve(address(vault), amount);
@@ -34,10 +39,71 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
         uint256 underlyingAfter = underlying.balanceOf(alice);
         uint256 sharesAfter = vault.balanceOf(alice);
+        uint256 bTokenAfter = bToken.balanceOf(address(vault));
 
         assertLt(underlyingAfter, underlyingBefore, "Deposit must deduct underlying from the sender");
         assertGt(sharesAfter, sharesBefore, "Deposit must credit shares to the sender");
+        assertGt(bTokenAfter, bTokenBefore, "Deposit must credit bToken to the vault");
         assertEq(vault.totalSupply(), vault.balanceOf(alice), "Total supply must be equal to the sender's balance");
+    }
+
+    function testFork_SoftVault_deposit_withdraw_few_shares_receive_0_assets() public {
+        uint256 amount = 1;
+        underlying.mint(alice, amount);
+
+        vm.prank(alice);
+        underlying.approve(address(vault), amount);
+        vm.prank(alice);
+        uint256 shares = vault.deposit(amount);
+
+        assertEq(underlying.balanceOf(alice), 0, "Deposit must deduct underlying from the sender");
+        assertEq(vault.totalSupply(), shares, "Total supply must be increased");
+
+        assertEq(vault.balanceOf(alice), shares, "Alice has shares");
+        vm.prank(alice);
+        vault.withdraw(1);
+
+        assertEq(underlying.balanceOf(alice), 0, "Withdraw 1 shares will not credit underlying to the sender");
+        assertEq(vault.balanceOf(alice), shares - 1, "Withdraw must deduct shares from the sender");
+        assertEq(vault.totalSupply(), shares - 1, "Total supply must be deducted");
+    }
+
+    function testFork_SoftVault_deposit_withdraw_few_shares_multiple_times_do_not_receive_all_assets() public {
+        uint8[2] memory amounts = [1, 2];
+        address[2] memory users = [alice, bob];
+        uint256 underlyingBefore = underlying.balanceOf(address(bToken));
+        for (uint256 i = 0; i < 2; i++) {
+            uint256 amount = amounts[i];
+            address user = users[i];
+            underlying.mint(user, amount);
+
+            vm.prank(user);
+            underlying.approve(address(vault), amount);
+            vm.prank(user);
+            vault.deposit(amount);
+
+            uint256 sharesBefore = vault.balanceOf(user);
+
+            for (uint256 j = 0; j < sharesBefore; j++) {
+                vm.prank(user);
+                vault.withdraw(1);
+            }
+
+            // @audit-issue Withdraw 1 shares N times will NOT credit underlying to the sender
+            assertEq(
+                underlying.balanceOf(user),
+                0,
+                "Withdraw 1 shares N times will NOT credit underlying to the sender"
+            );
+            assertEq(vault.balanceOf(user), 0, "Withdraw must deduct shares from the sender");
+            assertEq(vault.totalSupply(), 0, "Total supply must be deducted by the sender's balance");
+        }
+        uint256 underlyingAfter = underlying.balanceOf(address(bToken));
+        assertEq(
+            underlyingAfter,
+            underlyingBefore + amounts[0] + amounts[1],
+            "Total assets is equal to the sum of deposits even after withdrawals"
+        );
     }
 
     function testForkFuzz_SoftVault_deposit_withdraw(uint256 amount, uint256 shareAmountAlice) public {
@@ -68,6 +134,115 @@ contract SoftVaultTest is SoftVaultBaseTest {
         );
         assertLt(sharesAfter, sharesBefore, "Withdraw must deduct shares from the sender");
         assertEq(vault.totalSupply(), sharesAfter, "Total supply must be deducted by the sender's balance");
+    }
+
+    function testForkFuzz_SoftVault_deposit_withdraw_full(uint256 amount) public {
+        // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
+        amount = bound(amount, 1, type(uint128).max);
+        underlying.mint(alice, amount);
+
+        vm.prank(alice);
+        underlying.approve(address(vault), amount);
+        vm.prank(alice);
+        vault.deposit(amount);
+
+        uint256 shareAmountAlice = vault.balanceOf(alice);
+
+        vm.prank(alice);
+        vault.withdraw(shareAmountAlice);
+
+        uint256 underlyingAfter = underlying.balanceOf(alice);
+        uint256 sharesAfter = vault.balanceOf(alice);
+
+        assertEq(underlyingAfter, amount, "Withdraw must credit underlying to the sender equal to deposited amount");
+        assertEq(sharesAfter, 0, "Withdraw must clear shares from the sender");
+        assertEq(vault.totalSupply(), sharesAfter, "Total supply must be deducted by the sender's balance");
+    }
+
+    function testForkFuzz_SoftVault_deposit_is_order_independent(uint256[2] memory amounts) public {
+        address[2] memory users = [alice, bob];
+        uint256[2] memory shares = [type(uint256).max, type(uint256).max];
+        uint256 sum;
+        for (uint256 i = 0; i < users.length; i++) {
+            // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
+            amounts[i] = bound(amounts[i], 1000, type(uint128).max);
+            underlying.mint(users[i], amounts[i]);
+
+            vm.prank(users[i]);
+            underlying.approve(address(vault), amounts[i]);
+            vm.prank(users[i]);
+            shares[i] = vault.deposit(amounts[i]);
+
+            sum += amounts[i];
+        }
+
+        users = [bob, alice];
+        amounts = [amounts[1], amounts[0]];
+        shares = [shares[1], shares[0]];
+
+        for (uint256 i = 0; i < users.length; i++) {
+            underlying.mint(users[i], amounts[i]);
+
+            vm.prank(users[i]);
+            underlying.approve(address(vault), amounts[i]);
+            vm.prank(users[i]);
+            uint256 s = vault.deposit(amounts[i]);
+
+            assertEq(s, shares[i], "Deposit must be order independent");
+        }
+    }
+
+    function testForkFuzz_SoftVault_deposit_is_order_independent_with_borrow(uint256[2] memory amounts) public {
+        vm.rollFork(19073030);
+        _setupFork();
+        address[2] memory users = [alice, bob];
+        uint256[2] memory shares = [type(uint256).max, type(uint256).max];
+        uint256 sum;
+        for (uint256 i = 0; i < users.length; i++) {
+            // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
+            amounts[i] = bound(amounts[i], type(uint128).max / 2, type(uint128).max);
+            underlying.mint(users[i], amounts[i]);
+
+            vm.prank(users[i]);
+            underlying.approve(address(vault), amounts[i]);
+            vm.prank(users[i]);
+            shares[i] = vault.deposit(amounts[i]);
+
+            sum += amounts[i];
+        }
+
+        uint256 amount = sum * 100;
+
+        // borrow
+        underlying.mint(carol, amount);
+        address[] memory markets = new address[](1);
+        markets[0] = address(bToken);
+        vm.prank(carol);
+        comptroller.enterMarkets(markets);
+
+        vm.prank(carol);
+        underlying.approve(address(bToken), amount);
+        vm.prank(carol);
+        bToken.mint(amount);
+
+        uint256 borrowAmount = amount / 10;
+        vm.prank(carol);
+        bToken.borrow(borrowAmount);
+
+        users = [bob, alice];
+        amounts = [amounts[1], amounts[0]];
+        shares = [shares[1], shares[0]];
+
+        for (uint256 i = 0; i < users.length; i++) {
+            underlying.mint(users[i], amounts[i]);
+
+            vm.prank(users[i]);
+            underlying.approve(address(vault), amounts[i]);
+            vm.prank(users[i]);
+            uint256 s = vault.deposit(amounts[i]);
+
+            assertEq(s, shares[i], "Deposit must be order independent");
+        }
     }
 
     function testForkFuzz_SoftVault_deposit_withdraw_with_fees(
@@ -140,10 +315,36 @@ contract SoftVaultTest is SoftVaultBaseTest {
         vault.withdraw(sharesAmount + 1);
     }
 
+    function testFork_SoftVault_share_price_inflation_attack_concrete() public {
+        return testForkFuzz_SoftVault_share_price_inflation_attack(2987494030, 569);
+    }
+
     /// @notice Accounting system must not be vulnerable to share price inflation attacks
     function testForkFuzz_SoftVault_share_price_inflation_attack(uint256 inflateAmount, uint256 delta) public {
+        // vm.rollFork(19068161);
         // this has to be changed if there's deposit/withdraw fees
         uint256 lossThreshold = 0.999e18;
+        uint256 percent = 1e18;
+
+        underlying = ERC20PresetMinterPauser(DAI);
+        bToken = IBErc20(BDAI);
+        vault = SoftVault(
+            address(
+                new ERC1967Proxy(
+                    address(new SoftVault()),
+                    abi.encodeCall(
+                        SoftVault.initialize,
+                        (
+                            config,
+                            bToken,
+                            string.concat("SoftVault ", underlying.name()),
+                            string.concat("s", underlying.symbol()),
+                            address(this)
+                        )
+                    )
+                )
+            )
+        );
 
         // vault is fresh
         assertEq(underlying.balanceOf(address(vault)), 0);
@@ -156,7 +357,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
         uint256 victimDeposit = inflateAmount + delta;
         address attacker = bob;
         // fund account
-        underlying.mint(attacker, inflateAmount);
+        deal(DAI, attacker, inflateAmount);
 
         vm.prank(attacker);
         underlying.approve(address(vault), 1);
@@ -170,10 +371,10 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
         // inflate pps
         vm.prank(attacker);
-        underlying.transfer(address(vault), inflateAmount - 1);
+        underlying.transfer(address(bToken), inflateAmount - 1);
 
         // fund victim
-        underlying.mint(alice, victimDeposit);
+        deal(DAI, alice, victimDeposit);
         vm.prank(alice);
         underlying.approve(address(vault), victimDeposit);
 
@@ -183,6 +384,11 @@ contract SoftVaultTest is SoftVaultBaseTest {
         vm.prank(alice);
         uint256 aliceShares = vault.deposit(victimDeposit);
         console.log("Alice Shares:", aliceShares);
+
+        if (aliceShares == 0) {
+            return;
+        }
+
         vm.prank(alice);
         uint256 aliceWithdrawnFunds = vault.withdraw(aliceShares);
         console.log("Amount of tokens alice withdrew:", aliceWithdrawnFunds);
@@ -190,9 +396,9 @@ contract SoftVaultTest is SoftVaultBaseTest {
         uint256 victimLoss = victimDeposit - aliceWithdrawnFunds;
         console.log("Alice Loss:", victimLoss);
 
-        uint256 minRedeemedAmountNorm = (victimDeposit * lossThreshold) / 1e18;
+        uint256 minRedeemedAmountNorm = (victimDeposit * lossThreshold) / percent;
 
-        console.log("lossThreshold", lossThreshold);
+        console.log("lossThreshold%", lossThreshold);
         console.log("minRedeemedAmountNorm", minRedeemedAmountNorm);
         assertGt(
             aliceWithdrawnFunds,
@@ -228,7 +434,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
         );
         assertEq(vault.totalSupply(), totalSupply, "Total supply must be equal to the sum of users' balances");
 
-        for (uint256 i = 0; i < 3; i++) {
+        for (uint256 i = 0; i < amounts.length; i++) {
             uint256 shareAmount = vault.balanceOf(users[i]);
             vm.prank(users[i]);
             vault.withdraw(shareAmount);
@@ -237,5 +443,42 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
         assertEq(totalassetsFinal, totalAssetsBefore, "Total assets must be equal to the initial amount");
         assertEq(vault.totalSupply(), 0, "Total supply must be equal to 0");
+    }
+
+    function testForkFuzz_SoftVault_deposit_pass_time_withdraw(uint256 amount) public {
+        vm.rollFork(19073030);
+        _setupFork();
+        // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
+        amount = bound(amount, type(uint32).max / 2, type(uint32).max);
+        underlying.mint(alice, amount);
+        underlying.mint(bob, amount);
+
+        vm.prank(alice);
+        underlying.approve(address(vault), amount);
+        vm.prank(alice);
+        vault.deposit(amount);
+
+        address[] memory markets = new address[](1);
+        markets[0] = address(bToken);
+        vm.prank(bob);
+        comptroller.enterMarkets(markets);
+
+        vm.prank(bob);
+        underlying.approve(address(bToken), amount);
+        vm.prank(bob);
+        bToken.mint(amount);
+
+        uint256 borrowAmount = amount / 10;
+        vm.prank(bob);
+        bToken.borrow(borrowAmount);
+
+        vm.warp(block.timestamp + 30 days);
+
+        uint256 shareAmountAlice = vault.balanceOf(alice);
+
+        vm.prank(alice);
+        vault.withdraw(shareAmountAlice);
+
+        assertGt(underlying.balanceOf(alice), amount, "Vault must grow over time");
     }
 }

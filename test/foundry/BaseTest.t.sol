@@ -2,6 +2,7 @@
 pragma solidity 0.8.22;
 
 import { Test } from "forge-std/Test.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 // solhint-disable-next-line
 import { console2 } from "forge-std/console2.sol";
@@ -26,7 +27,6 @@ interface IUSDC {
 }
 
 abstract contract BaseTest is Test {
-    address public constant USDC_OWNER = 0xFcb19e6a322b27c06842A71e8c725399f049AE3a;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant BUSDC = 0xdfd54ac444eEffc121E3937b4EAfc3C27d39Ae64;
     IWETH public WETH;
@@ -66,6 +66,19 @@ abstract contract BaseTest is Test {
         vm.prank(IUSDC(USDC).masterMinter());
         IUSDC(USDC).configureMinter(owner, type(uint256).max);
 
+        vm.prank(comptroller.admin());
+        comptroller._setBorrowPaused(BUSDC, false);
+        vm.prank(comptroller.admin());
+        comptroller._setBorrowPaused(BDAI, false);
+        address[] memory markets = new address[](2);
+        markets[0] = BUSDC;
+        markets[1] = BDAI;
+        uint256[] memory newBorrowCaps = new uint256[](2);
+        newBorrowCaps[0] = type(uint256).max;
+        newBorrowCaps[1] = type(uint256).max;
+        vm.prank(comptroller.admin());
+        comptroller._setMarketBorrowCaps(markets, newBorrowCaps);
+
         config = ProtocolConfig(
             address(
                 new ERC1967Proxy(
@@ -99,8 +112,22 @@ abstract contract BaseTest is Test {
 
     // solhint-disable-next-line private-vars-leading-underscore
     function assertEq(uint256 a, uint256 b, uint256 c) internal {
-        assertEq(a, b);
-        assertEq(a, c);
+        return assertEq(a, b, c, "");
+    }
+
+    // solhint-disable-next-line private-vars-leading-underscore
+    function assertEq(uint256 a, uint256 b, uint256 c, string memory reason) internal {
+        reason = string.concat(
+            reason,
+            bytes(reason).length > 0 ? " " : "",
+            "Expected ",
+            Strings.toString(a),
+            " to be equal to ",
+            Strings.toString(b),
+            " and ",
+            Strings.toString(c)
+        );
+        assertTrue(a == b && b == c, reason);
     }
 
     function _generateAndLabel() private {
