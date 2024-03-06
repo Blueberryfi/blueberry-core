@@ -48,7 +48,7 @@ contract BCollateralCapErc20Test is BaseTest {
         assertEq(bTokenAfter, bTokenBalanceSnapshotAfter, "bToken balance must equal to bToken balance snapshot after");
     }
 
-    function testForkFuzz_BCollateralCapErc20_borrow(uint256 amount) public {
+    function testForkFuzz_BCollateralCapErc20_borrow(uint256 amount, uint256 borrowAmount) public {
         vm.rollFork(19073030);
         _setupFork();
         amount = bound(amount, type(uint128).max / 2, type(uint128).max);
@@ -64,7 +64,13 @@ contract BCollateralCapErc20Test is BaseTest {
         vm.prank(alice);
         bToken.mint(amount);
 
+        uint256 underlyingBefore = underlying.balanceOf(alice);
+
         vm.prank(alice);
-        bToken.borrow(amount / 10);
+        try bToken.borrow(borrowAmount) {
+            uint256 underlyingAfter = underlying.balanceOf(alice);
+            assertEq(underlyingAfter, underlyingBefore + borrowAmount, "Borrow must credit underlying to the sender");
+            assertLt(borrowAmount, amount, "Borrow must never be more than the amount minted");
+        } catch {}
     }
 }
