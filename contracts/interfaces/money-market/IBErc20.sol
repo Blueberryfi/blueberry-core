@@ -24,4 +24,8 @@ interface IBErc20 {
     function borrow(uint256 borrowAmount) external returns (uint256);
 
     function repayBorrow(uint256 repayAmount) external returns (uint256);
+
+    function getAccountSnapshot(address account) external view returns (uint256, uint256, uint256, uint256);
+
+    function exchangeRateCurrent() external returns (uint256);
 }
