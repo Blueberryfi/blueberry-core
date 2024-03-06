@@ -17,18 +17,15 @@ import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 import { FeeManager } from "@contracts/FeeManager.sol";
 import { IWETH } from "@contracts/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import { IUSDC } from "@contracts/interfaces/IUSDC.sol";
 import { IComptroller } from "@test/interfaces/IComptroller.sol";
-
-interface IUSDC {
-    function masterMinter() external view returns (address);
-
-    function configureMinter(address minter, uint256 minterAllowedAmount) external;
-}
 
 abstract contract BaseTest is Test {
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public constant BUSDC = 0xdfd54ac444eEffc121E3937b4EAfc3C27d39Ae64;
+    address public constant BUSDC = 0x649127D0800a8c68290129F091564aD2F1D62De1;
+    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address public constant BDAI = 0x23388Cca2BdFC994D75999667E09cc0F5fF1cc88;
+
     IWETH public WETH;
     IERC20 public CRV;
 
@@ -61,53 +58,8 @@ abstract contract BaseTest is Test {
         vm.createSelectFork({ blockNumber: 19_330_000, urlOrAlias: "mainnet" });
         _generateAndLabel();
         _assignDeployedContracts();
-        owner = address(this);
-
-        vm.prank(IUSDC(USDC).masterMinter());
-        IUSDC(USDC).configureMinter(owner, type(uint256).max);
-
-        vm.prank(comptroller.admin());
-        comptroller._setBorrowPaused(BUSDC, false);
-        vm.prank(comptroller.admin());
-        comptroller._setBorrowPaused(BDAI, false);
-        address[] memory markets = new address[](2);
-        markets[0] = BUSDC;
-        markets[1] = BDAI;
-        uint256[] memory newBorrowCaps = new uint256[](2);
-        newBorrowCaps[0] = type(uint256).max;
-        newBorrowCaps[1] = type(uint256).max;
-        vm.prank(comptroller.admin());
-        comptroller._setMarketBorrowCaps(markets, newBorrowCaps);
-
-        config = ProtocolConfig(
-            address(
-                new ERC1967Proxy(
-                    address(new ProtocolConfig()),
-                    abi.encodeCall(ProtocolConfig.initialize, (treasury, owner))
-                )
-            )
-        );
-
-        feeManager = FeeManager(
-            address(new ERC1967Proxy(address(new FeeManager()), abi.encodeCall(FeeManager.initialize, (config, owner))))
-        );
-
-        config.setFeeManager(address(feeManager));
-
-        oracle = CoreOracle(
-            address(new ERC1967Proxy(address(new CoreOracle()), abi.encodeCall(CoreOracle.initialize, (owner))))
-        );
-
-        bank = BlueberryBank(
-            address(
-                new ERC1967Proxy(
-                    address(new BlueberryBank()),
-                    abi.encodeCall(BlueberryBank.initialize, (oracle, config, owner))
-                )
-            )
-        );
-
-        comptrollerAdmin = comptroller.admin();
+        _deployContracts();
+        _configureMinter();
     }
 
     // solhint-disable-next-line private-vars-leading-underscore
@@ -158,6 +110,7 @@ abstract contract BaseTest is Test {
         bTokenWETH = IBErc20(0x643d448CEa0D3616F0b32E3718F563b164e7eDd2); // WETH bToken Mainnet
 
         comptroller = IComptroller(payable(0xfFadB0bbA4379dFAbFB20CA6823F6EC439429ec2)); // Comptroller address Mainnet
+        comptrollerAdmin = comptroller.admin();
 
         vm.label(address(comptroller), "comptroller");
         vm.label(address(bank), "bank");
@@ -168,6 +121,42 @@ abstract contract BaseTest is Test {
         vm.label(address(softVaultWETH), "softVaultWETH");
         vm.label(address(bTokenUSDC), "bTokenUSDC");
         vm.label(address(bTokenWETH), "bTokenWETH");
+    }
+
+    function _deployContracts() internal virtual {
+        owner = address(this);
+        config = ProtocolConfig(
+            address(
+                new ERC1967Proxy(
+                    address(new ProtocolConfig()),
+                    abi.encodeCall(ProtocolConfig.initialize, (treasury, owner))
+                )
+            )
+        );
+
+        feeManager = FeeManager(
+            address(new ERC1967Proxy(address(new FeeManager()), abi.encodeCall(FeeManager.initialize, (config, owner))))
+        );
+
+        config.setFeeManager(address(feeManager));
+
+        oracle = CoreOracle(
+            address(new ERC1967Proxy(address(new CoreOracle()), abi.encodeCall(CoreOracle.initialize, (owner))))
+        );
+
+        bank = BlueberryBank(
+            address(
+                new ERC1967Proxy(
+                    address(new BlueberryBank()),
+                    abi.encodeCall(BlueberryBank.initialize, (oracle, config, owner))
+                )
+            )
+        );
+    }
+
+    function _configureMinter() internal {
+        vm.prank(IUSDC(USDC).masterMinter());
+        IUSDC(USDC).configureMinter(owner, type(uint256).max);
     }
 
     /**

@@ -18,11 +18,17 @@ struct State {
 }
 
 abstract contract SoftVaultBaseTest is BaseTest {
+    IBErc20 public bToken;
     ERC20PresetMinterPauser public underlying;
     SoftVault public vault;
 
     function setUp() public override {
         super.setUp();
+        _deployVault();
+    }
+
+    function _deployVault() internal {
+        bToken = IBErc20(BUSDC);
         underlying = ERC20PresetMinterPauser(USDC);
         vault = SoftVault(
             address(
@@ -32,7 +38,7 @@ abstract contract SoftVaultBaseTest is BaseTest {
                         SoftVault.initialize,
                         (
                             config,
-                            IBErc20(address(bTokenUSDC)),
+                            bToken,
                             string.concat("SoftVault ", underlying.name()),
                             string.concat("s", underlying.symbol()),
                             owner
@@ -47,5 +53,20 @@ abstract contract SoftVaultBaseTest is BaseTest {
         state.vaultBalanceOf.alice = vault.balanceOf(alice);
         state.underlyingBalanceOf.alice = underlying.balanceOf(alice);
         state.underlyingBalanceOf.treasury = underlying.balanceOf(treasury);
+    }
+
+    function _enableBorrow() internal {
+        vm.prank(comptroller.admin());
+        comptroller._setBorrowPaused(IBErc20(BUSDC), false);
+        vm.prank(comptroller.admin());
+        comptroller._setBorrowPaused(IBErc20(BDAI), false);
+        address[] memory markets = new address[](2);
+        markets[0] = BUSDC;
+        markets[1] = BDAI;
+        uint256[] memory newBorrowCaps = new uint256[](2);
+        newBorrowCaps[0] = type(uint256).max;
+        newBorrowCaps[1] = type(uint256).max;
+        vm.prank(comptroller.admin());
+        comptroller._setMarketBorrowCaps(markets, newBorrowCaps);
     }
 }

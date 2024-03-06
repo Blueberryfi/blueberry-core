@@ -5,7 +5,7 @@ pragma solidity 0.8.22;
 /* solhint-disable no-console */
 
 import "@contracts/utils/BlueberryConst.sol" as Constants;
-import { SoftVaultBaseTest, State } from "@test/SoftVaultBaseTest.t.sol";
+import { SoftVaultBaseTest, State } from "@test/fork/vault/SoftVaultBaseTest.t.sol";
 import { console2 as console } from "forge-std/console2.sol";
 import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -17,10 +17,11 @@ import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 /// @dev See https://github.com/crytic/properties/tree/125fa4135c8ad5e7599d1bf2dd2aa055d35a1ab6/contracts/ERC4626
 contract SoftVaultTest is SoftVaultBaseTest {
     function testFork_SoftVault_getters() public {
-        assertEq(vault.decimals(), underlying.decimals(), bTokenUSDC.decimals());
-        assertEq(address(vault.getBToken()), address(bTokenUSDC));
-        assertEq(address(vault.getUnderlyingToken()), address(underlying));
-        assertEq(address(vault.getConfig()), address(config));
+        assertEq(vault.decimals(), bToken.decimals(), "Decimals must be set");
+        assertGe(vault.decimals(), underlying.decimals(), "Vault must have higher precision than underlying");
+        assertEq(address(vault.getBToken()), address(bToken), "bToken must be set");
+        assertEq(address(vault.getUnderlyingToken()), address(underlying), "Underlying token must be set");
+        assertEq(address(vault.getConfig()), address(config), "Config must be set");
     }
 
     function testForkFuzz_SoftVault_deposit(uint256 amount) public {
@@ -136,7 +137,9 @@ contract SoftVaultTest is SoftVaultBaseTest {
         assertEq(vault.totalSupply(), sharesAfter, "Total supply must be deducted by the sender's balance");
     }
 
-    function testForkFuzz_SoftVault_deposit_withdraw_full(uint256 amount) public {
+    function testForkFuzz_SoftVault_deposit_withdraw_full_does_not_credit_underlying_to_the_sender(
+        uint256 amount
+    ) public {
         // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
         amount = bound(amount, 1, type(uint128).max);
         underlying.mint(alice, amount);
@@ -154,7 +157,11 @@ contract SoftVaultTest is SoftVaultBaseTest {
         uint256 underlyingAfter = underlying.balanceOf(alice);
         uint256 sharesAfter = vault.balanceOf(alice);
 
-        assertEq(underlyingAfter, amount, "Withdraw must credit underlying to the sender equal to deposited amount");
+        assertLe(
+            underlyingAfter,
+            amount,
+            "Withdraw does not credit underlying to the sender equal to deposited amount"
+        );
         assertEq(sharesAfter, 0, "Withdraw must clear shares from the sender");
         assertEq(vault.totalSupply(), sharesAfter, "Total supply must be deducted by the sender's balance");
     }
@@ -194,7 +201,10 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
     function testForkFuzz_SoftVault_deposit_is_order_independent_with_borrow(uint256[2] memory amounts) public {
         vm.rollFork(19073030);
-        _setupFork();
+        _deployContracts();
+        _configureMinter();
+        _deployVault();
+        _enableBorrow();
         address[2] memory users = [alice, bob];
         uint256[2] memory shares = [type(uint256).max, type(uint256).max];
         uint256 sum;
@@ -251,6 +261,10 @@ contract SoftVaultTest is SoftVaultBaseTest {
         uint256 withdrawFeeRate,
         uint256 interval
     ) public {
+        vm.rollFork(19073030);
+        _deployContracts();
+        _configureMinter();
+        _deployVault();
         // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
         amount = bound(amount, 1, type(uint128).max);
         underlying.mint(alice, amount);
@@ -316,12 +330,14 @@ contract SoftVaultTest is SoftVaultBaseTest {
     }
 
     function testFork_SoftVault_share_price_inflation_attack_concrete() public {
+        // @audit-issue Vault is vulnerable to share price inflation attack
         return testForkFuzz_SoftVault_share_price_inflation_attack(2987494030, 569);
     }
 
-    /// @notice Accounting system must not be vulnerable to share price inflation attacks
     function testForkFuzz_SoftVault_share_price_inflation_attack(uint256 inflateAmount, uint256 delta) public {
-        // vm.rollFork(19068161);
+        vm.rollFork(19068161);
+        _deployContracts();
+
         // this has to be changed if there's deposit/withdraw fees
         uint256 lossThreshold = 0.999e18;
         uint256 percent = 1e18;
@@ -366,8 +382,9 @@ contract SoftVaultTest is SoftVaultBaseTest {
         console.log(shares);
 
         // attack only works when pps=1:1 + new vault
-        assertEq(underlying.balanceOf(address(bTokenUSDC)), 1);
-        if (shares != 1) return;
+        if (shares > 1) {
+            return;
+        }
 
         // inflate pps
         vm.prank(attacker);
@@ -411,7 +428,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
         address[3] memory users = [alice, bob, carol];
         uint256 totalSupply;
         uint256 totalAssets;
-        uint256 totalAssetsBefore = underlying.balanceOf(address(bTokenUSDC));
+        uint256 totalAssetsBefore = underlying.balanceOf(address(bToken));
         for (uint256 i = 0; i < 3; i++) {
             amounts[i] = bound(amounts[i], 1, type(uint128).max);
             underlying.mint(users[i], amounts[i]);
@@ -425,7 +442,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
 
             totalSupply += vault.balanceOf(users[i]);
         }
-        uint256 totalAssetsAfter = underlying.balanceOf(address(bTokenUSDC));
+        uint256 totalAssetsAfter = underlying.balanceOf(address(bToken));
 
         assertEq(
             totalAssetsAfter - totalAssetsBefore,
@@ -439,15 +456,22 @@ contract SoftVaultTest is SoftVaultBaseTest {
             vm.prank(users[i]);
             vault.withdraw(shareAmount);
         }
-        uint256 totalassetsFinal = underlying.balanceOf(address(bTokenUSDC));
+        uint256 totalassetsFinal = underlying.balanceOf(address(bToken));
 
-        assertEq(totalassetsFinal, totalAssetsBefore, "Total assets must be equal to the initial amount");
+        assertGe(
+            totalassetsFinal,
+            totalAssetsBefore,
+            "Total assets must be greater than or  equal to the initial amount (see testFork_SoftVault_deposit_withdraw_few_shares_multiple_times_do_not_receive_all_assets)"
+        );
         assertEq(vault.totalSupply(), 0, "Total supply must be equal to 0");
     }
 
     function testForkFuzz_SoftVault_deposit_pass_time_withdraw(uint256 amount) public {
         vm.rollFork(19073030);
-        _setupFork();
+        _deployContracts();
+        _configureMinter();
+        _deployVault();
+        _enableBorrow();
         // not using `type(uint256).max` as the maximum value since it makes `vault.deposit` overflow
         amount = bound(amount, type(uint32).max / 2, type(uint32).max);
         underlying.mint(alice, amount);
