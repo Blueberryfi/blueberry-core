@@ -10,6 +10,8 @@ import { ShortLongSpell } from "@contracts/spell/ShortLongSpell.sol";
 import { ICoreOracle } from "@contracts/interfaces/ICoreOracle.sol";
 import { IBasicSpell } from "@contracts/interfaces/spell/IBasicSpell.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
+import { IBank } from "@contracts/interfaces/IBank.sol";
+import "@contracts/utils/BlueberryConst.sol" as Constants;
 
 contract BankShortLongTest is SpellBaseTest {
     ShortLongSpell public shortLongSpell;
@@ -35,9 +37,9 @@ contract BankShortLongTest is SpellBaseTest {
     function testFork_BankShortLong_openPosition_success() external {
         uint256 strategyId = WSTETH_STRATEGY_ID;
         address collToken = WBTC;
-        uint256 collAmount = 0.1e8;
+        uint256 collAmount = 0.4e8;
         address borrowToken = DAI;
-        uint256 borrowAmount = 100e18;
+        uint256 borrowAmount = 5000e18;
         uint256 farmingPoolId = 0;
         address swapToken = WSTETH;
         uint256 maxImpact = 100;
@@ -53,10 +55,6 @@ contract BankShortLongTest is SpellBaseTest {
             borrowAmount: borrowAmount,
             farmingPoolId: farmingPoolId
         });
-        IBasicSpell.Strategy memory strategy = shortLongSpell.getStrategy(0);
-
-        console.log("minPositionSize", strategy.minPositionSize);
-        console.log("maxPositionSize", strategy.maxPositionSize);
 
         bytes memory swapData = _getParaswapData(
             borrowToken,
@@ -71,6 +69,63 @@ contract BankShortLongTest is SpellBaseTest {
         uint256 id = bank.execute(positionId, address(shortLongSpell), data);
 
         assertGt(id, positionId, "New position created");
+    }
+
+    function testForkFuzz_BankShortLong_openPosition(uint256 collAmount, uint256 borrowAmount) external {
+        uint256 strategyId = WSTETH_STRATEGY_ID;
+        IBasicSpell.Strategy memory strategy = shortLongSpell.getStrategy(strategyId);
+
+        address collToken = WBTC;
+        collAmount = bound(collAmount, 0.1e8, 15e8);
+        address borrowToken = DAI;
+        borrowAmount = bound(borrowAmount, strategy.minPositionSize / 2, 2 * strategy.maxPositionSize);
+        uint256 farmingPoolId = 0;
+        address swapToken = WSTETH;
+        uint256 maxImpact = 100;
+
+        deal(collToken, owner, collAmount);
+        ERC20PresetMinterPauser(collToken).approve(address(bank), collAmount);
+
+        IBasicSpell.OpenPosParam memory param = IBasicSpell.OpenPosParam({
+            strategyId: strategyId,
+            collToken: collToken,
+            collAmount: collAmount,
+            borrowToken: borrowToken,
+            borrowAmount: borrowAmount,
+            farmingPoolId: farmingPoolId
+        });
+
+        bytes memory swapData = _getParaswapData(
+            borrowToken,
+            swapToken,
+            borrowAmount,
+            address(shortLongSpell),
+            maxImpact
+        );
+
+        bytes memory data = abi.encodeCall(ShortLongSpell.openPosition, (param, swapData));
+        try bank.execute(0, address(shortLongSpell), data) returns (uint256 positionId) {
+            _validatePosSize(positionId, strategyId);
+            _validateLTV(positionId, strategyId);
+        } catch {}
+    }
+
+    function _validatePosSize(uint256 positionId, uint256 strategyId) internal {
+        IBank.Position memory pos = bank.getPositionInfo(positionId);
+        uint256 posSize = bank.getOracle().getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
+        IBasicSpell.Strategy memory strategy = shortLongSpell.getStrategy(strategyId);
+        assertGe(posSize, strategy.minPositionSize);
+        assertLe(posSize, strategy.maxPositionSize);
+    }
+
+    function _validateLTV(uint256 positionId, uint256 strategyId) internal {
+        IBank.Position memory pos = bank.getPositionInfo(positionId);
+        uint256 debtValue = bank.getDebtValue(positionId);
+        uint256 uValue = bank.getIsolatedCollateralValue(positionId);
+        assertLe(
+            debtValue,
+            (uValue * shortLongSpell.getMaxLTV(strategyId, pos.underlyingToken)) / Constants.DENOMINATOR
+        );
     }
 
     function _calculateSlippageCurve(address pool, uint256 amount) internal view returns (uint256) {}
