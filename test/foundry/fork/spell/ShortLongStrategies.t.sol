@@ -47,7 +47,6 @@ contract ShortLongStrategies is Addresses {
             })
         );
 
-
         borrowAssets = new address[](3);
         borrowAssets[0] = WETH_ADDRESS;
         borrowAssets[1] = WBTC;

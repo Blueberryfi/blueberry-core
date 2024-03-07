@@ -31,6 +31,7 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
         _assignDeployedContracts();
 
         _enableBToken(IBErc20(BDAI));
+        _enableBToken(IBErc20(BWBTC));
 
         spellOwner = IOwnable(address(shortLongSpell)).owner();
     }
@@ -134,14 +135,11 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
         address swapToken = shortLongStrategy.softVaultUnderlying;
         uint256 maxImpact = 100;
 
-        if(collToken == USDC) {
-_configureMinter();
-        ERC20PresetMinterPauser(collToken).mint(owner, collAmount);
-
-        }
-        else {
-        deal(collToken, owner, collAmount);
-
+        if (collToken == USDC) {
+            _configureMinter();
+            ERC20PresetMinterPauser(collToken).mint(owner, collAmount);
+        } else {
+            deal(collToken, owner, collAmount);
         }
         ERC20PresetMinterPauser(collToken).approve(address(bank), collAmount);
 
