@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import { SpellBaseTest } from "@test/fork/spell/SpellBaseTest.t.sol";
 import { IOwnable } from "@test/interfaces/IOwnable.sol";
@@ -12,9 +11,11 @@ import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 import { IBank } from "@contracts/interfaces/IBank.sol";
 import "@contracts/utils/BlueberryConst.sol" as Constants;
 import { ShortLongStrategies, ShortLongStrategy } from "@test/fork/spell/ShortLongStrategies.t.sol";
+import { ParaSwapSnapshot } from "@test/fork/ParaSwapSnapshot.t.sol";
+import { Quoter } from "@test/Quoter.t.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
 
-contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
+contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapshot, Quoter {
     ShortLongSpell public shortLongSpell;
     ICoreOracle public coreOracle;
 
@@ -51,7 +52,7 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
         Vars memory vars = Vars({
             strategyId: WSTETH_STRATEGY_ID,
             collToken: WBTC,
-            collAmount: 0.5e8,
+            collAmount: 0.4e8,
             borrowToken: DAI,
             borrowAmount: 5000e18,
             farmingPoolId: 0,
@@ -93,7 +94,7 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
 
         IBank.Position memory position = bank.getPositionInfo(positionId);
 
-        uint256 swapAmount = SoftVault(strategy.vault).withdraw(position.collateralSize);
+        uint256 swapAmount = quote(strategy.vault, abi.encodeCall(SoftVault.withdraw, position.collateralSize / 2));
 
         swapData = _getParaswapData(
             vars.swapToken,
@@ -260,29 +261,5 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
         vm.label(BWSTETH, "bWSTETH");
 
         coreOracle = bank.getOracle();
-    }
-
-    /// @notice Get paraswap data
-    /// @dev Using paraswap.ts and `vm.ffi` to get paraswap data with the Node.js SDK
-    function _getParaswapData(
-        address fromToken,
-        address toToken,
-        uint256 amount,
-        address userAddr,
-        uint256 maxImpact
-    ) internal returns (bytes memory) {
-        string[] memory inputs = new string[](8);
-
-        inputs[0] = "npx";
-        inputs[1] = "ts-node";
-        inputs[2] = "./script/paraswap.ts";
-        inputs[3] = Strings.toHexString(fromToken);
-        inputs[4] = Strings.toHexString(toToken);
-        inputs[5] = Strings.toString(amount);
-        inputs[6] = Strings.toHexString(userAddr);
-        inputs[7] = Strings.toString(maxImpact);
-
-        bytes memory res = vm.ffi(inputs);
-        return res;
     }
 }
