@@ -12,8 +12,9 @@ import { IBasicSpell } from "@contracts/interfaces/spell/IBasicSpell.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 import { IBank } from "@contracts/interfaces/IBank.sol";
 import "@contracts/utils/BlueberryConst.sol" as Constants;
+import { ShortLongStrategies, ShortLongStrategy } from "@test/fork/spell/ShortLongStrategies.t.sol";
 
-contract BankShortLongTest is SpellBaseTest {
+contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
     ShortLongSpell public shortLongSpell;
     ICoreOracle public coreOracle;
 
@@ -110,6 +111,64 @@ contract BankShortLongTest is SpellBaseTest {
         } catch {}
     }
 
+    function testForkFuzz_BankShortLong_openPosition_multiple_strategies(
+        uint256 shortLongStrategyIndex,
+        uint256 collTokenIndex,
+        uint256 borrowTokenIndex,
+        uint256 collAmount,
+        uint256 borrowAmount
+    ) external {
+        shortLongStrategyIndex = bound(shortLongStrategyIndex, 0, strategies.length - 1);
+        ShortLongStrategy memory shortLongStrategy = strategies[shortLongStrategyIndex];
+        collTokenIndex = bound(collTokenIndex, 0, shortLongStrategy.collTokens.length - 1);
+        borrowTokenIndex = bound(borrowTokenIndex, 0, shortLongStrategy.borrowAssets.length - 1);
+        uint256 strategyId = shortLongStrategy.strategyId;
+        IBasicSpell.Strategy memory strategy = shortLongSpell.getStrategy(strategyId);
+
+        address collToken = shortLongStrategy.collTokens[collTokenIndex];
+        uint8 collDecimals = ERC20PresetMinterPauser(collToken).decimals();
+        collAmount = bound(collAmount, 10 ** collDecimals / 10, 10 * 10 ** collDecimals);
+        address borrowToken = shortLongStrategy.borrowAssets[borrowTokenIndex];
+        borrowAmount = bound(borrowAmount, strategy.minPositionSize / 2, 2 * strategy.maxPositionSize);
+        uint256 farmingPoolId = 0;
+        address swapToken = shortLongStrategy.softVaultUnderlying;
+        uint256 maxImpact = 100;
+
+        if(collToken == USDC) {
+_configureMinter();
+        ERC20PresetMinterPauser(collToken).mint(owner, collAmount);
+
+        }
+        else {
+        deal(collToken, owner, collAmount);
+
+        }
+        ERC20PresetMinterPauser(collToken).approve(address(bank), collAmount);
+
+        IBasicSpell.OpenPosParam memory param = IBasicSpell.OpenPosParam({
+            strategyId: strategyId,
+            collToken: collToken,
+            collAmount: collAmount,
+            borrowToken: borrowToken,
+            borrowAmount: borrowAmount,
+            farmingPoolId: farmingPoolId
+        });
+
+        bytes memory swapData = _getParaswapData(
+            borrowToken,
+            swapToken,
+            borrowAmount,
+            address(shortLongSpell),
+            maxImpact
+        );
+
+        bytes memory data = abi.encodeCall(ShortLongSpell.openPosition, (param, swapData));
+        try bank.execute(0, address(shortLongSpell), data) returns (uint256 positionId) {
+            _validatePosSize(positionId, strategyId);
+            _validateLTV(positionId, strategyId);
+        } catch {}
+    }
+
     function _validatePosSize(uint256 positionId, uint256 strategyId) internal {
         IBank.Position memory pos = bank.getPositionInfo(positionId);
         uint256 posSize = bank.getOracle().getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
@@ -128,12 +187,10 @@ contract BankShortLongTest is SpellBaseTest {
         );
     }
 
-    function _calculateSlippageCurve(address pool, uint256 amount) internal view returns (uint256) {}
-
     function _calculateSlippage(uint256 amount, uint256 slippagePercentage) internal view override returns (uint256) {}
 
     function _validateReceivedBorrowAndPosition(
-        uint256 previousPosition,
+        IBank.Position memory previousPosition,
         uint256 positionId,
         uint256 amount
     ) internal override {}
@@ -143,7 +200,7 @@ contract BankShortLongTest is SpellBaseTest {
         address lpToken,
         uint256 maxPositionSize,
         uint256 positionId
-    ) internal view override returns (bool, uint256) {}
+    ) internal view override returns (bool, IBank.Position memory) {}
 
     function _assignDeployedContracts() internal override {
         super._assignDeployedContracts();
