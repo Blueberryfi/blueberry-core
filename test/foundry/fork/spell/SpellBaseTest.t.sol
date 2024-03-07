@@ -52,4 +52,9 @@ abstract contract SpellBaseTest is BaseTest {
 
         vm.label(address(0x737df47A4BdDB0D71b5b22c72B369d0B29329b40), "bankImpl");
     }
+
+    /**
+     * @dev Sets the mock oracle for various tokens
+     */
+    function _setMockOracle() internal virtual;
 }
