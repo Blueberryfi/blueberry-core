@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
+/* solhint-disable custom-errors */
+
 /// @dev See https://github.com/Uniswap/v3-periphery/blob/main/contracts/lens/Quoter.sol
 abstract contract Quoter {
-    function parseRevertReason(bytes memory reason) internal pure returns (uint256) {
+    function _parseRevertReason(bytes memory reason) internal pure returns (uint256) {
         if (reason.length != 32) {
             if (reason.length < 68) revert("Unexpected error");
             assembly {
@@ -24,13 +26,14 @@ abstract contract Quoter {
                 revert(ptr, 32)
             }
         } else {
-            revert();
+            revert("");
         }
     }
 
     function quote(address target, bytes memory data) public returns (uint256 ans) {
+        // solhint-disable-next-line no-empty-blocks
         try this.callRevert(target, data) {} catch (bytes memory reason) {
-            return parseRevertReason(reason);
+            return _parseRevertReason(reason);
         }
     }
 }
