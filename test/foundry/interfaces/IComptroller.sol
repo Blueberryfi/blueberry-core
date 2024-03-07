@@ -89,4 +89,6 @@ interface IComptroller {
 
     // solhint-disable-next-line
     function _setBorrowPaused(IBErc20 bToken, bool state) external returns (bool);
+
+    function _setMarketBorrowCaps(address[] memory bTokens, uint256[] memory newBorrowCaps) external;
 }
