@@ -3,7 +3,6 @@ pragma solidity 0.8.22;
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
-import { console2 as console } from "forge-std/console2.sol";
 import { SpellBaseTest } from "@test/fork/spell/SpellBaseTest.t.sol";
 import { IOwnable } from "@test/interfaces/IOwnable.sol";
 import { ShortLongSpell } from "@contracts/spell/ShortLongSpell.sol";
@@ -13,6 +12,7 @@ import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 import { IBank } from "@contracts/interfaces/IBank.sol";
 import "@contracts/utils/BlueberryConst.sol" as Constants;
 import { ShortLongStrategies, ShortLongStrategy } from "@test/fork/spell/ShortLongStrategies.t.sol";
+import { SoftVault } from "@contracts/vault/SoftVault.sol";
 
 contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
     ShortLongSpell public shortLongSpell;
@@ -25,6 +25,17 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
 
     address public spellOwner;
 
+    struct Vars {
+        uint256 strategyId;
+        address collToken;
+        uint256 collAmount;
+        address borrowToken;
+        uint256 borrowAmount;
+        uint256 farmingPoolId;
+        address swapToken;
+        uint256 maxImpact;
+    }
+
     function setUp() public override {
         super.setUp();
 
@@ -36,41 +47,77 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies {
         spellOwner = IOwnable(address(shortLongSpell)).owner();
     }
 
-    function testFork_BankShortLong_openPosition_success() external {
-        uint256 strategyId = WSTETH_STRATEGY_ID;
-        address collToken = WBTC;
-        uint256 collAmount = 0.4e8;
-        address borrowToken = DAI;
-        uint256 borrowAmount = 5000e18;
-        uint256 farmingPoolId = 0;
-        address swapToken = WSTETH;
-        uint256 maxImpact = 100;
+    function testFork_BankShortLong_openPosition_closePosition() external {
+        Vars memory vars = Vars({
+            strategyId: WSTETH_STRATEGY_ID,
+            collToken: WBTC,
+            collAmount: 0.5e8,
+            borrowToken: DAI,
+            borrowAmount: 5000e18,
+            farmingPoolId: 0,
+            swapToken: WSTETH,
+            maxImpact: 100
+        });
 
-        deal(collToken, owner, collAmount);
-        ERC20PresetMinterPauser(collToken).approve(address(bank), collAmount);
+        IBasicSpell.Strategy memory strategy = shortLongSpell.getStrategy(vars.strategyId);
 
-        IBasicSpell.OpenPosParam memory param = IBasicSpell.OpenPosParam({
-            strategyId: strategyId,
-            collToken: collToken,
-            collAmount: collAmount,
-            borrowToken: borrowToken,
-            borrowAmount: borrowAmount,
-            farmingPoolId: farmingPoolId
+        deal(vars.collToken, owner, vars.collAmount);
+        ERC20PresetMinterPauser(vars.collToken).approve(address(bank), vars.collAmount);
+
+        IBasicSpell.OpenPosParam memory openPositionParam = IBasicSpell.OpenPosParam({
+            strategyId: vars.strategyId,
+            collToken: vars.collToken,
+            collAmount: vars.collAmount,
+            borrowToken: vars.borrowToken,
+            borrowAmount: vars.borrowAmount,
+            farmingPoolId: vars.farmingPoolId
         });
 
         bytes memory swapData = _getParaswapData(
-            borrowToken,
-            swapToken,
-            borrowAmount,
+            vars.borrowToken,
+            vars.swapToken,
+            vars.borrowAmount,
             address(shortLongSpell),
-            maxImpact
+            vars.maxImpact
         );
 
-        bytes memory data = abi.encodeCall(ShortLongSpell.openPosition, (param, swapData));
+        bytes memory data = abi.encodeCall(ShortLongSpell.openPosition, (openPositionParam, swapData));
         uint256 positionId = 0;
-        uint256 id = bank.execute(positionId, address(shortLongSpell), data);
+        positionId = bank.execute(positionId, address(shortLongSpell), data);
 
-        assertGt(id, positionId, "New position created");
+        assertGt(positionId, 0, "New position created");
+        _validatePosSize(positionId, vars.strategyId);
+        _validateLTV(positionId, vars.strategyId);
+
+        bytes memory colTokenSwapData = "";
+
+        IBank.Position memory position = bank.getPositionInfo(positionId);
+
+        uint256 swapAmount = SoftVault(strategy.vault).withdraw(position.collateralSize);
+
+        swapData = _getParaswapData(
+            vars.swapToken,
+            vars.borrowToken,
+            swapAmount,
+            address(shortLongSpell),
+            vars.maxImpact
+        );
+
+        IBasicSpell.ClosePosParam memory closePositionParam = IBasicSpell.ClosePosParam({
+            strategyId: vars.strategyId,
+            collToken: WSTETH,
+            borrowToken: vars.borrowToken,
+            amountRepay: type(uint256).max,
+            amountPosRemove: type(uint256).max,
+            amountShareWithdraw: type(uint256).max,
+            amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: colTokenSwapData
+        });
+
+        data = abi.encodeCall(ShortLongSpell.closePosition, (closePositionParam, swapData));
+
+        bank.execute(positionId, address(shortLongSpell), data);
     }
 
     function testForkFuzz_BankShortLong_openPosition(uint256 collAmount, uint256 borrowAmount) external {
