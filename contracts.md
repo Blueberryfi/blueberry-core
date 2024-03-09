@@ -1,7 +1,85 @@
 # Blueberry Core Protocol
 
+## Mainnet Contracts
+
+### Blueberry-Core Contracts
+
+| Contract Names         | Address                                    |
+| ---------------------- | ------------------------------------------ |
+| Protocol Config        | 0x26c85a3780ef040Bc29F7b2002DfeD2D493Df4d4 |
+| Fee Manager            | 0x0D2A69FD6074cf2bFAeF844d65f13459E80309af |
+| Blueberry Bank         | 0x9b06eA9Fbc912845DF1302FE1641BEF9639009F7 |
+| Stakevest              | 0xd1e8DDEcF0b8D478ec6fa2a2747D424218e2AC2B |
+| WERC20                 | 0x1a1f8ed1a73d62F08a74C0e7ebdF50937153e9E5 |
+| WIchiFarm              | 0x70Cf54d024fFb8b9a58634284b515D337E811Aa2 |
+| WAuraBooster           | 0x161a4EB1c0f63CF051B6f45D898C328327838532 |
+| WConvexBooster         | 0x897678C417708D4134fF162A354A3CB74DaDCc6F |
+| PoolEscrowFactory      | 0x23b481F02f76Ae0398a5515141F6147f319E39F9 |
+| AURA Spell             | 0x1c65138E5aC1E97178737D5CcafFe46f5051A794 |
+| Convex Stable Spell    | 0x936F8e31717c4998804f85889DE758C4780702A4 |
+| Convex Tricrypto Spell | 0x63ADb6bEA9eE3Fdaa8FfC80a324C5429575cE587 |
+| Convex Volatile Spell  | 0x507a9a49Cc30568A9d07366CDF5c793C20671eB8 |
+| ICHI Spell             | 0x84229FA2c8B5911B71bcd44acCbC3A5c973A9013 |
+| Hard Vault             | 0x426aaA5E187BBe327D3A42795316D61DADa006E8 |
+| Soft Vault - ALCX      | 0x1413E54AEC40DE7Aab54251B09FA2268b317540c |
+| Soft Vault - BAL       | 0xB0269Bb4c541D84D69fE710B0983C0A833efaAcC |
+| Soft Vault - BLB       | 0x0                                        |
+| Soft Vault - CRV       | 0x6faA7815F6a2f5FBf2e4A49A590206cD94925d57 |
+| Soft Vault - CRVUSD    | 0x0BA5761092727502b48575288B4A2B8f2FB724AE |
+| Soft Vault - DAI       | 0xCD68475A160a256a2C0595c36F497B7cD1fC7672 |
+| Soft Vault - ICHI      | 0x0                                        |
+| Soft Vault - FRAX      | 0xE1a50DdDc74D2cc557781241860f82db2F99f4f4 |
+| Soft Vault - LINK      | 0xb9ea938A795A1765b6Dc1391239a8a4235E9362c |
+| Soft Vault - MIM       | 0x0                                        |
+| Soft Vault - OHM       | 0x8120e2F07c75bcB2BF1aF0e347b3a4f0fD8e5545 |
+| Soft Vault - SUSHI     | 0x0                                        |
+| Soft Vault - USDC      | 0x32619e841C497D1365c37612A3e64680A70E1894 |
+| Soft Vault - USDD      | 0x0                                        |
+| Soft Vault - WBTC      | 0xCc40ffD2512101c049A62eCE218AA2b5Aa6D2560 |
+| Soft Vault - WETH      | 0xcCd438a78376955A3b174be619E50Aa3DdD65469 |
+| Soft Vault - WSTETH    | 0x8DE384d5407ca3477b338Ee7a392caFFDD889F2D |
+
+### Money Market
+
+| Contract Names           | Address                                    |
+| ------------------------ | ------------------------------------------ |
+| Comptroller              | 0xfFadB0bbA4379dFAbFB20CA6823F6EC439429ec2 |
+| Unitroller               | 0xcb0D9Ff5BDD34521c6f8CDbeAf15e1A76Fa4dd5D |
+| Price Oracle Proxy       | 0x16D43cAC32329ec286Dc14431e0c0E805e6F5174 |
+| Money Market Core Oracle | 0x3485Dc9781d7666b67DDf5eD40A28d8e7CbC9615 |
+| bUSDC                    | 0x649127D0800a8c68290129F091564aD2F1D62De1 |
+| bDAI                     | 0x23388Cca2BdFC994D75999667E09cc0F5fF1cc88 |
+| bCRV                     | 0xdeBd5D482C2B0feeA5527f9B832F7F894c8303eB |
+| bCRVUSD                  | 0x9BdeCce77c6351b1941a827e25b5FdC73d69b622 |
+| bFRAX                    | 0xA51406abFc4658c542b69c2f5a8BAbe61e21B416 |
+| bWBTC                    | 0xE61ad5B0E40c856E6C193120Bd3fa28A432911B6 |
+| bWETH                    | 0x643d448CEa0D3616F0b32E3718F563b164e7eDd2 |
+| bWSTETH                  | 0xB387fd973358d2DfdE4F3795Bc9d2CCeE6449A40 |
+| bALCX                    | 0xc5435051ccc67b4BB8DB8D27f9641C3309b320CC |
+| bOHM                     | 0x08830038A6097C10f4A814274d5A68E64648d91c |
+| bBAL                     | 0x864aDa7223542Ec6eF92789ae524263D7fE9fD96 |
+| bLINK                    | 0x65cf55f03e2040D214883f6039FC65fd224E6A47 |
+
+### Oracle
+
+| Contract Names           | Address                                    |
+| ------------------------ | ------------------------------------------ |
+| Core Oracle              | 0xdfe469ACe05C3d0D4461439e6cF5d0f46F33Ec56 |
+| Chainlink Adapter Oracle | 0xC5CEa3f9C92291335076D4C2eC6Ae72E45Fb8937 |
+| Money Market Oracle      | 0x3485Dc9781d7666b67DDf5eD40A28d8e7CbC9615 |
+| Curve Stable Oracle      | 0x58660E94E910DB4215B57823Be7F32A11Ac69532 |
+| Curve Tricrypto Oracle   | 0x89DCe547640d98491437c7B0D5a4EE2693CbBD0C |
+| Curve Volatile Oracle    | 0x74Cdfa37F1CE8050465891DC0fE902aAb60Cc4f4 |
+| ICHI Vault Oracle        | 0x0                                        |
+| Stable BPT Oracle        | 0xA05FE2e46b386398f5a252Aa91e4C4bba73ECb33 |
+| Weighted BPT Oracle      | 0xA2f05a35C801c45A1ae735176783CD1C16E1966f |
+| Soft Vault Oracle        | 0x49aA042E281473d26562BBadF0C42A20649D059D |
+| ERC4626 Oracle           | 0x474c77b299d11598c50564d0Ad57eEbB23fd02B1 |
+
 ## Goerli Testnet
+
 ### Mock Contracts
+
 | Contract Names            | Address                                    |
 | ------------------------- | ------------------------------------------ |
 | Mock ALCX                 | 0x9eD02f1C12AdB524EC901f37cB4d9b183B2e578d |
@@ -35,6 +113,7 @@
 | Uni V3 Pool USDC/WETH     | 0xE665EF4F113d7a4E853A5360BaDdda7e3637894a |
 
 ### Oracle
+
 | Contract Names            | Address                                    |
 | ------------------------- | ------------------------------------------ |
 | Chainlink Adapter Oracle  | 0x9C75022b200e77c1403541cBF4aEb28B7781656F |
@@ -44,6 +123,7 @@
 | Core Oracle               | 0x459193543010abf4b0cb31f3ba1e2e1a832d8819 |
 
 ### Core
+
 | Contract Names     | Address                                    |
 | ------------------ | ------------------------------------------ |
 | Protocol Config    | 0x7FC9E9f965565c09fdb5c400AFbCCDEB1d4f7dA5 |
