@@ -6,6 +6,7 @@ import { SpellBaseTest, IBank } from "@test/fork/spell/SpellBaseTest.t.sol";
 import { IOwnable } from "@test/interfaces/IOwnable.sol";
 import { ConvexSpell } from "@contracts/spell/ConvexSpell.sol";
 import { IBasicSpell } from "@contracts/interfaces/spell/IBasicSpell.sol";
+import { IConvexSpell } from "@contracts/interfaces/spell/IConvexSpell.sol";
 import { IWConvexBooster } from "@contracts/interfaces/IWConvexBooster.sol";
 import { ICurveOracle } from "@contracts/interfaces/ICurveOracle.sol";
 import { ICoreOracle } from "@contracts/interfaces/ICoreOracle.sol";
@@ -19,6 +20,7 @@ import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { DENOMINATOR } from "@contracts/utils/BlueberryConst.sol";
 import { PRICE_PRECISION } from "@contracts/utils/BlueberryConst.sol";
 import { EXCEED_MAX_LTV } from "@contracts/utils/BlueberryErrors.sol";
+import { SoftVault } from "@contracts/vault/SoftVault.sol";
 
 import { ICurvePool } from "@test/interfaces/ICurvePool.sol";
 import { ICvxBooster } from "@test/interfaces/ICvxBooster.sol";
@@ -27,7 +29,11 @@ import { IExtCoreOracle } from "@test/interfaces/IExtCoreOracle.sol";
 
 import { WConvexBoosterMock } from "@test/fork/spell/mocks/WConvexBoosterMock.sol";
 
-contract BankConvexSpell is SpellBaseTest {
+import { ParaSwapSnapshot } from "@test/fork/ParaSwapSnapshot.t.sol";
+
+import { Quoter } from "@test/Quoter.t.sol";
+
+contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
     ConvexSpell public convexSpell;
 
     IWConvexBooster public wConvexBooster;
@@ -36,6 +42,7 @@ contract BankConvexSpell is SpellBaseTest {
     ConvexSpell internal _intConvexSpell; // Needed for vm.etch => debug inside the contracts
     WConvexBoosterMock internal _wConvexBoosterMock;
     MockOracle public mockOracle;
+    SoftVault internal _intSoftVault;
 
     address CVX = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
 
@@ -50,6 +57,9 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 initialRewardPerShare;
         address pool;
         uint256 timestamp;
+        uint256 initialDebtValue;
+        uint256 initialCollateral;
+        uint256 maxSharesRedeemed;
     }
 
     struct CachedBalances {
@@ -96,7 +106,7 @@ contract BankConvexSpell is SpellBaseTest {
         });
         IBasicSpell.Strategy memory strat = convexSpell.getStrategy(0);
 
-        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount);
+        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true);
 
         bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, 0));
         uint256 balanceBefore = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
@@ -148,7 +158,7 @@ contract BankConvexSpell is SpellBaseTest {
             farmingPoolId: poolId
         });
 
-        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount); // calculate the lp token received by curve
+        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true); // calculate the lp token received by curve
         slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
         (bool valid, IBank.Position memory previousPosition) = _validatePositionSize(
             slippage,
@@ -172,7 +182,6 @@ contract BankConvexSpell is SpellBaseTest {
                 maxPositionSelector != receivedSelector
             ) revert();
 
-            console2.logBytes4(receivedSelector);
             return;
         }
         // Validate that the position was updated correctly
@@ -231,7 +240,7 @@ contract BankConvexSpell is SpellBaseTest {
             farmingPoolId: poolId
         });
 
-        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount); // calculate the lp token received by curve
+        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true); // calculate the lp token received by curve
         slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
         (bool valid, IBank.Position memory previousPosition) = _validatePositionSize(
             slippage,
@@ -291,7 +300,10 @@ contract BankConvexSpell is SpellBaseTest {
             lpToken: lpToken,
             initialRewardPerShare: 0,
             pool: pool,
-            timestamp: timestamp
+            timestamp: timestamp,
+            initialDebtValue: 0,
+            initialCollateral: collateralAmount,
+            maxSharesRedeemed: 0
         });
         // Opening initial position
         _openInitialPosition(cachedValues.poolId, 1e18, 1.5e18);
@@ -309,7 +321,7 @@ contract BankConvexSpell is SpellBaseTest {
             farmingPoolId: cachedValues.poolId
         });
 
-        uint256 slippage = _calculateSlippageCurve(cachedValues.pool, borrowAmount); // calculate the lp token received by curve
+        uint256 slippage = _calculateSlippageCurve(cachedValues.pool, borrowAmount, true); // calculate the lp token received by curve
         slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
         (bool valid, IBank.Position memory previousPosition) = _validatePositionSize(
             slippage,
@@ -403,8 +415,175 @@ contract BankConvexSpell is SpellBaseTest {
         assertEq(balanceAfterUSDC, 0, "Remaining USDC in the initiator");
     }
 
+    function testForkFuzz_BankConvexSpell_closeNewPositionNoSwapOnRewards(
+        uint256 collateralAmount,
+        uint256 borrowAmount,
+        uint256 timestamp
+    ) public {
+        collateralAmount = bound(collateralAmount, 1, type(uint96).max - 1);
+        borrowAmount = bound(borrowAmount, 1, type(uint96).max - 1);
+        timestamp = bound(timestamp, 1, 365 days);
+
+        _setMockOracle();
+        (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
+        (address pool, , ) = curveOracle.getPoolInfo(lpToken);
+        CachedValues memory cachedValues = CachedValues({
+            poolId: 25,
+            positionId: 1,
+            lpToken: lpToken,
+            initialRewardPerShare: 0,
+            pool: pool,
+            timestamp: timestamp,
+            initialDebtValue: 0,
+            initialCollateral: collateralAmount,
+            maxSharesRedeemed: 0
+        });
+
+        // Opening initial position with random values, skip when it fails as we don't test the open initial position
+        if (!_openInitialPositionNoRevert(cachedValues.poolId, collateralAmount, borrowAmount)) return;
+
+        // avoid stack-too-deep, calculating initial reward per token for crv rewards
+        {
+            ICvxBooster cvxBooster = ICvxBooster(address(wConvexBooster.getCvxBooster())); // modified interface cast
+
+            (, , , address crvRewarder, , ) = cvxBooster.poolInfo(cachedValues.poolId);
+
+            cachedValues.initialRewardPerShare = IRewarder(crvRewarder).rewardPerToken();
+        }
+
+        IBank.Position memory currentPosition = bank.getPositionInfo(cachedValues.positionId);
+        cachedValues.initialDebtValue = _calculateDebtValue(
+            cachedValues.pool,
+            currentPosition.collateralSize,
+            cachedValues.positionId
+        );
+        bytes memory swapDataDebt = _getParaswapData(
+            address(USDC),
+            address(WETH),
+            cachedValues.initialDebtValue,
+            address(convexSpell),
+            100
+        );
+        IBasicSpell.ClosePosParam memory closePosParam = IBasicSpell.ClosePosParam({
+            strategyId: 0,
+            collToken: address(USDC),
+            borrowToken: address(WETH),
+            amountRepay: type(uint256).max,
+            amountPosRemove: currentPosition.collateralSize,
+            // This will be updated after warp to account for exchange rate change on money market
+            // advances in timestamp yield interest for the lender in money market, user receives yield for his collateral
+            amountShareWithdraw: 0,
+            amountOutMin: 0,
+            amountToSwap: 0.1 ether,
+            swapData: swapDataDebt
+        });
+
+        {
+            CachedBalances memory cachedBalances;
+            // getting the rewards before the time passes
+            (uint256[] memory rewardsBefore, address[] memory rewardTokensBefore) = _getRewards(cachedValues);
+            cachedBalances.balanceOfUserRewardsBefore = new uint256[](rewardsBefore.length);
+            cachedBalances.balanceOfTreasuryRewardsBefore = new uint256[](rewardsBefore.length);
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfUserRewardsBefore[i] = ERC20PresetMinterPauser(rewardTokensBefore[i]).balanceOf(
+                    owner
+                );
+            }
+
+            address feeTreasury = bank.getFeeManager().getConfig().getTreasury();
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfTreasuryRewardsBefore[i] = ERC20PresetMinterPauser(rewardTokensBefore[i])
+                    .balanceOf(feeTreasury);
+            }
+
+            // we move the timestamp
+            vm.warp(block.timestamp + cachedValues.timestamp);
+            cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+            console2.log("maxSharesRedeemed", cachedValues.maxSharesRedeemed);
+            if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
+                cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;
+            closePosParam.amountShareWithdraw = cachedValues.maxSharesRedeemed;
+
+            // rewards should have been accrued
+            (uint256[] memory rewards, address[] memory rewardTokens) = _getRewards(cachedValues);
+
+            bytes[] memory swapDatas = new bytes[](rewards.length);
+            IConvexSpell.ClosePositionFarmParam memory closePositionFarmParams = IConvexSpell.ClosePositionFarmParam({
+                param: closePosParam,
+                amounts: rewards,
+                swapDatas: swapDatas
+            });
+
+            bytes memory data = abi.encodeCall(ConvexSpell.closePositionFarm, (closePositionFarmParams));
+
+            // execute the spell, should yield the rewards in the owner's wallet
+            bank.execute(cachedValues.positionId, address(convexSpell), data);
+
+            // checking that the balances in the wallet are rewards - fees
+            cachedBalances.balanceOfUserRewardsAfter = new uint256[](rewardTokens.length);
+            cachedBalances.balanceOfTreasuryRewardsAfter = new uint256[](rewardTokens.length);
+            for (uint256 i; i < rewardTokens.length; ++i) {
+                cachedBalances.balanceOfUserRewardsAfter[i] = ERC20PresetMinterPauser(rewardTokens[i]).balanceOf(owner);
+            }
+
+            // checking that the treasury balance was updated accordingly
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfTreasuryRewardsAfter[i] = ERC20PresetMinterPauser(rewardTokensBefore[i])
+                    .balanceOf(feeTreasury);
+            }
+
+            assertEq(rewardsBefore.length, rewards.length, "Rewards length mismatch");
+            for (uint i; i < rewardsBefore.length; ++i) {
+                uint256 toRefund = rewards[i] - rewardsBefore[i];
+                uint256 feeRate = bank.getFeeManager().getConfig().getRewardFee();
+                uint256 cutFee = (toRefund * feeRate) / DENOMINATOR;
+                assertApproxEqAbs(
+                    toRefund - cutFee,
+                    cachedBalances.balanceOfUserRewardsAfter[i] - cachedBalances.balanceOfUserRewardsBefore[i],
+                    1,
+                    "Rewards balance mismatch for the user"
+                );
+
+                assertApproxEqAbs(
+                    cutFee,
+                    cachedBalances.balanceOfTreasuryRewardsAfter[i] - cachedBalances.balanceOfTreasuryRewardsBefore[i],
+                    1,
+                    "Rewards balance mismatch for the treasury"
+                );
+            }
+        }
+        {
+            // checking that the position closed and that the user is not in loss, should accrue interest from the money market
+            IBank.Position memory afterPosition = bank.getPositionInfo(cachedValues.positionId);
+
+            assertEq(afterPosition.collateralSize, 0, "After position collateral size not cleared");
+            assertEq(afterPosition.debtShare, 0, "After position debt share not cleared");
+            // assertEq(afterPosition.underlyingVaultShare, 0, "After position underlying vault share not cleared");// NOTE this fails as vault shares might still exists
+
+            uint256 balanceOfCollateralAfter = ERC20PresetMinterPauser(address(USDC)).balanceOf(owner);
+            uint256 balanceOfBorrowAfter = ERC20PresetMinterPauser(address(WETH)).balanceOf(owner);
+
+            console2.log("cachedValues.initialDebtValue ", cachedValues.initialDebtValue);
+            console2.log("balanceOfBorrowAfter", balanceOfBorrowAfter);
+            console2.log("balanceOfCollateralAfter", balanceOfCollateralAfter);
+            console2.log("cachedValues.initialCollateral", cachedValues.initialCollateral);
+            uint256 feeRateDeposit = bank.getFeeManager().getConfig().getDepositFee();
+            uint256 feeRateWithdraw = bank.getFeeManager().getConfig().getWithdrawFee();
+            uint256 collateral = cachedValues.initialCollateral;
+            uint256 cutFeeDeposit = (collateral * feeRateDeposit) / DENOMINATOR;
+            collateral -= cutFeeDeposit;
+            uint256 cutFee = (collateral * feeRateWithdraw) / DENOMINATOR;
+
+            uint256 debtValue = coreOracle.getTokenValue(address(USDC), cachedValues.initialDebtValue);
+            uint256 borrowValue = coreOracle.getTokenValue(address(WETH), balanceOfBorrowAfter);
+            uint256 collValue = coreOracle.getTokenValue(address(USDC), balanceOfCollateralAfter);
+            uint256 initialColValue = coreOracle.getTokenValue(address(USDC), collateral - cutFee);
+            assertGe(borrowValue + collValue, initialColValue - debtValue, "User in loss");
+        }
+    }
+
     function testConcreteValue() external {
-        testForkFuzz_BankConvexSpell_openExistingPositionGeneratesRightRewards(1e18, 1.5e18, 10, 1222);
+        testForkFuzz_BankConvexSpell_closeNewPositionNoSwapOnRewards(39802303317, 1171174894986796933, 1);
     }
 
     function _validatePositionSize(
@@ -413,11 +592,10 @@ contract BankConvexSpell is SpellBaseTest {
         uint256 maxPositionSize,
         uint256 positionId
     ) internal view override returns (bool, IBank.Position memory) {
-        IBank.Position memory currentPosition = bank.getPositionInfo(positionId);
-
         uint256 lpBalance = lpTokenAmount;
         uint256 lpPrice = coreOracle.getPrice(lpToken);
         uint256 addedPosSize = (lpPrice * lpBalance) / 10 ** IERC20Metadata(lpToken).decimals();
+        IBank.Position memory currentPosition = bank.getPositionInfo(positionId);
 
         uint256 currentPositionColValue;
         // positionId == 0 might mean new position
@@ -468,7 +646,7 @@ contract BankConvexSpell is SpellBaseTest {
             farmingPoolId: poolId
         });
 
-        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount);
+        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true);
 
         bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, 0));
         uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
@@ -482,16 +660,51 @@ contract BankConvexSpell is SpellBaseTest {
         assertEq(balanceAfterUSDC, 0);
     }
 
-    function _calculateSlippageCurve(address pool, uint256 amount) internal view returns (uint256) {
+    function _openInitialPositionNoRevert(
+        uint256 poolId,
+        uint256 collateralAmount,
+        uint256 borrowAmount
+    ) internal returns (bool) {
+        (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(poolId);
+        vm.label(lpToken, "lpToken");
+        (address pool, , ) = curveOracle.getPoolInfo(lpToken);
+
+        ERC20PresetMinterPauser(address(USDC)).mint(owner, collateralAmount);
+        ERC20PresetMinterPauser(address(USDC)).approve(address(bank), collateralAmount);
+
+        IBasicSpell.OpenPosParam memory param = IBasicSpell.OpenPosParam({
+            strategyId: 0,
+            collToken: address(USDC),
+            collAmount: collateralAmount,
+            borrowToken: address(WETH),
+            borrowAmount: borrowAmount,
+            farmingPoolId: poolId
+        });
+
+        bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, 0));
+        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
+        try bank.execute(0, address(convexSpell), data) {} catch (bytes memory reason) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function _calculateSlippageCurve(address pool, uint256 amount, bool deposit) internal view returns (uint256) {
         uint256[2] memory suppliedAmts;
         suppliedAmts[0] = amount;
-        uint256 slippage = ICurvePool(pool).calc_token_amount(suppliedAmts, true);
+        uint256 slippage = ICurvePool(pool).calc_token_amount(suppliedAmts, deposit);
         slippage -= (slippage * CURVE_FEE) / CURVE_FEE_DENOMINATOR;
         return slippage;
     }
 
     function _calculateSlippage(uint256 amount, uint256 slippagePercentage) internal pure override returns (uint256) {
         return (amount * (DENOMINATOR - slippagePercentage)) / DENOMINATOR;
+    }
+
+    function _calcWithdrawAmountFromCurve(address pool, uint256 amount) internal view returns (uint256) {
+        uint256 slippage = ICurvePool(pool).calc_withdraw_one_coin(amount, 0);
+        return slippage;
     }
 
     // The lp token lands in the reward_contract of the gauge for that poolId of the cvxBooster
@@ -631,6 +844,68 @@ contract BankConvexSpell is SpellBaseTest {
         IRewarder(cvxRewarder).rewardPerToken();
     }
 
+    function _applyFeesOnRewards(uint256[] memory rewards) internal returns (uint256[] memory, uint256[] memory) {
+        uint256[] memory rewardFees = new uint256[](rewards.length);
+        for (uint256 i; i < rewards.length; i++) {
+            uint256 toRefund = rewards[i];
+            uint256 feeRate = bank.getFeeManager().getConfig().getRewardFee();
+            uint256 cutFee = (toRefund * feeRate) / DENOMINATOR;
+            rewardFees[i] = cutFee;
+            rewards[i] = toRefund - cutFee;
+        }
+
+        return (rewards, rewardFees);
+    }
+
+    function _calculateDebtValue(address pool, uint256 collSize, uint256 positionId) internal returns (uint256) {
+        uint256 positionDebt = bank.getPositionDebt(positionId);
+        uint256 removedFromCurve = _calcWithdrawAmountFromCurve(pool, collSize);
+
+        uint256 underlyingValue = coreOracle.getPrice(address(USDC));
+        uint256 diff = ((positionDebt - removedFromCurve) * 1e12) / underlyingValue; // 1e12 cause diff between the tokens decimals is 1e12
+
+        return diff;
+    }
+
+    function _clearAmountZeroRewards(
+        uint256[] memory rewards,
+        address[] memory rewardTokens,
+        address toToken
+    )
+        internal
+        returns (uint256[] memory clearedRewards, address[] memory clearedRewardTokens, bytes[] memory swapDatas)
+    {
+        clearedRewards = new uint256[](rewards.length);
+        clearedRewardTokens = new address[](rewards.length);
+        swapDatas = new bytes[](rewards.length);
+
+        uint256 nonZeroLength;
+        for (uint256 i; i < rewardTokens.length; i++) {
+            if (rewards[i] != 0) {
+                clearedRewards[nonZeroLength] = rewards[i];
+                clearedRewardTokens[nonZeroLength] = rewardTokens[i];
+                swapDatas[nonZeroLength] = _getParaswapData(
+                    rewardTokens[i],
+                    toToken,
+                    rewards[i],
+                    address(convexSpell),
+                    100
+                );
+                nonZeroLength++;
+            }
+        }
+
+        assembly {
+            mstore(clearedRewards, nonZeroLength)
+        }
+        assembly {
+            mstore(clearedRewardTokens, nonZeroLength)
+        }
+        assembly {
+            mstore(swapDatas, nonZeroLength)
+        }
+    }
+
     // TODO maybe take these values from the deployments repo?
     function _assignDeployedContracts() internal override {
         super._assignDeployedContracts();
@@ -648,6 +923,10 @@ contract BankConvexSpell is SpellBaseTest {
 
         coreOracle = bank.getOracle();
         vm.label(address(coreOracle), "coreOracle");
+
+        _intSoftVault = new SoftVault();
+        vm.etch(address(softVaultUSDC), address(_intSoftVault).code);
+        vm.etch(address(softVaultWETH), address(_intSoftVault).code);
     }
 
     function _setMockOracle() internal override {
@@ -658,10 +937,10 @@ contract BankConvexSpell is SpellBaseTest {
         tokens[2] = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84; // stETH
         tokens[3] = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE; // ETH
         uint256[] memory prices = new uint256[](4);
-        prices[0] = 3811510000;
-        prices[1] = 3811510000000000000000;
+        prices[0] = 1000022840000000000;
+        prices[1] = 3414229970000000000000;
         prices[2] = 3798621950680000000000;
-        prices[3] = 3811510000000000000000;
+        prices[3] = 3414229970000000000000;
         mockOracle.setPrice(tokens, prices);
         vm.startPrank(IOwnable(address(coreOracle)).owner());
         address[] memory oracles = new address[](4);

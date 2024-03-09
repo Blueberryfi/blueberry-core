@@ -49,6 +49,8 @@ interface ICurvePool {
 
     function calc_token_amount(uint256[2] memory amounts, bool is_deposit) external view returns (uint256);
 
+    function calc_withdraw_one_coin(uint256 amount, int128 tokenIndex) external view returns (uint256);
+
     // 3crv pool specific functions
 
     function owner() external view returns (address);

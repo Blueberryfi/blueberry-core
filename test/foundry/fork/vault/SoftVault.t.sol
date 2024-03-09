@@ -11,6 +11,7 @@ import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/pre
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
+import { IExtBErc20 } from "@test/interfaces/IExtBErc20.sol";
 
 /// @title SoftVaultTest
 /// @notice Test common vault properties
@@ -343,7 +344,7 @@ contract SoftVaultTest is SoftVaultBaseTest {
         uint256 percent = 1e18;
 
         underlying = ERC20PresetMinterPauser(DAI);
-        bToken = IBErc20(BDAI);
+        bToken = IBErc20(address(BDAI));
         vault = SoftVault(
             address(
                 new ERC1967Proxy(
