@@ -30,7 +30,6 @@ contract ParaSwapSnapshot is Test {
         }
 
         string[] memory inputs = new string[](8);
-
         inputs[0] = "npx";
         inputs[1] = "ts-node";
         inputs[2] = "./script/paraswap.ts";

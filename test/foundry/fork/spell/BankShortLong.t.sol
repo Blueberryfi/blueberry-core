@@ -10,7 +10,7 @@ import { IOwnable } from "@test/interfaces/IOwnable.sol";
 import { ShortLongSpell } from "@contracts/spell/ShortLongSpell.sol";
 import { ICoreOracle } from "@contracts/interfaces/ICoreOracle.sol";
 import { IBasicSpell } from "@contracts/interfaces/spell/IBasicSpell.sol";
-import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
+import { IExtBErc20 } from "@test/interfaces/IExtBErc20.sol";
 import { IBank } from "@contracts/interfaces/IBank.sol";
 import "@contracts/utils/BlueberryConst.sol" as Constants;
 import { ShortLongStrategies, ShortLongStrategy } from "@test/fork/spell/ShortLongStrategies.t.sol";
@@ -45,8 +45,8 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
 
         _assignDeployedContracts();
 
-        _enableBToken(IBErc20(BDAI));
-        _enableBToken(IBErc20(BWBTC));
+        _enableBToken(IExtBErc20(BDAI));
+        _enableBToken(IExtBErc20(BWBTC));
 
         spellOwner = IOwnable(address(shortLongSpell)).owner();
     }

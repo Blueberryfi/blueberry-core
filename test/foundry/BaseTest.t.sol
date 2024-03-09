@@ -14,6 +14,7 @@ import { BlueberryBank } from "@contracts/BlueberryBank.sol";
 import { ProtocolConfig } from "@contracts/ProtocolConfig.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
+import { IExtBErc20 } from "@test/interfaces/IExtBErc20.sol";
 import { FeeManager } from "@contracts/FeeManager.sol";
 import { IWETH } from "@contracts/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -30,8 +31,8 @@ abstract contract BaseTest is Test, Addresses {
     ProtocolConfig public config;
     FeeManager public feeManager;
 
-    IBErc20 public bTokenUSDC;
-    IBErc20 public bTokenWETH;
+    IExtBErc20 public bTokenUSDC;
+    IExtBErc20 public bTokenWETH;
 
     SoftVault public softVaultUSDC;
     SoftVault public softVaultWETH;
@@ -107,8 +108,8 @@ abstract contract BaseTest is Test, Addresses {
         softVaultUSDC = SoftVault(0x20E83eF1f627629DAf745A205Dcd0D88eff5b402); // Soft Vault USDC Mainnet
         softVaultWETH = SoftVault(0xcCd438a78376955A3b174be619E50Aa3DdD65469); // Soft Vault WETH Mainnet
 
-        bTokenUSDC = IBErc20(0x649127D0800a8c68290129F091564aD2F1D62De1); // USDC bToken Mainnet
-        bTokenWETH = IBErc20(0x643d448CEa0D3616F0b32E3718F563b164e7eDd2); // WETH bToken Mainnet
+        bTokenUSDC = IExtBErc20(0x649127D0800a8c68290129F091564aD2F1D62De1); // USDC bToken Mainnet
+        bTokenWETH = IExtBErc20(0x643d448CEa0D3616F0b32E3718F563b164e7eDd2); // WETH bToken Mainnet
 
         comptroller = IComptroller(payable(0xfFadB0bbA4379dFAbFB20CA6823F6EC439429ec2)); // Comptroller address Mainnet
         comptrollerAdmin = comptroller.admin();
@@ -165,9 +166,9 @@ abstract contract BaseTest is Test, Addresses {
      *      We need to enable the market in Comptroller
      * @param token the market (BToken) we want to enable
      */
-    function _enableBToken(IBErc20 token) internal {
+    function _enableBToken(IExtBErc20 token) internal {
         vm.startPrank(comptrollerAdmin);
-        comptroller._setBorrowPaused(token, false);
+        comptroller._setBorrowPaused(IBErc20(address(token)), false);
         vm.stopPrank();
     }
 }

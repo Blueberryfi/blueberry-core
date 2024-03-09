@@ -41,14 +41,6 @@ export const getParaswapCalldata = async (
   return calldata;
 };
 
-const [
-  fromToken,
-  toToken,
-  amount,
-  userAddr,
-  maxImpact
-] = process.argv.slice(2)
+const [fromToken, toToken, amount, userAddr, maxImpact] = process.argv.slice(2);
 
-getParaswapCalldata(
-  fromToken, toToken, amount, userAddr, Number(maxImpact)
-).then(res => console.log(res.data))
+getParaswapCalldata(fromToken, toToken, amount, userAddr, Number(maxImpact)).then((res) => console.log(res.data));
