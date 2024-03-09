@@ -93,11 +93,13 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         _validatePosSize(positionId, vars.strategyId);
         _validateLTV(positionId, vars.strategyId);
 
-        bytes memory colTokenSwapData = "";
-
         IBank.Position memory position = bank.getPositionInfo(positionId);
 
-        uint256 swapAmount = quote(strategy.vault, abi.encodeCall(SoftVault.withdraw, position.collateralSize / 2));
+        uint256 swapAmount = quote(
+            address(shortLongSpell.getWrappedERC20()),
+            strategy.vault,
+            abi.encodeCall(SoftVault.withdraw, position.collateralSize)
+        );
 
         swapData = _getParaswapData(
             vars.swapToken,
@@ -107,21 +109,32 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
             vars.maxImpact
         );
 
+        uint256 colTokenSwapAmount = vars.collAmount / 2;
+        bytes memory colTokenSwapData = _getParaswapData(
+            vars.collToken,
+            vars.borrowToken,
+            colTokenSwapAmount,
+            address(shortLongSpell),
+            vars.maxImpact
+        );
+
         IBasicSpell.ClosePosParam memory closePositionParam = IBasicSpell.ClosePosParam({
             strategyId: vars.strategyId,
-            collToken: WSTETH,
+            collToken: vars.collToken,
             borrowToken: vars.borrowToken,
             amountRepay: type(uint256).max,
             amountPosRemove: type(uint256).max,
             amountShareWithdraw: type(uint256).max,
             amountOutMin: 1,
-            amountToSwap: 0,
+            amountToSwap: colTokenSwapAmount,
             swapData: colTokenSwapData
         });
 
         data = abi.encodeCall(ShortLongSpell.closePosition, (closePositionParam, swapData));
 
         bank.execute(positionId, address(shortLongSpell), data);
+
+        _validatePosIsClosed(positionId);
     }
 
     function testForkFuzz_BankShortLong_openPosition(uint256 collAmount, uint256 borrowAmount) external {
@@ -218,6 +231,12 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         } catch {}
     }
 
+    function _validatePosIsClosed(uint256 positionId) internal {
+        IBank.Position memory pos = bank.getPositionInfo(positionId);
+        uint256 posSize = bank.getOracle().getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
+        assertEq(posSize, 0);
+    }
+
     function _validatePosSize(uint256 positionId, uint256 strategyId) internal {
         IBank.Position memory pos = bank.getPositionInfo(positionId);
         uint256 posSize = bank.getOracle().getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
@@ -250,6 +269,8 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         uint256 maxPositionSize,
         uint256 positionId
     ) internal view override returns (bool, IBank.Position memory) {}
+
+    function _setMockOracle() internal override {}
 
     function _assignDeployedContracts() internal override {
         super._assignDeployedContracts();
