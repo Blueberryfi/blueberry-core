@@ -17,10 +17,13 @@ import { ShortLongStrategies, ShortLongStrategy } from "@test/fork/spell/ShortLo
 import { ParaSwapSnapshot } from "@test/fork/ParaSwapSnapshot.t.sol";
 import { Quoter } from "@test/Quoter.t.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
+import { MockOracle } from "@contracts/mock/MockOracle.sol";
+import { IExtCoreOracle } from "@test/interfaces/IExtCoreOracle.sol";
 
 contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapshot, Quoter {
     ShortLongSpell public shortLongSpell;
     ICoreOracle public coreOracle;
+    MockOracle public mockOracle;
 
     address public constant SHORT_LONG_SPELL_PROXY = 0x55d206c1A11F4b2f60459e88B5c601A4E1Cd41a5;
     address public constant SHORT_LONG_SPELL_IMPLEMENTATION = 0x6304029C11589f3754d0E9640536949fD41a1519;
@@ -38,6 +41,7 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         uint256 farmingPoolId;
         address swapToken;
         uint256 maxImpact;
+        uint256 balance;
     }
 
     function setUp() public override {
@@ -51,7 +55,8 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         spellOwner = IOwnable(address(shortLongSpell)).owner();
     }
 
-    function testFork_BankShortLong_openPosition_closePosition() external {
+    function testForkFuzz_BankShortLong_openPosition_closePosition(uint256 swapTokenMultiplier) external {
+        swapTokenMultiplier = bound(swapTokenMultiplier, 0.2e18, 2e18);
         Vars memory vars = Vars({
             strategyId: WSTETH_STRATEGY_ID,
             collToken: WBTC,
@@ -60,7 +65,8 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
             borrowAmount: 5000e18,
             farmingPoolId: 0,
             swapToken: WSTETH,
-            maxImpact: 100
+            maxImpact: 100,
+            balance: 0
         });
 
         IBasicSpell.Strategy memory strategy = shortLongSpell.getStrategy(vars.strategyId);
@@ -88,6 +94,8 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         bytes memory data = abi.encodeCall(ShortLongSpell.openPosition, (openPositionParam, swapData));
         uint256 positionId = 0;
         positionId = bank.execute(positionId, address(shortLongSpell), data);
+        vars.balance = bank.getPositionValue(positionId);
+        emit log_uint(vars.balance);
 
         assertGt(positionId, 0, "New position created");
         _validatePosSize(positionId, vars.strategyId);
@@ -131,6 +139,18 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         });
 
         data = abi.encodeCall(ShortLongSpell.closePosition, (closePositionParam, swapData));
+
+        _setPriceMultiplier(vars.swapToken, swapTokenMultiplier);
+        if (swapTokenMultiplier > 1.1e18) {
+            assertGt(bank.getPositionValue(positionId), vars.balance, "Position increased in value");
+        }
+        if (swapTokenMultiplier <= 1e18) {
+            assertLt(
+                bank.getPositionValue(positionId),
+                vars.balance,
+                "Position decreased increased in value (fees or negative price change)"
+            );
+        }
 
         bank.execute(positionId, address(shortLongSpell), data);
 
@@ -270,8 +290,6 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         uint256 positionId
     ) internal view override returns (bool, IBank.Position memory) {}
 
-    function _setMockOracle() internal override {}
-
     function _assignDeployedContracts() internal override {
         super._assignDeployedContracts();
 
@@ -285,5 +303,34 @@ contract BankShortLongTest is SpellBaseTest, ShortLongStrategies, ParaSwapSnapsh
         vm.label(BWSTETH, "bWSTETH");
 
         coreOracle = bank.getOracle();
+    }
+
+    function _getBalance(Vars memory vars) internal view returns (uint256) {
+        return
+            bank.getOracle().getTokenValue(vars.collToken, ERC20PresetMinterPauser(vars.collToken).balanceOf(owner)) +
+            bank.getOracle().getTokenValue(
+                vars.borrowToken,
+                ERC20PresetMinterPauser(vars.borrowToken).balanceOf(owner)
+            );
+    }
+
+    function _setMockOracle() internal override {}
+
+    function _setPriceMultiplier(address token, uint256 multiplier) internal {
+        mockOracle = new MockOracle();
+        address[] memory tokens = new address[](4);
+        tokens[0] = USDC;
+        tokens[1] = WETH_ADDRESS;
+        tokens[2] = WBTC;
+        tokens[3] = WSTETH;
+        uint256[] memory prices = new uint256[](4);
+        address[] memory oracles = new address[](4);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            prices[i] = (bank.getOracle().getPrice(tokens[i]) * (tokens[i] == token ? multiplier : 1e18)) / 1e18;
+            oracles[i] = address(mockOracle);
+        }
+        mockOracle.setPrice(tokens, prices);
+        vm.prank(IOwnable(address(coreOracle)).owner());
+        IExtCoreOracle(address(coreOracle)).setRoutes(tokens, oracles);
     }
 }
