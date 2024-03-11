@@ -56,7 +56,7 @@ abstract contract BaseTest is Test {
     function setUp() public virtual {
         // Forking Ethereum Mainnet at Feb-29-2024 01:47:47 AM +UTC
         // TODO modularize this to select various networks
-        vm.createSelectFork({ blockNumber: 19_330_000, urlOrAlias: "mainnet" });
+        vm.createSelectFork({ blockNumber: 19414468, urlOrAlias: "mainnet" });
         _generateAndLabel();
         _assignDeployedContracts();
         _deployContracts();
