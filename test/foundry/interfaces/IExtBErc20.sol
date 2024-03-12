@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.22;
 
-interface IBErc20 {
+interface IExtBErc20 {
     function decimals() external view returns (uint8);
 
     function underlying() external view returns (address);
@@ -28,4 +28,6 @@ interface IBErc20 {
     function getAccountSnapshot(address account) external view returns (uint256, uint256, uint256, uint256);
 
     function exchangeRateCurrent() external returns (uint256);
+
+    function getCash() external view returns (uint256);
 }

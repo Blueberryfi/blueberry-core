@@ -1101,7 +1101,7 @@ describe('ICHI Angel Vaults Spell', () => {
       const positionId = nextPosId.sub(1);
       const positionInfo = await bank.getPositionInfo(positionId);
       const underlyingShareAmount = positionInfo.underlyingVaultShare;
-  
+
       await bank.execute(
         positionId,
         spell.address,

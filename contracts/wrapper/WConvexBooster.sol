@@ -58,11 +58,11 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
     /// @dev Mapping from token id to initialTokenPerShare
     mapping(uint256 => mapping(address => uint256)) private _initialTokenPerShare;
     /// @dev CVX reward per share by pid
-    mapping(uint256 => uint256) private _cvxPerShareByPid;
+    mapping(uint256 => uint256) internal _cvxPerShareByPid;
     /// token id => cvxPerShareDebt;
-    mapping(uint256 => uint256) private _cvxPerShareDebt;
+    mapping(uint256 => uint256) internal _cvxPerShareDebt;
     /// @dev pid => last crv reward per token
-    mapping(uint256 => uint256) private _lastCrvPerTokenByPid;
+    mapping(uint256 => uint256) internal _lastCrvPerTokenByPid;
     /// @dev pid => escrow contract address
     mapping(uint256 => address) private _escrows;
     /// @dev pid => A set of extra rewarders
