@@ -50,6 +50,8 @@ abstract contract BaseTest is Test, Addresses {
     address public carol;
 
     function setUp() public virtual {
+        // Forking Ethereum Mainnet at Feb-29-2024 01:47:47 AM +UTC
+        // TODO modularize this to select various networks
         (string memory urlOrAlias, uint256 blockNumber) = _getFork();
         vm.createSelectFork({ urlOrAlias: urlOrAlias, blockNumber: blockNumber });
         _generateAndLabel();
@@ -59,8 +61,6 @@ abstract contract BaseTest is Test, Addresses {
     }
 
     function _getFork() internal pure virtual returns (string memory, uint256) {
-        // TODO modularize this to select various networks
-        // Forking Ethereum Mainnet at Feb-29-2024 01:47:47 AM +UTC
         return ("mainnet", 19_330_000);
     }
 
