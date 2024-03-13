@@ -427,14 +427,14 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         assertEq(balanceAfterUSDC, 0, "Remaining USDC in the initiator");
     }
 
-    function testForkFuzz_BankConvexSpell_closeNewPositionNoSwapOnRewards(
+    function testForkFuzz_BankConvexSpell_closeNewPositionNoSwapOnRewardsNoCollateralInMoneyMarket(
         uint256 collateralAmount,
         uint256 borrowAmount,
         uint256 timestamp
     ) public {
         collateralAmount = bound(collateralAmount, 1, type(uint96).max - 1);
         borrowAmount = bound(borrowAmount, 1, type(uint96).max - 1);
-        timestamp = bound(timestamp, 1, 30 days);
+        timestamp = bound(timestamp, 1, 1 days);
 
         _setMockOracle();
         (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
@@ -502,8 +502,11 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
             // Calculating max shares that can be redeemed from the money market
             cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+            console2.log("getcash before ", bTokenUSDC.getCash());
             if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
                 cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;
+            console2.log("max shared redeemed before", cachedValues.maxSharesRedeemed);
+
             closePosParam.amountShareWithdraw = cachedValues.maxSharesRedeemed;
 
             {
@@ -522,14 +525,16 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
                 // If we need to swap more than initial collateral that was supplied, we need to increase the position.
                 if (closePosParam.amountToSwap > cachedValues.initialCollateral) {
-                    _increasePosition(
-                        closePosParam.amountToSwap - cachedValues.initialCollateral,
-                        cachedValues.positionId
-                    );
+                    uint256 amountToIncrease = closePosParam.amountToSwap - cachedValues.initialCollateral;
+                    amountToIncrease = amountToIncrease * 1.1e18; // we increase with 10% to cover the fees
+                    _increasePosition(amountToIncrease, cachedValues.positionId);
+
                     currentPosition = bank.getPositionInfo(cachedValues.positionId);
                     cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+                    cachedValues.initialCollateral += amountToIncrease;
                     if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
                         cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;
+
                     closePosParam.amountShareWithdraw = cachedValues.maxSharesRedeemed;
                 }
                 bytes memory swapDataDebt = _getParaswapData(
@@ -602,25 +607,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
             uint256 collateral = cachedValues.initialCollateral;
 
-            {
-                uint256 feeRateDeposit = bank.getFeeManager().getConfig().getDepositFee();
-                uint256 cutFeeDeposit = (collateral * feeRateDeposit) / DENOMINATOR;
-                collateral -= cutFeeDeposit;
-                if (
-                    block.timestamp <
-                    bank.getFeeManager().getConfig().getWithdrawVaultFeeWindowStartTime() +
-                        bank.getFeeManager().getConfig().getWithdrawVaultFeeWindow()
-                ) {
-                    uint256 feeRateVaultWithdraw = bank.getFeeManager().getConfig().getWithdrawVaultFee();
-                    uint256 cutFeeVaultWithdraw = (collateral * feeRateVaultWithdraw) / DENOMINATOR;
-                    collateral -= cutFeeVaultWithdraw;
-                }
+            collateral = _calculateFeesOnCollateral(collateral, false);
 
-                uint256 feeRateWithdraw = bank.getFeeManager().getConfig().getWithdrawFee();
-
-                uint256 cutFeeWithdraw = (collateral * feeRateWithdraw) / DENOMINATOR;
-                collateral -= cutFeeWithdraw;
-            }
             uint256 debtValue = coreOracle.getTokenValue(address(USDC), closePosParam.amountToSwap);
             uint256 borrowValue = coreOracle.getTokenValue(address(WETH), balanceOfBorrowAfter);
             uint256 collValue = coreOracle.getTokenValue(address(USDC), balanceOfCollateralAfter);
@@ -630,9 +618,418 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         }
     }
 
+    function testForkFuzz_BankConvexSpell_closeNewPositionNoSwapOnRewardsWithCollateralInMoneyMarket(
+        uint256 existingCollateral,
+        uint256 collateralAmount,
+        uint256 borrowAmount,
+        uint256 timestamp
+    ) public {
+        existingCollateral = bound(collateralAmount, 1e18, type(uint96).max - 1);
+
+        collateralAmount = bound(collateralAmount, 1, type(uint96).max - 1);
+        borrowAmount = bound(borrowAmount, 1, type(uint96).max - 1);
+        timestamp = bound(timestamp, 1, 1 days);
+
+        WETH.deposit{ value: existingCollateral }();
+        WETH.approve(address(bTokenWETH), existingCollateral);
+        bTokenWETH.mint(existingCollateral);
+
+        _setMockOracle();
+        (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
+        (address pool, , ) = curveOracle.getPoolInfo(lpToken);
+        CachedValues memory cachedValues = CachedValues({
+            poolId: 25,
+            positionId: 1,
+            lpToken: lpToken,
+            initialRewardPerShare: 0,
+            pool: pool,
+            timestamp: timestamp,
+            initialDebtValue: 0,
+            initialCollateral: collateralAmount,
+            maxSharesRedeemed: 0
+        });
+
+        // Opening initial position with random values, skip when it fails as we don't test the open initial position
+        if (!_openInitialPositionNoRevert(cachedValues.poolId, collateralAmount, borrowAmount)) return;
+
+        // avoid stack-too-deep, calculating initial reward per token for crv rewards
+        {
+            ICvxBooster cvxBooster = ICvxBooster(address(wConvexBooster.getCvxBooster())); // modified interface cast
+
+            (, , , address crvRewarder, , ) = cvxBooster.poolInfo(cachedValues.poolId);
+
+            cachedValues.initialRewardPerShare = IRewarder(crvRewarder).rewardPerToken();
+        }
+
+        IBank.Position memory currentPosition = bank.getPositionInfo(cachedValues.positionId);
+
+        IBasicSpell.ClosePosParam memory closePosParam = IBasicSpell.ClosePosParam({
+            strategyId: 0,
+            collToken: address(USDC),
+            borrowToken: address(WETH),
+            amountRepay: type(uint256).max,
+            amountPosRemove: currentPosition.collateralSize,
+            amountShareWithdraw: type(uint256).max, // use full shares
+            amountOutMin: 0,
+            amountToSwap: 0, // This computed after interest accrued during warp
+            swapData: ""
+        });
+
+        {
+            CachedBalances memory cachedBalances;
+            // getting the rewards before the time passes
+            (uint256[] memory rewardsBefore, address[] memory rewardTokensBefore) = _getRewards(cachedValues);
+            cachedBalances.balanceOfUserRewardsBefore = new uint256[](rewardsBefore.length);
+            cachedBalances.balanceOfTreasuryRewardsBefore = new uint256[](rewardsBefore.length);
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfUserRewardsBefore[i] = ERC20PresetMinterPauser(rewardTokensBefore[i]).balanceOf(
+                    owner
+                );
+            }
+
+            address feeTreasury = bank.getFeeManager().getConfig().getTreasury();
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfTreasuryRewardsBefore[i] = ERC20PresetMinterPauser(rewardTokensBefore[i])
+                    .balanceOf(feeTreasury);
+            }
+
+            // we move the timestamp
+            vm.warp(block.timestamp + cachedValues.timestamp);
+
+            // // Calculating max shares that can be redeemed from the money market
+            cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+            // console2.log("getcash before ", bTokenUSDC.getCash());
+            // if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
+            //     cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;
+            // console2.log("max shared redeemed before", cachedValues.maxSharesRedeemed);
+
+            // closePosParam.amountShareWithdraw = cachedValues.maxSharesRedeemed;
+
+            {
+                uint256 debtAfter = _calculateDebtValue(
+                    cachedValues.pool,
+                    currentPosition.collateralSize,
+                    cachedValues.positionId
+                );
+
+                // debt value is in borrow token so we need to normalize in collateral token
+                uint256 debtValue = coreOracle.getTokenValue(address(WETH), debtAfter);
+                uint256 collTokenPrice = coreOracle.getPrice(address(USDC));
+
+                // Calculate how much we need to swap to cover the debt accrued by the borrowed funds
+                closePosParam.amountToSwap = (debtValue * 1e18) / collTokenPrice;
+
+                // If we need to swap more than initial collateral that was supplied, we need to increase the position.
+                if (closePosParam.amountToSwap > cachedValues.initialCollateral) {
+                    uint256 amountToIncrease = closePosParam.amountToSwap - cachedValues.initialCollateral;
+                    amountToIncrease = amountToIncrease * 1.1e18; // we increase with 10% to cover the fees
+                    _increasePosition(amountToIncrease, cachedValues.positionId);
+
+                    currentPosition = bank.getPositionInfo(cachedValues.positionId);
+                    // cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+                    cachedValues.initialCollateral += amountToIncrease;
+                    // if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
+                    //     cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;
+
+                    // closePosParam.amountShareWithdraw = cachedValues.maxSharesRedeemed;
+                }
+                bytes memory swapDataDebt = _getParaswapData(
+                    address(USDC),
+                    address(WETH),
+                    closePosParam.amountToSwap,
+                    address(convexSpell),
+                    100
+                );
+                closePosParam.swapData = swapDataDebt;
+            }
+            // rewards should have been accrued
+            (uint256[] memory rewards, address[] memory rewardTokens) = _getRewards(cachedValues);
+
+            bytes[] memory swapDatas = new bytes[](rewards.length);
+            IConvexSpell.ClosePositionFarmParam memory closePositionFarmParams = IConvexSpell.ClosePositionFarmParam({
+                param: closePosParam,
+                amounts: rewards,
+                swapDatas: swapDatas
+            });
+
+            bytes memory data = abi.encodeCall(ConvexSpell.closePositionFarm, (closePositionFarmParams));
+
+            // execute the spell, should yield the rewards in the owner's wallet
+            bank.execute(cachedValues.positionId, address(convexSpell), data);
+
+            // checking that the balances in the wallet are rewards - fees
+            cachedBalances.balanceOfUserRewardsAfter = new uint256[](rewardTokens.length);
+            cachedBalances.balanceOfTreasuryRewardsAfter = new uint256[](rewardTokens.length);
+            for (uint256 i; i < rewardTokens.length; ++i) {
+                cachedBalances.balanceOfUserRewardsAfter[i] = ERC20PresetMinterPauser(rewardTokens[i]).balanceOf(owner);
+            }
+
+            // checking that the treasury balance was updated accordingly
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfTreasuryRewardsAfter[i] = ERC20PresetMinterPauser(rewardTokensBefore[i])
+                    .balanceOf(feeTreasury);
+            }
+
+            assertEq(rewardsBefore.length, rewards.length, "Rewards length mismatch");
+            for (uint i; i < rewardsBefore.length; ++i) {
+                uint256 toRefund = rewards[i] - rewardsBefore[i];
+                uint256 feeRate = bank.getFeeManager().getConfig().getRewardFee();
+                uint256 cutFee = (toRefund * feeRate) / DENOMINATOR;
+                assertApproxEqAbs(
+                    toRefund - cutFee,
+                    cachedBalances.balanceOfUserRewardsAfter[i] - cachedBalances.balanceOfUserRewardsBefore[i],
+                    1,
+                    "Rewards balance mismatch for the user"
+                );
+
+                assertApproxEqAbs(
+                    cutFee,
+                    cachedBalances.balanceOfTreasuryRewardsAfter[i] - cachedBalances.balanceOfTreasuryRewardsBefore[i],
+                    1,
+                    "Rewards balance mismatch for the treasury"
+                );
+            }
+        }
+        {
+            // checking that the position closed and that the user is not in loss, should accrue interest from the money market
+            IBank.Position memory afterPosition = bank.getPositionInfo(cachedValues.positionId);
+
+            assertEq(afterPosition.collateralSize, 0, "After position collateral size not cleared");
+            assertEq(afterPosition.debtShare, 0, "After position debt share not cleared");
+            assertEq(afterPosition.underlyingVaultShare, 0, "After position underlying vault share not cleared"); // NOTE this fails as vault shares might still exists
+
+            uint256 remainedSharesInMoneyMarket = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+            assertEq(
+                cachedValues.maxSharesRedeemed - currentPosition.underlyingVaultShare,
+                remainedSharesInMoneyMarket
+            );
+
+            uint256 balanceOfCollateralAfter = ERC20PresetMinterPauser(address(USDC)).balanceOf(owner);
+            uint256 balanceOfBorrowAfter = ERC20PresetMinterPauser(address(WETH)).balanceOf(owner);
+
+            uint256 collateral = cachedValues.initialCollateral;
+
+            collateral = _calculateFeesOnCollateral(collateral, false);
+
+            uint256 debtValue = coreOracle.getTokenValue(address(USDC), closePosParam.amountToSwap);
+            uint256 borrowValue = coreOracle.getTokenValue(address(WETH), balanceOfBorrowAfter);
+            uint256 collValue = coreOracle.getTokenValue(address(USDC), balanceOfCollateralAfter);
+            uint256 initialColValue = coreOracle.getTokenValue(address(USDC), collateral);
+
+            assertGe(borrowValue + collValue, initialColValue - debtValue, "User in loss");
+        }
+    }
+
+    function testForkFuzz_BankConvexSpell_closeRandomPositionSizeNoSwapOnRewardsWithCollateralInMoneyMarket(
+        uint256 existingCollateral,
+        uint256 collateralAmount,
+        uint256 borrowAmount,
+        uint256 closeShares,
+        uint256 timestamp
+    ) public {
+        existingCollateral = bound(collateralAmount, 1e18, type(uint96).max - 1);
+
+        collateralAmount = bound(collateralAmount, 1, type(uint96).max - 1);
+        borrowAmount = bound(borrowAmount, 1, type(uint96).max - 1);
+        timestamp = bound(timestamp, 1, 1 days);
+
+        // adding underlying to the money market
+        WETH.deposit{ value: existingCollateral }();
+        WETH.approve(address(bTokenWETH), existingCollateral);
+        bTokenWETH.mint(existingCollateral);
+
+        _setMockOracle();
+        (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
+        (address pool, , ) = curveOracle.getPoolInfo(lpToken);
+        CachedValues memory cachedValues = CachedValues({
+            poolId: 25,
+            positionId: 1,
+            lpToken: lpToken,
+            initialRewardPerShare: 0,
+            pool: pool,
+            timestamp: timestamp,
+            initialDebtValue: 0,
+            initialCollateral: collateralAmount,
+            maxSharesRedeemed: 0
+        });
+
+        // Opening initial position with random values, skip when it fails as we don't test the open initial position
+        if (!_openInitialPositionNoRevert(cachedValues.poolId, collateralAmount, borrowAmount)) return;
+
+        // avoid stack-too-deep, calculating initial reward per token for crv rewards
+        {
+            ICvxBooster cvxBooster = ICvxBooster(address(wConvexBooster.getCvxBooster())); // modified interface cast
+
+            (, , , address crvRewarder, , ) = cvxBooster.poolInfo(cachedValues.poolId);
+
+            cachedValues.initialRewardPerShare = IRewarder(crvRewarder).rewardPerToken();
+        }
+
+        IBank.Position memory currentPosition = bank.getPositionInfo(cachedValues.positionId);
+
+        console2.log("bfore ", currentPosition.underlyingVaultShare);
+
+        // we bound the shares to 10% of the position and 100%
+        bound(
+            closeShares,
+            (currentPosition.underlyingVaultShare * 0.1e18) / 1e18,
+            currentPosition.underlyingVaultShare
+        );
+
+        IBasicSpell.ClosePosParam memory closePosParam = IBasicSpell.ClosePosParam({
+            strategyId: 0,
+            collToken: address(USDC),
+            borrowToken: address(WETH),
+            amountRepay: type(uint256).max,
+            amountPosRemove: currentPosition.collateralSize,
+            amountShareWithdraw: closeShares, // use fuzzed value
+            amountOutMin: 0,
+            amountToSwap: 0, // This computed after interest accrued during warp
+            swapData: ""
+        });
+
+        {
+            CachedBalances memory cachedBalances;
+            // getting the rewards before the time passes
+            (uint256[] memory rewardsBefore, address[] memory rewardTokensBefore) = _getRewards(cachedValues);
+            cachedBalances.balanceOfUserRewardsBefore = new uint256[](rewardsBefore.length);
+            cachedBalances.balanceOfTreasuryRewardsBefore = new uint256[](rewardsBefore.length);
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfUserRewardsBefore[i] = ERC20PresetMinterPauser(rewardTokensBefore[i]).balanceOf(
+                    owner
+                );
+            }
+
+            address feeTreasury = bank.getFeeManager().getConfig().getTreasury();
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfTreasuryRewardsBefore[i] = ERC20PresetMinterPauser(rewardTokensBefore[i])
+                    .balanceOf(feeTreasury);
+            }
+
+            // we move the timestamp
+            vm.warp(block.timestamp + cachedValues.timestamp);
+
+            // Storing the initial shares in the money market to compare at the final
+            cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+
+            {
+                uint256 debtAfter = _calculateDebtValue(
+                    cachedValues.pool,
+                    currentPosition.collateralSize,
+                    cachedValues.positionId
+                );
+
+                // debt value is in borrow token so we need to normalize in collateral token
+                uint256 debtValue = coreOracle.getTokenValue(address(WETH), debtAfter);
+                uint256 collTokenPrice = coreOracle.getPrice(address(USDC));
+
+                // Calculate how much we need to swap to cover the debt accrued by the borrowed funds
+                closePosParam.amountToSwap = (debtValue * 1e18) / collTokenPrice;
+                // closePosParam.amountToSwap = 0;
+
+                // If we need to swap more than initial collateral that was supplied, we need to increase the position.
+                if (closePosParam.amountToSwap > cachedValues.initialCollateral) {
+                    uint256 amountToIncrease = closePosParam.amountToSwap - cachedValues.initialCollateral;
+                    amountToIncrease = amountToIncrease * 1.1e18; // we increase with 10% to cover the fees
+                    _increasePosition(amountToIncrease, cachedValues.positionId);
+
+                    currentPosition = bank.getPositionInfo(cachedValues.positionId);
+                    cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+
+                    cachedValues.initialCollateral += amountToIncrease;
+                }
+                bytes memory swapDataDebt = _getParaswapData(
+                    address(USDC),
+                    address(WETH),
+                    closePosParam.amountToSwap,
+                    address(convexSpell),
+                    100
+                );
+                closePosParam.swapData = swapDataDebt;
+            }
+            // rewards should have been accrued
+            (uint256[] memory rewards, address[] memory rewardTokens) = _getRewards(cachedValues);
+
+            bytes[] memory swapDatas = new bytes[](rewards.length);
+            IConvexSpell.ClosePositionFarmParam memory closePositionFarmParams = IConvexSpell.ClosePositionFarmParam({
+                param: closePosParam,
+                amounts: rewards,
+                swapDatas: swapDatas
+            });
+
+            bytes memory data = abi.encodeCall(ConvexSpell.closePositionFarm, (closePositionFarmParams));
+
+            // execute the spell, should yield the rewards in the owner's wallet
+            bank.execute(cachedValues.positionId, address(convexSpell), data);
+
+            // checking that the balances in the wallet are rewards - fees
+            cachedBalances.balanceOfUserRewardsAfter = new uint256[](rewardTokens.length);
+            cachedBalances.balanceOfTreasuryRewardsAfter = new uint256[](rewardTokens.length);
+            for (uint256 i; i < rewardTokens.length; ++i) {
+                cachedBalances.balanceOfUserRewardsAfter[i] = ERC20PresetMinterPauser(rewardTokens[i]).balanceOf(owner);
+            }
+
+            // checking that the treasury balance was updated accordingly
+            for (uint256 i; i < rewardsBefore.length; ++i) {
+                cachedBalances.balanceOfTreasuryRewardsAfter[i] = ERC20PresetMinterPauser(rewardTokensBefore[i])
+                    .balanceOf(feeTreasury);
+            }
+
+            assertEq(rewardsBefore.length, rewards.length, "Rewards length mismatch");
+            for (uint i; i < rewardsBefore.length; ++i) {
+                uint256 toRefund = rewards[i] - rewardsBefore[i];
+                uint256 feeRate = bank.getFeeManager().getConfig().getRewardFee();
+                uint256 cutFee = (toRefund * feeRate) / DENOMINATOR;
+                assertApproxEqAbs(
+                    toRefund - cutFee,
+                    cachedBalances.balanceOfUserRewardsAfter[i] - cachedBalances.balanceOfUserRewardsBefore[i],
+                    1,
+                    "Rewards balance mismatch for the user"
+                );
+
+                assertApproxEqAbs(
+                    cutFee,
+                    cachedBalances.balanceOfTreasuryRewardsAfter[i] - cachedBalances.balanceOfTreasuryRewardsBefore[i],
+                    1,
+                    "Rewards balance mismatch for the treasury"
+                );
+            }
+        }
+        {
+            // checking that the position closed and that the user is not in loss, should accrue interest from the money market
+            IBank.Position memory afterPosition = bank.getPositionInfo(cachedValues.positionId);
+            currentPosition.underlyingVaultShare;
+            assertEq(afterPosition.collateralSize, 0, "After position collateral size not cleared");
+            assertEq(afterPosition.debtShare, 0, "After position debt share not cleared");
+
+            // making sure the remaining shares in the position matches the initial value - removed
+            assertEq(
+                afterPosition.underlyingVaultShare,
+                currentPosition.underlyingVaultShare - closeShares,
+                "After position underlying vault share mismatch"
+            );
+
+            uint256 remainedSharesInMoneyMarket = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
+
+            // we need to make sure the shares are removed correctly from the market, we let 1000 for rounding issues. Might need to be extra reviewed.
+            assertApproxEqAbs(
+                cachedValues.maxSharesRedeemed - remainedSharesInMoneyMarket,
+                closeShares,
+                1000,
+                "Shares removed from the Money Market mismatch"
+            );
+        }
+    }
+
     function testConcreteValue() external {
         // testForkFuzz_BankConvexSpell_closeNewPositionNoSwapOnRewards(1e18, 1.5e18, 1);
-        testForkFuzz_BankConvexSpell_closeNewPositionNoSwapOnRewards(2218535569, 1171496925058941629, 1);
+        testForkFuzz_BankConvexSpell_closeRandomPositionSizeNoSwapOnRewardsWithCollateralInMoneyMarket(
+            10e18,
+            1e18,
+            1.5e18,
+            4454079654948917697432,
+            10
+        );
     }
 
     function _validatePositionSize(
@@ -716,7 +1113,6 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
     ) internal returns (bool) {
         (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(poolId);
         vm.label(lpToken, "lpToken");
-        (address pool, , ) = curveOracle.getPoolInfo(lpToken);
 
         ERC20PresetMinterPauser(address(USDC)).mint(owner, collateralAmount);
         ERC20PresetMinterPauser(address(USDC)).approve(address(bank), collateralAmount);
@@ -731,8 +1127,7 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         });
 
         bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, 0));
-        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
-        try bank.execute(0, address(convexSpell), data) {} catch (bytes memory reason) {
+        try bank.execute(0, address(convexSpell), data) {} catch (bytes memory) {
             return false;
         }
 
@@ -874,7 +1269,7 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         uint256 stRewardPerShare,
         uint256 amount,
         uint256 lpDecimals
-    ) internal view returns (uint256 rewards) {
+    ) internal pure returns (uint256 rewards) {
         uint256 share = enRewardPerShare > stRewardPerShare ? enRewardPerShare - stRewardPerShare : 0;
         rewards = (share * amount) / (10 ** lpDecimals);
     }
@@ -884,7 +1279,7 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         if (positionId == 0) positionId++;
         ICvxBooster cvxBooster = ICvxBooster(address(wConvexBooster.getCvxBooster())); // modified interface cast
 
-        (address targetLpToken, , address gauge, address cvxRewarder, , ) = cvxBooster.poolInfo(poolId);
+        (, , , address cvxRewarder, , ) = cvxBooster.poolInfo(poolId);
         uint256 crvRewardPerToken = IRewarder(cvxRewarder).rewardPerToken();
         uint256 id = wConvexBooster.encodeId(poolId, crvRewardPerToken);
         IBank.Position memory currentPosition = bank.getPositionInfo(positionId);
@@ -893,7 +1288,7 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         IRewarder(cvxRewarder).rewardPerToken();
     }
 
-    function _applyFeesOnRewards(uint256[] memory rewards) internal returns (uint256[] memory, uint256[] memory) {
+    function _applyFeesOnRewards(uint256[] memory rewards) internal view returns (uint256[] memory, uint256[] memory) {
         uint256[] memory rewardFees = new uint256[](rewards.length);
         for (uint256 i; i < rewards.length; i++) {
             uint256 toRefund = rewards[i];
@@ -926,6 +1321,38 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         bytes memory data = abi.encodeCall(BasicSpell.increasePosition, (address(USDC), amount));
 
         bank.execute(positionId, address(convexSpell), data);
+    }
+
+    function _calculateFeesOnCollateral(uint256 collateral, bool add) internal view returns (uint256) {
+        uint256 feeRateDeposit = bank.getFeeManager().getConfig().getDepositFee();
+        uint256 feeRateWithdraw = bank.getFeeManager().getConfig().getWithdrawFee();
+        uint256 feeRateVaultWithdraw;
+
+        if (
+            block.timestamp <
+            bank.getFeeManager().getConfig().getWithdrawVaultFeeWindowStartTime() +
+                bank.getFeeManager().getConfig().getWithdrawVaultFeeWindow()
+        ) {
+            feeRateVaultWithdraw = bank.getFeeManager().getConfig().getWithdrawVaultFee();
+        }
+        if (!add) {
+            uint256 cutFeeDeposit = (collateral * feeRateDeposit) / DENOMINATOR;
+            collateral -= cutFeeDeposit;
+
+            uint256 cutFeeVaultWithdraw = (collateral * feeRateVaultWithdraw) / DENOMINATOR;
+            collateral -= cutFeeVaultWithdraw;
+
+            uint256 cutFeeWithdraw = (collateral * feeRateWithdraw) / DENOMINATOR;
+            collateral -= cutFeeWithdraw;
+        } else {
+            collateral += collateral - (collateral * (DENOMINATOR - feeRateWithdraw)) / DENOMINATOR;
+            if (feeRateVaultWithdraw != 0) {
+                collateral += collateral - (collateral * (DENOMINATOR - feeRateVaultWithdraw)) / DENOMINATOR;
+            }
+            collateral += collateral - (collateral * (DENOMINATOR - feeRateDeposit)) / DENOMINATOR;
+        }
+        console2.log("new collateral ", collateral);
+        return collateral;
     }
 
     // TODO maybe take these values from the deployments repo?
