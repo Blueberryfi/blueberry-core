@@ -502,10 +502,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
             // Calculating max shares that can be redeemed from the money market
             cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
-            console2.log("getcash before ", bTokenUSDC.getCash());
             if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
                 cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;
-            console2.log("max shared redeemed before", cachedValues.maxSharesRedeemed);
 
             closePosParam.amountShareWithdraw = cachedValues.maxSharesRedeemed;
 
@@ -698,12 +696,6 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
             // // Calculating max shares that can be redeemed from the money market
             cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
-            // console2.log("getcash before ", bTokenUSDC.getCash());
-            // if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
-            //     cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;
-            // console2.log("max shared redeemed before", cachedValues.maxSharesRedeemed);
-
-            // closePosParam.amountShareWithdraw = cachedValues.maxSharesRedeemed;
 
             {
                 uint256 debtAfter = _calculateDebtValue(
@@ -726,12 +718,7 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
                     _increasePosition(amountToIncrease, cachedValues.positionId);
 
                     currentPosition = bank.getPositionInfo(cachedValues.positionId);
-                    // cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
                     cachedValues.initialCollateral += amountToIncrease;
-                    // if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
-                    //     cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;
-
-                    // closePosParam.amountShareWithdraw = cachedValues.maxSharesRedeemed;
                 }
                 bytes memory swapDataDebt = _getParaswapData(
                     address(USDC),
@@ -866,8 +853,6 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         }
 
         IBank.Position memory currentPosition = bank.getPositionInfo(cachedValues.positionId);
-
-        console2.log("bfore ", currentPosition.underlyingVaultShare);
 
         // we bound the shares to 10% of the position and 100%
         bound(
@@ -1351,7 +1336,6 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             }
             collateral += collateral - (collateral * (DENOMINATOR - feeRateDeposit)) / DENOMINATOR;
         }
-        console2.log("new collateral ", collateral);
         return collateral;
     }
 

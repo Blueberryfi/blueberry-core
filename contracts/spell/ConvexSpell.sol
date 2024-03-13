@@ -28,6 +28,7 @@ import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
 import { IWETH } from "../interfaces/IWETH.sol";
 
 import { IConvexSpell } from "../interfaces/spell/IConvexSpell.sol";
+import { console2 } from "forge-std/console2.sol";
 
 /**
  * @title ConvexSpell
@@ -121,10 +122,8 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
         Strategy memory strategy = _strategies[param.strategyId];
 
         IWConvexBooster wConvexBooster = getWConvexBooster();
-
         (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(param.farmingPoolId);
         if (strategy.vault != lpToken) revert Errors.INCORRECT_LP(lpToken);
-
         /// 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
 
@@ -132,7 +131,6 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
         uint256 borrowBalance = _doBorrow(param.borrowToken, param.borrowAmount);
 
         (address pool, address[] memory tokens, ) = _crvOracle.getPoolInfo(lpToken);
-
         /// 3. Add liquidity on curve, get crvLp
         {
             address borrowToken = param.borrowToken;
@@ -235,9 +233,7 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
                 if (pos.collToken != address(wConvexBooster)) {
                     revert Errors.INCORRECT_COLTOKEN(pos.collToken);
                 }
-
                 bank.takeCollateral(pos.collateralSize);
-
                 (address[] memory rewardTokens, ) = wConvexBooster.burn(pos.collId, pos.collateralSize);
                 // distribute multiple rewards to users
                 uint256 tokensLength = rewardTokens.length;
@@ -253,6 +249,7 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
             IERC20(lpToken).universalApprove(address(wConvexBooster), lpAmount);
 
             uint256 id = wConvexBooster.mint(param.farmingPoolId, lpAmount);
+
             _bank.putCollateral(address(wConvexBooster), id, lpAmount);
         }
     }
@@ -290,10 +287,20 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
 
         /// 3. Remove liquidity
         _removeLiquidity(closePosParam.param, pos, crvLp, amountPosRemove);
+        // console2.log("pos.shares", pos.underlyingVaultShare);
+        // console2.log("closePosParam.param.amountShareWithdraw", closePosParam.param.amountShareWithdraw);
+        console2.log("balance amountPosRemove", amountPosRemove);
+        console2.log("balance before col token", IERC20(closePosParam.param.collToken).balanceOf(address(this)));
+        console2.log("balance borrow before", IERC20(closePosParam.param.borrowToken).balanceOf(address(this)));
 
         /// 4. Withdraw isolated collateral from Bank
         _doWithdraw(closePosParam.param.collToken, closePosParam.param.amountShareWithdraw);
+        console2.log("balance after  col token %e", IERC20(closePosParam.param.collToken).balanceOf(address(this)));
+        console2.log("balance after before", IERC20(closePosParam.param.borrowToken).balanceOf(address(this)));
 
+        // console2.log("balance before swap ", IERC20(closePosParam.param.borrowToken).balanceOf(address(this)));
+        // console2.log("amountShareWithdraw ", closePosParam.param.amountShareWithdraw);
+        // console2.log("pos underlying ", pos.underlyingVaultShare);
         /// 5. Swap some collateral to repay debt(for negative PnL)
         _swapCollToDebt(closePosParam.param.collToken, closePosParam.param.amountToSwap, closePosParam.param.swapData);
 
@@ -304,10 +311,17 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
             if (amountRepay == type(uint256).max) {
                 amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
             }
+            console2.log("amountRepay ", amountRepay);
+            console2.log("balance ", IERC20(closePosParam.param.borrowToken).balanceOf(address(this)));
+            console2.log("am to swap", closePosParam.param.amountToSwap);
             _doRepay(closePosParam.param.borrowToken, amountRepay);
         }
 
         _validateMaxLTV(closePosParam.param.strategyId);
+        console2.log(
+            "balance coll token before refund",
+            IERC20(closePosParam.param.collToken).balanceOf(address(this))
+        );
 
         /// 7. Refund
         _doRefund(closePosParam.param.borrowToken);
@@ -380,6 +394,7 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
             );
             return _getMetaPoolTokens(tokens[0]);
         } else {
+            console2.logInt(tokenIndex);
             /// Removes liquidity from the Curve pool for the specified token.
             ICurvePool(pool).remove_liquidity_one_coin(amountPosRemove, tokenIndex, param.amountOutMin);
         }
@@ -409,6 +424,7 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
      */
     function _sellRewards(address[] memory rewardTokens, ClosePositionFarmParam calldata closePosParam) internal {
         uint256 tokensLength = rewardTokens.length;
+        console2.log("rewardTokens length ", rewardTokens.length);
         for (uint256 i; i < tokensLength; ++i) {
             address sellToken = rewardTokens[i];
 
@@ -417,6 +433,7 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
 
             if (sellToken != closePosParam.param.borrowToken) {
                 uint256 expectedReward = closePosParam.amounts[i];
+
                 /// If the expected reward is zero, skip to the next token.
                 _swapOnParaswap(sellToken, expectedReward, closePosParam.swapDatas[i]);
             }

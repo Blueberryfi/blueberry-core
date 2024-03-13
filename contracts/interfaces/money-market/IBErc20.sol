@@ -28,4 +28,6 @@ interface IBErc20 {
     function getAccountSnapshot(address account) external view returns (uint256, uint256, uint256, uint256);
 
     function exchangeRateCurrent() external returns (uint256);
+
+    function getCash() external view returns (uint256);
 }

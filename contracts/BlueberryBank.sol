@@ -30,6 +30,7 @@ import { IFeeManager } from "./interfaces/IFeeManager.sol";
 import { IHardVault } from "./interfaces/IHardVault.sol";
 import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
 import { ISoftVault } from "./interfaces/ISoftVault.sol";
+import { console2 } from "forge-std/console2.sol";
 
 /**
  * @title BlueberryBank
@@ -256,10 +257,11 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
         }
 
         IFeeManager feeManager = getFeeManager();
-
         IERC20Upgradeable(token).safeTransferFrom(pos.owner, address(this), amount);
         IERC20(token).universalApprove(address(feeManager), amount);
+        console2.log("Amount pre fee ", amount);
         amount = feeManager.doCutDepositFee(token, amount);
+        console2.log("Amount after fee ", amount);
 
         if (_isSoftVault(token)) {
             IERC20(token).universalApprove(bank.softVault, amount);
@@ -268,6 +270,8 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
             IERC20(token).universalApprove(bank.hardVault, amount);
             pos.underlyingVaultShare += IHardVault(bank.hardVault).deposit(token, amount);
         }
+        console2.log("deposit amount", amount);
+        console2.log("share value ", pos.underlyingVaultShare);
 
         emit Lend(_POSITION_ID, msg.sender, token, amount);
     }
@@ -288,6 +292,9 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
         } else {
             wAmount = IHardVault(bank.hardVault).withdraw(token, shareAmount);
         }
+
+        console2.log("wAmount ", wAmount);
+        console2.log("shareAmount ", shareAmount);
 
         IFeeManager feeManager = getFeeManager();
 
@@ -362,7 +369,6 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
         if (amount == type(uint256).max) {
             amount = pos.collateralSize;
         }
-
         pos.collateralSize -= amount;
         IERC1155Upgradeable(pos.collToken).safeTransferFrom(address(this), msg.sender, pos.collId, amount, "");
 
@@ -619,6 +625,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     function getDebtValue(uint256 positionId) public view override returns (uint256 debtValue) {
         Position memory pos = _positions[positionId];
         uint256 debt = getPositionDebt(positionId);
+        console2.log("debt token ", pos.debtToken);
         debtValue = _oracle.getTokenValue(pos.debtToken, debt);
     }
 
@@ -635,6 +642,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
             underlyingAmount = pos.underlyingVaultShare;
         }
         icollValue = _oracle.getTokenValue(pos.underlyingToken, underlyingAmount);
+        console2.log("icollValue ", icollValue);
     }
 
     /// @inheritdoc IBank
@@ -683,6 +691,8 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
         }
 
         amountCall = _doERC20TransferIn(token, amountCall);
+
+        console2.log("amm to call ", amountCall);
         uint256 paid = _doRepay(token, amountCall);
 
         if (paid > oldDebt) revert Errors.REPAY_EXCEEDS_DEBT(paid, oldDebt); /// prevent share overflow attack

@@ -30,6 +30,7 @@ import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
 import { IWConvexBooster, ICvxBooster } from "../interfaces/IWConvexBooster.sol";
+import { console2 } from "forge-std/console2.sol";
 
 /* solhint-enable max-line-length */
 
@@ -67,6 +68,7 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
     mapping(uint256 => address) private _escrows;
     /// @dev pid => A set of extra rewarders
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private _extraRewards;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -205,8 +207,8 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
 
         /// CRV reward
         tokens[0] = IRewarder(cvxRewarder).rewardToken();
-        rewards[0] = _getPendingReward(originalCrvPerShare, cvxRewarder, amount, lpDecimals);
 
+        rewards[0] = _getPendingReward(originalCrvPerShare, cvxRewarder, amount, lpDecimals);
         /// CVX reward
         tokens[1] = address(_cvxToken);
         rewards[1] = _calcAllocatedCVX(pid, originalCrvPerShare, amount);
