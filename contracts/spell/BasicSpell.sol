@@ -27,7 +27,6 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IWETH } from "../interfaces/IWETH.sol";
 import { IBasicSpell } from "../interfaces/spell/IBasicSpell.sol";
-import { console2 } from "forge-std/console2.sol";
 
 /**
  * @title BasicSpell
@@ -273,6 +272,7 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
         IBank.Position memory pos = bank.getPositionInfo(positionId);
         uint256 debtValue = bank.getDebtValue(positionId);
         uint256 uValue = bank.getIsolatedCollateralValue(positionId);
+
         if (debtValue > (uValue * getMaxLTV(strategyId, pos.underlyingToken)) / Constants.DENOMINATOR) {
             revert Errors.EXCEED_MAX_LTV();
         }
@@ -305,7 +305,6 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
         if (prevPosSize + addedPosSize > strategy.maxPositionSize) {
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
         }
-
         if (prevPosSize + addedPosSize < strategy.minPositionSize) {
             revert Errors.EXCEED_MIN_POS_SIZE(strategyId);
         }
@@ -319,7 +318,6 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
         uint256 balance = IERC20(token).universalBalanceOf(address(this));
         if (balance > 0) {
             IERC20(token).universalTransfer(_bank.EXECUTOR(), balance);
-            console2.log("refunded ", token, balance);
         }
     }
 

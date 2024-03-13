@@ -25,7 +25,6 @@ import "../utils/BlueberryErrors.sol" as Errors;
 import { IProtocolConfig } from "../interfaces/IProtocolConfig.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IBErc20 } from "../interfaces/money-market/IBErc20.sol";
-import { console2 } from "forge-std/console2.sol";
 
 /**
  * @title SoftVault
@@ -134,14 +133,12 @@ contract SoftVault is ISoftVault, Ownable2StepUpgradeable, ERC20Upgradeable, Ree
         uint256 uBalanceBefore = underlyingToken.balanceOf(address(this));
         if (bToken.redeem(shareAmount) != 0) revert Errors.REDEEM_FAILED(shareAmount);
         uint256 uBalanceAfter = underlyingToken.balanceOf(address(this));
-        console2.log("uBalanceAfter ", uBalanceAfter);
 
         withdrawAmount = uBalanceAfter - uBalanceBefore;
         IERC20(address(underlyingToken)).universalApprove(address(config.getFeeManager()), withdrawAmount);
 
         withdrawAmount = config.getFeeManager().doCutVaultWithdrawFee(address(underlyingToken), withdrawAmount);
         underlyingToken.safeTransfer(msg.sender, withdrawAmount);
-        console2.log("withdrew amount  ", withdrawAmount);
 
         emit Withdrawn(msg.sender, withdrawAmount, shareAmount);
     }
