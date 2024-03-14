@@ -10,6 +10,7 @@
 
 pragma solidity 0.8.22;
 
+import "@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
@@ -36,7 +37,7 @@ import { ISoftVault } from "./interfaces/ISoftVault.sol";
  * @author BlueberryProtocol
  * @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
  */
-contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
+contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
@@ -208,7 +209,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function execute(uint256 positionId, address spell, bytes memory data) external lock returns (uint256) {
+    function execute(uint256 positionId, address spell, bytes memory data) external lock firewallProtected returns (uint256) {
         if (!_whitelistedSpells[spell]) revert Errors.SPELL_NOT_WHITELISTED(spell);
         if (positionId == 0) {
             positionId = _nextPositionId++;

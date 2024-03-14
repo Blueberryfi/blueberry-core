@@ -20,6 +20,7 @@
   "dependencies": {
     "@aave/core-v3": "^1.18.0",
     "@chainlink/contracts": "^0.8.0",
+    "@ironblocks/firewall-consumer": "^1.0.7",
     "@openzeppelin/contracts": "^4.9.3",
     "@openzeppelin/contracts-upgradeable": "^4.9.3",
     "@openzeppelin/hardhat-upgrades": "^1.19.1",
