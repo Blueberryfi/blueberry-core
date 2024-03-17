@@ -209,7 +209,11 @@ contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1
     }
 
     /// @inheritdoc IBank
-    function execute(uint256 positionId, address spell, bytes memory data) external lock firewallProtected returns (uint256) {
+    function execute(
+        uint256 positionId,
+        address spell,
+        bytes memory data
+    ) external lock firewallProtected returns (uint256) {
         if (!_whitelistedSpells[spell]) revert Errors.SPELL_NOT_WHITELISTED(spell);
         if (positionId == 0) {
             positionId = _nextPositionId++;
