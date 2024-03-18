@@ -135,9 +135,12 @@ contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1
     function initialize(ICoreOracle oracle, IProtocolConfig config, address owner) external initializer {
         __Ownable2Step_init();
         _transferOwnership(owner);
+        _setAddressBySlot(FIREWALL_ADMIN_STORAGE_SLOT, owner);
+
         if (address(oracle) == address(0) || address(config) == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
+
         _GENERAL_LOCK = _NOT_ENTERED;
         _IN_EXEC_LOCK = _NOT_ENTERED;
         _POSITION_ID = _NO_ID;
