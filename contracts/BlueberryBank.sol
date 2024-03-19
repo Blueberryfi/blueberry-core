@@ -11,6 +11,8 @@
 pragma solidity 0.8.22;
 
 import "@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
@@ -45,6 +47,9 @@ contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1
     /*//////////////////////////////////////////////////////////////////////////
                                      STORAGE
     //////////////////////////////////////////////////////////////////////////*/
+
+    // ironblocks: firewall admin role storage slot
+    bytes32 private constant FIREWALL_ADMIN_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.firewall.admin")) - 1);
 
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
@@ -805,6 +810,23 @@ contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1
     /// @inheritdoc IBank
     function SPELL() external view returns (address) {
         return _SPELL;
+    }
+
+    /**
+     * ironblocks: _msgSender() & _msgData() & _contextSuffixLength() are inherited in ContextUpgradeable
+     * and in FirewallConsumer, so we need to override them here to avoid the diamond inheritance problem.
+     */ 
+
+    function _msgSender() internal view override(Context, ContextUpgradeable) virtual returns (address) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view override(Context, ContextUpgradeable) returns (bytes calldata) {
+        return msg.data;
+    }
+
+    function _contextSuffixLength() internal view override(Context, ContextUpgradeable) returns (uint256) {
+        return 0;
     }
 
     /**
