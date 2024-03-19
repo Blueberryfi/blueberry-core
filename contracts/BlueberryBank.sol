@@ -10,6 +10,9 @@
 
 pragma solidity 0.8.22;
 
+import "@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
@@ -36,7 +39,7 @@ import { ISoftVault } from "./interfaces/ISoftVault.sol";
  * @author BlueberryProtocol
  * @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
  */
-contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
+contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
@@ -44,6 +47,9 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     /*//////////////////////////////////////////////////////////////////////////
                                      STORAGE
     //////////////////////////////////////////////////////////////////////////*/
+
+    // ironblocks: firewall admin role storage slot
+    bytes32 private constant _FIREWALL_ADMIN_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.firewall.admin")) - 1);
 
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
@@ -134,9 +140,12 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     function initialize(ICoreOracle oracle, IProtocolConfig config, address owner) external initializer {
         __Ownable2Step_init();
         _transferOwnership(owner);
+        _setAddressBySlot(_FIREWALL_ADMIN_STORAGE_SLOT, owner);
+
         if (address(oracle) == address(0) || address(config) == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
+
         _GENERAL_LOCK = _NOT_ENTERED;
         _IN_EXEC_LOCK = _NOT_ENTERED;
         _POSITION_ID = _NO_ID;
@@ -208,7 +217,11 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function execute(uint256 positionId, address spell, bytes memory data) external lock returns (uint256) {
+    function execute(
+        uint256 positionId,
+        address spell,
+        bytes memory data
+    ) external lock firewallProtected returns (uint256) {
         if (!_whitelistedSpells[spell]) revert Errors.SPELL_NOT_WHITELISTED(spell);
         if (positionId == 0) {
             positionId = _nextPositionId++;
@@ -797,6 +810,25 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     /// @inheritdoc IBank
     function SPELL() external view returns (address) {
         return _SPELL;
+    }
+
+    /**
+     * ironblocks: _msgSender() & _msgData() & _contextSuffixLength() are inherited in ContextUpgradeable
+     * and in FirewallConsumer, so we need to override them here to avoid the diamond inheritance problem.
+     */
+    // prettier-ignore
+    function _msgSender() internal view override(Context, ContextUpgradeable) virtual returns (address) {
+        return msg.sender;
+    }
+
+    // prettier-ignore
+    function _msgData() internal view override(Context, ContextUpgradeable) returns (bytes calldata) {
+        return msg.data;
+    }
+
+    // prettier-ignore
+    function _contextSuffixLength() internal view override(Context, ContextUpgradeable) returns (uint256) {
+        return 0;
     }
 
     /**
