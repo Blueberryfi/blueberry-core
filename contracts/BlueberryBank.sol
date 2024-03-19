@@ -49,7 +49,7 @@ contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1
     //////////////////////////////////////////////////////////////////////////*/
 
     // ironblocks: firewall admin role storage slot
-    bytes32 private constant FIREWALL_ADMIN_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.firewall.admin")) - 1);
+    bytes32 private constant _FIREWALL_ADMIN_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.firewall.admin")) - 1);
 
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
@@ -140,7 +140,7 @@ contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1
     function initialize(ICoreOracle oracle, IProtocolConfig config, address owner) external initializer {
         __Ownable2Step_init();
         _transferOwnership(owner);
-        _setAddressBySlot(FIREWALL_ADMIN_STORAGE_SLOT, owner);
+        _setAddressBySlot(_FIREWALL_ADMIN_STORAGE_SLOT, owner);
 
         if (address(oracle) == address(0) || address(config) == address(0)) {
             revert Errors.ZERO_ADDRESS();
@@ -815,16 +815,18 @@ contract BlueberryBank is FirewallConsumer, IBank, Ownable2StepUpgradeable, ERC1
     /**
      * ironblocks: _msgSender() & _msgData() & _contextSuffixLength() are inherited in ContextUpgradeable
      * and in FirewallConsumer, so we need to override them here to avoid the diamond inheritance problem.
-     */ 
-
+     */
+    // prettier-ignore
     function _msgSender() internal view override(Context, ContextUpgradeable) virtual returns (address) {
         return msg.sender;
     }
 
+    // prettier-ignore
     function _msgData() internal view override(Context, ContextUpgradeable) returns (bytes calldata) {
         return msg.data;
     }
 
+    // prettier-ignore
     function _contextSuffixLength() internal view override(Context, ContextUpgradeable) returns (uint256) {
         return 0;
     }
