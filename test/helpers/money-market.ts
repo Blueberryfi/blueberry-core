@@ -376,6 +376,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   // await comptroller._supportMarket(bCrvCvxCrv.address, 0);
 
   return {
+    bTokenAdmin,
     comptroller,
     bUSDC,
     bICHI,
