@@ -1307,11 +1307,15 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
      * @dev Admin function to set the soft vault address
      * @param _softVault the address of the SoftVault this contract is connected to
      */
-    function _setSoftVault(address _softVault)
-    public
-    {
-        require(msg.sender == admin, "admin only");
+    function _setSoftVault(address _softVault) public returns(uint256){
+        if (msg.sender != admin) {
+            return fail(
+                Error.UNAUTHORIZED,
+                FailureInfo.SET_SOFT_VAULT_ADMIN_CHECK
+            );
+        }
         softVault = _softVault;
+        return uint256(Error.NO_ERROR);
     }
 
     /*** Safe Token ***/

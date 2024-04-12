@@ -600,7 +600,7 @@ contract BWrappedNativeDelegator is
         delegateAndReturn();
     }
 
-    function _setSoftVault(address _softVault) public {
+    function _setSoftVault(address _softVault) public returns (uint256) {
         _softVault; // Shh
         delegateAndReturn();
     }

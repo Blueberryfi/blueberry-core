@@ -376,7 +376,7 @@ contract BTokenInterface is BTokenStorage {
         public
         returns (uint256);
 
-    function _setSoftVault(address _softVault) public;
+    function _setSoftVault(address _softVault) public returns(uint256);
 }
 
 contract BErc20Interface is BErc20Storage {

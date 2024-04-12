@@ -226,8 +226,8 @@ contract BTokenAdmin is Exponential {
     function _setSoftVault(
         address bToken,
         address softVault
-    ) external onlyAdmin {
-        BTokenInterface(bToken)._setSoftVault(softVault);
+    ) external onlyAdmin returns (uint256) {
+        return BTokenInterface(bToken)._setSoftVault(softVault);
     }
 
     /**
