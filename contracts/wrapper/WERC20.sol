@@ -31,12 +31,7 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
  * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank and do not generate yields.
  *      LP Tokens are identified by tokenIds encoded from lp token address
  */
-contract WERC20 is
-    IWERC20,
-    ERC1155Upgradeable,
-    ReentrancyGuardUpgradeable,
-    Ownable2StepUpgradeable 
-{
+contract WERC20 is IWERC20, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /*//////////////////////////////////////////////////////////////////////////

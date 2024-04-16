@@ -37,12 +37,7 @@ import { IIchiFarm } from "../interfaces/ichi/IIchiFarm.sol";
  *      At the same time, Underlying LPs will be deposited to ICHI farming pools and generate yields
  *      LP Tokens are identified by tokenIds encoded from lp token address and accPerShare of deposited time
  */
-contract WIchiFarm is
-    IWIchiFarm,
-    ERC1155Upgradeable,
-    ReentrancyGuardUpgradeable,
-    Ownable2StepUpgradeable
-{
+contract WIchiFarm is IWIchiFarm, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeERC20Upgradeable for IIchiV2;
@@ -129,9 +124,6 @@ contract WIchiFarm is
 
     /// @inheritdoc IWIchiFarm
     function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
-        if (amount == type(uint256).max) {
-            amount = balanceOf(msg.sender, id);
-        }
         (uint256 pid, ) = decodeId(id);
         _burn(msg.sender, id, amount);
 

@@ -40,12 +40,7 @@ import { IWConvexBooster, ICvxBooster } from "../interfaces/IWConvexBooster.sol"
  *     and do not generate yields. LP Tokens are identified by tokenIds
  *    encoded from lp token address.
  */
-contract WConvexBooster is
-    IWConvexBooster,
-    ERC1155Upgradeable,
-    ReentrancyGuardUpgradeable,
-    Ownable2StepUpgradeable
-{
+contract WConvexBooster is IWConvexBooster, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -71,6 +66,7 @@ contract WConvexBooster is
     mapping(uint256 => address) private _escrows;
     /// @dev pid => A set of extra rewarders
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private _extraRewards;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
@@ -170,10 +166,6 @@ contract WConvexBooster is
 
         // @dev sanity check
         assert(escrow != address(0));
-
-        if (amount == type(uint256).max) {
-            amount = balanceOf(msg.sender, id);
-        }
 
         _updateCvxReward(pid);
 

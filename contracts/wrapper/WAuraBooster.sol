@@ -41,12 +41,7 @@ import { IRewarder } from "../interfaces/convex/IRewarder.sol";
  *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
-contract WAuraBooster is
-    IWAuraBooster,
-    ERC1155Upgradeable,
-    ReentrancyGuardUpgradeable,
-    Ownable2StepUpgradeable 
-{
+contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using FixedPointMathLib for uint256;
@@ -194,10 +189,6 @@ contract WAuraBooster is
         address escrow = getEscrow(pid);
         // @dev sanity check
         assert(escrow != address(0));
-
-        if (amount == type(uint256).max) {
-            amount = balanceOf(msg.sender, id);
-        }
 
         _updateAuraReward(pid, id);
 
