@@ -12,6 +12,7 @@ pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
 import { EnumerableSetUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
@@ -21,8 +22,6 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 
 import "../utils/BlueberryConst.sol" as Constants;
 import "../utils/BlueberryErrors.sol" as Errors;
-
-import { BaseWrapper } from "./BaseWrapper.sol";
 
 import { ICvxExtraRewarder } from "../interfaces/convex/ICvxExtraRewarder.sol";
 import { IConvex } from "../interfaces/convex/IConvex.sol";
@@ -41,7 +40,12 @@ import { IWConvexBooster, ICvxBooster } from "../interfaces/IWConvexBooster.sol"
  *     and do not generate yields. LP Tokens are identified by tokenIds
  *    encoded from lp token address.
  */
-contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
+contract WConvexBooster is
+    IWConvexBooster,
+    ERC1155Upgradeable,
+    ReentrancyGuardUpgradeable,
+    Ownable2StepUpgradeable
+{
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 

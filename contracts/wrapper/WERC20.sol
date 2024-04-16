@@ -12,6 +12,7 @@ pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
@@ -19,8 +20,6 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 /* solhint-enable max-line-length */
 
 import "../utils/BlueberryErrors.sol" as Errors;
-
-import { BaseWrapper } from "./BaseWrapper.sol";
 
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
@@ -32,7 +31,12 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
  * @dev Leveraged LP Tokens will be wrapped here and be held in BlueberryBank and do not generate yields.
  *      LP Tokens are identified by tokenIds encoded from lp token address
  */
-contract WERC20 is IWERC20, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
+contract WERC20 is
+    IWERC20,
+    ERC1155Upgradeable,
+    ReentrancyGuardUpgradeable,
+    Ownable2StepUpgradeable 
+{
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -66,7 +70,6 @@ contract WERC20 is IWERC20, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2Ste
         uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(address(this));
 
         id = _encodeTokenId(token);
-        _validateTokenId(id);
 
         _mint(msg.sender, id, balanceAfter - balanceBefore, "");
 
