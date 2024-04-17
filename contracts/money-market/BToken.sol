@@ -1309,10 +1309,11 @@ contract BToken is BTokenInterface, Exponential, TokenErrorReporter {
      */
     function _setSoftVault(address _softVault) public returns (uint256) {
         if (msg.sender != admin) {
-            return fail(
-                Error.UNAUTHORIZED,
-                FailureInfo.SET_SOFT_VAULT_ADMIN_CHECK
-            );
+            return 
+                fail(
+                    Error.UNAUTHORIZED,
+                    FailureInfo.SET_SOFT_VAULT_ADMIN_CHECK
+                );
         }
         softVault = _softVault;
         return uint256(Error.NO_ERROR);
