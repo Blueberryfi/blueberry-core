@@ -22,7 +22,7 @@ import { SwapRegistry } from "./SwapRegistry.sol";
 import { IBank } from "../interfaces/IBank.sol";
 import { IBlueberryLiquidator, AutomationCompatibleInterface } from "../interfaces/IBlueberryLiquidator.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
-
+import "hardhat/console.sol";
 /**
  * @title BaseLiquidator
  * @author BlueberryProtocol
@@ -130,7 +130,9 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
 
         // Unwind position
         _unwindPosition(posInfo, bankInfo.softVault, asset, amount + premium);
-
+        console.log('asset: %s, amount: %s, premium: %s', asset);
+        console.log('Amount owed: %s', amount + premium);
+        console.log('balance: %s', IERC20(asset).balanceOf(address(this)));
         // forceApprove aave pool to get back debt
         IERC20(asset).forceApprove(address(_pool), amount + premium);
 

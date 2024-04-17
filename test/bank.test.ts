@@ -25,6 +25,7 @@ import { roughlyNear } from './assertions/roughlyNear';
 import { Protocol, setupIchiProtocol } from './helpers/setup-ichi-protocol';
 import { evm_mine_blocks, evm_increaseTime, fork } from './helpers';
 import { TickMath } from '@uniswap/v3-sdk';
+import { getBToken, getSoftVault } from './helpers/markets';
 
 chai.use(near);
 chai.use(roughlyNear);
@@ -58,9 +59,10 @@ describe('Bank', () => {
   let ichiVault: MockIchiVault;
   let protocol: Protocol;
   let bCRV: Contract;
+  let weth: ERC20;
 
   before(async () => {
-    await fork();
+    await fork(1);
 
     [admin, alice] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
@@ -77,14 +79,14 @@ describe('Bank', () => {
     werc20 = protocol.werc20;
     oracle = protocol.oracle;
     mockOracle = protocol.mockOracle;
-    usdcSoftVault = protocol.usdcSoftVault;
-    ichiSoftVault = protocol.ichiSoftVault;
-    wethSoftVault = protocol.wethSoftVault;
-    hardVault = protocol.hardVault;
-    bCRV = protocol.bCRV;
-  });
 
-  beforeEach(async () => {});
+    usdcSoftVault = await getSoftVault(protocol.softVaults, USDC);
+    ichiSoftVault = await getSoftVault(protocol.softVaults, ICHI);
+    wethSoftVault = await getSoftVault(protocol.softVaults, WETH);
+    hardVault = protocol.hardVault;
+    bCRV = await getBToken(protocol.bTokens, ADDRESS.CRV);
+    weth = <ERC20>await ethers.getContractAt('ERC20', WETH);
+  });
 
   describe('Constructor', () => {
     it('should revert Bank deployment when invalid args provided', async () => {
@@ -132,11 +134,11 @@ describe('Bank', () => {
     const iface = new ethers.utils.Interface(SpellABI);
     before(async () => {
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
-      await ichi.approve(bank.address, ethers.constants.MaxUint256);
+      await weth.approve(bank.address, ethers.constants.MaxUint256);
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
-          BigNumber.from(10).pow(18).mul(5), // $5
+          BigNumber.from(10).pow(18).mul(3000), // $3000
         ]
       );
     });
@@ -148,7 +150,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPositionFarm', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -167,7 +169,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPositionFarm', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -186,7 +188,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPositionFarm', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -203,7 +205,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPositionFarm', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -216,7 +218,7 @@ describe('Bank', () => {
         .withArgs(positionId.sub(1), alice.address);
     });
     it('should revert execution for not-whitelisted underlying token lending', async () => {
-      await bank.whitelistTokens([ICHI], [false]);
+      await bank.whitelistTokens([WETH], [false]);
       await expect(
         bank.execute(
           0,
@@ -224,7 +226,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPositionFarm', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -234,8 +236,8 @@ describe('Bank', () => {
         )
       )
         .to.be.revertedWithCustomError(bank, 'TOKEN_NOT_WHITELISTED')
-        .withArgs(ICHI);
-      await bank.whitelistTokens([ICHI], [true]);
+        .withArgs(WETH);
+      await bank.whitelistTokens([WETH], [true]);
     });
     it('should revert opening execution with non whitelisted debt token', async () => {
       await bank.whitelistTokens([USDC], [false]);
@@ -246,7 +248,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPositionFarm', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -266,7 +268,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPositionFarm', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -283,7 +285,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPositionFarm', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: DAI,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -302,7 +304,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPositionFarm', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -338,7 +340,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPositionFarm', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -356,7 +358,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPosition', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -385,7 +387,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPositionFarm', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -400,9 +402,9 @@ describe('Bank', () => {
     });
     it('should revert close execution for existing position with different isolated token', async () => {
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
-          BigNumber.from(10).pow(16).mul(326), // $3.26
+          BigNumber.from(10).pow(18).mul(2800), // $2800
         ]
       );
       await bank.execute(
@@ -411,7 +413,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPosition', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -453,7 +455,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPosition', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -467,9 +469,9 @@ describe('Bank', () => {
       TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
-          BigNumber.from(10).pow(16).mul(350), // $3.5
+          BigNumber.from(10).pow(18).mul(2900), // $2900
         ]
       );
 
@@ -480,7 +482,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('closePosition', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: ICHI,
               amountRepay: ethers.constants.MaxUint256,
               amountPosRemove: ethers.constants.MaxUint256,
@@ -497,9 +499,9 @@ describe('Bank', () => {
     });
     it('should revert close execution for for not whitelisted debt token', async () => {
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
-          BigNumber.from(10).pow(16).mul(326), // $3.26
+          BigNumber.from(10).pow(18).mul(2800), // $2800
         ]
       );
       await bank.execute(
@@ -508,7 +510,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPosition', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -529,7 +531,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('closePosition', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               amountRepay: ethers.constants.MaxUint256,
               amountPosRemove: ethers.constants.MaxUint256,
@@ -552,7 +554,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPosition', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -567,7 +569,7 @@ describe('Bank', () => {
         iface.encodeFunctionData('openPosition', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -585,20 +587,20 @@ describe('Bank', () => {
 
     beforeEach(async () => {
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
           BigNumber.from(10).pow(18).mul(5), // $5
         ]
       );
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
-      await ichi.approve(bank.address, ethers.constants.MaxUint256);
+      await weth.approve(bank.address, ethers.constants.MaxUint256);
       await bank.execute(
         0,
         spell.address,
         iface.encodeFunctionData('openPositionFarm', [
           {
             strategyId: 0,
-            collToken: ICHI,
+            collToken: WETH,
             borrowToken: USDC,
             collAmount: depositAmount,
             borrowAmount: borrowAmount,
@@ -634,19 +636,13 @@ describe('Bank', () => {
       let debtValue = await bank.callStatic.getDebtValue(positionId);
       let positionValue = await bank.callStatic.getPositionValue(positionId);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
       const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address);
-      console.log('Pending ICHI:', utils.formatUnits(pendingIchi, 9));
       await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(100));
       await ichiFarm.updatePool(ICHI_VAULT_PID);
 
-      console.log('===ICHI token dumped from $5 to $0.1===');
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
           BigNumber.from(10).pow(17).mul(5), // $0.5
         ]
@@ -655,16 +651,9 @@ describe('Bank', () => {
       debtValue = await bank.callStatic.getDebtValue(positionId);
       positionValue = await bank.callStatic.getPositionValue(positionId);
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Cur Pos:', positionInfo);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
-      console.log('Is Liquidatable:', await bank.callStatic.isLiquidatable(positionId));
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
 
-      console.log('===Portion Liquidated===');
       const liqAmount = utils.parseUnits('100', 6);
       await usdc.connect(alice).approve(bank.address, liqAmount);
       await expect(bank.connect(alice).liquidate(positionId, USDC, liqAmount)).to.be.revertedWithCustomError(
@@ -680,19 +669,13 @@ describe('Bank', () => {
       let debtValue = await bank.callStatic.getDebtValue(positionId);
       let positionValue = await bank.callStatic.getPositionValue(positionId);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
       const pendingIchi = await ichiFarm.pendingIchi(ICHI_VAULT_PID, wichi.address);
-      console.log('Pending ICHI:', utils.formatUnits(pendingIchi, 9));
       await ichiV1.transfer(ichiFarm.address, pendingIchi.mul(100));
       await ichiFarm.updatePool(ICHI_VAULT_PID);
 
-      console.log('===ICHI token dumped from $5 to $0.1===');
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
           BigNumber.from(10).pow(17).mul(5), // $0.5
         ]
@@ -701,16 +684,9 @@ describe('Bank', () => {
       debtValue = await bank.callStatic.getDebtValue(positionId);
       positionValue = await bank.callStatic.getPositionValue(positionId);
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Cur Pos:', positionInfo);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
-      console.log('Is Liquidatable:', await bank.callStatic.isLiquidatable(positionId));
 
-      console.log('===Portion Liquidated===');
       const liqAmount = utils.parseUnits('100', 6);
       await usdc.connect(alice).approve(bank.address, liqAmount);
       await expect(bank.connect(alice).liquidate(positionId, USDC, liqAmount)).to.be.emit(bank, 'Liquidate');
@@ -719,21 +695,10 @@ describe('Bank', () => {
       debtValue = await bank.callStatic.getDebtValue(positionId);
       positionValue = await bank.callStatic.getPositionValue(positionId);
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Cur Pos:', positionInfo);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
 
       const colToken = await ethers.getContractAt('ERC1155Upgradeable', positionInfo.collToken);
       const uVToken = await ethers.getContractAt('ERC20Upgradeable', ichiSoftVault.address);
-      console.log(
-        "Liquidator's Position Balance:",
-        utils.formatUnits(await colToken.balanceOf(alice.address, positionInfo.collId))
-      );
-      console.log("Liquidator's Collateral Balance:", utils.formatUnits(await uVToken.balanceOf(alice.address)));
 
-      console.log('===Full Liquidate===');
       await usdc.connect(alice).approve(bank.address, ethers.constants.MaxUint256);
       await expect(bank.connect(alice).liquidate(positionId, USDC, ethers.constants.MaxUint256)).to.be.emit(
         bank,
@@ -745,18 +710,10 @@ describe('Bank', () => {
       positionValue = await bank.callStatic.getPositionValue(positionId);
       risk = await bank.callStatic.getPositionRisk(positionId);
       const collateralBalance = await colToken.balanceOf(alice.address, positionInfo.collId);
-      console.log('Cur Pos:', positionInfo);
-      console.log('Debt Value:', utils.formatUnits(debtValue));
-      console.log('Position Value:', utils.formatUnits(positionValue));
-      console.log('Position Risk:', utils.formatUnits(risk, 2), '%');
-      console.log('Position Size:', utils.formatUnits(positionInfo.collateralSize));
-      console.log("Liquidator's Position Balance:", collateralBalance);
-      console.log("Liquidator's Collateral Balance:", await uVToken.balanceOf(alice.address));
 
       const beforeIchiBalance = await ichi.balanceOf(alice.address);
       await wichi.connect(alice).burn(positionInfo.collId, ethers.constants.MaxUint256);
       const afterIchiBalance = await ichi.balanceOf(alice.address);
-      console.log("Liquidator's ICHI Balance:", utils.formatUnits(afterIchiBalance.sub(beforeIchiBalance), 18));
 
       const lpBalance = await ichiVault.balanceOf(alice.address);
       await ichiVault.connect(alice).withdraw(lpBalance, alice.address);
@@ -764,21 +721,18 @@ describe('Bank', () => {
     it('should be able to maintain the position to get rid of liquidation', async () => {
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       let risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Position Risk:', risk);
 
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
           BigNumber.from(10).pow(17).mul(6), // $0.6
         ]
       );
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Position Risk:', risk);
       const positionInfo = await bank.getPositionInfo(positionId);
       const bankInfo = await bank.getBankInfo(positionInfo.underlyingToken);
-      console.log('Liquidity Threshold:', bankInfo.liqThreshold);
+
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
-      console.log('Is Liquidatable:', await bank.callStatic.isLiquidatable(positionId));
 
       await bank.execute(
         positionId,
@@ -787,12 +741,11 @@ describe('Bank', () => {
       );
 
       risk = await bank.callStatic.getPositionRisk(positionId);
-      console.log('Position Risk:', risk);
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.false;
     });
     it('should revert execution when it is liquidateable after execution', async () => {
       await mockOracle.setPrice(
-        [ICHI],
+        [WETH],
         [
           BigNumber.from(10).pow(17).mul(1), // $0.1
         ]
@@ -949,7 +902,7 @@ describe('Bank', () => {
         const iface = new ethers.utils.Interface(SpellABI);
         const depositAmount = utils.parseUnits('100', 18);
         const borrowAmount = utils.parseUnits('300', 6);
-        await ichi.approve(bank.address, ethers.constants.MaxUint256);
+        await weth.approve(bank.address, ethers.constants.MaxUint256);
 
         await expect(
           bank.execute(
@@ -958,7 +911,7 @@ describe('Bank', () => {
             iface.encodeFunctionData('openPosition', [
               {
                 strategyId: 0,
-                collToken: ICHI,
+                collToken: WETH,
                 borrowToken: USDC,
                 collAmount: depositAmount,
                 borrowAmount: borrowAmount,
@@ -980,7 +933,7 @@ describe('Bank', () => {
             iface.encodeFunctionData('openPosition', [
               {
                 strategyId: 0,
-                collToken: ICHI,
+                collToken: WETH,
                 borrowToken: USDC,
                 collAmount: depositAmount,
                 borrowAmount: borrowAmount,
@@ -997,7 +950,7 @@ describe('Bank', () => {
           iface.encodeFunctionData('openPosition', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -1008,12 +961,12 @@ describe('Bank', () => {
         const positionId = (await bank.getNextPositionId()).sub(1);
         const tick = await ichiVault.currentTick();
         TickMath.getSqrtRatioAtTick(tick);
-        await ichi.approve(bank.address, ethers.constants.MaxUint256);
+        await weth.approve(bank.address, ethers.constants.MaxUint256);
 
         await mockOracle.setPrice(
-          [ICHI],
+          [WETH],
           [
-            BigNumber.from(10).pow(16).mul(326), // $3.26
+            BigNumber.from(10).pow(18).mul(2800), // $2800
           ]
         );
         await expect(
@@ -1023,7 +976,7 @@ describe('Bank', () => {
             iface.encodeFunctionData('closePosition', [
               {
                 strategyId: 0,
-                collToken: ICHI,
+                collToken: WETH,
                 borrowToken: USDC,
                 amountRepay: ethers.constants.MaxUint256,
                 amountPosRemove: ethers.constants.MaxUint256,
@@ -1044,7 +997,7 @@ describe('Bank', () => {
             iface.encodeFunctionData('closePosition', [
               {
                 strategyId: 0,
-                collToken: ICHI,
+                collToken: WETH,
                 borrowToken: USDC,
                 amountRepay: ethers.constants.MaxUint256,
                 amountPosRemove: ethers.constants.MaxUint256,
@@ -1085,14 +1038,14 @@ describe('Bank', () => {
         const iface = new ethers.utils.Interface(SpellABI);
 
         await usdc.approve(bank.address, ethers.constants.MaxUint256);
-        await ichi.approve(bank.address, ethers.constants.MaxUint256);
+        await weth.approve(bank.address, ethers.constants.MaxUint256);
         await bank.execute(
           0,
           spell.address,
           iface.encodeFunctionData('openPositionFarm', [
             {
               strategyId: 0,
-              collToken: ICHI,
+              collToken: WETH,
               borrowToken: USDC,
               collAmount: depositAmount,
               borrowAmount: borrowAmount,
@@ -1102,14 +1055,14 @@ describe('Bank', () => {
         );
 
         // set ICHI token oracle route wrongly
-        oracle.setRoutes([ICHI], [ICHI]);
+        oracle.setRoutes([WETH], [WETH]);
 
         const positionId = (await bank.getNextPositionId()).sub(1);
         const positionValue = await bank.callStatic.getPositionValue(positionId);
         expect(positionValue).to.be.gte(BigNumber.from(0));
 
         // set ICHI token oracle route correctly
-        oracle.setRoutes([ICHI], [mockOracle.address]);
+        oracle.setRoutes([WETH], [mockOracle.address]);
       });
     });
   });

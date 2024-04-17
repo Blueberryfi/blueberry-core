@@ -95,7 +95,6 @@ describe('Convex Liquidator', () => {
     await evm_increaseTime(4 * 3600);
     await evm_mine_blocks(10);
 
-    console.log('===DAI token dumped from $5 to $0.008===');
     await mockOracle.setPrice(
       [DAI],
       [

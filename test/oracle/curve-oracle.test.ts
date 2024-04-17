@@ -134,13 +134,6 @@ describe('Curve LP Oracle', () => {
       await stableOracle.registerCurveLp(ADDRESS.CRV_FRXETH);
       await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
       await stableOracle.registerCurveLp(ADDRESS.CRV_CVXCRV_CRV);
-
-      console.log('3CrvPool', await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_3Crv));
-      console.log('TriCrypto2 Pool', await tricryptoOracle.callStatic.getPoolInfo(ADDRESS.CRV_TriCrypto));
-      console.log('FRAX/USDC USD Pool', await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRAXUSDC));
-      console.log('frxETH/ETH ETH Pool', await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_FRXETH));
-      console.log('CVX/ETH Crypto Pool', await volatileOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXETH));
-      console.log('cvxCRV/CRV Factory Pool', await stableOracle.callStatic.getPoolInfo(ADDRESS.CRV_CVXCRV_CRV));
     });
 
     it('Should fail to get price when base oracle is not set', async () => {
@@ -213,23 +206,18 @@ describe('Curve LP Oracle', () => {
 
       await stableOracle.registerCurveLp(ADDRESS.CRV_3Crv);
       let price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_3Crv);
-      console.log('3CrvPool Price:', utils.formatUnits(price, 18));
 
       await tricryptoOracle.registerCurveLp(ADDRESS.CRV_TriCrypto);
       price = await tricryptoOracle.callStatic.getPrice(ADDRESS.CRV_TriCrypto);
-      console.log('TriCrypto Price:', utils.formatUnits(price, 18));
 
       await stableOracle.registerCurveLp(ADDRESS.CRV_FRAXUSDC);
       price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_FRAXUSDC);
-      console.log('FRAX/USDC Price:', utils.formatUnits(price, 18));
 
       await volatileOracle.registerCurveLp(ADDRESS.CRV_CVXETH);
       price = await volatileOracle.callStatic.getPrice(ADDRESS.CRV_CVXETH);
-      console.log('CVX/ETH Price:', utils.formatUnits(price, 18));
 
       await stableOracle.registerCurveLp(ADDRESS.CRV_FRXETH);
       price = await stableOracle.callStatic.getPrice(ADDRESS.CRV_FRXETH);
-      console.log('frxETH/ETH Price:', utils.formatUnits(price, 18));
     });
   });
 });

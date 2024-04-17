@@ -141,7 +141,6 @@ describe('Chainlink Adapter Oracle', () => {
 
       // real usdc price should be closed to $1
       expect(price).to.be.roughlyNear(BigNumber.from(10).pow(18));
-      console.log('USDC Price:', utils.formatUnits(price, 18));
     });
     it('UNI price feeds / based 10^18', async () => {
       const five = ethers.utils.parseEther('5.0');
@@ -150,8 +149,6 @@ describe('Chainlink Adapter Oracle', () => {
 
       assert(price.gte(five), 'Price is greater than 5.0');
       assert(price.lte(sixPointFive), 'Price is less than 6.5');
-      console.log('UNI Price:', utils.formatUnits(price, 18));
-      console.log('Block Number:', await ethers.provider.getBlockNumber());
     });
 
     it('ALCX price feeds / based 10^18', async () => {
@@ -161,7 +158,6 @@ describe('Chainlink Adapter Oracle', () => {
 
       await chainlinkAdapterOracle.connect(admin).setEthDenominatedToken(ADDRESS.ALCX, true);
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.ALCX);
-      console.log('ALCX Price:', utils.formatUnits(price, 18));
 
       assert(price.gte(fiften), 'Price is greater than 15');
       assert(price.lte(thirty), 'Price is less than 30');
@@ -174,7 +170,6 @@ describe('Chainlink Adapter Oracle', () => {
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.wstETH);
       assert(price > twoThousand, 'Price is greater than 2000');
       assert(price < twoThousandFiveHundred, 'Price is less than 2500');
-      console.log('wstETH Price:', utils.formatUnits(price, 18));
     });
 
     it('CRV price feeds', async () => {
@@ -182,7 +177,6 @@ describe('Chainlink Adapter Oracle', () => {
       await chainlinkAdapterOracle.setTokenRemappings([ADDRESS.CRV], [ADDRESS.CRV]);
       await chainlinkAdapterOracle.connect(admin).setPriceFeeds([ADDRESS.CRV], [ADDRESS.CHAINLINK_CRV_USD_FEED]);
       const price = await chainlinkAdapterOracle.callStatic.getPrice(ADDRESS.CRV);
-      console.log('CRV Price:', utils.formatUnits(price, 18));
     });
     it('should revert for too old prices', async () => {
       const bnb = '0xb8c77482e45f1f44de1745f52c74426c631bdd52';

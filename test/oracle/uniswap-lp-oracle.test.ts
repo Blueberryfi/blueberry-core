@@ -49,7 +49,6 @@ describe('Uniswap V2 LP Oracle', () => {
     await uniswapOracle.registerPair(pair.address);
 
     const oraclePrice = await uniswapOracle.callStatic.getPrice(ADDRESS.UNI_V2_USDC_CRV);
-    console.log('USDC/CRV LP Price:', utils.formatUnits(oraclePrice, 18));
     // Calculate real lp price manually
     const { reserve0, reserve1 } = await pair.getReserves();
     const totalSupply = await pair.totalSupply();
@@ -65,8 +64,6 @@ describe('Uniswap V2 LP Oracle', () => {
     const token0Amount = token0Price.mul(reserve0).div(BigNumber.from(10).pow(token0Decimal));
     const token1Amount = token1Price.mul(reserve1).div(BigNumber.from(10).pow(token1Decimal));
     const price = token0Amount.add(token1Amount).mul(BigNumber.from(10).pow(18)).div(totalSupply);
-
-    console.log('USDC/CRV LP Price:', utils.formatUnits(oraclePrice, 18), utils.formatUnits(price, 18));
   });
   it('should return 0 when invalid lp address provided', async () => {
     const MockToken = await ethers.getContractFactory(CONTRACT_NAMES.MockERC20);

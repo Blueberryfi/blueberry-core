@@ -128,7 +128,6 @@ describe('Aggregator Oracle', () => {
 
       // real usdc price should be closed to $1
       expect(price).to.be.roughlyNear(BigNumber.from(10).pow(18));
-      console.log('USDC Price:', utils.formatUnits(price, 18));
     });
 
     it('should revert for too old prices', async () => {

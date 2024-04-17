@@ -18,7 +18,6 @@ describe('Uniswap V3 Oracle', () => {
 
     const LinkedLibFactory = await ethers.getContractFactory('UniV3WrappedLib');
     const LibInstance = await LinkedLibFactory.deploy();
-    console.log('Uni V3 Lib Wrapper:', LibInstance.address);
     const MockOracle = await ethers.getContractFactory(CONTRACT_NAMES.MockOracle);
     mockOracle = <MockOracle>await MockOracle.deploy();
     await mockOracle.deployed();
@@ -136,11 +135,9 @@ describe('Uniswap V3 Oracle', () => {
     });
     it('$UNI Price', async () => {
       const price = await uniswapV3Oracle.callStatic.getPrice(ADDRESS.UNI);
-      console.log(utils.formatUnits(price, 18));
     });
     it('$ICHI Price', async () => {
       const price = await uniswapV3Oracle.callStatic.getPrice(ADDRESS.ICHI);
-      console.log(utils.formatUnits(price, 18));
     });
   });
 });

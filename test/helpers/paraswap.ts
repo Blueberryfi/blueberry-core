@@ -67,7 +67,7 @@ export const faucetToken = async (
     await setTokenBalance(token, signer, utils.parseEther('100000'));
     return utils.parseEther('100000');
   } catch (e) {
-    console.log(e);
+    return utils.parseEther('0');
   }
 
   const priceRoute = await paraswapSdk.swap.getRate({
@@ -91,7 +91,6 @@ export const faucetToken = async (
   while (txStatus === false) {
     try {
       const slippage = 10 * (0.01 + 0.001 * retryCount) * 10000;
-      console.log(slippage);
       const calldata = await buildTxCalldata(toToken, amount, priceRoute, signer, slippage);
 
       await signer.sendTransaction({
