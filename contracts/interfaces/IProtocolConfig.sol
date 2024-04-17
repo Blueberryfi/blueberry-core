@@ -14,6 +14,12 @@ import { IFeeManager } from "./IFeeManager.sol";
  */
 interface IProtocolConfig {
     /**
+     * @notice Retrieve hypernative signer
+     * @return Hypernative signer address
+     */
+    function getSigner() external view returns (address);
+
+    /**
      * @notice Retrieve the deposit fee rate applied when users deposit into the protocol.
      * @return The deposit fee rate.
      */

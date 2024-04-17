@@ -26,6 +26,9 @@ import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
  *          treasury settings, and other system configurations.
  */
 contract ProtocolConfig is IProtocolConfig, Ownable2StepUpgradeable {
+    /// Hypernative signer
+    address private _signer;
+
     /// Fee manager of the protocol to handle different types of fees.
     IFeeManager private _feeManager;
 
@@ -84,6 +87,15 @@ contract ProtocolConfig is IProtocolConfig, Ownable2StepUpgradeable {
 
         _withdrawVaultFee = 100; // Represents 1% (base 10000)
         _withdrawVaultFeeWindow = 60 days; // Liquidity boot strapping event per vault
+    }
+
+    /**
+     * @dev Owner privileged to set the hypernative signer address
+     * @param signer the hypernative signer address
+     */
+    function setSigner(address signer) external onlyOwner {
+        if (signer == address(0)) revert Errors.ZERO_ADDRESS();
+        _signer = signer;
     }
 
     /**
@@ -190,6 +202,11 @@ contract ProtocolConfig is IProtocolConfig, Ownable2StepUpgradeable {
     function setBlbStabilityPool(address pool) external onlyOwner {
         if (pool == address(0)) revert Errors.ZERO_ADDRESS();
         _blbStabilityPool = pool;
+    }
+
+    /// @inheritdoc IProtocolConfig
+    function getSigner() external view override returns (address) {
+        return _signer;
     }
 
     /// @inheritdoc IProtocolConfig

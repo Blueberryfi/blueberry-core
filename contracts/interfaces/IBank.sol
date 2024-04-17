@@ -338,7 +338,7 @@ interface IBank {
      * @param spell Address of the contract ("spell") that contains the logic for the action to be executed.
      * @param data Data payload to pass to the spell for execution.
      */
-    function execute(uint256 positionId, address spell, bytes memory data) external returns (uint256);
+    function execute(uint256 positionId, address spell, bytes memory data, bytes memory signature) external returns (uint256);
 
     /**
      * @notice Allows users to repay their borrowed tokens to the bank.

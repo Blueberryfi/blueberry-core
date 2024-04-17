@@ -30,13 +30,14 @@ import { IFeeManager } from "./interfaces/IFeeManager.sol";
 import { IHardVault } from "./interfaces/IHardVault.sol";
 import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
 import { ISoftVault } from "./interfaces/ISoftVault.sol";
+import { HypernativeProtected } from "./integration/hypernative/HypernativeProtected.sol";
 
 /**
  * @title BlueberryBank
  * @author BlueberryProtocol
  * @notice Blueberry Bank is the main contract that stores user's positions and track the borrowing of tokens
  */
-contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
+contract BlueberryBank is HypernativeProtected, IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
@@ -144,6 +145,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
 
         _config = config;
         _oracle = oracle;
+        _hypernativeSigner = config.getSigner();
 
         _nextPositionId = 1;
         _bankStatus = 15; // 0x1111: allow borrow, repay, lend, withdrawLend as default
@@ -208,7 +210,12 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     }
 
     /// @inheritdoc IBank
-    function execute(uint256 positionId, address spell, bytes memory data) external lock returns (uint256) {
+    function execute(
+        uint256 positionId,
+        address spell,
+        bytes memory data,
+        bytes memory signature
+    ) external verifyHypernativeTx(keccak256(abi.encodePacked(positionId, spell, data)), signature) lock returns (uint256) {
         if (!_whitelistedSpells[spell]) revert Errors.SPELL_NOT_WHITELISTED(spell);
         if (positionId == 0) {
             positionId = _nextPositionId++;
