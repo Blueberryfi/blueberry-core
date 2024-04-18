@@ -27,7 +27,7 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IWETH } from "../interfaces/IWETH.sol";
 import { IBasicSpell } from "../interfaces/spell/IBasicSpell.sol";
-import "hardhat/console.sol";
+
 /**
  * @title BasicSpell
  * @author BlueberryProtocol
@@ -308,7 +308,7 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
 
         // Get isolated collateral value
         uint256 isolatedCollateralValue = bank.getIsolatedCollateralValue(bank.POSITION_ID());
-        console.log("isolatedCollateralValue: %s", isolatedCollateralValue);
+
         // Check if isolated Collateral size is within bounds
         if (isolatedCollateralValue < strategy.minIsolatedCollateral) {
             revert Errors.BELOW_MIN_ISOLATED_COLLATERAL(strategyId);
