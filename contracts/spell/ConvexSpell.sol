@@ -108,8 +108,8 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
     }
 
     /// @inheritdoc IConvexSpell
-    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(crvLp, minPosSize, maxPosSize);
+    function addStrategy(address crvLp, uint256 minCollSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(crvLp, minCollSize, maxPosSize);
     }
 
     /// @inheritdoc IConvexSpell

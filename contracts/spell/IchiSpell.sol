@@ -94,8 +94,8 @@ contract IchiSpell is IIchiSpell, BasicSpell {
     }
 
     /// @inheritdoc IIchiSpell
-    function addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(vault, minPosSize, maxPosSize);
+    function addStrategy(address vault, uint256 minCollSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(vault, minCollSize, maxPosSize);
     }
 
     /// @inheritdoc IIchiSpell

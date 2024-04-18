@@ -14,10 +14,10 @@ interface IIchiSpell is IBasicSpell {
     /**
      * @notice Adds a strategy to the contract.
      * @param vault Address of the vault linked to the strategy.
-     * @param minPosSize Minimum position size in USD, normalized to 1e18.
+     * @param minCollSize Minimum position size in USD, normalized to 1e18.
      * @param maxPosSize Maximum position size in USD, normalized to 1e18.
      */
-    function addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) external;
+    function addStrategy(address vault, uint256 minCollSize, uint256 maxPosSize) external;
 
     /**
      * @notice Deposits assets into an IchiVault.
