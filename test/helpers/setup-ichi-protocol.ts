@@ -233,6 +233,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     unsafeAllow: ['delegatecall'],
   });
   await config.deployed();
+  await config.setSigner(admin.address);
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory('FeeManager');

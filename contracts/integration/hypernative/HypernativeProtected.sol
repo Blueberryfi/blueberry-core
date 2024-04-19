@@ -9,7 +9,7 @@ abstract contract HypernativeProtected {
     error InvalidSignature();
 
     modifier verifyHypernativeTx(bytes32 hash, bytes memory _signature) {
-        address _signer = hash.recover(_signature);
+        address _signer = hash.toEthSignedMessageHash().recover(_signature);
         require(_signer == _hypernativeSigner, "HypernativeProtector: Invalid signature");
         _;
     }

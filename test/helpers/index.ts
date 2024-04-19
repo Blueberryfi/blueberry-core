@@ -166,6 +166,20 @@ export const revertToSnapshot = async (snapshotId: number) => {
   await ethers.provider.send('evm_revert', [snapshotId]);
 };
 
+export async function getSignatureFromData(
+  signer: SignerWithAddress,
+  positionId: number,
+  spellAddress: string,
+  data: string
+): Promise<string> {
+  const messageHash = ethers.utils.solidityKeccak256(
+    ['uint256', 'address', 'bytes'], //types of the parameters to be signed
+    [positionId, spellAddress, data] //values of the parameters to be signed
+  );
+
+  return await signer.signMessage(ethers.utils.arrayify(messageHash));
+}
+
 export * from './setup-ichi-protocol';
 export * from './setup-convex-protocol';
 export * from './setup-aura-protocol';
