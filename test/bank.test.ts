@@ -23,7 +23,7 @@ import SpellABI from '../abi/IchiSpell.json';
 import { near } from './assertions/near';
 import { roughlyNear } from './assertions/roughlyNear';
 import { Protocol, setupIchiProtocol } from './helpers/setup-ichi-protocol';
-import { evm_mine_blocks, evm_increaseTime, fork } from './helpers';
+import { evm_mine_blocks, evm_increaseTime, fork, getSignatureFromData } from './helpers';
 import { TickMath } from '@uniswap/v3-sdk';
 
 chai.use(near);
@@ -141,233 +141,209 @@ describe('Bank', () => {
       );
     });
     it('should revert execution to not whitelisted spells', async () => {
-      await expect(
-        bank.execute(
-          0,
-          ethers.constants.AddressZero,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      ).to.be.revertedWithCustomError(bank, 'SPELL_NOT_WHITELISTED');
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, 0, ethers.constants.AddressZero, encodedData);
+      await expect(bank.execute(0, ethers.constants.AddressZero, encodedData, signature)).to.be.revertedWithCustomError(
+        bank,
+        'SPELL_NOT_WHITELISTED'
+      );
     });
     it('should revert execution for existing position when given position id is greater than last pos id', async () => {
       const positionId = await bank.getNextPositionId();
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      )
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+      await expect(bank.execute(positionId, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'BAD_POSITION')
         .withArgs(positionId);
     });
     it('should revert execution for existing position from non-position owner', async () => {
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      let encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+      await bank.execute(0, spell.address, encodedData, signature);
 
+      encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
       const positionId = await bank.getNextPositionId();
-      await expect(
-        bank.connect(alice).execute(
-          positionId.sub(1),
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      )
+      signature = await getSignatureFromData(admin, positionId.sub(1).toNumber(), spell.address, encodedData);
+      await expect(bank.connect(alice).execute(positionId.sub(1), spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'NOT_FROM_OWNER')
         .withArgs(positionId.sub(1), alice.address);
     });
+
     it('should revert execution for not-whitelisted underlying token lending', async () => {
       await bank.whitelistTokens([ICHI], [false]);
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      )
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+      await expect(bank.execute(0, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'TOKEN_NOT_WHITELISTED')
         .withArgs(ICHI);
       await bank.whitelistTokens([ICHI], [true]);
     });
+
     it('should revert opening execution with non whitelisted debt token', async () => {
       await bank.whitelistTokens([USDC], [false]);
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      )
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+      await expect(bank.execute(0, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'TOKEN_NOT_WHITELISTED')
         .withArgs(USDC);
       await bank.whitelistTokens([USDC], [true]);
     });
-    it('should revert opening execution for existing position with different debt token', async () => {
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
 
+    it('should revert opening execution for existing position with different debt token', async () => {
+      let encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await bank.execute(0, spell.address, encodedData, signature);
       const positionId = await bank.getNextPositionId();
-      await expect(
-        bank.execute(
-          positionId.sub(1),
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: DAI,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      )
+
+      encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: DAI,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      signature = await getSignatureFromData(admin, positionId.sub(1).toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId.sub(1), spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'INCORRECT_DEBT')
         .withArgs(DAI);
     });
+
     it('should revert opening execution for existing position with different isolated token', async () => {
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      let encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await bank.execute(0, spell.address, encodedData, signature);
 
       const positionId = await bank.getNextPositionId();
-      await expect(
-        bank.execute(
-          positionId.sub(1),
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: DAI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      )
+      encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: DAI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      signature = await getSignatureFromData(admin, positionId.sub(1).toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId.sub(1), spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'INCORRECT_UNDERLYING')
         .withArgs(DAI);
     });
+
     it('should revert opening execution for existing position with different wrapper token', async () => {
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      let encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await bank.execute(0, spell.address, encodedData, signature);
 
       const positionId = await bank.getNextPositionId();
       const position = await bank.getPositionInfo(positionId.sub(1));
-      await expect(
-        bank.execute(
-          positionId.sub(1),
-          spell.address,
-          iface.encodeFunctionData('openPosition', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      )
+
+      encodedData = iface.encodeFunctionData('openPosition', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      signature = await getSignatureFromData(admin, positionId.sub(1).toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId.sub(1), spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'DIFF_COL_EXIST')
         .withArgs(position.collToken);
     });
+
     it('should revert direct call to lending, withdrawLend, borrow, repay, putCollateral', async () => {
       await expect(bank.lend(USDC, depositAmount)).to.be.revertedWithCustomError(bank, 'NOT_IN_EXEC');
       await expect(bank.withdrawLend(USDC, depositAmount)).to.be.revertedWithCustomError(bank, 'NOT_IN_EXEC');
@@ -376,91 +352,87 @@ describe('Bank', () => {
       await expect(bank.putCollateral(USDC, 0, depositAmount)).to.be.revertedWithCustomError(bank, 'NOT_IN_EXEC');
       await expect(bank.takeCollateral(0)).to.be.revertedWithCustomError(bank, 'NOT_IN_EXEC');
     });
+
     it('should revert execution for not whitelisted wrapper', async () => {
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
       await bank.whitelistERC1155([wichi.address], false);
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        )
-      )
+      await expect(bank.execute(0, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'TOKEN_NOT_WHITELISTED')
         .withArgs(wichi.address);
       await bank.whitelistERC1155([wichi.address], true);
     });
+
     it('should revert close execution for existing position with different isolated token', async () => {
+      let encodedData = iface.encodeFunctionData('openPosition', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
       await mockOracle.setPrice(
         [ICHI],
         [
           BigNumber.from(10).pow(16).mul(326), // $3.26
         ]
       );
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPosition', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      await bank.execute(0, spell.address, encodedData, signature);
 
       const positionId = (await bank.getNextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
       TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePosition', [
-            {
-              strategyId: 0,
-              collToken: DAI,
-              borrowToken: USDC,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: '0x',
-            },
-          ])
-        )
-      )
+
+      encodedData = iface.encodeFunctionData('closePosition', [
+        {
+          strategyId: 0,
+          collToken: DAI,
+          borrowToken: USDC,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+          amountToSwap: 0,
+          swapData: '0x',
+        },
+      ]);
+      signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'INVALID_UTOKEN')
         .withArgs(DAI);
     });
+
     it('should revert close execution for existing position with different debt token', async () => {
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPosition', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      let encodedData = iface.encodeFunctionData('openPosition', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await bank.execute(0, spell.address, encodedData, signature);
 
       const positionId = (await bank.getNextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
@@ -473,110 +445,94 @@ describe('Bank', () => {
         ]
       );
 
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePosition', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: ICHI,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: '0x',
-            },
-          ])
-        )
-      )
+      encodedData = iface.encodeFunctionData('closePosition', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: ICHI,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+          amountToSwap: 0,
+          swapData: '0x',
+        },
+      ]);
+      signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'INCORRECT_DEBT')
         .withArgs(ICHI);
     });
+
     it('should revert close execution for for not whitelisted debt token', async () => {
+      let encodedData = iface.encodeFunctionData('openPosition', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
       await mockOracle.setPrice(
         [ICHI],
         [
           BigNumber.from(10).pow(16).mul(326), // $3.26
         ]
       );
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPosition', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      await bank.execute(0, spell.address, encodedData, signature);
 
       await bank.whitelistTokens([USDC], [false]);
       const positionId = (await bank.getNextPositionId()).sub(1);
       const tick = await ichiVault.currentTick();
       TickMath.getSqrtRatioAtTick(tick);
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePosition', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: '0x',
-            },
-          ])
-        )
-      )
+
+      encodedData = iface.encodeFunctionData('closePosition', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+          amountToSwap: 0,
+          swapData: '0x',
+        },
+      ]);
+      signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+      await expect(bank.execute(positionId, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(bank, 'TOKEN_NOT_WHITELISTED')
         .withArgs(USDC);
       await bank.whitelistTokens([USDC], [true]);
     });
+
     it('should be able to increase position by putting more coll, debt', async () => {
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPosition', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      const encodedData = iface.encodeFunctionData('openPosition', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await bank.execute(0, spell.address, encodedData, signature);
       const positionId = (await bank.getNextPositionId()).sub(1);
-      await bank.execute(
-        positionId,
-        spell.address,
-        iface.encodeFunctionData('openPosition', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await bank.execute(positionId, spell.address, encodedData, signature);
     });
   });
+
   describe('Liquidation', () => {
     const depositAmount = utils.parseUnits('100', 18); // worth of $400
     const borrowAmount = utils.parseUnits('300', 6);
@@ -592,22 +548,22 @@ describe('Bank', () => {
       );
       await usdc.approve(bank.address, ethers.constants.MaxUint256);
       await ichi.approve(bank.address, ethers.constants.MaxUint256);
-      await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: ICHI,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: ICHI_VAULT_PID,
-          },
-        ])
-      );
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: ICHI,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: ICHI_VAULT_PID,
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await bank.execute(0, spell.address, encodedData, signature);
       positionId = (await bank.getNextPositionId()).sub(1);
     });
+
     it('should revert liquidation when repay is not allowed', async () => {
       const liqAmount = utils.parseUnits('100', 6);
       await bank.setBankStatus(13);
@@ -617,9 +573,11 @@ describe('Bank', () => {
       );
       await bank.setBankStatus(15);
     });
+
     it('should revert liquidation when zero amount given', async () => {
       await expect(bank.connect(alice).liquidate(1, USDC, 0)).to.be.revertedWithCustomError(bank, 'ZERO_AMOUNT');
     });
+
     it('should revert liquidation when the pos is not liquidatable', async () => {
       const liqAmount = utils.parseUnits('100', 6);
       expect(await bank.callStatic.isLiquidatable(1)).to.be.false;
@@ -627,6 +585,7 @@ describe('Bank', () => {
         .to.be.revertedWithCustomError(bank, 'NOT_LIQUIDATABLE')
         .withArgs(1);
     });
+
     it('should revert when repayAllowed is not warmed up', async () => {
       await evm_mine_blocks(10);
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
@@ -672,6 +631,7 @@ describe('Bank', () => {
         'REPAY_ALLOW_NOT_WARMED_UP'
       );
     });
+
     it('should be able to liquidate the position when repayAllowed is warmed up => (OV - PV)/CV = LT', async () => {
       await evm_increaseTime(4 * 3600);
       await evm_mine_blocks(10);
@@ -761,6 +721,7 @@ describe('Bank', () => {
       const lpBalance = await ichiVault.balanceOf(alice.address);
       await ichiVault.connect(alice).withdraw(lpBalance, alice.address);
     });
+
     it('should be able to maintain the position to get rid of liquidation', async () => {
       await ichiVault.rebalance(-260400, -260200, -260800, -260600, 0);
       let risk = await bank.callStatic.getPositionRisk(positionId);
@@ -780,16 +741,16 @@ describe('Bank', () => {
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.true;
       console.log('Is Liquidatable:', await bank.callStatic.isLiquidatable(positionId));
 
-      await bank.execute(
-        positionId,
-        spell.address,
-        iface.encodeFunctionData('increasePosition', [ICHI, depositAmount.div(2)])
-      );
+      const encodedData = iface.encodeFunctionData('increasePosition', [ICHI, depositAmount.div(2)]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await bank.execute(positionId, spell.address, encodedData, signature);
 
       risk = await bank.callStatic.getPositionRisk(positionId);
       console.log('Position Risk:', risk);
       expect(await bank.callStatic.isLiquidatable(positionId)).to.be.false;
     });
+
     it('should revert execution when it is liquidateable after execution', async () => {
       await mockOracle.setPrice(
         [ICHI],
@@ -797,13 +758,13 @@ describe('Bank', () => {
           BigNumber.from(10).pow(17).mul(1), // $0.1
         ]
       );
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('increasePosition', [ICHI, depositAmount.div(3)])
-        )
-      ).to.be.revertedWithCustomError(bank, 'INSUFFICIENT_COLLATERAL');
+
+      const encodedData = iface.encodeFunctionData('increasePosition', [ICHI, depositAmount.div(3)]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+      await expect(bank.execute(positionId, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        bank,
+        'INSUFFICIENT_COLLATERAL'
+      );
     });
   });
 
@@ -828,6 +789,7 @@ describe('Bank', () => {
         await bank.whitelistSpells([admin.address], [false]);
         expect(await bank.isSpellWhitelisted(admin.address)).to.be.false;
       });
+
       it('should be able to whitelist standard ERC20 tokens', async () => {
         await expect(bank.connect(alice).whitelistTokens([WETH], [true])).to.be.revertedWith(
           'Ownable: caller is not the owner'
@@ -854,6 +816,7 @@ describe('Bank', () => {
         expect(await bank.isTokenWhitelisted(WETH)).to.be.true;
         expect(await bank.isTokenWhitelisted(ICHI)).to.be.true;
       });
+
       it('should be able to whitelist ERC1155 tokens', async () => {
         await expect(bank.connect(alice).whitelistERC1155([werc20.address], true)).to.be.revertedWith(
           'Ownable: caller is not the owner'
@@ -873,6 +836,7 @@ describe('Bank', () => {
         await bank.whitelistERC1155([werc20.address], true);
         expect(await bank.isWrappedTokenWhitelisted(werc20.address)).to.be.true;
       });
+
       it('should be able to add bank', async () => {
         await expect(
           bank.connect(alice).addBank(USDC, usdcSoftVault.address, hardVault.address, 9000)
@@ -914,6 +878,7 @@ describe('Bank', () => {
           'BANK_ALREADY_LISTED'
         );
       });
+
       it('should be able to modify bank', async () => {
         await expect(
           bank.connect(alice).modifyBank(0, USDC, usdcSoftVault.address, hardVault.address, 9000)
@@ -937,6 +902,7 @@ describe('Bank', () => {
           bank.modifyBank(4, USDC, wethSoftVault.address, hardVault.address, 9000)
         ).to.be.revertedWithCustomError(bank, 'BANK_NOT_EXIST');
       });
+
       it('should be able to set bank status', async () => {
         await mockOracle.setPrice([ICHI], [BigNumber.from(10).pow(18).mul(5)]);
         await expect(bank.connect(alice).setBankStatus(0)).to.be.revertedWith('Ownable: caller is not the owner');
@@ -951,64 +917,54 @@ describe('Bank', () => {
         const borrowAmount = utils.parseUnits('300', 6);
         await ichi.approve(bank.address, ethers.constants.MaxUint256);
 
-        await expect(
-          bank.execute(
-            0,
-            spell.address,
-            iface.encodeFunctionData('openPosition', [
-              {
-                strategyId: 0,
-                collToken: ICHI,
-                borrowToken: USDC,
-                collAmount: depositAmount,
-                borrowAmount: borrowAmount,
-                farmingPoolId: 0,
-              },
-            ])
-          )
-        ).to.be.revertedWithCustomError(bank, 'LEND_NOT_ALLOWED');
+        let encodedData = iface.encodeFunctionData('openPosition', [
+          {
+            strategyId: 0,
+            collToken: ICHI,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: 0,
+          },
+        ]);
+        let signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+        await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+          bank,
+          'LEND_NOT_ALLOWED'
+        );
 
         await bank.setBankStatus(4);
         expect(await bank.isBorrowAllowed()).to.be.false;
         expect(await bank.isRepayAllowed()).to.be.false;
         expect(await bank.isLendAllowed()).to.be.true;
 
-        await expect(
-          bank.execute(
-            0,
-            spell.address,
-            iface.encodeFunctionData('openPosition', [
-              {
-                strategyId: 0,
-                collToken: ICHI,
-                borrowToken: USDC,
-                collAmount: depositAmount,
-                borrowAmount: borrowAmount,
-                farmingPoolId: 0,
-              },
-            ])
-          )
-        ).to.be.revertedWithCustomError(bank, 'BORROW_NOT_ALLOWED');
+        await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+          bank,
+          'BORROW_NOT_ALLOWED'
+        );
 
         await bank.setBankStatus(7);
-        await bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPosition', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: 0,
-            },
-          ])
-        );
+        await bank.execute(0, spell.address, encodedData, signature);
         const positionId = (await bank.getNextPositionId()).sub(1);
         const tick = await ichiVault.currentTick();
         TickMath.getSqrtRatioAtTick(tick);
         await ichi.approve(bank.address, ethers.constants.MaxUint256);
+
+        encodedData = iface.encodeFunctionData('closePosition', [
+          {
+            strategyId: 0,
+            collToken: ICHI,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            amountOutMin: 1,
+            amountToSwap: 0,
+            swapData: '0x',
+          },
+        ]);
+        signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
 
         await mockOracle.setPrice(
           [ICHI],
@@ -1016,48 +972,19 @@ describe('Bank', () => {
             BigNumber.from(10).pow(16).mul(326), // $3.26
           ]
         );
-        await expect(
-          bank.execute(
-            positionId,
-            spell.address,
-            iface.encodeFunctionData('closePosition', [
-              {
-                strategyId: 0,
-                collToken: ICHI,
-                borrowToken: USDC,
-                amountRepay: ethers.constants.MaxUint256,
-                amountPosRemove: ethers.constants.MaxUint256,
-                amountShareWithdraw: ethers.constants.MaxUint256,
-                amountOutMin: 1,
-                amountToSwap: 0,
-                swapData: '0x',
-              },
-            ])
-          )
-        ).to.be.revertedWithCustomError(bank, 'WITHDRAW_LEND_NOT_ALLOWED');
+        await expect(bank.execute(positionId, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+          bank,
+          'WITHDRAW_LEND_NOT_ALLOWED'
+        );
 
         await bank.setBankStatus(13);
-        await expect(
-          bank.execute(
-            positionId,
-            spell.address,
-            iface.encodeFunctionData('closePosition', [
-              {
-                strategyId: 0,
-                collToken: ICHI,
-                borrowToken: USDC,
-                amountRepay: ethers.constants.MaxUint256,
-                amountPosRemove: ethers.constants.MaxUint256,
-                amountShareWithdraw: ethers.constants.MaxUint256,
-                amountOutMin: 1,
-                amountToSwap: 0,
-                swapData: '0x',
-              },
-            ])
-          )
-        ).to.be.revertedWithCustomError(bank, 'REPAY_NOT_ALLOWED');
+        await expect(bank.execute(positionId, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+          bank,
+          'REPAY_NOT_ALLOWED'
+        );
       });
     });
+
     describe('Accrue', () => {
       it('anyone can call accrue functions by tokens', async () => {
         await expect(bank.accrue(ADDRESS.SUSHI))
@@ -1067,18 +994,22 @@ describe('Bank', () => {
         await bank.accrueAll([USDC, ICHI]);
       });
     });
+
     describe('View functions', async () => {
       it('should revert EXECUTOR call when the bank is not under execution', async () => {
         await expect(bank.EXECUTOR()).to.be.revertedWithCustomError(bank, 'NOT_UNDER_EXECUTION');
       });
+
       it('should be able to check if the oracle support the token', async () => {
         expect(await oracle.callStatic.isTokenSupported(ADDRESS.CRV)).to.be.false;
       });
+
       it('should revert getCurrentPositionInfo when not in exec', async () => {
         await expect(bank.getCurrentPositionInfo())
           .to.be.revertedWithCustomError(bank, 'BAD_POSITION')
           .withArgs(ethers.constants.MaxUint256);
       });
+
       it('should not reverted getPositionValue view function call when reward token oracle route is set wrongly', async () => {
         const depositAmount = utils.parseUnits('100', 18);
         const borrowAmount = utils.parseUnits('300', 6);
@@ -1086,20 +1017,20 @@ describe('Bank', () => {
 
         await usdc.approve(bank.address, ethers.constants.MaxUint256);
         await ichi.approve(bank.address, ethers.constants.MaxUint256);
-        await bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: ICHI,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: ICHI_VAULT_PID,
-            },
-          ])
-        );
+
+        const encodedData = iface.encodeFunctionData('openPositionFarm', [
+          {
+            strategyId: 0,
+            collToken: ICHI,
+            borrowToken: USDC,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: ICHI_VAULT_PID,
+          },
+        ]);
+        const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+        await bank.execute(0, spell.address, encodedData, signature);
 
         // set ICHI token oracle route wrongly
         oracle.setRoutes([ICHI], [ICHI]);
