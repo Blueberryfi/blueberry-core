@@ -179,8 +179,8 @@ contract IchiSpell is IIchiSpell, BasicSpell {
         if (posCollToken != address(wIchiFarm)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
 
         /// 1. Take out collateral
-        bank.takeCollateral(param.amountPosRemove);
-        wIchiFarm.burn(collId, param.amountPosRemove);
+        uint256 amountPosRemove = bank.takeCollateral(param.amountPosRemove);
+        wIchiFarm.burn(collId, amountPosRemove);
         _doRefundRewards(ichiV2);
 
         /// 2-8. Remove liquidity
