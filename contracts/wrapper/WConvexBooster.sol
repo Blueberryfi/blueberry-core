@@ -27,8 +27,6 @@ import { IConvex } from "../interfaces/convex/IConvex.sol";
 import { ICvxBooster } from "../interfaces/convex/ICvxBooster.sol";
 import { ICvxStashToken } from "../interfaces/convex/ICvxStashToken.sol";
 import { ICvxExtraRewarder } from "../interfaces/convex/ICvxExtraRewarder.sol";
-import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
-import { IBalancerV2Pool } from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
@@ -41,12 +39,7 @@ import { IRewarder } from "../interfaces/convex/IRewarder.sol";
  *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
-contract WConvexBooster is 
-    IWConvexBooster,
-    ERC1155Upgradeable,
-    ReentrancyGuardUpgradeable,
-    Ownable2StepUpgradeable
-{
+contract WConvexBooster is IWConvexBooster, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using FixedPointMathLib for uint256;
@@ -61,8 +54,6 @@ contract WConvexBooster is
     ICvxBooster private _cvxBooster;
     /// @dev Address of the escrow factory
     IPoolEscrowFactory private _escrowFactory;
-    /// @dev Address of the balancer vault
-    IBalancerVault private _balancerVault;
     /// @dev Mapping from token id to initialTokenPerShare
     mapping(uint256 => mapping(address => uint256)) private _initialTokenPerShare;
     /// @dev Convex reward per share by pid
@@ -117,27 +108,27 @@ contract WConvexBooster is
     }
 
     /// @inheritdoc IWConvexBooster
-    function encodeId(uint256 pid, uint256 cvxPerShare) public pure returns (uint256 id) {
-        // Ensure the pool id and cvxPerShare are within expected bounds
+    function encodeId(uint256 pid, uint256 crvPerShare) public pure returns (uint256 id) {
+        // Ensure the pool id and crvPerShare are within expected bounds
         if (pid >= (1 << 16)) revert Errors.BAD_PID(pid);
-        if (cvxPerShare >= (1 << 240)) revert Errors.BAD_REWARD_PER_SHARE(cvxPerShare);
-        return (pid << 240) | cvxPerShare;
+        if (crvPerShare >= (1 << 240)) revert Errors.BAD_REWARD_PER_SHARE(crvPerShare);
+        return (pid << 240) | crvPerShare;
     }
 
     /// @inheritdoc IWConvexBooster
-    function decodeId(uint256 id) public pure returns (uint256 gid, uint256 cvxPerShare) {
+    function decodeId(uint256 id) public pure returns (uint256 gid, uint256 crvPerShare) {
         gid = id >> 240; // Extracting the first 16 bits
-        cvxPerShare = id & ((1 << 240) - 1); // Extracting the last 240 bits
+        crvPerShare = id & ((1 << 240) - 1); // Extracting the last 240 bits
     }
 
     /// @inheritdoc IWConvexBooster
     function mint(uint256 pid, uint256 amount) external nonReentrant returns (uint256 id) {
-        (address lpToken, , , address ConvexRewarder, , ) = getPoolInfoFromPoolId(pid);
+        (address lpToken, , , address convexRewarder, , ) = getPoolInfoFromPoolId(pid);
         /// Escrow deployment/get logic
         address escrow = getEscrow(pid);
 
         if (escrow == address(0)) {
-            escrow = _escrowFactory.createEscrow(pid, address(_cvxBooster), ConvexRewarder, lpToken);
+            escrow = _escrowFactory.createEscrow(pid, address(_cvxBooster), convexRewarder, lpToken);
             _escrows[pid] = escrow;
         }
 
@@ -148,16 +139,16 @@ contract WConvexBooster is
         /// Deposit LP from escrow contract
         IPoolEscrow(escrow).deposit(amount);
 
-        /// cvx reward handle logic
-        uint256 cvxRewardPerToken = IRewarder(ConvexRewarder).rewardPerToken();
-        id = encodeId(pid, cvxRewardPerToken);
+        /// crv reward handle logic
+        uint256 crvRewardPerToken = IRewarder(convexRewarder).rewardPerToken();
+        id = encodeId(pid, crvRewardPerToken);
 
         _mint(msg.sender, id, amount, "");
 
         // Store extra rewards info
-        uint256 extraRewardsCount = IRewarder(ConvexRewarder).extraRewardsLength();
+        uint256 extraRewardsCount = IRewarder(convexRewarder).extraRewardsLength();
         for (uint256 i; i < extraRewardsCount; ++i) {
-            address extraRewarder = IRewarder(ConvexRewarder).extraRewards(i);
+            address extraRewarder = IRewarder(convexRewarder).extraRewards(i);
             bool mismatchFound = _syncExtraRewards(_extraRewards[pid], id, extraRewarder);
 
             if (!mismatchFound) {
@@ -179,10 +170,6 @@ contract WConvexBooster is
         address escrow = getEscrow(pid);
         // @dev sanity check
         assert(escrow != address(0));
-
-        if (amount == type(uint256).max) {
-            amount = balanceOf(msg.sender, id);
-        }
 
         _updateConvexReward(pid, id);
 
@@ -222,7 +209,7 @@ contract WConvexBooster is
         uint256 tokenId,
         uint256 amount
     ) public view override returns (address[] memory tokens, uint256[] memory rewards) {
-        (uint256 pid, uint256 originalCvxPerShare) = decodeId(tokenId);
+        (uint256 pid, uint256 originalCrvPerShare) = decodeId(tokenId);
 
         address stashToken = _stashTokenInfo[pid].stashToken;
 
@@ -232,14 +219,14 @@ contract WConvexBooster is
 
         // CVX reward
         {
-            (, , , address ConvexRewarder, , ) = getPoolInfoFromPoolId(pid);
+            (, , , address convexRewarder, , ) = getPoolInfoFromPoolId(pid);
             /// CVX reward
-            tokens[0] = IRewarder(ConvexRewarder).rewardToken();
-            rewards[0] = _getPendingReward(originalCvxPerShare, ConvexRewarder, amount);
+            tokens[0] = IRewarder(convexRewarder).rewardToken();
+            rewards[0] = _getPendingReward(originalCrvPerShare, convexRewarder, amount);
         }
         // Convex reward
         tokens[1] = address(getCvxToken());
-        rewards[1] = _calcAllocatedConvex(pid, originalCvxPerShare, amount);
+        rewards[1] = _calcAllocatedConvex(pid, originalCrvPerShare, amount);
 
         // This index is used to make sure that there is no gap in the returned array
         uint256 index = 0;
@@ -350,7 +337,7 @@ contract WConvexBooster is
 
     /**
      * @notice Calculate the amount of pending reward for a given LP amount.
-     * @param originalRewardPerShare The cached value of Cvx per share at the time of opening the position.
+     * @param originalRewardPerShare The cached value of Crv per share at the time of opening the position.
      * @param rewarder The address of the rewarder contract.
      * @param amount The calculated reward amount.
      */
@@ -361,6 +348,7 @@ contract WConvexBooster is
     ) internal view returns (uint256 rewards) {
         /// Retrieve current reward per token from rewarder
         uint256 currentRewardPerShare = IRewarder(rewarder).rewardPerToken();
+
         /// Calculate the difference in reward per share
         uint256 share = currentRewardPerShare > originalRewardPerShare
             ? currentRewardPerShare - originalRewardPerShare
@@ -382,8 +370,8 @@ contract WConvexBooster is
         uint256 amount
     ) internal view returns (uint256 mintAmount) {
         address escrow = getEscrow(pid);
-        (, , , address ConvexRewarder, , ) = getPoolInfoFromPoolId(pid);
-        uint256 currentDeposits = IRewarder(ConvexRewarder).balanceOf(escrow);
+        (, , , address convexRewarder, , ) = getPoolInfoFromPoolId(pid);
+        uint256 currentDeposits = IRewarder(convexRewarder).balanceOf(escrow);
 
         if (currentDeposits == 0) {
             return 0;
@@ -406,7 +394,7 @@ contract WConvexBooster is
         address escrow = getEscrow(pid);
         address stashToken = stashTokenInfo.stashToken;
 
-        // _ConvexRewarder rewards users in Convex
+        // _convexRewarder rewards users in Convex
         (, , , address _convexRewarder, address stashConvex, ) = getPoolInfoFromPoolId(pid);
         uint256 lastCrvPerToken = IRewarder(_convexRewarder).rewardPerToken();
 
@@ -481,17 +469,17 @@ contract WConvexBooster is
 
     /**
      * @notice Sets the Convex Stash token
-     * @param ConvexRewarder Address of the Convex Rewarder
+     * @param convexRewarder Address of the Convex Rewarder
      * @param stashConvex Address of the stash Convex
      */
     function _setConvexStashToken(
         StashTokenInfo storage stashTokenData,
-        address ConvexRewarder,
+        address convexRewarder,
         address stashConvex
     ) internal {
-        uint256 length = IRewarder(ConvexRewarder).extraRewardsLength();
+        uint256 length = IRewarder(convexRewarder).extraRewardsLength();
         for (uint256 i; i < length; ++i) {
-            address _extraRewarder = IRewarder(ConvexRewarder).extraRewards(i);
+            address _extraRewarder = IRewarder(convexRewarder).extraRewards(i);
 
             address _rewardToken = IRewarder(_extraRewarder).rewardToken();
             // Initialize the stashToken if it is not initialized
@@ -536,11 +524,11 @@ contract WConvexBooster is
     /**
      * @notice Checks if a token is an Convex Stash token
      * @param token Address of the token to check
-     * @param ConvexStash Address of the Convex Stash
+     * @param convexStash Address of the Convex Stash
      */
-    function _isConvexStashToken(address token, address ConvexStash) internal view returns (bool) {
+    function _isConvexStashToken(address token, address convexStash) internal view returns (bool) {
         try ICvxStashToken(token).stash() returns (address stash) {
-            return stash == ConvexStash;
+            return stash == convexStash;
         } catch {
             return false;
         }
