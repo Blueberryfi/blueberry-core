@@ -263,6 +263,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     unsafeAllow: ['delegatecall'],
   });
   await config.deployed();
+  await config.setSigner(admin.address);
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory('FeeManager');

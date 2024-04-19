@@ -375,6 +375,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
     unsafeAllow: ['delegatecall'],
   });
   await config.deployed();
+  await config.setSigner(admin.address);
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory('FeeManager');

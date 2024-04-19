@@ -6,7 +6,7 @@ import { setupShortLongProtocol } from '../helpers/setup-short-long-protocol';
 import { BigNumber, utils } from 'ethers';
 import SpellABI from '../../abi/ShortLongSpell.json';
 import { getParaswapCalldata } from '../helpers/paraswap';
-import { evm_increaseTime, evm_mine_blocks } from '../helpers';
+import { evm_increaseTime, evm_mine_blocks, getSignatureFromData } from '../helpers';
 import { expect } from 'chai';
 
 const WETH = ADDRESS.WETH;
@@ -73,21 +73,20 @@ describe('ShortLong Liquidator', () => {
     await crv.approve(bank.address, ethers.constants.MaxUint256);
     const swapData = await getParaswapCalldata(CRV, DAI, borrowAmount, spell.address, 100);
 
-    await bank.execute(
-      0,
-      spell.address,
-      iface.encodeFunctionData('openPosition', [
-        {
-          strategyId: 0,
-          collToken: USDC,
-          borrowToken: CRV,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId: 0,
-        },
-        swapData.data,
-      ])
-    );
+    const encodedData = iface.encodeFunctionData('openPosition', [
+      {
+        strategyId: 0,
+        collToken: USDC,
+        borrowToken: CRV,
+        collAmount: depositAmount,
+        borrowAmount: borrowAmount,
+        farmingPoolId: 0,
+      },
+      swapData.data,
+    ]);
+    const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+    await bank.execute(0, spell.address, encodedData, signature);
 
     positionId = (await bank.getNextPositionId()).sub(1);
   });

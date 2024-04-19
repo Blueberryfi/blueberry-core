@@ -2,7 +2,14 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BlueberryBank, MockOracle, ERC20, ConvexSpell, ConvexLiquidator } from '../../typechain-types';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork, evm_increaseTime } from '../helpers';
+import {
+  CvxProtocol,
+  setupCvxProtocol,
+  evm_mine_blocks,
+  fork,
+  evm_increaseTime,
+  getSignatureFromData,
+} from '../helpers';
 import SpellABI from '../../abi/ConvexSpell.json';
 import chai, { expect } from 'chai';
 import { near } from '../assertions/near';
@@ -56,21 +63,20 @@ describe('Convex Liquidator', () => {
     await usdc.approve(bank.address, ethers.constants.MaxUint256);
     await dai.approve(bank.address, ethers.constants.MaxUint256);
 
-    await bank.execute(
+    const encodedData = iface.encodeFunctionData('openPositionFarm', [
+      {
+        strategyId: 0,
+        collToken: DAI,
+        borrowToken: USDC,
+        collAmount: depositAmount,
+        borrowAmount: borrowAmount,
+        farmingPoolId: POOL_ID_1,
+      },
       0,
-      spell.address,
-      iface.encodeFunctionData('openPositionFarm', [
-        {
-          strategyId: 0,
-          collToken: DAI,
-          borrowToken: USDC,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId: POOL_ID_1,
-        },
-        0,
-      ])
-    );
+    ]);
+    const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+    await bank.execute(0, spell.address, encodedData, signature);
     positionId = (await bank.getNextPositionId()).sub(1);
 
     const LiquidatorFactory = await ethers.getContractFactory(CONTRACT_NAMES.ConvexLiquidator);

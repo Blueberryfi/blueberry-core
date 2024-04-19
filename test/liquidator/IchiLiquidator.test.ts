@@ -1,6 +1,6 @@
 import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
-import { evm_increaseTime, evm_mine_blocks, fork, setupIchiProtocol } from '../helpers';
+import { evm_increaseTime, evm_mine_blocks, fork, getSignatureFromData, setupIchiProtocol } from '../helpers';
 import {
   BlueberryBank,
   ERC20,
@@ -72,20 +72,20 @@ describe('Ichi Liquidator', () => {
     );
     await usdc.approve(bank.address, ethers.constants.MaxUint256);
     await ichi.approve(bank.address, ethers.constants.MaxUint256);
-    await bank.execute(
-      0,
-      spell.address,
-      iface.encodeFunctionData('openPositionFarm', [
-        {
-          strategyId: 0,
-          collToken: ICHI,
-          borrowToken: USDC,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId: ICHI_VAULT_PID,
-        },
-      ])
-    );
+
+    const encodedData = iface.encodeFunctionData('openPositionFarm', [
+      {
+        strategyId: 0,
+        collToken: ICHI,
+        borrowToken: USDC,
+        collAmount: depositAmount,
+        borrowAmount: borrowAmount,
+        farmingPoolId: ICHI_VAULT_PID,
+      },
+    ]);
+    const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+    await bank.execute(0, spell.address, encodedData, signature);
     positionId = (await bank.getNextPositionId()).sub(1);
 
     const LiquidatorFactory = await ethers.getContractFactory(CONTRACT_NAMES.IchiLiquidator);

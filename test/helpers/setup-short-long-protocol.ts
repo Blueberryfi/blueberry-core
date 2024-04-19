@@ -340,6 +340,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     unsafeAllow: ['delegatecall'],
   });
   await config.deployed();
+  await config.setSigner(admin.address);
   // config.startVaultWithdrawFee();
 
   const FeeManager = await ethers.getContractFactory('FeeManager');

@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BlueberryBank, MockOracle, ERC20, AuraSpell, AuraLiquidator } from '../../typechain-types';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { AuraProtocol, evm_increaseTime, evm_mine_blocks, setupAuraProtocol } from '../helpers';
+import { AuraProtocol, evm_increaseTime, evm_mine_blocks, getSignatureFromData, setupAuraProtocol } from '../helpers';
 import SpellABI from '../../abi/AuraSpell.json';
 import { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
@@ -53,21 +53,20 @@ describe('Aura Liquidator', () => {
     await usdc.approve(bank.address, ethers.constants.MaxUint256);
     await dai.approve(bank.address, ethers.constants.MaxUint256);
 
-    await bank.execute(
-      0,
-      spell.address,
-      iface.encodeFunctionData('openPositionFarm', [
-        {
-          strategyId: 0,
-          collToken: DAI,
-          borrowToken: USDC,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId: POOL_ID,
-        },
-        1,
-      ])
-    );
+    const encodedData = iface.encodeFunctionData('openPositionFarm', [
+      {
+        strategyId: 0,
+        collToken: DAI,
+        borrowToken: USDC,
+        collAmount: depositAmount,
+        borrowAmount: borrowAmount,
+        farmingPoolId: POOL_ID,
+      },
+      1,
+    ]);
+    const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+    await bank.execute(0, spell.address, encodedData, signature);
     positionId = (await bank.getNextPositionId()).sub(1);
 
     const LiquidatorFactory = await ethers.getContractFactory(CONTRACT_NAMES.AuraLiquidator);
