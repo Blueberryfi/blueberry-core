@@ -12,7 +12,7 @@ import {
 } from '../../typechain-types';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { AuraProtocol, evm_mine_blocks, setupAuraProtocol } from '../helpers';
+import { AuraProtocol, evm_mine_blocks, getSignatureFromData, setupAuraProtocol } from '../helpers';
 import SpellABI from '../../abi/AuraSpell.json';
 import chai, { expect } from 'chai';
 import { near } from '../assertions/near';
@@ -173,103 +173,103 @@ describe('Aura Spell', () => {
     });
 
     it('should revert when opening position exceeds max LTV', async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: CRV,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount.mul(4),
-              farmingPoolId: POOL_ID,
-            },
-            1,
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, 'EXCEED_MAX_LTV');
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount.mul(4),
+          farmingPoolId: POOL_ID,
+        },
+        1,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        spell,
+        'EXCEED_MAX_LTV'
+      );
     });
 
     it('should revert when opening a position for non-existing strategy', async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 5,
-              collToken: CRV,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID,
-            },
-            1,
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, 'STRATEGY_NOT_EXIST');
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 5,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID,
+        },
+        1,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        spell,
+        'STRATEGY_NOT_EXIST'
+      );
     });
 
     it('should revert when opening a position for non-existing collateral', async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: WETH,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID,
-            },
-            1,
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, 'COLLATERAL_NOT_EXIST');
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: WETH,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID,
+        },
+        1,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        spell,
+        'COLLATERAL_NOT_EXIST'
+      );
     });
 
     it('should revert when opening a position for incorrect farming pool id', async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: CRV,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: 0,
-            },
-            1,
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, 'INCORRECT_LP');
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: 0,
+        },
+        1,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        spell,
+        'INCORRECT_LP'
+      );
     });
 
     it('should be able to farm USDC on Aura', async () => {
       const positionId = await bank.getNextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
-      const res = await bank.execute(
-        0,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID,
-          },
-          1,
-        ])
-      );
+
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID,
+        },
+        1,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      const res = await bank.execute(0, spell.address, encodedData, signature);
 
       await res.wait();
 
@@ -306,21 +306,20 @@ describe('Aura Spell', () => {
       const balPendingReward = pendingRewardsInfo.rewards[0];
       const auraPendingReward = pendingRewardsInfo.rewards[1];
 
-      await bank.execute(
-        positionId,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID,
-          },
-          1,
-        ])
-      );
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID,
+        },
+        1,
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await bank.execute(positionId, spell.address, encodedData, signature);
 
       const afterSenderBalBalance = await bal.balanceOf(admin.address);
       const afterSenderAuraBalance = await aura.balanceOf(admin.address);
@@ -378,56 +377,50 @@ describe('Aura Spell', () => {
       const positionId = (await bank.getNextPositionId()).sub(1);
 
       const iface = new ethers.utils.Interface(SpellABI);
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePositionFarm', [
-            {
-              strategyId: 5,
-              collToken: CRV,
-              borrowToken: USDC,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: '0x',
-            },
-            [],
-            [],
-          ])
-        )
-      )
+      const encodedData = iface.encodeFunctionData('closePositionFarm', [
+        {
+          strategyId: 5,
+          collToken: CRV,
+          borrowToken: USDC,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+          amountToSwap: 0,
+          swapData: '0x',
+        },
+        [],
+        [],
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(spell, 'STRATEGY_NOT_EXIST')
         .withArgs(spell.address, 5);
     });
 
     it('should fail to close position for non-existing collateral', async () => {
       const positionId = (await bank.getNextPositionId()).sub(1);
-
       const iface = new ethers.utils.Interface(SpellABI);
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePositionFarm', [
-            {
-              strategyId: 0,
-              collToken: WETH,
-              borrowToken: USDC,
-              amountRepay: ethers.constants.MaxUint256,
-              amountPosRemove: ethers.constants.MaxUint256,
-              amountShareWithdraw: ethers.constants.MaxUint256,
-              amountOutMin: 1,
-              amountToSwap: 0,
-              swapData: '0x',
-            },
-            [],
-            [],
-          ])
-        )
-      )
+
+      const encodedData = iface.encodeFunctionData('closePositionFarm', [
+        {
+          strategyId: 0,
+          collToken: WETH,
+          borrowToken: USDC,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+          amountToSwap: 0,
+          swapData: '0x',
+        },
+        [],
+        [],
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(spell, 'COLLATERAL_NOT_EXIST')
         .withArgs(0, WETH);
     });
@@ -470,27 +463,28 @@ describe('Aura Spell', () => {
       const swapData = (await getParaswapCalldata(CRV, USDC, amountToSwap, spell.address, 100)).data;
 
       const iface = new ethers.utils.Interface(SpellABI);
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePositionFarm', [
-            {
-              strategyId: 0,
-              collToken: CRV,
-              borrowToken: USDC,
-              amountRepay: debtAmount.div(2),
-              amountPosRemove: position.collateralSize.div(2),
-              amountShareWithdraw: position.underlyingVaultShare.div(2),
-              amountOutMin: 1,
-              amountToSwap,
-              swapData,
-            },
-            expectedAmounts,
-            swapDatas.map((item) => item.data),
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, 'EXCEED_MAX_LTV');
+
+      const encodedData = iface.encodeFunctionData('closePositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          amountRepay: debtAmount.div(2),
+          amountPosRemove: position.collateralSize.div(2),
+          amountShareWithdraw: position.underlyingVaultShare.div(2),
+          amountOutMin: 1,
+          amountToSwap,
+          swapData,
+        },
+        expectedAmounts,
+        swapDatas.map((item) => item.data),
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        spell,
+        'EXCEED_MAX_LTV'
+      );
     });
 
     it('should be able to harvest on Aura', async () => {
@@ -533,25 +527,25 @@ describe('Aura Spell', () => {
       const beforeCrvBalance = await crv.balanceOf(admin.address);
 
       const iface = new ethers.utils.Interface(SpellABI);
-      await bank.execute(
-        positionId,
-        spell.address,
-        iface.encodeFunctionData('closePositionFarm', [
-          {
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: USDC,
-            amountRepay: ethers.constants.MaxUint256,
-            amountPosRemove: ethers.constants.MaxUint256,
-            amountShareWithdraw: ethers.constants.MaxUint256,
-            amountOutMin: 1,
-            amountToSwap,
-            swapData,
-          },
-          expectedAmounts,
-          swapDatas.map((item) => item.data),
-        ])
-      );
+
+      const encodedData = iface.encodeFunctionData('closePositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+          amountToSwap,
+          swapData,
+        },
+        expectedAmounts,
+        swapDatas.map((item) => item.data),
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await bank.execute(positionId, spell.address, encodedData, signature);
       const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);
       console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));

@@ -13,7 +13,7 @@ import {
 } from '../../typechain-types';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork } from '../helpers';
+import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork, getSignatureFromData } from '../helpers';
 import SpellABI from '../../abi/ConvexSpell.json';
 import chai, { expect } from 'chai';
 import { near } from '../assertions/near';
@@ -195,104 +195,101 @@ describe('Convex Spell', () => {
     });
 
     it('should revert when opening position exceeds max LTV', async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: CRV,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount.mul(4),
-              farmingPoolId: POOL_ID_1,
-            },
-            0,
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, 'EXCEED_MAX_LTV');
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount.mul(4),
+          farmingPoolId: POOL_ID_1,
+        },
+        0,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        spell,
+        'EXCEED_MAX_LTV'
+      );
     });
+
     it('should revert when opening a position for non-existing strategy', async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 999,
-              collToken: CRV,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_1,
-            },
-            0,
-          ])
-        )
-      )
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 999,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID_1,
+        },
+        0,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await expect(bank.execute(0, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(spell, 'STRATEGY_NOT_EXIST')
         .withArgs(spell.address, 999);
     });
+
     it('should revert when opening a position for non-existing collateral', async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: BAL,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_1,
-            },
-            0,
-          ])
-        )
-      )
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: BAL,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID_1,
+        },
+        0,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await expect(bank.execute(0, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(spell, 'COLLATERAL_NOT_EXIST')
         .withArgs(0, BAL);
     });
+
     it('should revert when opening a position for incorrect farming pool id', async () => {
-      await expect(
-        bank.execute(
-          0,
-          spell.address,
-          iface.encodeFunctionData('openPositionFarm', [
-            {
-              strategyId: 0,
-              collToken: CRV,
-              borrowToken: USDC,
-              collAmount: depositAmount,
-              borrowAmount: borrowAmount,
-              farmingPoolId: POOL_ID_1 + 1,
-            },
-            0,
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, 'INCORRECT_LP');
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID_1 + 1,
+        },
+        0,
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        spell,
+        'INCORRECT_LP'
+      );
     });
 
     it('should be able to farm USDC on Convex', async () => {
       const positionId = await bank.getNextPositionId();
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
-      await bank.execute(
+
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID_1,
+        },
         0,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID_1,
-          },
-          0,
-        ])
-      );
+      ]);
+      const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+      await bank.execute(0, spell.address, encodedData, signature);
 
       const bankInfo = await bank.getBankInfo(USDC);
       console.log('USDC Bank Info:', bankInfo);
@@ -326,21 +323,20 @@ describe('Convex Spell', () => {
       const crvPendingReward = pendingRewardsInfo.rewards[0];
       const cvxPendingReward = pendingRewardsInfo.rewards[1];
 
-      await bank.execute(
-        positionId,
-        spell.address,
-        iface.encodeFunctionData('openPositionFarm', [
-          {
-            strategyId: 0,
-            collToken: CRV,
-            borrowToken: USDC,
-            collAmount: depositAmount,
-            borrowAmount: borrowAmount,
-            farmingPoolId: POOL_ID_1,
-          },
-          0,
-        ])
-      );
+      const encodedData = iface.encodeFunctionData('openPositionFarm', [
+        {
+          strategyId: 0,
+          collToken: CRV,
+          borrowToken: USDC,
+          collAmount: depositAmount,
+          borrowAmount: borrowAmount,
+          farmingPoolId: POOL_ID_1,
+        },
+        0,
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await bank.execute(positionId, spell.address, encodedData, signature);
 
       const afterSenderCrvBalance = await crv.balanceOf(admin.address);
       const afterSenderCvxBalance = await cvx.balanceOf(admin.address);
@@ -425,87 +421,86 @@ describe('Convex Spell', () => {
       );
 
       const iface = new ethers.utils.Interface(SpellABI);
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePositionFarm', [
-            {
-              param: {
-                strategyId: 0,
-                collToken: CRV,
-                borrowToken: USDC,
-                amountRepay: ethers.constants.MaxUint256,
-                amountPosRemove: ethers.constants.MaxUint256,
-                amountShareWithdraw: ethers.constants.MaxUint256,
-                amountOutMin: utils.parseUnits('1000', 18),
-                amountToSwap: 0,
-                swapData: '0x',
-              },
-              amounts: expectedAmounts,
-              swapDatas: swapDatas.map((item) => item.data),
-            },
-          ])
-        )
-      ).to.be.revertedWith('Not enough coins removed');
+
+      const encodedData = iface.encodeFunctionData('closePositionFarm', [
+        {
+          param: {
+            strategyId: 0,
+            collToken: CRV,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            amountOutMin: utils.parseUnits('1000', 18),
+            amountToSwap: 0,
+            swapData: '0x',
+          },
+          amounts: expectedAmounts,
+          swapDatas: swapDatas.map((item) => item.data),
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId, spell.address, encodedData, signature)).to.be.revertedWith(
+        'Not enough coins removed'
+      );
     });
 
     it('should fail to close position for non-existing strategy', async () => {
       const positionId = (await bank.getNextPositionId()).sub(1);
 
       const iface = new ethers.utils.Interface(SpellABI);
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePositionFarm', [
-            {
-              param: {
-                strategyId: 999,
-                collToken: CRV,
-                borrowToken: USDC,
-                amountRepay: ethers.constants.MaxUint256,
-                amountPosRemove: ethers.constants.MaxUint256,
-                amountShareWithdraw: ethers.constants.MaxUint256,
-                amountOutMin: utils.parseUnits('1000', 18),
-                amountToSwap: 0,
-                swapData: '0x',
-              },
-              amounts: [],
-              swapDatas: [],
-            },
-          ])
-        )
-      ).to.be.revertedWithCustomError(spell, 'STRATEGY_NOT_EXIST');
+
+      const encodedData = iface.encodeFunctionData('closePositionFarm', [
+        {
+          param: {
+            strategyId: 999,
+            collToken: CRV,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            amountOutMin: utils.parseUnits('1000', 18),
+            amountToSwap: 0,
+            swapData: '0x',
+          },
+          amounts: [],
+          swapDatas: [],
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+        spell,
+        'STRATEGY_NOT_EXIST'
+      );
     });
 
     it('should fail to close position for non-existing collateral', async () => {
       const positionId = (await bank.getNextPositionId()).sub(1);
 
       const iface = new ethers.utils.Interface(SpellABI);
-      await expect(
-        bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePositionFarm', [
-            {
-              param: {
-                strategyId: 0,
-                collToken: BAL,
-                borrowToken: USDC,
-                amountRepay: ethers.constants.MaxUint256,
-                amountPosRemove: ethers.constants.MaxUint256,
-                amountShareWithdraw: ethers.constants.MaxUint256,
-                amountOutMin: utils.parseUnits('1000', 18),
-                amountToSwap: 0,
-                swapData: '0x',
-              },
-              amounts: [],
-              swapDatas: [],
-            },
-          ])
-        )
-      )
+
+      const encodedData = iface.encodeFunctionData('closePositionFarm', [
+        {
+          param: {
+            strategyId: 0,
+            collToken: BAL,
+            borrowToken: USDC,
+            amountRepay: ethers.constants.MaxUint256,
+            amountPosRemove: ethers.constants.MaxUint256,
+            amountShareWithdraw: ethers.constants.MaxUint256,
+            amountOutMin: utils.parseUnits('1000', 18),
+            amountToSwap: 0,
+            swapData: '0x',
+          },
+          amounts: [],
+          swapDatas: [],
+        },
+      ]);
+      const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+      await expect(bank.execute(positionId, spell.address, encodedData, signature))
         .to.be.revertedWithCustomError(spell, 'COLLATERAL_NOT_EXIST')
         .withArgs(0, BAL);
     });
@@ -588,27 +583,26 @@ describe('Convex Spell', () => {
         const beforeCrvBalance = await crv.balanceOf(admin.address);
 
         const iface = new ethers.utils.Interface(SpellABI);
-        await bank.execute(
-          positionId,
-          spell.address,
-          iface.encodeFunctionData('closePositionFarm', [
-            {
-              param: {
-                strategyId: 0,
-                collToken: CRV,
-                borrowToken: USDC,
-                amountRepay: ethers.constants.MaxUint256,
-                amountPosRemove: ethers.constants.MaxUint256,
-                amountShareWithdraw: ethers.constants.MaxUint256,
-                amountOutMin: 1,
-                amountToSwap: 0,
-                swapData: '0x',
-              },
-              amounts: expectedAmounts,
-              swapDatas: swapDatas.map((item) => item.data),
+        const encodedData = iface.encodeFunctionData('closePositionFarm', [
+          {
+            param: {
+              strategyId: 0,
+              collToken: CRV,
+              borrowToken: USDC,
+              amountRepay: ethers.constants.MaxUint256,
+              amountPosRemove: ethers.constants.MaxUint256,
+              amountShareWithdraw: ethers.constants.MaxUint256,
+              amountOutMin: 1,
+              amountToSwap: 0,
+              swapData: '0x',
             },
-          ])
-        );
+            amounts: expectedAmounts,
+            swapDatas: swapDatas.map((item) => item.data),
+          },
+        ]);
+        const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+        await bank.execute(positionId, spell.address, encodedData, signature);
         const afterUSDCBalance = await usdc.balanceOf(admin.address);
         const afterCrvBalance = await crv.balanceOf(admin.address);
         console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
@@ -623,23 +617,24 @@ describe('Convex Spell', () => {
       });
 
       it('should be fail to farm DAI on Convex', async () => {
-        await expect(
-          bank.execute(
-            0,
-            spell.address,
-            iface.encodeFunctionData('openPositionFarm', [
-              {
-                strategyId: 2,
-                collToken: CRV,
-                borrowToken: DAI,
-                collAmount: depositAmount,
-                borrowAmount: borrowAmount,
-                farmingPoolId: POOL_ID_3,
-              },
-              0,
-            ])
-          )
-        ).to.be.revertedWithCustomError(spell, 'EXCEED_MIN_POS_SIZE');
+        const encodedData = iface.encodeFunctionData('openPositionFarm', [
+          {
+            strategyId: 2,
+            collToken: CRV,
+            borrowToken: DAI,
+            collAmount: depositAmount,
+            borrowAmount: borrowAmount,
+            farmingPoolId: POOL_ID_3,
+          },
+          0,
+        ]);
+
+        const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+        await expect(bank.execute(0, spell.address, encodedData, signature)).to.be.revertedWithCustomError(
+          spell,
+          'EXCEED_MIN_POS_SIZE'
+        );
       });
     });
   });
