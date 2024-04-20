@@ -11,7 +11,15 @@ import {
 } from '../../../../typechain-types';
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../../../constant';
-import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork, revertToSnapshot, takeSnapshot } from '../../../helpers';
+import {
+  CvxProtocol,
+  setupCvxProtocol,
+  evm_mine_blocks,
+  fork,
+  revertToSnapshot,
+  takeSnapshot,
+  getSignatureFromData,
+} from '../../../helpers';
 import SpellABI from '../../../../abi/ConvexSpell.json';
 import chai, { expect } from 'chai';
 import { near } from '../../../assertions/near';
@@ -658,21 +666,20 @@ describe('Convex Spells Deploy', () => {
   ) {
     const positionId = await bank.getNextPositionId();
     const beforeTreasuryBalance = await colTokenContract.balanceOf(treasury.address);
-    await bank.execute(
+    const encodedData = iface.encodeFunctionData('openPositionFarm', [
+      {
+        strategyId,
+        collToken,
+        borrowToken,
+        collAmount: depositAmount,
+        borrowAmount: borrowAmount,
+        farmingPoolId: poolId,
+      },
       0,
-      spell.address,
-      iface.encodeFunctionData('openPositionFarm', [
-        {
-          strategyId,
-          collToken,
-          borrowToken,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId: poolId,
-        },
-        0,
-      ])
-    );
+    ]);
+    const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+    await bank.execute(0, spell.address, encodedData, signature);
 
     const bankInfo = await bank.getBankInfo(borrowToken);
     console.log('Bank Info:', bankInfo);
@@ -740,27 +747,26 @@ describe('Convex Spells Deploy', () => {
     const beforeColBalance = await collTokenContract.balanceOf(admin.address);
 
     const iface = new ethers.utils.Interface(SpellABI);
-    await bank.execute(
-      positionId,
-      spell.address,
-      iface.encodeFunctionData('closePositionFarm', [
-        {
-          param: {
-            strategyId,
-            collToken,
-            borrowToken,
-            amountRepay: ethers.constants.MaxUint256,
-            amountPosRemove: ethers.constants.MaxUint256,
-            amountShareWithdraw: ethers.constants.MaxUint256,
-            amountOutMin: 1,
-            amountToSwap,
-            swapData,
-          },
-          amounts: expectedAmounts,
-          swapDatas: swapDatas.map((item) => item.data),
+    const encodedData = iface.encodeFunctionData('closePositionFarm', [
+      {
+        param: {
+          strategyId,
+          collToken,
+          borrowToken,
+          amountRepay: ethers.constants.MaxUint256,
+          amountPosRemove: ethers.constants.MaxUint256,
+          amountShareWithdraw: ethers.constants.MaxUint256,
+          amountOutMin: 1,
+          amountToSwap,
+          swapData,
         },
-      ])
-    );
+        amounts: expectedAmounts,
+        swapDatas: swapDatas.map((item) => item.data),
+      },
+    ]);
+    const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+    await bank.execute(positionId, spell.address, encodedData, signature);
     const afterETHBalance = await admin.getBalance();
     const afterColBalance = await collTokenContract.balanceOf(admin.address);
     console.log('ETH Balance Change:', afterETHBalance.sub(beforeETHBalance));

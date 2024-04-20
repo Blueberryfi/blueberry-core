@@ -18,7 +18,7 @@ import {
 import { ADDRESS } from '../../../../constant';
 import { setupStrategy, strategies } from './utils';
 import { getParaswapCalldataToBuy } from '../../../helpers/paraswap';
-import { addEthToContract, evm_mine_blocks, fork, setTokenBalance } from '../../../helpers';
+import { addEthToContract, evm_mine_blocks, fork, getSignatureFromData, setTokenBalance } from '../../../helpers';
 import { getTokenAmountFromUSD } from '../utils';
 
 const DAI = ADDRESS.DAI;
@@ -379,21 +379,20 @@ describe('Aura Spell Strategy test', () => {
             _borrowAmount: BigNumberish,
             _poolId: BigNumberish
           ): Promise<BigNumber> => {
-            await bank.connect(_account).execute(
-              0,
-              spell.address,
-              spell.interface.encodeFunctionData('openPositionFarm', [
-                {
-                  strategyId: i,
-                  collToken: collateralToken.address,
-                  borrowToken: borrowToken.address,
-                  collAmount: _depositAmount,
-                  borrowAmount: _borrowAmount,
-                  farmingPoolId: _poolId,
-                },
-                1,
-              ])
-            );
+            const encodedData = spell.interface.encodeFunctionData('openPositionFarm', [
+              {
+                strategyId: i,
+                collToken: collateralToken.address,
+                borrowToken: borrowToken.address,
+                collAmount: _depositAmount,
+                borrowAmount: _borrowAmount,
+                farmingPoolId: _poolId,
+              },
+              1,
+            ]);
+            const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+            await bank.connect(_account).execute(0, spell.address, encodedData, signature);
 
             const positionId = (await bank.getNextPositionId()).sub(1);
 
@@ -412,25 +411,29 @@ describe('Aura Spell Strategy test', () => {
             expectedAmounts: BigNumberish[],
             swapDatas: string[]
           ) => {
-            await bank.connect(account).execute(
-              positionId,
+            const encodedData = spell.interface.encodeFunctionData('closePositionFarm', [
+              {
+                strategyId: i,
+                collToken: collateralToken.address,
+                borrowToken: borrowToken.address,
+                amountRepay,
+                amountPosRemove,
+                amountShareWithdraw,
+                amountOutMin,
+                amountToSwap,
+                swapData,
+              },
+              expectedAmounts,
+              swapDatas,
+            ]);
+            const signature = await getSignatureFromData(
+              admin,
+              BigNumber.from(positionId).toNumber(),
               spell.address,
-              spell.interface.encodeFunctionData('closePositionFarm', [
-                {
-                  strategyId: i,
-                  collToken: collateralToken.address,
-                  borrowToken: borrowToken.address,
-                  amountRepay,
-                  amountPosRemove,
-                  amountShareWithdraw,
-                  amountOutMin,
-                  amountToSwap,
-                  swapData,
-                },
-                expectedAmounts,
-                swapDatas,
-              ])
+              encodedData
             );
+
+            await bank.connect(account).execute(positionId, spell.address, encodedData, signature);
           };
 
           const rewardAmountWithoutFee = (amount: BigNumberish): BigNumber => {
