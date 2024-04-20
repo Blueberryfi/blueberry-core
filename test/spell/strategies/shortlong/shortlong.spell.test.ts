@@ -9,6 +9,7 @@ import {
   setupShortLongProtocol,
   revertToSnapshot,
   takeSnapshot,
+  getSignatureFromData,
 } from '../../../helpers';
 import SpellABI from '../../../../abi/ShortLongSpell.json';
 import chai, { expect } from 'chai';
@@ -457,21 +458,20 @@ describe('ShortLong Spell Test test', () => {
     const beforeTreasuryBalance = await colTokenContract.balanceOf(treasury.address);
     const swapData = await getParaswapCalldata(borrowToken, swapToken, borrowAmount, spell.address, 100);
 
-    await bank.execute(
-      0,
-      spell.address,
-      iface.encodeFunctionData('openPosition', [
-        {
-          strategyId,
-          collToken,
-          borrowToken: borrowToken,
-          collAmount: depositAmount,
-          borrowAmount: borrowAmount,
-          farmingPoolId,
-        },
-        swapData.data,
-      ])
-    );
+    const encodedData = iface.encodeFunctionData('openPosition', [
+      {
+        strategyId,
+        collToken,
+        borrowToken: borrowToken,
+        collAmount: depositAmount,
+        borrowAmount: borrowAmount,
+        farmingPoolId,
+      },
+      swapData.data,
+    ]);
+    const signature = await getSignatureFromData(admin, 0, spell.address, encodedData);
+
+    await bank.execute(0, spell.address, encodedData, signature);
 
     const bankInfo = await bank.getBankInfo(DAI);
     console.log('DAI Bank Info:', bankInfo);
@@ -518,24 +518,23 @@ describe('ShortLong Spell Test test', () => {
     const swapData = await getParaswapCalldata(swapToken, borrowToken, swapAmount, spell.address, 100);
 
     const iface = new ethers.utils.Interface(SpellABI);
-    await bank.execute(
-      positionId,
-      spell.address,
-      iface.encodeFunctionData('closePosition', [
-        {
-          strategyId,
-          collToken,
-          borrowToken: borrowToken,
-          amountRepay: ethers.constants.MaxUint256,
-          amountPosRemove: ethers.constants.MaxUint256,
-          amountShareWithdraw: ethers.constants.MaxUint256,
-          amountOutMin: 1,
-          amountToSwap,
-          swapData: colTokenSwapData,
-        },
-        swapData.data,
-      ])
-    );
+    const encodedData = iface.encodeFunctionData('closePosition', [
+      {
+        strategyId,
+        collToken,
+        borrowToken: borrowToken,
+        amountRepay: ethers.constants.MaxUint256,
+        amountPosRemove: ethers.constants.MaxUint256,
+        amountShareWithdraw: ethers.constants.MaxUint256,
+        amountOutMin: 1,
+        amountToSwap,
+        swapData: colTokenSwapData,
+      },
+      swapData.data,
+    ]);
+    const signature = await getSignatureFromData(admin, positionId.toNumber(), spell.address, encodedData);
+
+    await bank.execute(positionId, spell.address, encodedData, signature);
     const afterColBalance = await collTokenContract.balanceOf(admin.address);
     console.log('Col Token Balance Change:', afterColBalance.sub(beforeColBalance));
     const depositFee = depositAmount.mul(50).div(10000);
