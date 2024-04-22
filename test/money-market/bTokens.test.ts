@@ -54,12 +54,9 @@ describe('Money Market', async () => {
   });
 
   it('successfully borrow from a market | 18 decimals', async () => {
+    const seedAmount = utils.parseUnits('10000', 18);
     const underlying = await ethers.getContractAt('ERC20', await bBAL.underlying(), admin);
-
-    const amount = utils.parseUnits('10000', 18);
-    await faucetToken(ADDRESS.BAL, amount, admin);
-    await underlying.connect(admin).approve(bBAL.address, amount);
-    await bBAL.connect(admin).mint(amount);
+    await seedMarket(bBAL, underlying, admin, seedAmount);
 
     // Borrow bBAL from the market
     const borrowAmount = utils.parseUnits('4', 18);
@@ -68,13 +65,9 @@ describe('Money Market', async () => {
   });
 
   it('fail to borrow more than your collateral value | 18 decimals', async () => {
-    const underlyingAddr = await bBAL.underlying();
-    const underlying = await ethers.getContractAt('ERC20', underlyingAddr, admin);
-
-    const amount = utils.parseUnits('10000', 18);
-    await faucetToken(ADDRESS.BAL, amount, admin);
-    await underlying.connect(admin).approve(bBAL.address, amount);
-    await bBAL.connect(admin).mint(amount);
+    const seedAmount = utils.parseUnits('10000', 18);
+    const underlying = await ethers.getContractAt('ERC20', await bBAL.underlying(), admin);
+    await seedMarket(bBAL, underlying, admin, seedAmount);
 
     // Borrow bBAL from the market
     expect(await bBAL.connect(alice).borrow(utils.parseUnits('500', 18))).to.be.revertedWith(
@@ -85,10 +78,7 @@ describe('Money Market', async () => {
   it('successfully borrow from a market | 9 decimals', async () => {
     const seedAmount = utils.parseUnits('500', 9);
     const underlying = await ethers.getContractAt('ERC20', await bOHM.underlying(), admin);
-
-    await faucetToken(underlying.address, seedAmount, admin);
-    await underlying.connect(admin).approve(bOHM.address, seedAmount);
-    await bOHM.connect(admin).mint(seedAmount);
+    await seedMarket(bOHM, underlying, admin, seedAmount);
 
     // Borrow OHM from the market
     const borrowAmount = utils.parseUnits('12', 9);
@@ -99,10 +89,7 @@ describe('Money Market', async () => {
   it('fail to borrow more than your collateral value | 9 decimals', async () => {
     const seedAmount = utils.parseUnits('500', 9);
     const underlying = await ethers.getContractAt('ERC20', await bOHM.underlying(), admin);
-
-    await faucetToken(underlying.address, seedAmount, admin);
-    await underlying.connect(admin).approve(bOHM.address, seedAmount);
-    await bOHM.connect(admin).mint(seedAmount);
+    await seedMarket(bOHM, underlying, admin, seedAmount);
 
     // Borrow OHM from the market
     const borrowAmount = utils.parseUnits('20', 9);
@@ -112,12 +99,9 @@ describe('Money Market', async () => {
   it('successfully borrow from a market | 8 decimals', async () => {
     const seedAmount = utils.parseUnits('100', 8);
     const underlying = await ethers.getContractAt('ERC20', await bWBTC.underlying(), admin);
+    await seedMarket(bWBTC, underlying, admin, seedAmount);
 
-    await faucetToken(underlying.address, seedAmount, admin);
-    await underlying.connect(admin).approve(bWBTC.address, seedAmount);
-    await bWBTC.connect(admin).mint(seedAmount);
-
-    // Borrow bOHM from the market
+    // Borrow WBTC from the market
     const borrowAmount = utils.parseUnits('.001', 8);
     await bWBTC.connect(alice).borrow(borrowAmount);
     expect(await underlying.balanceOf(alice.address)).to.be.equal(borrowAmount);
@@ -126,10 +110,7 @@ describe('Money Market', async () => {
   it('fail to borrow more than your collateral value | 8 decimals', async () => {
     const seedAmount = utils.parseUnits('100', 8);
     const underlying = await ethers.getContractAt('ERC20', await bWBTC.underlying(), admin);
-
-    await faucetToken(underlying.address, seedAmount, admin);
-    await underlying.connect(admin).approve(bWBTC.address, seedAmount);
-    await bWBTC.connect(admin).mint(seedAmount);
+    await seedMarket(bWBTC, underlying, admin, seedAmount);
 
     // Borrow WBTC from the market
     const borrowAmount = utils.parseUnits('.01', 8);
@@ -139,12 +120,9 @@ describe('Money Market', async () => {
   it('successfully borrow from a market | 6 decimals', async () => {
     const seedAmount = utils.parseUnits('10000', 6);
     const underlying = await ethers.getContractAt('ERC20', await bUSDC.underlying(), admin);
+    await seedMarket(bUSDC, underlying, admin, seedAmount);
 
-    await faucetToken(underlying.address, seedAmount, admin);
-    await underlying.connect(admin).approve(bUSDC.address, seedAmount);
-    await bUSDC.connect(admin).mint(seedAmount);
-
-    // Borrow bOHM from the market
+    // Borrow USDC from the market
     const borrowAmount = utils.parseUnits('100', 6);
     await bUSDC.connect(alice).borrow(borrowAmount);
     expect(await underlying.balanceOf(alice.address)).to.be.equal(borrowAmount);
@@ -153,12 +131,9 @@ describe('Money Market', async () => {
   it('fail to borrow more than your collateral value | 6 decimals', async () => {
     const seedAmount = utils.parseUnits('10000', 6);
     const underlying = await ethers.getContractAt('ERC20', await bUSDC.underlying(), admin);
+    await seedMarket(bUSDC, underlying, admin, seedAmount);
 
-    await faucetToken(underlying.address, seedAmount, admin);
-    await underlying.connect(admin).approve(bUSDC.address, seedAmount);
-    await bUSDC.connect(admin).mint(seedAmount);
-
-    // Borrow bOHM from the market
+    // Borrow USDC from the market
     const borrowAmount = utils.parseUnits('1000', 6);
     expect(await bUSDC.connect(alice).borrow(borrowAmount)).to.be.revertedWith('revert Insufficient collateral');
   });
