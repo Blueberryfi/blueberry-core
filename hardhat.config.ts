@@ -62,7 +62,7 @@ const config: HardhatUserConfig = {
     path: './abi',
     runOnCompile: true,
     clear: true,
-    flat: true,
+    flat: false,
     spacing: 2,
     except: ['IBaseOracle'],
   },
