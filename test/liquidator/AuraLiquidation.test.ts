@@ -3,7 +3,8 @@ import { BlueberryBank, MockOracle, ERC20, AuraSpell, AuraLiquidator } from '../
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { AuraProtocol, evm_increaseTime, evm_mine_blocks, setupAuraProtocol } from '../helpers';
-import SpellABI from '../../abi/AuraSpell.json';
+import SpellABI from '../../abi/contracts/spell/AuraSpell.sol/AuraSpell.json';
+
 import { expect } from 'chai';
 import { BigNumber, utils } from 'ethers';
 import { fork } from '../helpers';

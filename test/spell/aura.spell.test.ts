@@ -13,7 +13,8 @@ import {
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { AuraProtocol, evm_mine_blocks, setupAuraProtocol } from '../helpers';
-import SpellABI from '../../abi/AuraSpell.json';
+import SpellABI from '../../abi/contracts/spell/AuraSpell.sol/AuraSpell.json';
+
 import chai, { expect } from 'chai';
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';

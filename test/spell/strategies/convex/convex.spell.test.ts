@@ -12,7 +12,7 @@ import {
 import { ethers } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../../../constant';
 import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork, revertToSnapshot, takeSnapshot } from '../../../helpers';
-import SpellABI from '../../../../abi/ConvexSpell.json';
+import SpellABI from '../../../../abi/contracts/spell/ConvexSpell.sol/ConvexSpell.json';
 import chai, { expect } from 'chai';
 import { near } from '../../../assertions/near';
 import { roughlyNear } from '../../../assertions/roughlyNear';

@@ -14,7 +14,7 @@ import {
   MockIchiV2,
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import SpellABI from '../../abi/IchiSpell.json';
+import SpellABI from '../../abi/contracts/spell/IchiSpell.sol/IchiSpell.json';
 
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';
@@ -1101,7 +1101,7 @@ describe('ICHI Angel Vaults Spell', () => {
       const positionId = nextPosId.sub(1);
       const positionInfo = await bank.getPositionInfo(positionId);
       const underlyingShareAmount = positionInfo.underlyingVaultShare;
-  
+
       await bank.execute(
         positionId,
         spell.address,

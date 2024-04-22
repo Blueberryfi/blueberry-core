@@ -77,7 +77,7 @@ export interface ShortLongProtocol {
   bMIM: Contract;
   bLINK: Contract;
   bOHM: Contract;
-  bSUSHI: Contract;
+  // bSUSHI: Contract;
   bBAL: Contract;
   //bALCX: Contract;
   bWETH: Contract;
@@ -316,7 +316,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     ]
   );
 
-  const bTokens = await deployBTokens(admin.address, oracle.address);
+  const bTokens = await deployBTokens(admin.address);
   comptroller = bTokens.comptroller;
   bUSDC = bTokens.bUSDC;
   bICHI = bTokens.bICHI;
@@ -325,7 +325,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
   bOHM = bTokens.bOHM;
-  bSUSHI = bTokens.bSUSHI;
+  // bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
   //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
@@ -560,7 +560,7 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
     bMIM,
     bLINK,
     bOHM,
-    bSUSHI,
+    // bSUSHI,
     bBAL,
     //bALCX,
     bWETH,

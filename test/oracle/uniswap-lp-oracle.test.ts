@@ -3,7 +3,7 @@ import { BigNumber, utils } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { UniswapV2Oracle, IUniswapV2Pair, ChainlinkAdapterOracle, IERC20Metadata } from '../../typechain-types';
-import UniPairABI from '../../abi/IUniswapV2Pair.json';
+import UniPairABI from '../../abi/@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol/IUniswapV2Pair.json';
 import { roughlyNear } from '../assertions/roughlyNear';
 
 chai.use(roughlyNear);
