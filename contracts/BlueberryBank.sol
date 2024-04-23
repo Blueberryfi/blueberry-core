@@ -293,7 +293,6 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
 
         pos.underlyingVaultShare -= shareAmount;
         IERC20(token).universalApprove(address(feeManager), wAmount);
-        wAmount = feeManager.doCutWithdrawFee(token, wAmount);
         IERC20Upgradeable(token).safeTransfer(msg.sender, wAmount);
         emit WithdrawLend(_POSITION_ID, msg.sender, token, wAmount);
     }
