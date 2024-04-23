@@ -30,6 +30,7 @@ import { ICvxExtraRewarder } from "../interfaces/convex/ICvxExtraRewarder.sol";
 import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
+import { ITokenWrapper } from "../interfaces/convex/ITokenWrapper.sol";
 
 /**
  * @title WConvexBooster
@@ -235,6 +236,11 @@ contract WConvexBooster is IWConvexBooster, ERC1155Upgradeable, ReentrancyGuardU
         for (uint256 i; i < extraRewardsCount; ++i) {
             address rewarder = _extraRewards[pid].at(i);
             address rewardToken = IRewarder(rewarder).rewardToken();
+
+            // From pool 151 onwards, extra reward tokens are wrapped
+            if (pid >= 151) {
+                rewardToken = ITokenWrapper(rewardToken).token();
+            }
 
             if (rewardToken == stashToken) {
                 stashTokenFound = true;
