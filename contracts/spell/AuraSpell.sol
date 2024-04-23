@@ -185,12 +185,11 @@ contract AuraSpell is IAuraSpell, BasicSpell {
                 revert Errors.INCORRECT_UNDERLYING(lpToken);
             }
 
-            bank.takeCollateral(param.amountPosRemove);
-
             /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards
             {
+                uint256 amountPosRemove = bank.takeCollateral(param.amountPosRemove);
                 address[] memory rewardTokens;
-                (rewardTokens, ) = _wAuraBooster.burn(pos.collId, param.amountPosRemove);
+                (rewardTokens, ) = _wAuraBooster.burn(pos.collId, amountPosRemove);
                 /// 2. Swap each reward token for the debt token
                 _sellRewards(rewardTokens, expectedRewards, swapDatas);
             }

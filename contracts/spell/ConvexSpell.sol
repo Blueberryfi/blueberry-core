@@ -282,7 +282,7 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
         uint256 amountPosRemove = closePosParam.param.amountPosRemove;
 
         /// 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
-        bank.takeCollateral(amountPosRemove);
+        amountPosRemove = bank.takeCollateral(amountPosRemove);
         (address[] memory rewardTokens, ) = wConvexBooster.burn(pos.collId, amountPosRemove);
 
         /// 2. Swap rewards tokens to debt token
