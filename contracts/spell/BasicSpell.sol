@@ -282,7 +282,7 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
      * @notice Internal function to validate if the current position size is within the strategy's bounds.
      * @param strategyId Strategy ID to validate against.
      */
-    function _validatePosSize(uint256 strategyId) internal view {
+    function _validatePosSize(uint256 strategyId) internal virtual view {
         IBank bank = getBank();
         Strategy memory strategy = _strategies[strategyId];
         IBank.Position memory pos = bank.getCurrentPositionInfo();
@@ -439,7 +439,7 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
      * @param token Address of the collateral token to be deposited.
      * @param amount Amount of collateral tokens to deposit.
      */
-    function _doPutCollateral(address token, uint256 amount) internal {
+    function _doPutCollateral(address token, uint256 amount) internal virtual {
         if (amount > 0) {
             IWERC20 werc20 = getWrappedERC20();
             IERC20(token).universalApprove(address(werc20), amount);

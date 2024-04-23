@@ -82,7 +82,7 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
     function openPosition(
         OpenPosParam calldata param,
         bytes calldata swapData
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+    ) external virtual existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         Strategy memory strategy = _strategies[param.strategyId];
         if (address(ISoftVault(strategy.vault).getUnderlyingToken()) == param.borrowToken) {
             revert Errors.INCORRECT_LP(param.borrowToken);
@@ -101,7 +101,7 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
     function closePosition(
         ClosePosParam calldata param,
         bytes calldata swapData
-    ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+    ) external virtual existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         IBank bank = getBank();
         IWERC20 werc20 = getWrappedERC20();
         Strategy memory strategy = _strategies[param.strategyId];
@@ -139,7 +139,7 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
      * @param swapData Data for paraswap swap
      * @dev swapData found in bytes struct in {PSwapLib}
      */
-    function _deposit(OpenPosParam calldata param, bytes calldata swapData) internal {
+    function _deposit(OpenPosParam calldata param, bytes calldata swapData) internal virtual {
         Strategy memory strategy = _strategies[param.strategyId];
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
@@ -176,7 +176,7 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
      * @param param Parameters required for the withdrawal, described in the `ClosePosParam` struct.
      * @param swapData Specific data needed for the ParaSwap swap.
      */
-    function _withdraw(ClosePosParam calldata param, bytes calldata swapData) internal {
+    function _withdraw(ClosePosParam calldata param, bytes calldata swapData) internal virtual {
         Strategy memory strategy = _strategies[param.strategyId];
         ISoftVault vault = ISoftVault(strategy.vault);
         IBank bank = getBank();

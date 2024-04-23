@@ -9,6 +9,7 @@
 */
 
 pragma solidity 0.8.22;
+import "hardhat/console.sol";
 
 /* solhint-disable max-line-length */
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
@@ -80,11 +81,16 @@ contract HardVault is IHardVault, Ownable2StepUpgradeable, ERC1155Upgradeable, R
         IERC20Upgradeable underlyingToken = IERC20Upgradeable(token);
 
         uint256 underlyingBalanceBefore = underlyingToken.balanceOf(address(this));
+        console.log("hardvault initial bal: ", underlyingBalanceBefore); //625000000000000000
+        console.log(underlyingToken.allowance(msg.sender, address(this)), msg.sender);
         underlyingToken.safeTransferFrom(msg.sender, address(this), amount);
+        console.log("transfer done");
         uint256 underlyingBalanceAfter = underlyingToken.balanceOf(address(this));
+        console.log("diff: ", underlyingBalanceAfter, underlyingBalanceBefore);
 
         shareAmount = underlyingBalanceAfter - underlyingBalanceBefore;
         _mint(msg.sender, uint256(uint160(token)), shareAmount, "");
+        console.log("spell address: ", msg.sender, "spell bal: ", balanceOf(msg.sender, _encodeTokenId(token)));
 
         emit Deposited(msg.sender, amount, shareAmount);
     }

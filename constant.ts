@@ -56,6 +56,7 @@ export enum CONTRACT_NAMES {
   IchiSpell = 'IchiSpell',
   AuraSpell = 'AuraSpell',
   ShortLongSpell = 'ShortLongSpell',
+  ShortLongSpell_ERC4626 = 'ShortLongSpell_ERC4626',
 
   // Interface
   IWETH = 'IWETH',

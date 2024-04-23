@@ -21,7 +21,9 @@ export const getParaswapCalldata = async (
 ) => {
   const priceRoute = await paraswapSdk.swap.getRate({
     srcToken: fromToken,
+    srcDecimals: 18,
     destToken: toToken,
+    destDecimals: 18,
     amount: amount.toString(),
     options: {
       includeDEXS: ['SushiSwap', 'BalancerV1', 'BalancerV2', 'Curve', 'UniswapV3', 'CurveV2', 'CurveV3'],

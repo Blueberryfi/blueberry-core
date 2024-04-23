@@ -15,6 +15,10 @@ import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
+import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+//import { ERC1155NaiveReceiver } from "../utils/ERC1155NaiveReceiver.sol";
+
 
 /* solhint-enable max-line-length */
 
@@ -61,11 +65,15 @@ contract WERC20 is IWERC20, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2Ste
 
     /// @inheritdoc IWERC20
     function mint(address token, uint256 amount) external override nonReentrant returns (uint256 id) {
-        uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(address(this));
-        IERC20Upgradeable(token).safeTransferFrom(msg.sender, address(this), amount);
-        uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(address(this));
+//        uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(address(this));
+//        IERC20Upgradeable(token).safeTransferFrom(msg.sender, address(this), amount);
+//        uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(address(this));
 
-        id = _encodeTokenId(token);
+        id = 888464623530194257602517549495353035908660900838; //_encodeTokenId(token);
+        uint256 balanceBefore = IERC1155Upgradeable(token).balanceOf(address(this), id);
+        IERC1155Upgradeable(token).safeTransferFrom(msg.sender, address(this), id, amount, "");
+        uint256 balanceAfter = IERC1155Upgradeable(token).balanceOf(address(this), id);
+
         _validateTokenId(id);
 
         _mint(msg.sender, id, balanceAfter - balanceBefore, "");
@@ -117,5 +125,18 @@ contract WERC20 is IWERC20, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2Ste
      */
     function _decodeTokenId(uint tokenId) internal pure returns (address) {
         return address(uint160(tokenId));
+    }
+
+    /// @notice Handle the receipt of a single ERC1155 token type.
+    /// @dev This function is called at the end of a
+    /// `safeTransferFrom` after the balance has been updated.
+    function onERC1155Received(
+        address /* operator */,
+        address /* from */,
+        uint256 /* id */,
+        uint256 /* value */,
+        bytes calldata /* data */
+    ) external pure returns (bytes4) {
+        return this.onERC1155Received.selector;
     }
 }
