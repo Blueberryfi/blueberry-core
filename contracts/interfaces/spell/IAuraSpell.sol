@@ -13,10 +13,10 @@ interface IAuraSpell is IBasicSpell {
     /**
      * @notice Allows the owner to add a new strategy.
      * @param bpt Address of the Balancer Pool Token.
-     * @param minPosSize, USD price of minimum position size for given strategy, based 1e18
+     * @param minCollSize, USD price of minimum isolated collateral for given strategy, based 1e18
      * @param maxPosSize, USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address bpt, uint256 minPosSize, uint256 maxPosSize) external;
+    function addStrategy(address bpt, uint256 minCollSize, uint256 maxPosSize) external;
 
     /**
      * @notice Adds liquidity to a Balancer pool and stakes the resultant tokens in Aura.

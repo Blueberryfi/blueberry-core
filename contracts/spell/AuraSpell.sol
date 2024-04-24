@@ -86,8 +86,8 @@ contract AuraSpell is IAuraSpell, BasicSpell {
     }
 
     /// @inheritdoc IAuraSpell
-    function addStrategy(address bpt, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(bpt, minPosSize, maxPosSize);
+    function addStrategy(address bpt, uint256 minCollSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(bpt, minCollSize, maxPosSize);
     }
 
     /// @inheritdoc IAuraSpell

@@ -140,32 +140,32 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
      * @dev Internal function that appends to the strategies array.
      * @dev Emit {StrategyAdded} event.
      * @param vault The address of the vault associated with this strategy.
-     * @param minPosSize The minimum position size (USD value) for this strategy. Value is based on 1e18.
+     * @param minCollSize The minimum isolated collateral size (USD value) for this strategy. Value is based on 1e18.
      * @param maxPosSize The maximum position size (USD value) for this strategy. Value is based on 1e18.
      */
-    function _addStrategy(address vault, uint256 minPosSize, uint256 maxPosSize) internal {
+    function _addStrategy(address vault, uint256 minCollSize, uint256 maxPosSize) internal {
         if (vault == address(0)) revert Errors.ZERO_ADDRESS();
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
-        if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
+        if (minCollSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
 
-        _strategies.push(Strategy({ vault: vault, minPositionSize: minPosSize, maxPositionSize: maxPosSize }));
+        _strategies.push(Strategy({ vault: vault, minIsolatedCollateral: minCollSize, maxPositionSize: maxPosSize }));
 
-        emit StrategyAdded(_strategies.length - 1, vault, minPosSize, maxPosSize);
+        emit StrategyAdded(_strategies.length - 1, vault, minCollSize, maxPosSize);
     }
 
     /// @inheritdoc IBasicSpell
     function setPosSize(
         uint256 strategyId,
-        uint256 minPosSize,
+        uint256 minCollSize,
         uint256 maxPosSize
     ) external existingStrategy(strategyId) onlyOwner {
         if (maxPosSize == 0) revert Errors.ZERO_AMOUNT();
-        if (minPosSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
+        if (minCollSize >= maxPosSize) revert Errors.INVALID_POS_SIZE();
 
-        _strategies[strategyId].minPositionSize = minPosSize;
+        _strategies[strategyId].minIsolatedCollateral = minCollSize;
         _strategies[strategyId].maxPositionSize = maxPosSize;
 
-        emit StrategyPosSizeUpdated(strategyId, minPosSize, maxPosSize);
+        emit StrategyPosSizeUpdated(strategyId, minCollSize, maxPosSize);
     }
 
     /// @inheritdoc IBasicSpell
@@ -305,8 +305,13 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
         if (prevPosSize + addedPosSize > strategy.maxPositionSize) {
             revert Errors.EXCEED_MAX_POS_SIZE(strategyId);
         }
-        if (prevPosSize + addedPosSize < strategy.minPositionSize) {
-            revert Errors.EXCEED_MIN_POS_SIZE(strategyId);
+
+        // Get isolated collateral value
+        uint256 isolatedCollateralValue = bank.getIsolatedCollateralValue(bank.POSITION_ID());
+
+        // Check if isolated collateral size is within bounds
+        if (isolatedCollateralValue < strategy.minIsolatedCollateral) {
+            revert Errors.BELOW_MIN_ISOLATED_COLLATERAL(strategyId);
         }
     }
 
