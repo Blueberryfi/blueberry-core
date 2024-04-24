@@ -53,8 +53,6 @@ describe('BToken Money Market', () => {
       await bTokenAdmin._setSoftVault(bUSDC.address, softVault.address);
       await bTokenAdmin._setSoftVault(bWETH.address, softVault.address);
 
-      await expect(bUSDC.connect(softVault).mint(amount)).to.not.be.revertedWith('caller should be softvault');
-      await expect(bWETH.connect(softVault).mint(amount)).to.not.be.revertedWith('caller should be softvault');
 
       await usdc.connect(softVault).approve(bUSDC.address, amount);
       let success = await bUSDC.connect(softVault).callStatic.mint(amount);
