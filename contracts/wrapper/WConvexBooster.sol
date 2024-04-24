@@ -71,10 +71,6 @@ contract WConvexBooster is IWConvexBooster, ERC1155Upgradeable, ReentrancyGuardU
     /// @dev pid => packed balances
     mapping(uint256 => uint256) private _packedBalances;
 
-    /// @dev The denominator used for reward multiplier
-    // solhint-disable-next-line var-name-mixedcase
-    uint256 private _rewardMultiplierDenominator;
-
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
