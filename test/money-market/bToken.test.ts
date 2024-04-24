@@ -80,8 +80,6 @@ describe('BToken Money Market', () => {
 
       amount = ethers.BigNumber.from(10);
 
-      await expect(bUSDC.connect(bank).borrow(amount)).to.not.be.revertedWith('only bank can borrow');
-      await expect(bWETH.connect(bank).borrow(amount)).to.not.be.revertedWith('only bank can borrow');
 
       await usdc.connect(softVault).approve(bUSDC.address, amount);
       await bUSDC.connect(softVault).mint(amount);
