@@ -86,14 +86,14 @@ describe('BToken Money Market', () => {
       await usdc.connect(softVault).approve(bUSDC.address, amount);
       await bUSDC.connect(softVault).mint(amount);
 
-      let returnValue = await bUSDC.connect(bank).callStatic.borrow(amount.div(2));
-      expect(returnValue).to.equal(0);
+      let success = await bUSDC.connect(bank).callStatic.borrow(amount.div(2));
+      expect(success).to.equal(0);
 
       await weth.connect(softVault).approve(bWETH.address, amount);
       await bWETH.connect(softVault).mint(amount);
 
-      returnValue = await bWETH.connect(bank).callStatic.borrow(amount.div(2));
-      expect(returnValue).to.equal(0);
+      success = await bWETH.connect(bank).callStatic.borrow(amount.div(2));
+      expect(success).to.equal(0);
     });
   });
 });
