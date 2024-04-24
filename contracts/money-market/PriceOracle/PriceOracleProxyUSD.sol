@@ -168,14 +168,23 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
             "mismatched data"
         );
         for (uint256 i = 0; i < bTokenAddresses.length; i++) {
+            AggregatorV3Interface aggregator = AggregatorV3Interface(sources[i]);
+            
             if (sources[i] != address(0)) {
                 require(
                     msg.sender == admin,
                     "guardian may only clear the aggregator"
                 );
+
+                (, int256 answer,,,) = aggregator.latestRoundData();
+                require(
+                    answer > 0,
+                    "invalid pricing aggregator"
+                );
             }
+
             aggregators[bTokenAddresses[i]] = AggregatorInfo({
-                source: AggregatorV3Interface(sources[i]),
+                source: aggregator,
                 base: bases[i]
             });
             emit AggregatorUpdated(bTokenAddresses[i], sources[i], bases[i]);
