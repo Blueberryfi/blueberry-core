@@ -185,7 +185,7 @@ describe('Convex Spell', () => {
   });
 
   describe('Convex Pool Farming Position', () => {
-    const depositAmount = utils.parseUnits('100', 18); // CRV => $100
+    const depositAmount = utils.parseUnits('110', 18); // CRV => $110
     const borrowAmount = utils.parseUnits('250', 6); // USDC
     const iface = new ethers.utils.Interface(SpellABI);
 
@@ -641,7 +641,7 @@ describe('Convex Spell', () => {
               0,
             ])
           )
-        ).to.be.revertedWithCustomError(spell, 'EXCEED_MIN_POS_SIZE');
+        ).to.be.revertedWithCustomError(spell, 'BELOW_MIN_ISOLATED_COLLATERAL');
       });
     });
   });

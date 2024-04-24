@@ -33,10 +33,10 @@ interface IConvexSpell is IBasicSpell {
     /**
      * @notice Adds a new strategy to the spell.
      * @param crvLp Address of the Curve LP token for the strategy.
-     * @param minPosSize Minimum position size in USD for the strategy (with 1e18 precision).
+     * @param minCollSize Minimum isolated collateral in USD for the strategy (with 1e18 precision).
      * @param maxPosSize Maximum position size in USD for the strategy (with 1e18 precision).
      */
-    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external;
+    function addStrategy(address crvLp, uint256 minCollSize, uint256 maxPosSize) external;
 
     /// @notice Returns the address of the Cvx oracle.
     function getCrvOracle() external view returns (ICurveOracle);

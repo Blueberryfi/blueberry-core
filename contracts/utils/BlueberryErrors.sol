@@ -127,8 +127,8 @@ error STRATEGY_NOT_EXIST(address spell, uint256 strategyId);
 /// @notice Thrown when the position size exceeds maximum limits.
 error EXCEED_MAX_POS_SIZE(uint256 strategyId);
 
-/// @notice Thrown when the position size is below minimum requirements.
-error EXCEED_MIN_POS_SIZE(uint256 strategyId);
+/// @notice Thrown when the user has not deposited enough isolated collateral for a strategy.
+error BELOW_MIN_ISOLATED_COLLATERAL(uint256 strategyId);
 
 /// @notice Thrown when the loan-to-value ratio exceeds allowed maximum.
 error EXCEED_MAX_LTV();

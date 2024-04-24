@@ -12,10 +12,10 @@ interface IShortLongSpell is IBasicSpell {
     /**
      * @notice Add strategy to the spell
      * @param swapToken Address of token for given strategy
-     * @param minPosSize USD price of minimum position size for given strategy, based 1e18
+     * @param minCollSize USD price of minimum isolated collateral for given strategy, based 1e18
      * @param maxPosSize USD price of maximum position size for given strategy, based 1e18
      */
-    function addStrategy(address swapToken, uint256 minPosSize, uint256 maxPosSize) external;
+    function addStrategy(address swapToken, uint256 minCollSize, uint256 maxPosSize) external;
 
     /**
      * @notice Opens a position using provided parameters and swap data.

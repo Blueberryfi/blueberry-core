@@ -14,6 +14,7 @@ pragma solidity 0.8.22;
 import { EnumerableSetUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { SafeERC20Upgradeable, IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { FixedPointMathLib } from "../libraries/FixedPointMathLib.sol";
@@ -21,7 +22,6 @@ import { FixedPointMathLib } from "../libraries/FixedPointMathLib.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
 
-import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IConvex } from "../interfaces/convex/IConvex.sol";
 import { ICvxBooster } from "../interfaces/convex/ICvxBooster.sol";
@@ -31,6 +31,7 @@ import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
 import { ITokenWrapper } from "../interfaces/convex/ITokenWrapper.sol";
+import { IWConvexBooster } from "../interfaces/IWConvexBooster.sol";
 
 /**
  * @title WConvexBooster

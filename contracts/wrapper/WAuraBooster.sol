@@ -12,6 +12,7 @@ pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
 import { EnumerableSetUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { SafeERC20Upgradeable, IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
@@ -19,8 +20,6 @@ import { FixedPointMathLib } from "../libraries/FixedPointMathLib.sol";
 /* solhint-enable max-line-length */
 
 import "../utils/BlueberryErrors.sol" as Errors;
-
-import { BaseWrapper } from "./BaseWrapper.sol";
 
 import { IWAuraBooster } from "../interfaces/IWAuraBooster.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
@@ -42,7 +41,7 @@ import { IRewarder } from "../interfaces/convex/IRewarder.sol";
  *      and do not generate yields. LP Tokens are identified by tokenIds
  *      encoded from lp token address.
  */
-contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
+contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using FixedPointMathLib for uint256;
@@ -163,8 +162,6 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
         uint256 balRewardPerToken = IRewarder(auraRewarder).rewardPerToken();
         id = encodeId(pid, balRewardPerToken);
 
-        _validateTokenId(id);
-
         _mint(msg.sender, id, amount, "");
 
         // Store extra rewards info
@@ -192,10 +189,6 @@ contract WAuraBooster is IWAuraBooster, BaseWrapper, ReentrancyGuardUpgradeable,
         address escrow = getEscrow(pid);
         // @dev sanity check
         assert(escrow != address(0));
-
-        if (amount == type(uint256).max) {
-            amount = balanceOf(msg.sender, id);
-        }
 
         _updateAuraReward(pid, id);
 
