@@ -315,7 +315,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
 
         uint256 totalShare = bank.totalShare;
         uint256 totalDebt = _borrowBalanceStored(token);
-        uint256 share = totalShare == 0 ? amount : (amount * totalShare).divCeil(totalDebt);
+        uint256 share = totalShare == 0 ? amount : (amount * totalShare) / totalDebt;
         if (share == 0) revert Errors.BORROW_ZERO_SHARE(amount);
         bank.totalShare += share;
         pos.debtShare += share;
