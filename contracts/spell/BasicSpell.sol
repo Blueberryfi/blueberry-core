@@ -140,7 +140,7 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
      * @dev Internal function that appends to the strategies array.
      * @dev Emit {StrategyAdded} event.
      * @param vault The address of the vault associated with this strategy.
-     * @param minCollSize The minimum isolated Collateral size (USD value) for this strategy. Value is based on 1e18.
+     * @param minCollSize The minimum isolated collateral size (USD value) for this strategy. Value is based on 1e18.
      * @param maxPosSize The maximum position size (USD value) for this strategy. Value is based on 1e18.
      */
     function _addStrategy(address vault, uint256 minCollSize, uint256 maxPosSize) internal {
@@ -309,7 +309,7 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
         // Get isolated collateral value
         uint256 isolatedCollateralValue = bank.getIsolatedCollateralValue(bank.POSITION_ID());
 
-        // Check if isolated Collateral size is within bounds
+        // Check if isolated collateral size is within bounds
         if (isolatedCollateralValue < strategy.minIsolatedCollateral) {
             revert Errors.BELOW_MIN_ISOLATED_COLLATERAL(strategyId);
         }
