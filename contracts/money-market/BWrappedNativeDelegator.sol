@@ -600,6 +600,11 @@ contract BWrappedNativeDelegator is
         delegateAndReturn();
     }
 
+    function _setSoftVault(address _softVault) public returns (uint256) {
+        _softVault; // Shh
+        delegateAndReturn();
+    }
+
     /**
      * @notice Internal method to delegate execution to another contract
      * @dev It returns to the external caller whatever the implementation returns or forwards reverts

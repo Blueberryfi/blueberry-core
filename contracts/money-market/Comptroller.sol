@@ -451,6 +451,11 @@ contract Comptroller is
         address borrower,
         uint256 borrowAmount
     ) external returns (uint256) {
+        uint256 creditLimit = _creditLimits[borrower][bToken];
+
+        // Only allow borrowing from the bank
+        require(creditLimit > 0, "only bank can borrow");
+
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!borrowGuardianPaused[bToken], "borrow is paused");
 
@@ -479,7 +484,6 @@ contract Comptroller is
             uint256 nextTotalBorrows = add_(totalBorrows, borrowAmount);
             require(nextTotalBorrows < borrowCap, "market borrow cap reached");
         }
-        uint256 creditLimit = _creditLimits[borrower][bToken];
         // If the borrower is a credit account, check the credit limit instead of account liquidity.
         if (creditLimit > 0) {
             (uint256 oErr, , uint256 borrowBalance, ) = BToken(bToken)
