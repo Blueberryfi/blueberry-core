@@ -49,7 +49,6 @@ describe('Aura Spell', () => {
   let bank: BlueberryBank;
   let protocol: AuraProtocol;
   let auraBooster: IAuraBooster;
-  let auraRewarder: IRewarder;
   let config: ProtocolConfig;
 
   before(async () => {
@@ -349,11 +348,6 @@ describe('Aura Spell', () => {
       pv = await bank.callStatic.getPositionValue(1);
       ov = await bank.callStatic.getDebtValue(1);
       cv = await bank.callStatic.getIsolatedCollateralValue(1);
-      console.log('=======');
-      console.log('PV:', utils.formatUnits(pv));
-      console.log('OV:', utils.formatUnits(ov));
-      console.log('CV:', utils.formatUnits(cv));
-      console.log('Position Risk', utils.formatUnits(risk, 2), '%');
     });
     // TODO: Find another USDC curve pool
     // it("should revert increasing existing position when diff pos param given", async () => {
@@ -437,11 +431,6 @@ describe('Aura Spell', () => {
       const positionId = (await bank.getNextPositionId()).sub(1);
       const position = await bank.getPositionInfo(positionId);
 
-      const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
-
-      const totalEarned = await auraRewarder.earned(waura.address);
-      console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));
-
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
 
       const rewardFeeRatio = await config.getRewardFee();
@@ -479,9 +468,9 @@ describe('Aura Spell', () => {
               strategyId: 0,
               collToken: CRV,
               borrowToken: USDC,
-              amountRepay: debtAmount.div(2),
+              amountRepay: 0,
               amountPosRemove: position.collateralSize.div(2),
-              amountShareWithdraw: position.underlyingVaultShare.div(2),
+              amountShareWithdraw: 0,
               amountOutMin: 1,
               amountToSwap,
               swapData,
@@ -497,9 +486,7 @@ describe('Aura Spell', () => {
       await evm_mine_blocks(1000);
       const positionId = (await bank.getNextPositionId()).sub(1);
       const position = await bank.getPositionInfo(positionId);
-
-      const totalEarned = await auraRewarder.earned(waura.address);
-      console.log('Wrapper Total Earned:', utils.formatUnits(totalEarned));
+      const iface = new ethers.utils.Interface(SpellABI);
 
       const pendingRewardsInfo = await waura.callStatic.pendingRewards(position.collId, position.collateralSize);
 
@@ -520,19 +507,14 @@ describe('Aura Spell', () => {
           }
         })
       );
-
-      console.log('Pending Rewards', pendingRewardsInfo);
-
       // Manually transfer CRV rewards to spell
       //await usdc.transfer(spell.address, utils.parseUnits("10", 6))
       const amountToSwap = utils.parseUnits('30', 18);
       const swapData = (await getParaswapCalldata(CRV, USDC, amountToSwap, spell.address, 100)).data;
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
-      const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeCrvBalance = await crv.balanceOf(admin.address);
 
-      const iface = new ethers.utils.Interface(SpellABI);
       await bank.execute(
         positionId,
         spell.address,
@@ -552,10 +534,8 @@ describe('Aura Spell', () => {
           swapDatas.map((item) => item.data),
         ])
       );
-      const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);
-      console.log('USDC Balance Change:', afterUSDCBalance.sub(beforeUSDCBalance));
-      console.log('CRV Balance Change:', afterCrvBalance.sub(beforeCrvBalance));
+
       const depositFee = depositAmount.mul(50).div(10000);
       const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
       expect(afterCrvBalance.sub(beforeCrvBalance)).to.be.gte(

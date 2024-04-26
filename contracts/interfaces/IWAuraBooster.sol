@@ -34,17 +34,17 @@ interface IWAuraBooster is IERC1155Upgradeable, IERC20Wrapper {
     event Burned(uint256 indexed id, uint256 indexed pid, uint256 amount);
 
     /**
-     * @notice Struct for storing information regarding an Aura Pools Stash Token.
+     * @notice Struct for storing information regarding an Aura Pools StashAura Token.
      * @param stashToken The address of the stash token.
      * @param rewarder The address of the rewarder contract.
      * @param lastStashRewardPerToken The last reward per token value for the stash token.
      * @param stashAuraReceived The amount of AURA received by the stash token.
      */
-    struct StashTokenInfo {
-        address stashToken;
+    struct StashAuraInfo {
+        address stashAuraToken;
         address rewarder;
         uint256 lastStashRewardPerToken;
-        uint256 stashAuraReceived;
+        uint256 stashAuraAuraReceived;
     }
 
     /**
@@ -140,7 +140,7 @@ interface IWAuraBooster is IERC1155Upgradeable, IERC20Wrapper {
      * @return token The reward token's address for the specific pool.
      * @return gauge The gauge contract's address for the specific pool.
      * @return crvRewards The curve rewards contract's address associated with the specific pool.
-     * @return stash The stash contract's address associated with the specific pool.
+     * @return stash The stashAura contract's address associated with the specific pool.
      * @return shutdown A boolean indicating if the pool is in shutdown mode.
      */
     function getPoolInfoFromPoolId(
