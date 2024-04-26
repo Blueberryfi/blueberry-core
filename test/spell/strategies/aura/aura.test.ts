@@ -90,9 +90,7 @@ describe('Aura Spell Strategy test', () => {
               await ethers.getContractAt('ICvxExtraRewarder', await auraRewarder.extraRewards(0))
             );
 
-            stashToken = <IStashToken>(
-              await ethers.getContractAt('IStashToken', await extraRewarder1.rewardToken())
-            );
+            stashToken = <IStashToken>await ethers.getContractAt('IStashToken', await extraRewarder1.rewardToken());
 
             await setTokenBalance(collateralToken, alice, utils.parseEther('1000000000000'));
             await setTokenBalance(collateralToken, bob, utils.parseEther('1000000000000'));
@@ -274,26 +272,26 @@ describe('Aura Spell Strategy test', () => {
             extraRewarder2 = <MockVirtualBalanceRewardPool>(
               await rewarderFactory.deploy(auraRewarder.address, dai.address)
             );
-            console.log('Extra rewarder 2 address:', extraRewarder2.address);
+
             await auraRewarder.connect(rewardManager).addExtraReward(extraRewarder2.address);
-            console.log('Extra rewarder 2 added');
+
             const pid = BigNumber.from(strategyInfo.poolId);
 
             const extraRewardLength = await waura.extraRewardsLength(pid);
             await waura.syncExtraRewards(pid, position.collId);
 
             expect(await waura.extraRewardsLength(pid)).greaterThan(extraRewardLength);
-            
+
             const pendingRewardsInfoAfterAdd = await waura.pendingRewards(position.collId, position.collateralSize);
-            console.log('Pending rewards info after add:', pendingRewardsInfoAfterAdd);
+
             const expectedAmounts = pendingRewardsInfoAfterAdd.rewards.map((reward: BigNumber) => reward);
-            
+
             const swapDatas = pendingRewardsInfoAfterAdd.tokens.map((token: any, i: any) => ({
               data: '0x',
             }));
-            console.log('setTokenBalance');
+
             await setTokenBalance(borrowToken, spell, utils.parseEther('1000'));
-            console.log('Closing position');
+
             await closePosition(
               alice,
               positionId,

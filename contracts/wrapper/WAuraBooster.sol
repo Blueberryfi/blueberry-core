@@ -32,7 +32,6 @@ import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
 import { IStashToken } from "../interfaces/aura/IStashToken.sol";
-import "hardhat/console.sol";
 
 /**
  * @title WAuraBooster
@@ -255,9 +254,9 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
                 stashAuraFound = true;
                 continue;
             }
-            console.log("rewardToken: %s", rewardToken);
+
             rewardToken = IStashToken(rewardToken).baseToken();
-            console.log("rewardToken: %s", rewardToken);
+
             uint256 tokenRewardPerShare = _initialTokenPerShare[tokenId][rewarder];
             tokens[index + 2] = rewardToken;
 

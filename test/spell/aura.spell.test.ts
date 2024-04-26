@@ -49,7 +49,6 @@ describe('Aura Spell', () => {
   let bank: BlueberryBank;
   let protocol: AuraProtocol;
   let auraBooster: IAuraBooster;
-  let auraRewarder: IRewarder;
   let config: ProtocolConfig;
 
   before(async () => {
@@ -514,7 +513,6 @@ describe('Aura Spell', () => {
       const swapData = (await getParaswapCalldata(CRV, USDC, amountToSwap, spell.address, 100)).data;
 
       const beforeTreasuryBalance = await crv.balanceOf(treasury.address);
-      const beforeUSDCBalance = await usdc.balanceOf(admin.address);
       const beforeCrvBalance = await crv.balanceOf(admin.address);
 
       await bank.execute(
@@ -536,7 +534,6 @@ describe('Aura Spell', () => {
           swapDatas.map((item) => item.data),
         ])
       );
-      const afterUSDCBalance = await usdc.balanceOf(admin.address);
       const afterCrvBalance = await crv.balanceOf(admin.address);
 
       const depositFee = depositAmount.mul(50).div(10000);
