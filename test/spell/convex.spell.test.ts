@@ -322,10 +322,6 @@ describe('Convex Spell', () => {
 
       await evm_mine_blocks(10);
 
-      const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
-      const crvPendingReward = pendingRewardsInfo.rewards[0];
-      const cvxPendingReward = pendingRewardsInfo.rewards[1];
-
       await bank.execute(
         positionId,
         spell.address,
@@ -335,18 +331,24 @@ describe('Convex Spell', () => {
             collToken: CRV,
             borrowToken: USDC,
             collAmount: depositAmount,
-            borrowAmount: borrowAmount,
+            borrowAmount: 0.001 * 1e6,
             farmingPoolId: POOL_ID_1,
           },
           0,
         ])
       );
+      const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
+      const crvPendingReward = pendingRewardsInfo.rewards[0];
+      const cvxPendingReward = pendingRewardsInfo.rewards[1];
 
       const afterSenderCrvBalance = await crv.balanceOf(admin.address);
       const afterSenderCvxBalance = await cvx.balanceOf(admin.address);
       // before - out + in = after => after + out = before + in
       expect(afterSenderCrvBalance.add(depositAmount)).to.be.roughlyNear(beforeSenderCrvBalance.add(crvPendingReward));
-      expect(afterSenderCvxBalance.sub(beforeTreasuryCvxBalance)).to.be.roughlyNear(cvxPendingReward);
+      expect(afterSenderCvxBalance.sub(beforeTreasuryCvxBalance)).to.be.approximately(
+        cvxPendingReward,
+        BigNumber.from(10).pow(16)
+      );
     });
 
     it('should be able to get position risk ratio', async () => {

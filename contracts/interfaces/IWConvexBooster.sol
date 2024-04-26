@@ -25,6 +25,20 @@ interface IWConvexBooster is IERC1155Upgradeable, IERC20Wrapper {
     event Burned(uint256 indexed id, uint256 indexed pid, uint256 amount);
 
     /**
+     * @notice Struct for storing information regarding an Cvx Pools Stash Token.
+     * @param stashToken The address of the stash token.
+     * @param rewarder The address of the rewarder contract.
+     * @param lastStashRewardPerToken The last reward per token value for the stash token.
+     * @param stashCvxReceived The amount of Cvx received by the stash token.
+     */
+    struct StashTokenInfo {
+        address stashToken;
+        address rewarder;
+        uint256 lastStashRewardPerToken;
+        uint256 stashCvxReceived;
+    }
+
+    /**
      * @notice Encodes pool id and BAL per share into an ERC1155 token id
      * @param pid The pool id (The first 16-bits)
      * @param cvxPerShare CVX amount per share, which should be multiplied by 1e18 and is the last 240 bits.
@@ -59,6 +73,16 @@ interface IWConvexBooster is IERC1155Upgradeable, IERC20Wrapper {
         uint256 id,
         uint256 amount
     ) external returns (address[] memory rewardTokens, uint256[] memory rewards);
+
+    /**
+     * @notice Syncs extra rewards for a given tokenId
+     * @dev Due to the way rewards can be added to an Aura pool, this function is necessary to
+     *    sync the extra rewards for a given tokenId before users can access any newly added rewards.
+     * @dev It is the responsibility of the user to call this function when new rewards are added.
+     * @param pid The pool ID representing the specific Aura pool.
+     * @param tokenId The ID of the ERC1155 token representing the staked position.
+     */
+    function syncExtraRewards(uint256 pid, uint256 tokenId) external;
 
     /// @notice Get the Convex token's contract address.
     function getCvxToken() external view returns (IConvex);

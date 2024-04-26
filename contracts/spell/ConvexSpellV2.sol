@@ -237,8 +237,6 @@ contract ConvexSpellV2 is IConvexSpell, BasicSpell {
                     revert Errors.INCORRECT_COLTOKEN(pos.collToken);
                 }
 
-                bank.takeCollateral(pos.collateralSize);
-
                 (address[] memory rewardTokens, ) = wConvexBooster.burn(pos.collId, pos.collateralSize);
                 // distribute multiple rewards to users
                 uint256 tokensLength = rewardTokens.length;
