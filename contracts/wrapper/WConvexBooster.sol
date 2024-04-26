@@ -234,14 +234,14 @@ contract WConvexBooster is IWConvexBooster, ERC1155Upgradeable, ReentrancyGuardU
             address rewarder = _extraRewards[pid].at(i);
             address rewardToken = IRewarder(rewarder).rewardToken();
 
-            // From pool 151 onwards, extra reward tokens are wrapped
-            if (pid >= 151) {
-                rewardToken = ITokenWrapper(rewardToken).token();
-            }
-
             if (rewardToken == stashToken) {
                 stashTokenFound = true;
                 continue;
+            }
+
+            // From pool 151 onwards, extra reward tokens are wrapped
+            if (pid >= 151) {
+                rewardToken = ITokenWrapper(rewardToken).token();
             }
 
             uint256 tokenRewardPerShare = _initialTokenPerShare[tokenId][rewarder];
