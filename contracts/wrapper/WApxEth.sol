@@ -27,8 +27,8 @@ import { BBMath } from "../libraries/BBMath.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IWApxETH } from "../interfaces/IWApxETH.sol";
 import { IApxEth } from "../interfaces/IApxETH.sol";
+import "../interfaces/IWERC4626.sol";
 
-//todo: change comments
 /**
  * @title WApxEth
  * @author BlueberryProtocol
@@ -37,7 +37,7 @@ import { IApxEth } from "../interfaces/IApxETH.sol";
  *      At the same time, the pxETH will be deposited to apxETH contract to generate yield
  *      LP Tokens are identified by tokenIds encoded from lp token address and accPerShare of deposited time
  */
-contract WApxEth is IWApxETH, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
+contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
@@ -79,22 +79,18 @@ contract WApxEth is IWApxETH, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ow
         _apxETH = IApxEth(apxETH);
     }
 
-    /// @inheritdoc IWApxETH
-    function encodeId(uint256 pid, uint256 assetsPerShare) public pure returns (uint256 id) {
-        if (pid >= (1 << 16)) revert Errors.BAD_PID(pid);
-        if (assetsPerShare >= (1 << 240)) revert Errors.BAD_REWARD_PER_SHARE(assetsPerShare);
-
-        return (pid << 240) | assetsPerShare;
+    // @inheritdoc IWERC4626
+    function decodeId(uint256 tokenId) public pure returns (address) {
+        return address(uint160(tokenId));
     }
 
-    /// @inheritdoc IWApxETH
-    function decodeId(uint256 id) public pure returns (uint256 pid, uint256 assetsPerShare) {
-        pid = id >> 240; // First 16 bits
-        assetsPerShare = id & ((1 << 240) - 1); // Last 240 bits
+    // @inheritdoc IWERC4626
+    function encodeId(address token) public pure returns (uint256) {
+        return uint256(uint160(token));
     }
 
-    /// @inheritdoc IWApxETH
-    function mint(uint256 pid, uint256 amount) external nonReentrant returns (uint256) {
+    /// @inheritdoc IWERC4626
+    function mint(uint256 amount) external nonReentrant returns (uint256) {
         IApxEth apxETH = getApxETH();
         address pxETH = apxETH.asset();
         IERC20Upgradeable(pxETH).safeTransferFrom(msg.sender, address(this), amount);
@@ -102,18 +98,18 @@ contract WApxEth is IWApxETH, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ow
         IERC20(pxETH).universalApprove(address(apxETH), amount);
         apxETH.deposit(amount, address(this));
 
-        uint256 id = encodeId(pid, apxETH.assetsPerShare());
+        uint256 id = encodeId(apxETH.asset());
 
         _mint(msg.sender, id, amount, "");
 
-        emit Minted(id, pid, amount);
+        emit Minted(id, amount);
 
         return id;
     }
 
-    /// @inheritdoc IWApxETH
-    function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
-        (uint256 pid, ) = decodeId(id);
+    /// @inheritdoc IWERC4626
+    function burn(uint256 amount) external nonReentrant returns (uint256) {
+        uint256 id = encodeId(address(getUnderlyingToken()));
         _burn(msg.sender, id, amount);
 
         IApxEth apxETH = getApxETH();
@@ -127,12 +123,25 @@ contract WApxEth is IWApxETH, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ow
         /// Transfer LP Tokens
         IERC20Upgradeable(pxETH).safeTransfer(msg.sender, assets);
 
-        emit Burned(id, pid, amount);
+        emit Burned(id, amount);
         return reward;
     }
 
-    /// @inheritdoc IWApxETH
-    function getApxETH() public view override returns (IApxEth) {
+    /// @inheritdoc IWERC4626
+    function balanceOf(address account) external view returns (uint256) {
+        return balanceOf(account, encodeId(getApxETH().asset()));
+    }
+
+    /// @inheritdoc IWERC4626
+    function getUnderlyingToken() public view returns (IERC20Upgradeable) {
+        return IERC20Upgradeable(getApxETH().asset());
+    }
+
+    /**
+     * @notice Get the apxETH contract address for this wrapper.
+     * @return An IApxEth interface of the apxETH contract.
+     */
+    function getApxETH() public view returns (IApxEth) {
         return _apxETH;
     }
 }
