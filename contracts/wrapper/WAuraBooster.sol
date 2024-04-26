@@ -25,13 +25,14 @@ import { IWAuraBooster } from "../interfaces/IWAuraBooster.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IAura } from "../interfaces/aura/IAura.sol";
 import { IAuraBooster } from "../interfaces/aura/IAuraBooster.sol";
-import { IAuraStashToken } from "../interfaces/aura/IAuraStashToken.sol";
 import { ICvxExtraRewarder } from "../interfaces/convex/ICvxExtraRewarder.sol";
 import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
 import { IBalancerV2Pool } from "../interfaces/balancer-v2/IBalancerV2Pool.sol";
 import { IPoolEscrow } from "./escrow/interfaces/IPoolEscrow.sol";
 import { IPoolEscrowFactory } from "./escrow/interfaces/IPoolEscrowFactory.sol";
 import { IRewarder } from "../interfaces/convex/IRewarder.sol";
+import { IStashToken } from "../interfaces/aura/IStashToken.sol";
+import "hardhat/console.sol";
 
 /**
  * @title WAuraBooster
@@ -66,16 +67,12 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
     mapping(uint256 => uint256) private _auraPerShareDebt;
     /// @dev pid => escrow contract address
     mapping(uint256 => address) private _escrows;
-    /// @dev pid => stash token data
-    mapping(uint256 => StashTokenInfo) private _stashTokenInfo;
+    /// @dev pid => stashAura token data
+    mapping(uint256 => StashAuraInfo) private _stashAuraInfo;
     /// @dev pid => A set of extra rewarders
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private _extraRewards;
     /// @dev pid => packed balances
     mapping(uint256 => uint256) private _packedBalances;
-
-    /// @dev The denominator used for reward multiplier
-    // solhint-disable-next-line var-name-mixedcase
-    uint256 private _rewardMultiplierDenominator;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -122,7 +119,6 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
         _auraToken = IAura(aura);
         _escrowFactory = IPoolEscrowFactory(escrowFactory);
         _auraBooster = IAuraBooster(auraBooster);
-        _rewardMultiplierDenominator = IAuraBooster(auraBooster).REWARD_MULTIPLIER_DENOMINATOR();
         _balancerVault = IBalancerVault(balancerVault);
     }
 
@@ -230,7 +226,7 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
     ) public view override returns (address[] memory tokens, uint256[] memory rewards) {
         (uint256 pid, uint256 originalBalPerShare) = decodeId(tokenId);
 
-        address stashToken = _stashTokenInfo[pid].stashToken;
+        address stashAura = _stashAuraInfo[pid].stashAuraToken;
 
         uint256 extraRewardsCount = extraRewardsLength(pid);
         tokens = new address[](extraRewardsCount + 2);
@@ -249,17 +245,19 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
 
         // This index is used to make sure that there is no gap in the returned array
         uint256 index = 0;
-        bool stashTokenFound = false;
+        bool stashAuraFound = false;
         // Additional rewards
         for (uint256 i; i < extraRewardsCount; ++i) {
             address rewarder = _extraRewards[pid].at(i);
             address rewardToken = IRewarder(rewarder).rewardToken();
 
-            if (rewardToken == stashToken) {
-                stashTokenFound = true;
+            if (rewardToken == stashAura) {
+                stashAuraFound = true;
                 continue;
             }
-
+            console.log("rewardToken: %s", rewardToken);
+            rewardToken = IStashToken(rewardToken).baseToken();
+            console.log("rewardToken: %s", rewardToken);
             uint256 tokenRewardPerShare = _initialTokenPerShare[tokenId][rewarder];
             tokens[index + 2] = rewardToken;
 
@@ -276,7 +274,7 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
             index++;
         }
 
-        if (stashTokenFound) {
+        if (stashAuraFound) {
             assembly {
                 mstore(tokens, sub(mload(tokens), 1))
                 mstore(rewards, sub(mload(rewards), 1))
@@ -424,13 +422,13 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
      * @param tokenId The ID of the ERC1155 token representing the staked position.
      */
     function _updateAuraReward(uint256 pid, uint256 tokenId) private {
-        StashTokenInfo storage stashTokenInfo = _stashTokenInfo[pid];
+        StashAuraInfo storage stashAuraInfo = _stashAuraInfo[pid];
         IAura auraToken = getAuraToken();
         address escrow = getEscrow(pid);
-        address stashToken = stashTokenInfo.stashToken;
+        address stashAuraToken = stashAuraInfo.stashAuraToken;
 
         // _auraRewarder rewards users in AURA
-        (, , , address _auraRewarder, address stashAura, ) = getPoolInfoFromPoolId(pid);
+        (, , , address _auraRewarder, address stash, ) = getPoolInfoFromPoolId(pid);
         uint256 lastBalPerToken = IRewarder(_auraRewarder).rewardPerToken();
 
         // If the token is not minted yet the tokenId will be 0
@@ -439,8 +437,8 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
             syncExtraRewards(pid, tokenId);
         }
 
-        if (stashToken == address(0)) {
-            _setAuraStashToken(stashTokenInfo, _auraRewarder, stashAura);
+        if (stashAuraToken == address(0)) {
+            _setAuraStashToken(stashAuraInfo, _auraRewarder, stash);
         }
 
         uint256 currentDeposits = IRewarder(_auraRewarder).balanceOf(escrow);
@@ -507,20 +505,16 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
      * @param auraRewarder Address of the Aura Rewarder
      * @param stashAura Address of the stash Aura
      */
-    function _setAuraStashToken(
-        StashTokenInfo storage stashTokenData,
-        address auraRewarder,
-        address stashAura
-    ) internal {
+    function _setAuraStashToken(StashAuraInfo storage stashAuraData, address auraRewarder, address stashAura) internal {
         uint256 length = IRewarder(auraRewarder).extraRewardsLength();
         for (uint256 i; i < length; ++i) {
             address _extraRewarder = IRewarder(auraRewarder).extraRewards(i);
 
             address _rewardToken = IRewarder(_extraRewarder).rewardToken();
-            // Initialize the stashToken if it is not initialized
+            // Initialize the stashAura if it is not initialized
             if (_isAuraStashToken(_rewardToken, stashAura)) {
-                stashTokenData.stashToken = _rewardToken;
-                stashTokenData.rewarder = _extraRewarder;
+                stashAuraData.stashAuraToken = _rewardToken;
+                stashAuraData.rewarder = _extraRewarder;
                 break;
             }
         }
@@ -562,7 +556,7 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
      * @param auraStash Address of the Aura Stash
      */
     function _isAuraStashToken(address token, address auraStash) internal view returns (bool) {
-        try IAuraStashToken(token).stash() returns (address stash) {
+        try IStashToken(token).stash() returns (address stash) {
             return stash == auraStash;
         } catch {
             return false;
