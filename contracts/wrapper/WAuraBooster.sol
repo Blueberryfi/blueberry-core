@@ -427,7 +427,7 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
         address stashAuraToken = stashAuraInfo.stashAuraToken;
 
         // _auraRewarder rewards users in AURA
-        (, , , address _auraRewarder, address stash, ) = getPoolInfoFromPoolId(pid);
+        (, , , address _auraRewarder, address stashAura, ) = getPoolInfoFromPoolId(pid);
         uint256 lastBalPerToken = IRewarder(_auraRewarder).rewardPerToken();
 
         // If the token is not minted yet the tokenId will be 0
@@ -437,7 +437,7 @@ contract WAuraBooster is IWAuraBooster, ERC1155Upgradeable, ReentrancyGuardUpgra
         }
 
         if (stashAuraToken == address(0)) {
-            _setAuraStashToken(stashAuraInfo, _auraRewarder, stash);
+            _setAuraStashToken(stashAuraInfo, _auraRewarder, stashAura);
         }
 
         uint256 currentDeposits = IRewarder(_auraRewarder).balanceOf(escrow);
