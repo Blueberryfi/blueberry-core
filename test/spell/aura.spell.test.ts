@@ -50,6 +50,7 @@ describe('Aura Spell', () => {
   let protocol: AuraProtocol;
   let auraBooster: IAuraBooster;
   let config: ProtocolConfig;
+  let auraRewarder: IRewarder;
 
   before(async () => {
     await fork();
