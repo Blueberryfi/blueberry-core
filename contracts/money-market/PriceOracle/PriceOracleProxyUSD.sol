@@ -7,7 +7,7 @@ import "../BErc20.sol";
 import "../BToken.sol";
 import "../Exponential.sol";
 import "../EIP20Interface.sol";
-import "hardhat/console.sol";
+
 contract PriceOracleProxyUSD is PriceOracle, Exponential {
     /// @notice ChainLink aggregator base, currently support USD and ETH
     enum AggregatorBase {
