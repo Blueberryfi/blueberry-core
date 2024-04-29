@@ -5,8 +5,6 @@ import {
   WERC20,
   ERC20,
   WAuraBooster,
-  IAuraBooster,
-  IRewarder,
   AuraSpell,
   ProtocolConfig,
 } from '../../typechain-types';
@@ -48,9 +46,7 @@ describe('Aura Spell', () => {
   let waura: WAuraBooster;
   let bank: BlueberryBank;
   let protocol: AuraProtocol;
-  let auraBooster: IAuraBooster;
   let config: ProtocolConfig;
-  let auraRewarder: IRewarder;
 
   before(async () => {
     await fork();
@@ -61,9 +57,6 @@ describe('Aura Spell', () => {
     aura = <ERC20>await ethers.getContractAt('ERC20', AURA);
     bal = <ERC20>await ethers.getContractAt('ERC20', BAL);
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
-    auraBooster = <IAuraBooster>await ethers.getContractAt('IAuraBooster', ADDRESS.AURA_BOOSTER);
-    const poolInfo = await auraBooster.poolInfo(ADDRESS.AURA_UDU_POOL_ID);
-    auraRewarder = <IRewarder>await ethers.getContractAt('IRewarder', poolInfo.crvRewards);
 
     protocol = await setupAuraProtocol();
     bank = protocol.bank;

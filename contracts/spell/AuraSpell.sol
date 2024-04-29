@@ -284,8 +284,8 @@ contract AuraSpell is IAuraSpell, BasicSpell {
 
         for (i; i < length; ++i) {
             if (tokens[i] != lpToken) {
-                amountsIn[j] = tokens[i] == borrowToken ? borrowAmount : 0;
-                if (amountsIn[j] > 0) {
+                if (tokens[i] == borrowToken) {
+                    amountsIn[j] = borrowAmount;
                     IERC20(tokens[i]).universalApprove(vault, amountsIn[j]);
                     maxAmountsIn[i] = amountsIn[j];
                 }
