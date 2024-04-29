@@ -14,7 +14,7 @@ import {
   MockIchiV2,
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import SpellABI from '../../abi/IchiSpell.json';
+import SpellABI from '../../abi/contracts/spell/IchiSpell.sol/IchiSpell.json';
 
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';

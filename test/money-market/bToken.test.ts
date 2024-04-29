@@ -29,8 +29,8 @@ describe('BToken Money Market', () => {
 
     await setupShortLongProtocol();
 
-    const oracle = await setupOracles();
-    const bTokens = await deployBTokens(admin.address, oracle.address);
+    await setupOracles();
+    const bTokens = await deployBTokens(admin.address);
     bUSDC = bTokens.bUSDC;
     bWETH = bTokens.bWETH;
     comptroller = bTokens.comptroller;

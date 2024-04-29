@@ -80,7 +80,7 @@ export interface CvxProtocol {
   bMIM: Contract;
   bLINK: Contract;
   bOHM: Contract;
-  bSUSHI: Contract;
+  // bSUSHI: Contract;
   bBAL: Contract;
   //bALCX: Contract;
   bWETH: Contract;
@@ -352,7 +352,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   await stableOracle.registerCurveLp(ADDRESS.CRV_MIM3CRV);
   await stableOracle.registerCurveLp(ADDRESS.CRV_FRAXUSDC);
 
-  const bTokens = await deployBTokens(admin.address, oracle.address);
+  const bTokens = await deployBTokens(admin.address);
   comptroller = bTokens.comptroller;
   bUSDC = bTokens.bUSDC;
   bICHI = bTokens.bICHI;
@@ -361,7 +361,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
   bOHM = bTokens.bOHM;
-  bSUSHI = bTokens.bSUSHI;
+  // bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
   //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
@@ -644,7 +644,7 @@ export const setupCvxProtocol = async (minimized: boolean = false): Promise<CvxP
     bMIM,
     bLINK,
     bOHM,
-    bSUSHI,
+    // bSUSHI,
     bBAL,
     //bALCX,
     bWETH,

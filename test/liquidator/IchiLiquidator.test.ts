@@ -13,7 +13,8 @@ import {
   WIchiFarm,
 } from '../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
-import SpellABI from '../../abi/IchiSpell.json';
+import SpellABI from '../../abi/contracts/spell/IchiSpell.sol/IchiSpell.json';
+
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 

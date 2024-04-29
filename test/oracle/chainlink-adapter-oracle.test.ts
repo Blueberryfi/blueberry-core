@@ -4,7 +4,7 @@ import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { ChainlinkAdapterOracle, IAggregatorV3Interface, IWstETH } from '../../typechain-types';
-import WstETHABI from '../../abi/IWstETH.json';
+import WstETHABI from '../../abi/contracts/interfaces/IWstETH.sol/IWstETH.json';
 
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';

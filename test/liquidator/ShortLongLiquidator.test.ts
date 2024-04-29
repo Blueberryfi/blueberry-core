@@ -4,7 +4,7 @@ import { BlueberryBank, ERC20, MockOracle, ShortLongLiquidator, ShortLongSpell }
 import { ethers, upgrades } from 'hardhat';
 import { setupShortLongProtocol } from '../helpers/setup-short-long-protocol';
 import { BigNumber, utils } from 'ethers';
-import SpellABI from '../../abi/ShortLongSpell.json';
+import SpellABI from '../../abi/contracts/spell/ShortLongSpell.sol/ShortLongSpell.json';
 import { getParaswapCalldata } from '../helpers/paraswap';
 import { evm_increaseTime, evm_mine_blocks } from '../helpers';
 import { expect } from 'chai';

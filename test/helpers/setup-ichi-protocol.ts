@@ -62,7 +62,7 @@ export interface Protocol {
   bMIM: Contract;
   bLINK: Contract;
   bOHM: Contract;
-  bSUSHI: Contract;
+  // bSUSHI: Contract;
   bBAL: Contract;
   //bALCX: Contract,
   bWETH: Contract;
@@ -303,7 +303,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   await bank.whitelistTokens([USDC, ICHI, DAI, wstETH, WETH], [true, true, true, true, true]);
   await bank.whitelistERC1155([werc20.address, wichi.address], true);
 
-  const bTokens = await deployBTokens(admin.address, oracle.address);
+  const bTokens = await deployBTokens(admin.address);
   comptroller = bTokens.comptroller;
   bUSDC = bTokens.bUSDC;
   bICHI = bTokens.bICHI;
@@ -312,7 +312,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
   bOHM = bTokens.bOHM;
-  bSUSHI = bTokens.bSUSHI;
+  // bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
   //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
@@ -415,7 +415,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
     bMIM,
     bLINK,
     bOHM,
-    bSUSHI,
+    // bSUSHI,
     bBAL,
     //bALCX,
     bWETH,

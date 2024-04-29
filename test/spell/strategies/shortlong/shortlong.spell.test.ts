@@ -10,7 +10,8 @@ import {
   revertToSnapshot,
   takeSnapshot,
 } from '../../../helpers';
-import SpellABI from '../../../../abi/ShortLongSpell.json';
+import SpellABI from '../../../../abi/contracts/spell/ShortLongSpell.sol/ShortLongSpell.json';
+
 import chai, { expect } from 'chai';
 import { near } from '../../../assertions/near';
 import { roughlyNear } from '../../../assertions/roughlyNear';
