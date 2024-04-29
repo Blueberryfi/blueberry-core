@@ -53,7 +53,6 @@ describe('BToken Money Market', () => {
       await bTokenAdmin._setSoftVault(bUSDC.address, softVault.address);
       await bTokenAdmin._setSoftVault(bWETH.address, softVault.address);
 
-
       await usdc.connect(softVault).approve(bUSDC.address, amount);
       let success = await bUSDC.connect(softVault).callStatic.mint(amount);
       expect(success).to.equal(0);
@@ -77,7 +76,6 @@ describe('BToken Money Market', () => {
       await comptroller._setCreditLimit(bank.address, bWETH.address, amount);
 
       amount = ethers.BigNumber.from(10);
-
 
       await usdc.connect(softVault).approve(bUSDC.address, amount);
       await bUSDC.connect(softVault).mint(amount);
