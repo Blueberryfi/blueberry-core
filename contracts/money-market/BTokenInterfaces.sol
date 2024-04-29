@@ -115,6 +115,11 @@ contract BTokenStorage {
      * @notice Mapping of account addresses to outstanding borrow balances
      */
     mapping(address => BorrowSnapshot) internal accountBorrows;
+
+    /**
+     * @notice Address of the SoftVault allowed to call mint and mint-related functions
+     */
+    address public softVault;
 }
 
 contract BErc20Storage {
@@ -370,6 +375,8 @@ contract BTokenInterface is BTokenStorage {
     function _setInterestRateModel(InterestRateModel newInterestRateModel)
         public
         returns (uint256);
+
+    function _setSoftVault(address _softVault) public returns (uint256);
 }
 
 contract BErc20Interface is BErc20Storage {

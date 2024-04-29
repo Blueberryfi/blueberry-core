@@ -124,8 +124,8 @@ contract ShortLongSpell is IShortLongSpell, BasicSpell {
     }
 
     /// @inheritdoc IShortLongSpell
-    function addStrategy(address swapToken, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(swapToken, minPosSize, maxPosSize);
+    function addStrategy(address swapToken, uint256 minCollSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(swapToken, minCollSize, maxPosSize);
     }
 
     /**

@@ -47,7 +47,7 @@ describe('Aura Liquidator', () => {
     spell = protocol.auraSpell;
     mockOracle = protocol.mockOracle;
 
-    const depositAmount = utils.parseUnits('100', 18); // CRV => $100
+    const depositAmount = utils.parseUnits('110', 18); // CRV => $110
     const borrowAmount = utils.parseUnits('250', 6); // USDC
     const iface = new ethers.utils.Interface(SpellABI);
 

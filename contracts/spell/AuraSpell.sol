@@ -86,8 +86,8 @@ contract AuraSpell is IAuraSpell, BasicSpell {
     }
 
     /// @inheritdoc IAuraSpell
-    function addStrategy(address bpt, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(bpt, minPosSize, maxPosSize);
+    function addStrategy(address bpt, uint256 minCollSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(bpt, minCollSize, maxPosSize);
     }
 
     /// @inheritdoc IAuraSpell
@@ -105,8 +105,11 @@ contract AuraSpell is IAuraSpell, BasicSpell {
         /// 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
 
+        address borrowToken = param.borrowToken;
+        uint256 borrowAmount = param.borrowAmount;
+
         /// 2. Borrow funds based on specified amount
-        _doBorrow(param.borrowToken, param.borrowAmount);
+        _doBorrow(borrowToken, borrowAmount);
 
         /// 3. Add liquidity to the Balancer pool and receive BPT in return.
         {
@@ -117,7 +120,9 @@ contract AuraSpell is IAuraSpell, BasicSpell {
             (uint256[] memory maxAmountsIn, uint256[] memory amountsIn) = _getJoinPoolParamsAndApprove(
                 address(vault),
                 tokens,
-                lpToken
+                lpToken,
+                borrowToken,
+                borrowAmount
             );
 
             vault.joinPool(
@@ -185,12 +190,11 @@ contract AuraSpell is IAuraSpell, BasicSpell {
                 revert Errors.INCORRECT_UNDERLYING(lpToken);
             }
 
-            bank.takeCollateral(param.amountPosRemove);
-
             /// 1. Burn the wrapped tokens, retrieve the BPT tokens, and claim the AURA rewards
             {
+                uint256 amountPosRemove = bank.takeCollateral(param.amountPosRemove);
                 address[] memory rewardTokens;
-                (rewardTokens, ) = _wAuraBooster.burn(pos.collId, param.amountPosRemove);
+                (rewardTokens, ) = _wAuraBooster.burn(pos.collId, amountPosRemove);
                 /// 2. Swap each reward token for the debt token
                 _sellRewards(rewardTokens, expectedRewards, swapDatas);
             }
@@ -267,7 +271,9 @@ contract AuraSpell is IAuraSpell, BasicSpell {
     function _getJoinPoolParamsAndApprove(
         address vault,
         address[] memory tokens,
-        address lpToken
+        address lpToken,
+        address borrowToken,
+        uint256 borrowAmount
     ) internal returns (uint256[] memory, uint256[] memory) {
         uint256 i;
         uint256 j;
@@ -278,8 +284,8 @@ contract AuraSpell is IAuraSpell, BasicSpell {
 
         for (i; i < length; ++i) {
             if (tokens[i] != lpToken) {
-                amountsIn[j] = IERC20(tokens[i]).balanceOf(address(this));
-                if (amountsIn[j] > 0) {
+                if (tokens[i] == borrowToken) {
+                    amountsIn[j] = borrowAmount;
                     IERC20(tokens[i]).universalApprove(vault, amountsIn[j]);
                     maxAmountsIn[i] = amountsIn[j];
                 }

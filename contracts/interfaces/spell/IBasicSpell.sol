@@ -10,12 +10,12 @@ interface IBasicSpell {
     /**
      * @dev Defines strategies for Blueberry Protocol.
      * @param vault Address of the vault where assets are held.
-     * @param minPositionSize Minimum size of the position in USD.
+     * @param minIsolatedCollateral Minimum size of isolated collateral in USD.
      * @param maxPositionSize Maximum size of the position in USD.
      */
     struct Strategy {
         address vault;
-        uint256 minPositionSize;
+        uint256 minIsolatedCollateral;
         uint256 maxPositionSize;
     }
 
@@ -65,18 +65,18 @@ interface IBasicSpell {
      * @notice This event is emitted when a new strategy is added.
      * @param strategyId Unique identifier for the strategy.
      * @param vault Address of the vault where assets are held.
-     * @param minPosSize Minimum size of the position in USD.
+     * @param minCollSize Minimum size of the isolated collateral in USD.
      * @param maxPosSize Maximum size of the position in USD.
      */
-    event StrategyAdded(uint256 strategyId, address vault, uint256 minPosSize, uint256 maxPosSize);
+    event StrategyAdded(uint256 strategyId, address vault, uint256 minCollSize, uint256 maxPosSize);
 
     /**
      * @notice This event is emitted when a strategy's min/max position size is updated.
      * @param strategyId Unique identifier for the strategy.
-     * @param minPosSize Minimum size of the position in USD.
+     * @param minCollSize Minimum size of the isolated collateral in USD.
      * @param maxPosSize Maximum size of the position in USD.
      */
-    event StrategyPosSizeUpdated(uint256 strategyId, uint256 minPosSize, uint256 maxPosSize);
+    event StrategyPosSizeUpdated(uint256 strategyId, uint256 minCollSize, uint256 maxPosSize);
 
     /**
      * @notice This event is emitted when a strategy's collateral max LTV is updated.
@@ -90,10 +90,10 @@ interface IBasicSpell {
      * @notice Update the position sizes for a specific strategy.
      * @dev This function validates the inputs, updates the strategy's position sizes, and emits an event.
      * @param strategyId ID of the strategy to be updated.
-     * @param minPosSize New minimum position size for the strategy.
+     * @param minCollSize New minimum size of the isolated collateral for the strategy.
      * @param maxPosSize New maximum position size for the strategy.
      */
-    function setPosSize(uint256 strategyId, uint256 minPosSize, uint256 maxPosSize) external;
+    function setPosSize(uint256 strategyId, uint256 minCollSize, uint256 maxPosSize) external;
 
     /**
      * @notice Set maximum Loan-To-Value (LTV) ratios for collaterals in a given strategy.

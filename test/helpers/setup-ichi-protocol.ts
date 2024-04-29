@@ -111,6 +111,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   //let bALCX: Contract;
   let bWETH: Contract;
   let bWBTC: Contract;
+  let bTokenAdmin: Contract;
 
   [admin, alice, treasury] = await ethers.getSigners();
   usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
@@ -316,6 +317,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
   bWBTC = bTokens.bWBTC;
+  bTokenAdmin = bTokens.bTokenAdmin;
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
   hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
@@ -332,6 +334,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   );
   await usdcSoftVault.deployed();
   await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
+  await bTokenAdmin._setSoftVault(bUSDC.address, usdcSoftVault.address);
 
   daiSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
@@ -342,6 +345,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   );
   await daiSoftVault.deployed();
   await bank.addBank(DAI, daiSoftVault.address, hardVault.address, 8500);
+  await bTokenAdmin._setSoftVault(bDAI.address, daiSoftVault.address);
 
   ichiSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
@@ -352,6 +356,7 @@ export const setupIchiProtocol = async (): Promise<Protocol> => {
   );
   await ichiSoftVault.deployed();
   await bank.addBank(ICHI, ichiSoftVault.address, hardVault.address, 9000);
+  await bTokenAdmin._setSoftVault(bICHI.address, ichiSoftVault.address);
 
   wethSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,

@@ -369,6 +369,7 @@ export async function deployBTokens(admin: string) {
 
   console.log('bOHM price', await priceOracleProxyUSD.getUnderlyingPrice(bOHM.address));
   return {
+    bTokenAdmin,
     comptroller,
     bUSDC,
     bICHI,

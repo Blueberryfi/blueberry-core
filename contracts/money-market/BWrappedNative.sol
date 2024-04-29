@@ -65,6 +65,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mint(uint256 mintAmount) external returns (uint256) {
+        require(msg.sender == softVault, "caller should be softvault");
         (uint256 err, ) = mintInternal(mintAmount, false);
         require(err == 0, "mint failed");
     }
@@ -76,6 +77,7 @@ contract BWrappedNative is BToken, BWrappedNativeInterface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mintNative() external payable returns (uint256) {
+        require(msg.sender == softVault, "caller should be softvault");
         (uint256 err, ) = mintInternal(msg.value, true);
         require(err == 0, "mint native failed");
     }

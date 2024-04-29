@@ -108,8 +108,8 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
     }
 
     /// @inheritdoc IConvexSpell
-    function addStrategy(address crvLp, uint256 minPosSize, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(crvLp, minPosSize, maxPosSize);
+    function addStrategy(address crvLp, uint256 minCollSize, uint256 maxPosSize) external onlyOwner {
+        _addStrategy(crvLp, minCollSize, maxPosSize);
     }
 
     /// @inheritdoc IConvexSpell
@@ -282,7 +282,7 @@ contract ConvexSpell is IConvexSpell, BasicSpell {
         uint256 amountPosRemove = closePosParam.param.amountPosRemove;
 
         /// 1. Take out collateral - Burn wrapped tokens, receive crv lp tokens and harvest CRV
-        bank.takeCollateral(amountPosRemove);
+        amountPosRemove = bank.takeCollateral(amountPosRemove);
         (address[] memory rewardTokens, ) = wConvexBooster.burn(pos.collId, amountPosRemove);
 
         /// 2. Swap rewards tokens to debt token
