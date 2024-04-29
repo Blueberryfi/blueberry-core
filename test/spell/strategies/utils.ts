@@ -201,7 +201,7 @@ export const setupVaults = async (
   signer: SignerWithAddress
 ): Promise<Vaults> => {
   const [admin] = await ethers.getSigners();
-  const bTokens = await deployBTokens(signer.address, oracle.address);
+  const bTokens = await deployBTokens(signer.address);
 
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
   const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {

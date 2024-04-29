@@ -7,7 +7,7 @@ import "../BErc20.sol";
 import "../BToken.sol";
 import "../Exponential.sol";
 import "../EIP20Interface.sol";
-
+import "hardhat/console.sol";
 contract PriceOracleProxyUSD is PriceOracle, Exponential {
     /// @notice ChainLink aggregator base, currently support USD and ETH
     enum AggregatorBase {
@@ -174,6 +174,12 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
                 require(
                     msg.sender == admin,
                     "guardian may only clear the aggregator"
+                );
+
+                require(
+                    bases[i] == AggregatorBase.USD ||
+                        bases[i] == AggregatorBase.ETH,
+                    "aggregator base may only be USD or ETH"
                 );
 
                 (, int256 answer,,,) = source.latestRoundData();
