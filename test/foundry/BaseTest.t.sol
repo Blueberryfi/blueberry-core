@@ -7,12 +7,12 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 // solhint-disable-next-line
 import { console2 } from "forge-std/console2.sol";
 
+import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { CoreOracle } from "@contracts/oracle/CoreOracle.sol";
 import { BlueberryBank } from "@contracts/BlueberryBank.sol";
 import { ProtocolConfig } from "@contracts/ProtocolConfig.sol";
 import { SoftVault } from "@contracts/vault/SoftVault.sol";
-import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 import { IExtBErc20 } from "@test/interfaces/IExtBErc20.sol";
 import { FeeManager } from "@contracts/FeeManager.sol";
@@ -20,13 +20,9 @@ import { IWETH } from "@contracts/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IUSDC } from "@contracts/interfaces/IUSDC.sol";
 import { IComptroller } from "@test/interfaces/IComptroller.sol";
+import { Addresses } from "@test/Addresses.t.sol";
 
-abstract contract BaseTest is Test {
-    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public constant BUSDC = 0x649127D0800a8c68290129F091564aD2F1D62De1;
-    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant BDAI = 0x23388Cca2BdFC994D75999667E09cc0F5fF1cc88;
-
+abstract contract BaseTest is Test, Addresses {
     IWETH public WETH;
     IERC20 public CRV;
 
@@ -56,11 +52,16 @@ abstract contract BaseTest is Test {
     function setUp() public virtual {
         // Forking Ethereum Mainnet at Feb-29-2024 01:47:47 AM +UTC
         // TODO modularize this to select various networks
-        vm.createSelectFork({ blockNumber: 19414468, urlOrAlias: "mainnet" });
+        (string memory urlOrAlias, uint256 blockNumber) = _getFork();
+        vm.createSelectFork({ urlOrAlias: urlOrAlias, blockNumber: blockNumber });
         _generateAndLabel();
         _assignDeployedContracts();
         _deployContracts();
         _configureMinter();
+    }
+
+    function _getFork() internal pure virtual returns (string memory, uint256) {
+        return ("mainnet", 19_330_000);
     }
 
     // solhint-disable-next-line private-vars-leading-underscore
@@ -101,8 +102,8 @@ abstract contract BaseTest is Test {
     function _assignDeployedContracts() internal virtual {
         bank = BlueberryBank(0x9b06eA9Fbc912845DF1302FE1641BEF9639009F7); // Latest Bank Proxy address Mainnet
 
-        WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // WETH Mainnet
-        CRV = IERC20(0xD533a949740bb3306d119CC777fa900bA034cd52); // CRV Mainnet
+        WETH = IWETH(WETH_ADDRESS); // WETH Mainnet
+        CRV = IERC20(CRV_ADDRESS); // CRV Mainnet
 
         softVaultUSDC = SoftVault(0x20E83eF1f627629DAf745A205Dcd0D88eff5b402); // Soft Vault USDC Mainnet
         softVaultWETH = SoftVault(0xcCd438a78376955A3b174be619E50Aa3DdD65469); // Soft Vault WETH Mainnet

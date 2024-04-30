@@ -5,6 +5,7 @@ abi
 cache
 typechain
 build
+dist/
 coverage/
 coverage.json
 typechain-types

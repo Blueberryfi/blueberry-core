@@ -87,7 +87,6 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         wConvexBooster = convexSpell.getWConvexBooster();
         _wConvexBoosterMock = new WConvexBoosterMock();
         vm.etch(address(wConvexBooster), address(_wConvexBoosterMock).code);
-
         curveOracle = convexSpell.getCrvOracle();
     }
 
@@ -531,7 +530,18 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         }
 
         IBank.Position memory currentPosition = bank.getPositionInfo(cachedValues.positionId);
-
+        cachedValues.initialDebtValue = _calculateDebtValue(
+            cachedValues.pool,
+            currentPosition.collateralSize,
+            cachedValues.positionId
+        );
+        bytes memory swapDataDebt = _getParaswapData(
+            address(USDC),
+            address(WETH),
+            cachedValues.initialDebtValue,
+            address(convexSpell),
+            100
+        );
         IBasicSpell.ClosePosParam memory closePosParam = IBasicSpell.ClosePosParam({
             strategyId: 0,
             collToken: address(USDC),
@@ -542,8 +552,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             // advances in timestamp yield interest for the lender in money market, user receives yield for his collateral
             amountShareWithdraw: 0,
             amountOutMin: 0,
-            amountToSwap: 0, // This computed after interest accrued during warp
-            swapData: ""
+            amountToSwap: 0.1 ether,
+            swapData: swapDataDebt
         });
 
         {
@@ -566,8 +576,6 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
             // we move the timestamp
             vm.warp(block.timestamp + cachedValues.timestamp);
-
-            // Calculating max shares that can be redeemed from the money market
             cachedValues.maxSharesRedeemed = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
             if (cachedValues.maxSharesRedeemed > currentPosition.underlyingVaultShare)
                 cachedValues.maxSharesRedeemed = currentPosition.underlyingVaultShare;

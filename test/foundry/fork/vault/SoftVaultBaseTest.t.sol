@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import { BaseTest, ERC20PresetMinterPauser, SoftVault, ERC1967Proxy, IBErc20 } from "@test/BaseTest.t.sol";
+import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import { BaseTest, SoftVault, ERC1967Proxy, IBErc20 } from "@test/BaseTest.t.sol";
 
 struct VaultBalanceOf {
     uint256 alice;
