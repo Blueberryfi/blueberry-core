@@ -58,6 +58,7 @@ contract AuraLiquidator is BaseLiquidator {
     function initialize(
         IBank bank,
         address treasury,
+        address emergencyFund,
         address poolAddressesProvider,
         address auraSpell,
         address balancerVault,
@@ -77,6 +78,7 @@ contract AuraLiquidator is BaseLiquidator {
         _swapRouter = swapRouter;
         _weth = weth;
 
+        _emergencyFund = emergencyFund;
         _transferOwnership(owner);
     }
 

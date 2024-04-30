@@ -28,6 +28,7 @@ describe('Convex Liquidator', () => {
   let admin: SignerWithAddress;
   let alice: SignerWithAddress;
   let treasury: SignerWithAddress;
+  let emergengyFund: SignerWithAddress;
 
   let usdc: ERC20;
   let mockOracle: MockOracle;
@@ -40,7 +41,7 @@ describe('Convex Liquidator', () => {
 
   before(async () => {
     await fork(1);
-    [admin, alice, treasury] = await ethers.getSigners();
+    [admin, alice, treasury, emergengyFund] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
     dai = <ERC20>await ethers.getContractAt('ERC20', DAI);
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
@@ -80,6 +81,7 @@ describe('Convex Liquidator', () => {
       [
         bank.address,
         treasury.address,
+        emergengyFund.address,
         POOL_ADDRESSES_PROVIDER,
         spell.address,
         BALANCER_VAULT,

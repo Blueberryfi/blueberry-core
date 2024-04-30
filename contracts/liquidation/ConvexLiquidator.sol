@@ -63,6 +63,7 @@ contract ConvexLiquidator is BaseLiquidator {
     function initialize(
         IBank bank,
         address treasury,
+        address emergencyFund,
         address poolAddressesProvider,
         address convexSpell,
         address balancerVault,
@@ -83,6 +84,8 @@ contract ConvexLiquidator is BaseLiquidator {
         _curveOracle = IConvexSpell(convexSpell).getCrvOracle();
 
         _weth = weth;
+        _emergencyFund = emergencyFund;
+
         _transferOwnership(owner);
     }
 
