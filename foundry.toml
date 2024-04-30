@@ -1,0 +1,15 @@
+[profile.default]
+auto_detect_solc = true
+libs = ["lib"]
+out = "out"
+src = "src"
+tests = ["test"]
+
+[rpc_endpoints]
+localhost = "http://localhost:8545"
+mainnet = "https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}"
+
+[fuzz]
+runs = 1000
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

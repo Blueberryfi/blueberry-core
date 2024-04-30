@@ -26,10 +26,7 @@ contract MockOracle is IBaseOracle, Ownable {
     /// @dev Set the prices of the given token addresses.
     /// @param tokens The token addresses to set the prices.
     /// @param pxs The price data points, representing token value in USD, based 1e18.
-    function setPrice(
-        address[] memory tokens,
-        uint256[] memory pxs
-    ) external onlyOwner {
+    function setPrice(address[] memory tokens, uint256[] memory pxs) external onlyOwner {
         if (tokens.length != pxs.length) revert Errors.INPUT_ARRAY_MISMATCH();
         for (uint256 i = 0; i < tokens.length; i++) {
             prices[tokens[i]] = pxs[i];

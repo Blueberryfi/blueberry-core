@@ -5,6 +5,7 @@ abi
 cache
 typechain
 build
+dist/
 coverage/
 coverage.json
 typechain-types
@@ -12,3 +13,8 @@ typechain-types
 .vscode/
 .deps/
 .openzeppelin/
+
+# foundry
+out/
+lcov.info
+report/
