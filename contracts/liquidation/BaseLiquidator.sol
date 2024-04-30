@@ -161,6 +161,15 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
     }
 
     /**
+     * @notice Sets the address of the emergency fund
+     * @param emergencyFund The address of the emergency fund
+     */
+    function setEmergencyFund(address emergencyFund) external onlyOwner {
+        if (emergencyFund != address(0)) revert Errors.ZERO_ADDRESS();
+        _emergencyFund = emergencyFund;
+    }
+
+    /**
      * @notice Sends emergency funds to the contract to cover unprofitable liquidations
      * @param asset The address of the asset to withdraw from the contract
      * @param amount Amount of asset to send to the liquidator bot
