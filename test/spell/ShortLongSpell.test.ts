@@ -198,7 +198,7 @@ describe('ShortLongSpell', () => {
       );
     });
 
-    it('should revert when minPosSize >= maxPosSize', async () => {
+    it('should revert when minCollSize >= maxPosSize', async () => {
       await expect(spell.connect(admin).addStrategy(weth.address, 10, 10)).to.be.revertedWithCustomError(
         spell,
         'INVALID_POS_SIZE'
@@ -210,7 +210,7 @@ describe('ShortLongSpell', () => {
 
       const strategy = await spell.getStrategy(0);
       expect(strategy.vault).to.eq(weth.address);
-      expect(strategy.minPositionSize).to.eq(1);
+      expect(strategy.minIsolatedCollateral).to.eq(1);
       expect(strategy.maxPositionSize).to.eq(10);
     });
 

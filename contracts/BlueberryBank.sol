@@ -232,6 +232,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
             }
         }
 
+        accrue(_positions[positionId].underlyingToken);
         if (isLiquidatable(positionId)) revert Errors.INSUFFICIENT_COLLATERAL();
 
         _POSITION_ID = _NO_ID;

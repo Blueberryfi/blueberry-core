@@ -54,6 +54,7 @@ contract BCollateralCapErc20 is BToken, BCollateralCapErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mint(uint256 mintAmount) external returns (uint256) {
+        require(msg.sender == softVault, "caller should be softvault");
         (uint256 err, ) = mintInternal(mintAmount, false);
         require(err == 0, "mint failed");
     }

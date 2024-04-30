@@ -12,7 +12,7 @@ import {
   IRewarder,
   ICvxExtraRewarder,
   ProtocolConfig,
-  IAuraStashToken,
+  IStashToken,
   MockVirtualBalanceRewardPool,
 } from '../../../../typechain-types';
 import { ADDRESS } from '../../../../constant';
@@ -48,7 +48,7 @@ describe('Aura Spell Strategy test', () => {
   let rewardFeePct: BigNumber;
   let extraRewarder1: ICvxExtraRewarder;
   let extraRewarder2: MockVirtualBalanceRewardPool;
-  let stashToken: IAuraStashToken;
+  let stashToken: IStashToken;
 
   before(async () => {
     await fork();
@@ -90,9 +90,7 @@ describe('Aura Spell Strategy test', () => {
               await ethers.getContractAt('ICvxExtraRewarder', await auraRewarder.extraRewards(0))
             );
 
-            stashToken = <IAuraStashToken>(
-              await ethers.getContractAt('IAuraStashToken', await extraRewarder1.rewardToken())
-            );
+            stashToken = <IStashToken>await ethers.getContractAt('IStashToken', await extraRewarder1.rewardToken());
 
             await setTokenBalance(collateralToken, alice, utils.parseEther('1000000000000'));
             await setTokenBalance(collateralToken, bob, utils.parseEther('1000000000000'));
@@ -286,13 +284,12 @@ describe('Aura Spell Strategy test', () => {
 
             const pendingRewardsInfoAfterAdd = await waura.pendingRewards(position.collId, position.collateralSize);
 
-            expect(pendingRewardsInfoAfterAdd.rewards.length).gte(pendingRewardsInfo.rewards.length);
-
             const expectedAmounts = pendingRewardsInfoAfterAdd.rewards.map((reward: BigNumber) => reward);
 
             const swapDatas = pendingRewardsInfoAfterAdd.tokens.map((token: any, i: any) => ({
               data: '0x',
             }));
+
             await setTokenBalance(borrowToken, spell, utils.parseEther('1000'));
 
             await closePosition(

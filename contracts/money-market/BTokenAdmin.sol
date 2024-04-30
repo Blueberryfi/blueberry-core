@@ -219,6 +219,18 @@ contract BTokenAdmin is Exponential {
     }
 
     /**
+     * @notice Set Soft Vault address
+     * @param bToken The bToken address
+     * @param softVault The Soft Vault address
+     */
+    function _setSoftVault(
+        address bToken,
+        address softVault
+    ) external onlyAdmin returns (uint256) {
+        return BTokenInterface(bToken)._setSoftVault(softVault);
+    }
+
+    /**
      * @notice Set bToken collateral cap
      * @dev It will revert if the bToken is not BCollateralCap.
      * @param bToken The bToken address

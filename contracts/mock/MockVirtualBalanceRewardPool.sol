@@ -32,11 +32,19 @@ interface IDeposit {
     function deposit(uint256 _pid, uint256 _amount, bool _stake) external returns (bool);
 }
 
+contract MockWrappedStashToken {
+    IERC20 public baseToken;
+
+    constructor(address _baseToken) {
+        baseToken = IERC20(_baseToken);
+    }
+}
+
 contract MockVirtualBalanceRewardPool {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable rewardToken;
+    MockWrappedStashToken private immutable _rewardToken;
     uint256 public constant duration = 7 days;
 
     IDeposit public immutable deposits;
@@ -68,7 +76,7 @@ contract MockVirtualBalanceRewardPool {
      */
     constructor(address deposit_, address reward_) {
         deposits = IDeposit(deposit_);
-        rewardToken = IERC20(reward_);
+        _rewardToken = new MockWrappedStashToken(reward_);
     }
 
     /**
@@ -135,7 +143,7 @@ contract MockVirtualBalanceRewardPool {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
-            rewardToken.safeTransfer(_account, reward);
+            _rewardToken.baseToken().safeTransfer(_account, reward);
             emit RewardPaid(_account, reward);
         }
     }
@@ -145,7 +153,7 @@ contract MockVirtualBalanceRewardPool {
     }
 
     function donate(uint256 _amount) external returns (bool) {
-        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20(_rewardToken.baseToken()).safeTransferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards.add(_amount);
     }
 
@@ -169,6 +177,14 @@ contract MockVirtualBalanceRewardPool {
         } else {
             queuedRewards = _rewards;
         }
+    }
+
+    function rewardToken() external view returns (address) {
+        return address(_rewardToken);
+    }
+
+    function baseToken() external view returns (address) {
+        return address(_rewardToken.baseToken());
     }
 
     function _notifyRewardAmount(uint256 reward) internal updateReward(address(0)) {

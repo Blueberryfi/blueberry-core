@@ -3,7 +3,8 @@ import { BlueberryBank, MockOracle, WERC20, ERC20, ShortLongSpell, SoftVault } f
 import { ethers } from 'hardhat';
 import { ADDRESS } from '../../constant';
 import { ShortLongProtocol, evm_mine_blocks, fork, setupShortLongProtocol } from '../helpers';
-import SpellABI from '../../abi/ShortLongSpell.json';
+import SpellABI from '../../abi/contracts/spell/ShortLongSpell.sol/ShortLongSpell.json';
+
 import chai, { expect } from 'chai';
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';

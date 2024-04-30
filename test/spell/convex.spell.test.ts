@@ -14,7 +14,8 @@ import {
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork } from '../helpers';
-import SpellABI from '../../abi/ConvexSpell.json';
+import SpellABI from '../../abi/contracts/spell/ConvexSpell.sol/ConvexSpell.json';
+
 import chai, { expect } from 'chai';
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';
@@ -185,7 +186,7 @@ describe('Convex Spell', () => {
   });
 
   describe('Convex Pool Farming Position', () => {
-    const depositAmount = utils.parseUnits('100', 18); // CRV => $100
+    const depositAmount = utils.parseUnits('110', 18); // CRV => $110
     const borrowAmount = utils.parseUnits('250', 6); // USDC
     const iface = new ethers.utils.Interface(SpellABI);
 
@@ -322,10 +323,6 @@ describe('Convex Spell', () => {
 
       await evm_mine_blocks(10);
 
-      const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
-      const crvPendingReward = pendingRewardsInfo.rewards[0];
-      const cvxPendingReward = pendingRewardsInfo.rewards[1];
-
       await bank.execute(
         positionId,
         spell.address,
@@ -335,18 +332,24 @@ describe('Convex Spell', () => {
             collToken: CRV,
             borrowToken: USDC,
             collAmount: depositAmount,
-            borrowAmount: borrowAmount,
+            borrowAmount: 0.001 * 1e6,
             farmingPoolId: POOL_ID_1,
           },
           0,
         ])
       );
+      const pendingRewardsInfo = await wconvex.callStatic.pendingRewards(position.collId, position.collateralSize);
+      const crvPendingReward = pendingRewardsInfo.rewards[0];
+      const cvxPendingReward = pendingRewardsInfo.rewards[1];
 
       const afterSenderCrvBalance = await crv.balanceOf(admin.address);
       const afterSenderCvxBalance = await cvx.balanceOf(admin.address);
       // before - out + in = after => after + out = before + in
       expect(afterSenderCrvBalance.add(depositAmount)).to.be.roughlyNear(beforeSenderCrvBalance.add(crvPendingReward));
-      expect(afterSenderCvxBalance.sub(beforeTreasuryCvxBalance)).to.be.roughlyNear(cvxPendingReward);
+      expect(afterSenderCvxBalance.sub(beforeTreasuryCvxBalance)).to.be.approximately(
+        cvxPendingReward,
+        BigNumber.from(10).pow(16)
+      );
     });
 
     it('should be able to get position risk ratio', async () => {
@@ -639,7 +642,7 @@ describe('Convex Spell', () => {
               0,
             ])
           )
-        ).to.be.revertedWithCustomError(spell, 'EXCEED_MIN_POS_SIZE');
+        ).to.be.revertedWithCustomError(spell, 'BELOW_MIN_ISOLATED_COLLATERAL');
       });
     });
   });

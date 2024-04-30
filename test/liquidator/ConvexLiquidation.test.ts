@@ -3,7 +3,8 @@ import { BlueberryBank, MockOracle, ERC20, ConvexSpell, ConvexLiquidator } from 
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { CvxProtocol, setupCvxProtocol, evm_mine_blocks, fork, evm_increaseTime } from '../helpers';
-import SpellABI from '../../abi/ConvexSpell.json';
+import SpellABI from '../../abi/contracts/spell/ConvexSpell.sol/ConvexSpell.json';
+
 import chai, { expect } from 'chai';
 import { near } from '../assertions/near';
 import { roughlyNear } from '../assertions/roughlyNear';
@@ -51,7 +52,7 @@ describe('Convex Liquidator', () => {
     mockOracle = protocol.mockOracle;
     const iface = new ethers.utils.Interface(SpellABI);
 
-    const depositAmount = utils.parseUnits('100', 18); // CRV => $100
+    const depositAmount = utils.parseUnits('110', 18); // CRV => $100
     const borrowAmount = utils.parseUnits('250', 6); // USDC
     await usdc.approve(bank.address, ethers.constants.MaxUint256);
     await dai.approve(bank.address, ethers.constants.MaxUint256);

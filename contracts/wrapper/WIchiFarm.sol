@@ -12,6 +12,7 @@ pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -21,8 +22,6 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
-
-import { BaseWrapper } from "./BaseWrapper.sol";
 
 import { BBMath } from "../libraries/BBMath.sol";
 import { IWIchiFarm } from "../interfaces/IWIchiFarm.sol";
@@ -38,7 +37,7 @@ import { IIchiFarm } from "../interfaces/ichi/IIchiFarm.sol";
  *      At the same time, Underlying LPs will be deposited to ICHI farming pools and generate yields
  *      LP Tokens are identified by tokenIds encoded from lp token address and accPerShare of deposited time
  */
-contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
+contract WIchiFarm is IWIchiFarm, ERC1155Upgradeable, ReentrancyGuardUpgradeable, Ownable2StepUpgradeable {
     using BBMath for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeERC20Upgradeable for IIchiV2;
@@ -115,7 +114,7 @@ contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, Ownab
         (uint256 ichiPerShare, , ) = ichiFarm.poolInfo(pid);
 
         uint256 id = encodeId(pid, ichiPerShare);
-        _validateTokenId(id);
+
         _mint(msg.sender, id, amount, "");
 
         emit Minted(id, pid, amount);
@@ -125,9 +124,6 @@ contract WIchiFarm is IWIchiFarm, BaseWrapper, ReentrancyGuardUpgradeable, Ownab
 
     /// @inheritdoc IWIchiFarm
     function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
-        if (amount == type(uint256).max) {
-            amount = balanceOf(msg.sender, id);
-        }
         (uint256 pid, ) = decodeId(id);
         _burn(msg.sender, id, amount);
 

@@ -67,7 +67,7 @@ export interface AuraProtocol {
   bDAI: Contract;
   bMIM: Contract;
   bLINK: Contract;
-  bSUSHI: Contract;
+  // bSUSHI: Contract;
   bBAL: Contract;
   //bALCX: Contract;
   bWETH: Contract;
@@ -115,6 +115,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   //let bALCX: Contract;
   let bWETH: Contract;
   let bWBTC: Contract;
+  let bTokenAdmin: Contract;
 
   [admin, alice, treasury] = await ethers.getSigners();
   usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
@@ -241,7 +242,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     ]
   );
 
-  const bTokens = await deployBTokens(admin.address, oracle.address);
+  const bTokens = await deployBTokens(admin.address);
   comptroller = bTokens.comptroller;
   bUSDC = bTokens.bUSDC;
   bICHI = bTokens.bICHI;
@@ -249,11 +250,12 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   bDAI = bTokens.bDAI;
   bMIM = bTokens.bMIM;
   bLINK = bTokens.bLINK;
-  bSUSHI = bTokens.bSUSHI;
+  // bSUSHI = bTokens.bSUSHI;
   bBAL = bTokens.bBAL;
   //bALCX = bTokens.bALCX;
   bWETH = bTokens.bWETH;
   bWBTC = bTokens.bWBTC;
+  bTokenAdmin = bTokens.bTokenAdmin;
 
   // Deploy Bank
   const Config = await ethers.getContractFactory('ProtocolConfig');
@@ -338,6 +340,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   );
   await usdcSoftVault.deployed();
   await bank.addBank(USDC, usdcSoftVault.address, hardVault.address, 9000);
+  await bTokenAdmin._setSoftVault(bUSDC.address, usdcSoftVault.address);
 
   daiSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
@@ -348,6 +351,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   );
   await daiSoftVault.deployed();
   await bank.addBank(DAI, daiSoftVault.address, hardVault.address, 8500);
+  await bTokenAdmin._setSoftVault(bDAI.address, daiSoftVault.address);
 
   crvSoftVault = <SoftVault>await upgrades.deployProxy(
     SoftVault,
@@ -358,6 +362,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
   );
   await crvSoftVault.deployed();
   await bank.addBank(CRV, crvSoftVault.address, hardVault.address, 9000);
+  await bTokenAdmin._setSoftVault(bCRV.address, crvSoftVault.address);
 
   // Whitelist bank contract on compound
   await comptroller._setCreditLimit(bank.address, bUSDC.address, utils.parseUnits('3000000'));
@@ -404,7 +409,7 @@ export const setupAuraProtocol = async (): Promise<AuraProtocol> => {
     bDAI,
     bMIM,
     bLINK,
-    bSUSHI,
+    // bSUSHI,
     bBAL,
     //bALCX,
     bWETH,
