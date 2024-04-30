@@ -140,7 +140,7 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         // Have the emergency fund cover any extra costs
         uint256 assetBalance = IERC20(asset).balanceOf(address(this));
         if (assetBalance < amount + premium) {
-            _accessEmergencyFunds(asset, assetBalance - (amount + premium));
+            _accessEmergencyFunds(asset, (amount + premium) - assetBalance);
         }
 
         // reset position id
