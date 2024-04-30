@@ -459,11 +459,10 @@ contract SoftVaultTest is SoftVaultBaseTest {
         }
         uint256 totalassetsFinal = underlying.balanceOf(address(bToken));
 
-        assertGe(
-            totalassetsFinal,
-            totalAssetsBefore,
-            "Total assets must be greater than or  equal to the initial amount (see testFork_SoftVault_deposit_withdraw_few_shares_multiple_times_do_not_receive_all_assets)"
-        );
+        string error1 = "Total assets must be greater than or  equal to the initial amount";
+        string error2 = "(see testFork_SoftVault_deposit_withdraw_few_shares_multiple_times_do_not_receive_all_assets)";
+
+        assertGe(totalassetsFinal, totalAssetsBefore, string(abi.encodepacked(error1, error2)));
         assertEq(vault.totalSupply(), 0, "Total supply must be equal to 0");
     }
 

@@ -43,11 +43,11 @@ interface ICurvePool {
 
     function get_dy(uint256 i, uint256 j, uint256 dx) external view returns (uint256);
 
-    function exchange(uint256 i, uint256 j, uint256 dx, uint256 min_dy) external returns (uint256);
+    function exchange(uint256 i, uint256 j, uint256 dx, uint256 minDy) external returns (uint256);
 
     function coins(uint256 i) external view returns (address);
 
-    function calc_token_amount(uint256[2] memory amounts, bool is_deposit) external view returns (uint256);
+    function calc_token_amount(uint256[2] memory amounts, bool isDeposit) external view returns (uint256);
 
     function calc_withdraw_one_coin(uint256 amount, int128 tokenIndex) external view returns (uint256);
 

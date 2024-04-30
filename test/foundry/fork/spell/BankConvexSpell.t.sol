@@ -50,7 +50,7 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
     MockParaswap public mockParaswap;
     MockParaswapTransferProxy public mockParaswapTransferProxy;
 
-    address CVX = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
+    address public CVX = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
 
     address public spellOwner;
     uint256 public CURVE_FEE = 505800; // 0.005058 % approximation
@@ -114,7 +114,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true);
 
         bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, 0));
-        uint256 balanceBefore = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
+        // Used to make sure the right amount of LP landed at destination
+        uint256 balanceBefore = _getLpBalance(poolId, lpToken);
 
         bank.execute(0, address(convexSpell), data);
 
@@ -133,7 +134,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         (address lpt, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
         (address p, , ) = curveOracle.getPoolInfo(lpt);
         collateralAmount = bound(collateralAmount, 1, type(uint128).max - 1);
-        borrowAmount = bound(borrowAmount, 1, ICurvePool(p).balances(0)); // limiting to curve pool's balance, NOTE should try test with increasing the POOL
+        borrowAmount = bound(borrowAmount, 1, ICurvePool(p).balances(0));
+        // limiting to curve pool's balance, NOTE should try test with increasing the POOL
         slippagePercent = bound(slippagePercent, 10 /* 0.1% */, 500 /* 5% */);
 
         // avoid stack-too-deep
@@ -163,7 +165,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             farmingPoolId: poolId
         });
 
-        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true); // calculate the lp token received by curve
+        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true);
+        // calculate the lp token received by curve
         slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
         (bool valid, IBank.Position memory previousPosition) = _validatePositionSize(
             slippage,
@@ -174,7 +177,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         if (!valid) return; // making sure it validates the position min/max size
 
         bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, slippage));
-        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
+        // Used to make sure the right amount of LP landed at destination
+        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken);
 
         try bank.execute(positionId, address(convexSpell), data) {} catch (bytes memory reason) {
             bytes4 maxTVLSelector = bytes4(keccak256(bytes("EXCEED_MAX_LTV()")));
@@ -185,14 +189,15 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
                 maxTVLSelector != receivedSelector &&
                 minPositionSelector != receivedSelector &&
                 maxPositionSelector != receivedSelector
-            ) revert();
+            ) revert("");
 
             return;
         }
         // Validate that the position was updated correctly
         _validateReceivedBorrowAndPosition(previousPosition, positionId, slippage);
 
-        // Validate that the collateral ID is encoded as expected. The collateral ID is keeping the cvx share used in rewards
+        // Validate that the collateral ID is encoded as expected.
+        // The collateral ID is keeping the cvx share used in rewards
         _checkTokenIdEncoding(poolId, positionId);
 
         uint256 balanceAfterLP = _getLpBalance(poolId, lpToken);
@@ -214,7 +219,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         (address lpt, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
         (address p, , ) = curveOracle.getPoolInfo(lpt);
         collateralAmount = bound(collateralAmount, 1, type(uint128).max - 1);
-        borrowAmount = bound(borrowAmount, 1, ICurvePool(p).balances(0) - 1); // limiting to curve pool's balance, NOTE should try test with increasing the POOL
+        // limiting to curve pool's balance, NOTE should try test with increasing the POOL
+        borrowAmount = bound(borrowAmount, 1, ICurvePool(p).balances(0) - 1);
         slippagePercent = bound(slippagePercent, 10 /* 0.1% */, 500 /* 5% */);
 
         uint256 slippage = _calculateSlippageCurve(p, borrowAmount, true); // calculate the lp token received by curve
@@ -222,14 +228,13 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
         (bool valid, ) = _validatePositionSize(slippage, lpt, strategy.maxPositionSize, 0);
         if (!valid) return; // making sure it validates the position min/max size
-        _openExistingPositionGeneratesRightLPToken(collateralAmount, borrowAmount, slippagePercent);
+        openExistingPositionGeneratesRightLPToken(collateralAmount, borrowAmount, slippagePercent);
     }
 
     function test_testFork_BankConvexSpell_openExistingPositionGeneratesRightLPToken_Revert_WithMaxPos() public {
         uint256 collateralAmount = 182210610927678553752966593788471477096;
         uint256 borrowAmount = 187087916770269888819;
         uint256 slippagePercent = 449;
-        // _openExistingPositionGeneratesRightLPToken(182210610927678553752966593788471477096, 187087916770269888819, 449);
         (address lpt, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
         (address p, , ) = curveOracle.getPoolInfo(lpt);
         // avoid stack-too-deep
@@ -262,7 +267,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             farmingPoolId: poolId
         });
 
-        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true); // calculate the lp token received by curve
+        // calculate the lp token received by curve
+        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true);
         slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
         (bool valid, ) = _validatePositionSize(slippage, lpToken, strategy.maxPositionSize, positionId);
         if (!valid) return; // making sure it validates the position min/max size
@@ -273,7 +279,7 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         bank.execute(positionId, address(convexSpell), data);
     }
 
-    function _openExistingPositionGeneratesRightLPToken(
+    function openExistingPositionGeneratesRightLPToken(
         uint256 collateralAmount,
         uint256 borrowAmount,
         uint256 slippagePercent
@@ -310,7 +316,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             farmingPoolId: poolId
         });
 
-        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true); // calculate the lp token received by curve
+        // calculate the lp token received by curve
+        uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true);
         slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
         (bool valid, IBank.Position memory previousPosition) = _validatePositionSize(
             slippage,
@@ -321,14 +328,16 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         if (!valid) return; // making sure it validates the position min/max size
 
         bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, slippage));
-        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
+        // Used to make sure the right amount of LP landed at destination
+        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken);
 
         bank.execute(positionId, address(convexSpell), data);
 
         // Validate that the position was updated correctly
         _validateReceivedBorrowAndPosition(previousPosition, positionId, slippage);
 
-        // Validate that the collateral ID is encoded as expected. The collateral ID is keeping the cvx share used in rewards
+        // Validate that the collateral ID is encoded as expected.
+        // The collateral ID is keeping the cvx share used in rewards
         _checkTokenIdEncoding(poolId, positionId);
 
         uint256 balanceAfterLP = _getLpBalance(poolId, lpToken);
@@ -359,7 +368,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         (address lpToken, , , , , ) = wConvexBooster.getPoolInfoFromPoolId(25);
         (address pool, , ) = curveOracle.getPoolInfo(lpToken);
         collateralAmount = bound(collateralAmount, 1, type(uint128).max - 1);
-        borrowAmount = bound(borrowAmount, 1, ICurvePool(pool).balances(0)); // limiting to curve pool's balance, NOTE should try test with increasing the POOL
+        // limiting to curve pool's balance, NOTE should try test with increasing the POOL
+        borrowAmount = bound(borrowAmount, 1, ICurvePool(pool).balances(0));
         slippagePercent = bound(slippagePercent, 10 /* 0.1% */, 500 /* 5% */);
         timestamp = bound(timestamp, 12, 365 days);
 
@@ -400,7 +410,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             farmingPoolId: cachedValues.poolId
         });
 
-        uint256 slippage = _calculateSlippageCurve(cachedValues.pool, borrowAmount, true); // calculate the lp token received by curve
+        // calculate the lp token received by curve
+        uint256 slippage = _calculateSlippageCurve(cachedValues.pool, borrowAmount, true);
         slippage = _calculateSlippage(slippage, slippagePercent); // add the slippage
         (bool valid, IBank.Position memory previousPosition) = _validatePositionSize(
             slippage,
@@ -411,7 +422,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         if (!valid) return; // making sure it validates the position min/max size
 
         // bytes memory data = ;
-        uint256 balanceBeforeLP = _getLpBalance(cachedValues.poolId, cachedValues.lpToken); // Used to make sure the right amount of LP landed at destination
+        // Used to make sure the right amount of LP landed at destination
+        uint256 balanceBeforeLP = _getLpBalance(cachedValues.poolId, cachedValues.lpToken);
 
         {
             CachedBalances memory cachedBalances;
@@ -481,7 +493,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         // Validate that the position was updated correctly
         _validateReceivedBorrowAndPosition(previousPosition, cachedValues.positionId, slippage);
 
-        // Validate that the collateral ID is encoded as expected. The collateral ID is keeping the cvx share used in rewards
+        // Validate that the collateral ID is encoded as expected.
+        //The collateral ID is keeping the cvx share used in rewards
         _checkTokenIdEncoding(cachedValues.poolId, cachedValues.positionId);
 
         uint256 balanceAfterLP = _getLpBalance(cachedValues.poolId, cachedValues.lpToken);
@@ -549,7 +562,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             amountRepay: type(uint256).max,
             amountPosRemove: currentPosition.collateralSize,
             // This will be updated after warp to account for exchange rate change on money market
-            // advances in timestamp yield interest for the lender in money market, user receives yield for his collateral
+            // advances in timestamp yield interest for the lender in money market,
+            //user receives yield for his collateral
             amountShareWithdraw: 0,
             amountOutMin: 0,
             amountToSwap: 0.1 ether,
@@ -668,12 +682,14 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             }
         }
         {
-            // checking that the position closed and that the user is not in loss, should accrue interest from the money market
+            // checking that the position closed and that the user is not in loss,
+            // should accrue interest from the money market
             IBank.Position memory afterPosition = bank.getPositionInfo(cachedValues.positionId);
 
             assertEq(afterPosition.collateralSize, 0, "After position collateral size not cleared");
             assertEq(afterPosition.debtShare, 0, "After position debt share not cleared");
-            // assertEq(afterPosition.underlyingVaultShare, 0, "After position underlying vault share not cleared");// NOTE this fails as vault shares might still exists
+            // assertEq(afterPosition.underlyingVaultShare, 0, "After position underlying vault share not cleared");
+            // NOTE this fails as vault shares might still exists
 
             uint256 balanceOfCollateralAfter = ERC20PresetMinterPauser(address(USDC)).balanceOf(owner);
             uint256 balanceOfBorrowAfter = ERC20PresetMinterPauser(address(WETH)).balanceOf(owner);
@@ -785,7 +801,6 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
                 // Calculate how much we need to swap to cover the debt accrued by the borrowed funds
                 closePosParam.amountToSwap = (debtValue * 1e18) / collTokenPrice;
-                console2.log("amm to swap", closePosParam.amountToSwap);
                 // If we need to swap more than initial collateral that was supplied, we need to increase the position.
                 if (closePosParam.amountToSwap > cachedValues.initialCollateral) {
                     uint256 amountToIncrease = closePosParam.amountToSwap - cachedValues.initialCollateral;
@@ -853,12 +868,14 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             }
         }
         {
-            // checking that the position closed and that the user is not in loss, should accrue interest from the money market
+            // checking that the position closed and that the user is not in loss,
+            // should accrue interest from the money market
             IBank.Position memory afterPosition = bank.getPositionInfo(cachedValues.positionId);
 
             assertEq(afterPosition.collateralSize, 0, "After position collateral size not cleared");
             assertEq(afterPosition.debtShare, 0, "After position debt share not cleared");
-            assertEq(afterPosition.underlyingVaultShare, 0, "After position underlying vault share not cleared"); // NOTE this fails as vault shares might still exists
+            // NOTE this fails as vault shares might still exists
+            assertEq(afterPosition.underlyingVaultShare, 0, "After position underlying vault share not cleared");
 
             uint256 remainedSharesInMoneyMarket = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
             assertEq(
@@ -1056,7 +1073,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
             }
         }
         {
-            // checking that the position closed and that the user is not in loss, should accrue interest from the money market
+            // checking that the position closed and that the user is not in loss,
+            // should accrue interest from the money market
             IBank.Position memory afterPosition = bank.getPositionInfo(cachedValues.positionId);
             currentPosition.underlyingVaultShare;
             assertEq(afterPosition.collateralSize, 0, "After position collateral size not cleared");
@@ -1071,7 +1089,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
             uint256 remainedSharesInMoneyMarket = (bTokenUSDC.getCash() * 1e18) / bTokenUSDC.exchangeRateCurrent();
 
-            // we need to make sure the shares are removed correctly from the market, we let 1000 for rounding issues. Might need to be extra reviewed.
+            // we need to make sure the shares are removed correctly from the market, we let 1000 for rounding issues.
+            // Might need to be extra reviewed.
             assertApproxEqAbs(
                 cachedValues.maxSharesRedeemed - remainedSharesInMoneyMarket,
                 closeShares,
@@ -1144,7 +1163,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
         uint256 slippage = _calculateSlippageCurve(pool, borrowAmount, true);
 
         bytes memory data = abi.encodeCall(ConvexSpell.openPositionFarm, (param, 0));
-        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken); // Used to make sure the right amount of LP landed at destination
+        // Used to make sure the right amount of LP landed at destination
+        uint256 balanceBeforeLP = _getLpBalance(poolId, lpToken);
         bank.execute(0, address(convexSpell), data);
         uint256 balanceAfterLP = _getLpBalance(poolId, lpToken);
         uint256 balanceAfterUSDC = ERC20PresetMinterPauser(address(USDC)).balanceOf(owner);
@@ -1358,8 +1378,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
         // If the debt is lower than what we had in curve then something is wrong
         assertGe(positionDebt, removedFromCurve, "Position did not accumulate debt");
-
-        uint256 diff = ((positionDebt - removedFromCurve) * 1e12) / underlyingValue; // 1e12 cause diff between the tokens decimals is 1e12
+        // 1e12 cause diff between the tokens decimals is 1e12
+        uint256 diff = ((positionDebt - removedFromCurve) * 1e12) / underlyingValue;
 
         return diff;
     }
@@ -1409,8 +1429,8 @@ contract BankConvexSpell is SpellBaseTest, ParaSwapSnapshot, Quoter {
 
         // etching the bank impl with the current code to do logging
         _intConvexSpell = new ConvexSpell();
-
-        convexSpell = ConvexSpell(payable(0x936F8e31717c4998804f85889DE758C4780702A4)); // Convex Stable Proxy address Mainnet
+        // Convex Stable Proxy address Mainnet
+        convexSpell = ConvexSpell(payable(0x936F8e31717c4998804f85889DE758C4780702A4));
         vm.etch(0xa89Cc6C319D80744Fe6000A603ccDA2fd637E7B4, address(_intConvexSpell).code);
 
         vm.label(address(convexSpell), "convexSpell");
