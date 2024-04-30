@@ -67,6 +67,7 @@ contract WConvexBooster is IWConvexBooster, BaseWrapper, ReentrancyGuardUpgradea
     mapping(uint256 => address) private _escrows;
     /// @dev pid => A set of extra rewarders
     mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private _extraRewards;
+
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/

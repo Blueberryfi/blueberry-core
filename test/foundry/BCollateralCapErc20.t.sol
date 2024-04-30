@@ -5,7 +5,7 @@ pragma solidity 0.8.22;
 /* solhint-disable no-console */
 
 import { ERC20PresetMinterPauser } from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
-import { BaseTest } from "@test/BaseTest.t.sol";
+import { BaseTest, IUSDC } from "@test/BaseTest.t.sol";
 import { IBErc20 } from "@contracts/interfaces/money-market/IBErc20.sol";
 
 /// @title BCollateralCapErc20
@@ -26,6 +26,7 @@ contract BCollateralCapErc20Test is BaseTest {
         vm.prank(comptroller.admin());
         comptroller._setMarketBorrowCaps(markets, newBorrowCaps);
     }
+
     function testForkFuzz_BCollateralCapErc20_mint_balanceOf_getAccountSnapshot(uint256 amount) public {
         amount = bound(amount, type(uint128).max / 2, type(uint128).max);
         ERC20PresetMinterPauser(USDC).mint(alice, amount);
@@ -75,23 +76,23 @@ contract BCollateralCapErc20Test is BaseTest {
 
     function testForkFuzz_BCollateralCapErc20_borrow(uint256 amount, uint256 borrowAmount) public {
         vm.rollFork(19073030);
+        vm.prank(IUSDC(USDC).masterMinter());
+        IUSDC(USDC).configureMinter(owner, type(uint256).max);
         _deployContracts();
+        _enableBToken(bTokenUSDC);
         amount = bound(amount, type(uint128).max / 2, type(uint128).max);
         ERC20PresetMinterPauser(USDC).mint(alice, amount);
 
         address[] memory markets = new address[](1);
         markets[0] = address(bTokenUSDC);
-        vm.prank(alice);
+        vm.startPrank(alice);
         comptroller.enterMarkets(markets);
 
-        vm.prank(alice);
         ERC20PresetMinterPauser(USDC).approve(address(bTokenUSDC), amount);
-        vm.prank(alice);
         bTokenUSDC.mint(amount);
 
         uint256 usdcBefore = ERC20PresetMinterPauser(USDC).balanceOf(alice);
 
-        vm.prank(alice);
         try bTokenUSDC.borrow(borrowAmount) {
             uint256 usdcAfter = ERC20PresetMinterPauser(USDC).balanceOf(alice);
             assertEq(
