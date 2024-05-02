@@ -58,6 +58,7 @@ contract IchiLiquidator is BaseLiquidator {
     function initialize(
         IBank bank,
         address treasury,
+        address emergencyFund,
         address poolAddressesProvider,
         address ichiSpell,
         address swapRouter,
@@ -77,6 +78,7 @@ contract IchiLiquidator is BaseLiquidator {
         _swapRouter = swapRouter;
         _weth = weth;
 
+        _emergencyFund = emergencyFund;
         _transferOwnership(owner);
     }
 
@@ -118,7 +120,8 @@ contract IchiLiquidator is BaseLiquidator {
     function _unwrapLpToken(IBank.Position memory posInfo) internal returns (address) {
         // Withdraw ERC1155 liquidiation
         if (posInfo.collToken == address(IIchiSpell(_spell).getWIchiFarm())) {
-            IWIchiFarm(posInfo.collToken).burn(posInfo.collId, type(uint256).max);
+            uint256 balance = IERC1155(posInfo.collToken).balanceOf(address(this), posInfo.collId);
+            IWIchiFarm(posInfo.collToken).burn(posInfo.collId, balance);
             (uint256 pid, ) = IWIchiFarm(posInfo.collToken).decodeId(posInfo.collId);
 
             return IIchiFarm(IWIchiFarm(posInfo.collToken).getIchiFarm()).lpToken(pid);

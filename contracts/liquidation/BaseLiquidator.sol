@@ -51,6 +51,9 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
     /// @dev aave pool addresses provider
     IPoolAddressesProvider private _poolAddressesProvider;
 
+    /// @dev The address of the emergency fund that will cover any extra costs for liquidation
+    address internal _emergencyFund;
+
     /*//////////////////////////////////////////////////////////////////////////
                                       FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -134,6 +137,12 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
         // forceApprove aave pool to get back debt
         IERC20(asset).forceApprove(address(_pool), amount + premium);
 
+        // Have the emergency fund cover any extra costs
+        uint256 assetBalance = IERC20(asset).balanceOf(address(this));
+        if (assetBalance < amount + premium) {
+            _accessEmergencyFunds(asset, (amount + premium) - assetBalance);
+        }
+
         // reset position id
         _POS_ID = 0;
 
@@ -149,6 +158,24 @@ abstract contract BaseLiquidator is IBlueberryLiquidator, SwapRegistry, IERC1155
             IERC20 token = IERC20(tokens[i]);
             token.transfer(_treasury, token.balanceOf(address(this)));
         }
+    }
+
+    /**
+     * @notice Sets the address of the emergency fund
+     * @param emergencyFund The address of the emergency fund
+     */
+    function setEmergencyFund(address emergencyFund) external onlyOwner {
+        if (emergencyFund == address(0)) revert Errors.ZERO_ADDRESS();
+        _emergencyFund = emergencyFund;
+    }
+
+    /**
+     * @notice Sends emergency funds to the contract to cover unprofitable liquidations
+     * @param asset The address of the asset to withdraw from the contract
+     * @param amount Amount of asset to send to the liquidator bot
+     */
+    function _accessEmergencyFunds(address asset, uint256 amount) internal {
+        IERC20(asset).transferFrom(_emergencyFund, address(this), amount);
     }
 
     /**

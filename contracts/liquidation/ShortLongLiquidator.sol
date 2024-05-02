@@ -50,6 +50,7 @@ contract ShortLongLiquidator is BaseLiquidator {
     function initialize(
         IBank bank,
         address treasury,
+        address emergencyFund,
         address poolAddressesProvider,
         address shortLongSpell,
         address balancerVault,
@@ -67,6 +68,7 @@ contract ShortLongLiquidator is BaseLiquidator {
         _balancerVault = balancerVault;
         _swapRouter = swapRouter;
         _weth = weth;
+        _emergencyFund = emergencyFund;
         _transferOwnership(owner);
     }
 
