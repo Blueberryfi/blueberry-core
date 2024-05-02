@@ -93,10 +93,10 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
         }
 
         /// 1-3 Swap to strategy underlying token, deposit to soft vault
-        _deposit(param, swapData);
+        uint256 swapTokenAmt = _deposit(param, swapData);
 
         /// 4. Put collateral - strategy token
-        _doPutCollateral(wrapper, IWERC4626(wrapper).balanceOf(address(this)));
+        _doPutCollateral(wrapper, swapTokenAmt);
     }
 
     /// @inheritdoc IShortLongSpell
@@ -105,23 +105,17 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
         bytes calldata swapData
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         IBank bank = getBank();
-        IWERC20 werc20 = getWrappedERC20();
-        Strategy memory strategy = _strategies[param.strategyId];
+        address wrapper = _strategies[param.strategyId].vault;
 
-        address vault = strategy.vault;
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
 
-        if (IWERC20(posCollToken).getUnderlyingToken(collId) != vault) revert Errors.INCORRECT_UNDERLYING(vault);
-        if (posCollToken != address(werc20)) revert Errors.INCORRECT_COLTOKEN(posCollToken);
+        if (posCollToken != wrapper) revert Errors.INCORRECT_COLTOKEN(posCollToken);
+        if (address(IWERC4626(posCollToken).getUnderlyingToken()) != address(IWERC4626(wrapper).getUnderlyingToken()))
+            revert Errors.INCORRECT_UNDERLYING(wrapper);
 
-        /// 1. Take out collateral
-        uint256 burnAmount = bank.takeCollateral(param.amountPosRemove);
-
-        werc20.burn(vault, burnAmount);
-
-        /// 2-7. Remove liquidity
+        /// 1-7. Remove liquidity
         _withdraw(param, swapData);
     }
 
@@ -140,9 +134,8 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
      * @param swapData Data for paraswap swap
      * @dev swapData found in bytes struct in {PSwapLib}
      */
-    function _deposit(OpenPosParam calldata param, bytes calldata swapData) internal {
+    function _deposit(OpenPosParam calldata param, bytes calldata swapData) internal returns(uint256) {
         Strategy memory strategy = _strategies[param.strategyId];
-        address wrapper = strategy.vault;
 
         /// 1. Deposit isolated collaterals on Blueberry Money Market
         _doLend(param.collToken, param.collAmount);
@@ -151,7 +144,7 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
         _doBorrow(param.borrowToken, param.borrowAmount);
 
         /// 3. Swap borrowed token to strategy token
-        IERC20Upgradeable swapToken = IWERC4626(wrapper).getUnderlyingToken();
+        IERC20Upgradeable swapToken = IWERC4626(strategy.vault).getUnderlyingToken();
         uint256 swapTokenAmt = swapToken.balanceOf(address(this));
 
         address borrowToken = param.borrowToken;
@@ -167,6 +160,8 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
 
         /// 6. Validate Max Pos Size
         _validatePosSize(param.strategyId);
+
+        return swapTokenAmt;
     }
 
     /**
@@ -176,23 +171,23 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
      */
     function _withdraw(ClosePosParam calldata param, bytes calldata swapData) internal {
         Strategy memory strategy = _strategies[param.strategyId];
-        ISoftVault vault = ISoftVault(strategy.vault);
-        IBank bank = getBank();
+        IWERC4626 wrapper = IWERC4626(strategy.vault);
 
+        IBank bank = getBank();
+        IBank.Position memory pos = bank.getCurrentPositionInfo();
         uint256 positionId = bank.POSITION_ID();
 
-        /// 1. Calculate actual amount to remove
-        uint256 amountPosRemove = param.amountPosRemove;
-        if (amountPosRemove == type(uint256).max) {
-            amountPosRemove = vault.balanceOf(address(this));
-        }
 
-        /// 2. Withdraw from softvault
-        uint256 swapAmount = vault.withdraw(amountPosRemove);
+        /// 1. Take out collateral
+        uint256 burnAmount = bank.takeCollateral(param.amountPosRemove);
+
+        /// 2. Withdraw from wrapper
+        uint256 swapAmount = IWERC4626(wrapper).burn(pos.collId, burnAmount);
+
 
         /// 3. Swap strategy token to isolated collateral token
         {
-            IERC20Upgradeable uToken = ISoftVault(strategy.vault).getUnderlyingToken();
+            IERC20Upgradeable uToken = wrapper.getUnderlyingToken();
             uint256 balanceBefore = uToken.balanceOf(address(this));
 
             if (!PSwapLib.swap(_augustusSwapper, _tokenTransferProxy, address(uToken), swapAmount, swapData))

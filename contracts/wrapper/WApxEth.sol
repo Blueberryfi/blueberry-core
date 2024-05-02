@@ -79,16 +79,6 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         _apxETH = IApxEth(apxETH);
     }
 
-    // @inheritdoc IWERC4626
-    function decodeId(uint256 tokenId) public pure returns (address) {
-        return address(uint160(tokenId));
-    }
-
-    // @inheritdoc IWERC4626
-    function encodeId(address token) public pure returns (uint256) {
-        return uint256(uint160(token));
-    }
-
     /// @inheritdoc IWERC4626
     function mint(uint256 amount) external nonReentrant returns (uint256) {
         IApxEth apxETH = getApxETH();
@@ -98,7 +88,8 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         IERC20(pxETH).universalApprove(address(apxETH), amount);
         apxETH.deposit(amount, address(this));
 
-        uint256 id = encodeId(apxETH.asset());
+        uint256 rewardPerToken = apxETH.rewardPerToken();
+        uint256 id = encodeId(rewardPerToken);
 
         _mint(msg.sender, id, amount, "");
 
@@ -108,8 +99,11 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
     }
 
     /// @inheritdoc IWERC4626
-    function burn(uint256 amount) external nonReentrant returns (uint256) {
-        uint256 id = encodeId(address(getUnderlyingToken()));
+    function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
+        uint256 prevRewardPerToken = decodeId(id);
+        uint256 rewards = pendingRewards(id, prevRewardPerToken, amount);
+        amount += rewards;
+
         _burn(msg.sender, id, amount);
 
         IApxEth apxETH = getApxETH();
@@ -127,9 +121,21 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         return reward;
     }
 
+    /// @notice IWERC4626
+    function pendingRewards(
+        uint256 tokenId,
+        uint256 preRewardPerToken,
+        uint256 amount
+    ) public view returns (uint256 rewards) {
+        IApxEth apxETH = getApxETH();
+        uint256 currRewardPerToken = apxETH.rewardPerToken();
+        uint256 share = currRewardPerToken > preRewardPerToken ? currRewardPerToken - preRewardPerToken : 0;
+        rewards = (share * amount) / (10 ** apxETH.decimals());
+    }
+
     /// @inheritdoc IWERC4626
     function balanceOf(address account) external view returns (uint256) {
-        return balanceOf(account, encodeId(getApxETH().asset()));
+        return 0;//balanceOf(account, encodeId(getApxETH().asset()));
     }
 
     /// @inheritdoc IWERC4626
@@ -143,5 +149,15 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
      */
     function getApxETH() public view returns (IApxEth) {
         return _apxETH;
+    }
+
+    // @inheritdoc IWERC4626
+    function decodeId(uint256 rewardId) public pure returns (uint256) {
+        return rewardId;
+    }
+
+    // @inheritdoc IWERC4626
+    function encodeId(uint256 rewardPerToken) public pure returns (uint256) {
+        return rewardPerToken;
     }
 }
