@@ -9,6 +9,7 @@
 */
 
 pragma solidity 0.8.22;
+import "hardhat/console.sol";
 
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
@@ -20,6 +21,7 @@ import { UsingBaseOracle } from "./UsingBaseOracle.sol";
 
 import { IApxEth } from "../interfaces/IApxETH.sol";
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
+import { IWERC4626 } from "../interfaces/IWERC4626.sol";
 
 /**
  * @title ERC4626Oracle
@@ -82,6 +84,7 @@ contract ERC4626Oracle is IBaseOracle, UsingBaseOracle {
             revert Errors.ORACLE_NOT_SUPPORT(token);
         }
         uint256 fixedPointOne = 10 ** (18 + tokenInfo.erc4626Decimals - tokenInfo.underlyingDecimals);
+        console.log("fp: ", fixedPointOne, _assetsPerShare(_APXETH, fixedPointOne));
 
         return
             (_base.getPrice(tokenInfo.underlyingToken) * _assetsPerShare(token, fixedPointOne)) /

@@ -3,7 +3,7 @@ import { BlueberryBank, WERC20, ERC20, ShortLongSpell, SoftVault } from '../../.
 import { ethers } from 'hardhat';
 import { ADDRESS } from '../../../../constant';
 import {
-  ShortLongProtocol,
+  ShortLongERC4626Protocol,
   evm_mine_blocks,
   fork,
   setupShortLongProtocol,
@@ -40,7 +40,7 @@ describe('ShortLong Spell Test test', () => {
   let werc20: WERC20;
   let spell: ShortLongSpell;
   let bank: BlueberryBank;
-  let protocol: ShortLongProtocol;
+  let protocol: ShortLongERC4626Protocol;
   let daiSoftVault: SoftVault;
   let linkSoftVault: SoftVault;
   let wbtcSoftVault: SoftVault;

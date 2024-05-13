@@ -11,6 +11,7 @@
 pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 /* solhint-enable max-line-length */
@@ -58,7 +59,7 @@ interface IWERC4626 is IERC1155Upgradeable {
 
     /**
      * @notice Get the underlying ERC20 token for this vault.
-     * @return An ERC20 interface of the underlying token.
+     * @return An ERC4626 interface of the underlying token.
      */
-    function getUnderlyingToken() external view returns (IERC20Upgradeable);
+    function getUnderlyingToken() external view returns (IERC4626);
 }

@@ -313,6 +313,17 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   );
   console.log('bWstETH deployed at: ', bWstETH.address);
 
+  const bApxETH = await deployBToken(
+    ADDRESS.apxETH,
+    comptroller.address,
+    IRM.address,
+    'Blueberry ApxETH',
+    'bApxETH',
+    8,
+    bTokenAdmin.address
+  );
+  console.log('bApxETH deployed at: ', bApxETH.address);
+
   // const bCrvStEth = await deployBToken(
   //   ADDRESS.CRV_STETH,
   //   comptroller.address,
@@ -370,6 +381,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
   await comptroller._supportMarket(bWETH.address, 0);
   await comptroller._supportMarket(bWBTC.address, 0);
   await comptroller._supportMarket(bWstETH.address, 0);
+  await comptroller._supportMarket(bApxETH.address, 0);
   //await comptroller._supportMarket(bCrvStEth.address, 0);
   // await comptroller._supportMarket(bCrvFrxEth.address, 0);
   // await comptroller._supportMarket(bCrvMim3Crv.address, 0);
@@ -390,6 +402,7 @@ export async function deployBTokens(admin: string, baseOracle: string) {
     bWETH,
     bWBTC,
     bWstETH,
+    bApxETH,
     // //bCrvStEth,
     // bCrvFrxEth,
     // bCrvMim3Crv,

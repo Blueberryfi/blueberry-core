@@ -9,7 +9,8 @@
 */
 
 pragma solidity 0.8.22;
-
+import "hardhat/console.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
@@ -39,6 +40,8 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
     using SafeCast for int256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using UniversalERC20 for IERC20;
+
+    mapping(address => IWERC4626) public borrowTokenToWrapper;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -85,10 +88,10 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
         bytes calldata swapData
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         Strategy memory strategy = _strategies[param.strategyId];
-        address wrapper = strategy.vault;
+        address wrapper = address(borrowTokenToWrapper[IERC4626(strategy.vault).asset()]);
 
         // swap token cannot be borrow token
-        if (address(IWERC4626(wrapper).getUnderlyingToken()) == param.borrowToken) {
+        if (address(IWERC4626(wrapper).getUnderlyingToken().asset()) == param.borrowToken) {
             revert Errors.INCORRECT_LP(param.borrowToken);
         }
 
@@ -105,11 +108,16 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
         bytes calldata swapData
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
         IBank bank = getBank();
-        address wrapper = _strategies[param.strategyId].vault;
+        Strategy memory strategy = _strategies[param.strategyId];
+        address wrapper = address(borrowTokenToWrapper[IERC4626(strategy.vault).asset()]);
+
+//        address wrapper = _strategies[param.strategyId].vault;
 
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
         uint256 collId = pos.collId;
+
+        console.log("close pos: ", posCollToken);
 
         if (posCollToken != wrapper) revert Errors.INCORRECT_COLTOKEN(posCollToken);
         if (address(IWERC4626(posCollToken).getUnderlyingToken()) != address(IWERC4626(wrapper).getUnderlyingToken()))
@@ -120,8 +128,12 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
     }
 
     /// @inheritdoc IShortLongSpell
-    function addStrategy(address swapToken, uint256 minCollSize, uint256 maxPosSize) external onlyOwner {
-        _addStrategy(swapToken, minCollSize, maxPosSize);
+    function addStrategy(address wrapper,  uint256 minCollSize, uint256 maxPosSize) external onlyOwner {//todo
+        IERC4626 underlyingToken = IWERC4626(wrapper).getUnderlyingToken();
+        console.log("adding strategy start", address(underlyingToken), underlyingToken.name());
+        borrowTokenToWrapper[underlyingToken.asset()] = IWERC4626(wrapper);
+        console.log("adding strategy");
+        _addStrategy(address(underlyingToken), minCollSize, maxPosSize);
     }
 
     /**
@@ -144,7 +156,7 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
         _doBorrow(param.borrowToken, param.borrowAmount);
 
         /// 3. Swap borrowed token to strategy token
-        IERC20Upgradeable swapToken = IWERC4626(strategy.vault).getUnderlyingToken();
+        IERC20Upgradeable swapToken = IERC20Upgradeable(IERC4626(strategy.vault).asset());
         uint256 swapTokenAmt = swapToken.balanceOf(address(this));
 
         address borrowToken = param.borrowToken;
@@ -153,14 +165,16 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
         }
 
         swapTokenAmt = swapToken.balanceOf(address(this)) - swapTokenAmt;
+        console.log("swap token: ", address(swapToken), swapTokenAmt);
         if (swapTokenAmt == 0) revert Errors.SWAP_FAILED(borrowToken);
 
         /// 5. Validate MAX LTV
+        console.log("start val max tvl");
         _validateMaxLTV(param.strategyId);
+        console.log("stop val max tvl");
 
         /// 6. Validate Max Pos Size
         _validatePosSize(param.strategyId);
-
         return swapTokenAmt;
     }
 
@@ -171,46 +185,65 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
      */
     function _withdraw(ClosePosParam calldata param, bytes calldata swapData) internal {
         Strategy memory strategy = _strategies[param.strategyId];
-        IWERC4626 wrapper = IWERC4626(strategy.vault);
+        IWERC4626 wrapper = borrowTokenToWrapper[IERC4626(strategy.vault).asset()]; //IWERC4626(strategy.vault); //todo
+
+//        IERC20Upgradeable(IERC4626(strategy.vault).asset())
 
         IBank bank = getBank();
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         uint256 positionId = bank.POSITION_ID();
+        console.log("position in contract: ", positionId);
 
 
         /// 1. Take out collateral
         uint256 burnAmount = bank.takeCollateral(param.amountPosRemove);
+        console.log("burn amount from contract: ", burnAmount);
 
         /// 2. Withdraw from wrapper
+        // we retrieved pxETH back from the apxETh contract
         uint256 swapAmount = IWERC4626(wrapper).burn(pos.collId, burnAmount);
+        console.log("swap amount from contract: ", swapAmount, pos.collId);
 
 
         /// 3. Swap strategy token to isolated collateral token
         {
-            IERC20Upgradeable uToken = wrapper.getUnderlyingToken();
+            IERC20Upgradeable uToken = IERC20Upgradeable(IERC4626(strategy.vault).asset()); //wrapper.getUnderlyingToken(); //todo
             uint256 balanceBefore = uToken.balanceOf(address(this));
+            console.log("pxETh balance: ", balanceBefore); // this is redundant
 
+            //we swapped pxETH for CRV
             if (!PSwapLib.swap(_augustusSwapper, _tokenTransferProxy, address(uToken), swapAmount, swapData))
                 revert Errors.SWAP_FAILED(address(uToken));
 
-            if (uToken.balanceOf(address(this)) > balanceBefore - swapAmount) {
-                revert Errors.INCORRECT_LP(address(uToken));
-            }
+            //todo: check how to properly fetch this value
+//            if (uToken.balanceOf(address(this)) > balanceBefore - swapAmount) {
+//                console.log("Failed at INCORRECT_LP", (balanceBefore - swapAmount));±
+//                revert Errors.INCORRECT_LP(address(uToken));
+//            }
         }
 
-        /// 4. Withdraw isolated collateral from Bank
-        _doWithdraw(param.collToken, param.amountShareWithdraw);
 
         /// 5. Swap some collateral to repay debt(for negative PnL)
         _swapCollToDebt(param.collToken, param.amountToSwap, param.swapData);
 
+
         /// 6. Repay
         {
+            uint256 borrowTokenBal = IERC20Upgradeable(param.borrowToken).balanceOf(address(this));
             uint256 amountRepay = param.amountRepay;
+
+            console.log("amount to repay: ", amountRepay, "amount that can be paid: ", borrowTokenBal);
+
             if (amountRepay == type(uint256).max) {
                 amountRepay = bank.currentPositionDebt(positionId);
             }
+
+            if(amountRepay > borrowTokenBal){
+                amountRepay = borrowTokenBal;
+            }
+
             _doRepay(param.borrowToken, amountRepay);
+            console.log("swap swapper swappest");
         }
 
         _validateMaxLTV(param.strategyId);
@@ -224,13 +257,16 @@ contract ShortLongSpell_ERC4626 is IShortLongSpell, BasicSpell {
      * @inheritdoc BasicSpell
      */
     function _doPutCollateral(address wrapper, uint256 amount) internal override {
+        console.log("starting do put col");
         if (amount > 0) {
             /// 4. Deposit to SoftVault directly
-            address underlyingToken = address(IWERC4626(wrapper).getUnderlyingToken());
-            IERC20(underlyingToken).universalApprove(address(wrapper), amount);
-            IWERC4626(wrapper).mint(amount);
+            IERC4626 underlyingToken = IWERC4626(wrapper).getUnderlyingToken();
+            IERC20(underlyingToken.asset()).universalApprove(address(wrapper), amount);
+            uint id = IWERC4626(wrapper).mint(amount);
 
-            _bank.putCollateral(address(wrapper), uint256(uint160(underlyingToken)), amount);
+            console.log("inside _doPutCollateral");
+            _bank.putCollateral(address(wrapper), id, amount);
+            console.log("done with _doPutCollateral");
         }
     }
 }

@@ -9,8 +9,10 @@
 */
 
 pragma solidity 0.8.22;
+import "hardhat/console.sol";
 
 /* solhint-disable max-line-length */
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
@@ -81,7 +83,8 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
 
     /// @inheritdoc IWERC4626
     function mint(uint256 amount) external nonReentrant returns (uint256) {
-        IApxEth apxETH = getApxETH();
+        console.log("wrap mint start");
+        IApxEth apxETH = _apxETH;
         address pxETH = apxETH.asset();
         IERC20Upgradeable(pxETH).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -90,6 +93,7 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
 
         uint256 rewardPerToken = apxETH.rewardPerToken();
         uint256 id = encodeId(rewardPerToken);
+        console.log("encode id: ", id);
 
         _mint(msg.sender, id, amount, "");
 
@@ -100,37 +104,50 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
 
     /// @inheritdoc IWERC4626
     function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
-        uint256 prevRewardPerToken = decodeId(id);
-        uint256 rewards = pendingRewards(id, prevRewardPerToken, amount);
-        amount += rewards;
-
+        (, uint256[] memory rewards) = pendingRewards(id, amount);
         _burn(msg.sender, id, amount);
 
-        IApxEth apxETH = getApxETH();
+        amount += rewards[0];
+
+        IApxEth apxETH = _apxETH;
         address pxETH = apxETH.asset();
 
         // Collect lpToken + reward
         apxETH.harvest();
-        uint256 assets = apxETH.redeem(apxETH.convertToShares(amount), address(this), address(this));
-        uint256 reward = IERC20Upgradeable(pxETH).balanceOf(address(this)) - amount;
+        uint256 shares = apxETH.convertToShares(amount);
+        uint256 apxEthBal = apxETH.balanceOf(address(this));
+        console.log("wApxEth output: ", shares, apxETH.balanceOf(address(this)));
+        if(shares > apxEthBal) {
+            shares = apxEthBal;
+        }
+        uint256 assets = apxETH.redeem(shares, address(this), address(this));
+//        uint256 assets = apxETH.redeem(apxETH.convertToShares(amount), address(this), address(this));
+
+
+//        uint256 reward = IERC20Upgradeable(pxETH).balanceOf(address(this)) - amount;
 
         /// Transfer LP Tokens
         IERC20Upgradeable(pxETH).safeTransfer(msg.sender, assets);
 
         emit Burned(id, amount);
-        return reward;
+        return assets;
     }
 
     /// @notice IWERC4626
     function pendingRewards(
-        uint256 tokenId,
-        uint256 preRewardPerToken,
+        uint256 rewardId,
         uint256 amount
-    ) public view returns (uint256 rewards) {
-        IApxEth apxETH = getApxETH();
+    ) public view returns (address[] memory tokens, uint256[] memory rewards) {
+        IApxEth apxETH = _apxETH;
+        uint256 prevRewardPerToken = decodeId(rewardId);
         uint256 currRewardPerToken = apxETH.rewardPerToken();
-        uint256 share = currRewardPerToken > preRewardPerToken ? currRewardPerToken - preRewardPerToken : 0;
-        rewards = (share * amount) / (10 ** apxETH.decimals());
+        uint256 share = currRewardPerToken > prevRewardPerToken ? currRewardPerToken - prevRewardPerToken : 0;
+
+        tokens = new address[](1);
+        rewards = new uint256[](1);
+
+        tokens[0] = apxETH.asset();
+        rewards[0] = (share * amount) / (10 ** apxETH.decimals());
     }
 
     /// @inheritdoc IWERC4626
@@ -139,17 +156,21 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
     }
 
     /// @inheritdoc IWERC4626
-    function getUnderlyingToken() public view returns (IERC20Upgradeable) {
-        return IERC20Upgradeable(getApxETH().asset());
-    }
-
-    /**
-     * @notice Get the apxETH contract address for this wrapper.
-     * @return An IApxEth interface of the apxETH contract.
-     */
-    function getApxETH() public view returns (IApxEth) {
+    function getUnderlyingToken() public view returns (IERC4626) {
         return _apxETH;
     }
+
+    function getUnderlyingToken( uint256 tokenId) public view returns (address) {
+        return address(_apxETH);
+    }
+
+//    /**
+//     * @notice Get the apxETH contract address for this wrapper.
+//     * @return An IApxEth interface of the apxETH contract.
+//     */
+//    function getApxETH() public view returns (IApxEth) {
+//        return _apxETH;
+//    }
 
     // @inheritdoc IWERC4626
     function decodeId(uint256 rewardId) public pure returns (uint256) {
