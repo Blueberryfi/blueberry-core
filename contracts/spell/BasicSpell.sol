@@ -268,9 +268,6 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
      */
     function _validateMaxLTV(uint256 strategyId) internal view {
         IBank bank = getBank();
-
-        console.log("inside val max tvl");
-
         uint256 positionId = bank.POSITION_ID();
         IBank.Position memory pos = bank.getPositionInfo(positionId);
         uint256 debtValue = bank.getDebtValue(positionId);
@@ -288,7 +285,6 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
     function _validatePosSize(uint256 strategyId) internal view {
         IBank bank = getBank();
         Strategy memory strategy = _strategies[strategyId];
-        console.log("val start");
         IBank.Position memory pos = bank.getCurrentPositionInfo();
 
         /// Get previous position size
@@ -301,7 +297,6 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
         uint256 addedPosSize;
         IERC20 lpToken = IERC20(strategy.vault);
         uint256 lpBalance = lpToken.balanceOf(address(this));
-        console.log("val cont");
         uint256 lpPrice = bank.getOracle().getPrice(address(lpToken));
 
         addedPosSize = (lpPrice * lpBalance) / 10 ** IERC20MetadataUpgradeable(address(lpToken)).decimals();
@@ -319,7 +314,6 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
         if (isolatedCollateralValue < strategy.minIsolatedCollateral) {
             revert Errors.BELOW_MIN_ISOLATED_COLLATERAL(strategyId);
         }
-        console.log("val stop: ", isolatedCollateralValue);
     }
 
     /**
@@ -439,7 +433,6 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
 
             IBank bank = getBank();
             IERC20(t).universalApprove(address(bank), amount);
-            console.log("executing doRepay");
             bank.repay(t, amount);
         }
     }

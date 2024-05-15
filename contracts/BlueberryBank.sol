@@ -275,7 +275,6 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
 
     /// @inheritdoc IBank
     function withdrawLend(address token, uint256 shareAmount) external override inExec poke(token) {
-        console.log("withdraw lend start");
         if (!isWithdrawLendAllowed()) revert Errors.WITHDRAW_LEND_NOT_ALLOWED();
         Position storage pos = _positions[_POSITION_ID];
         Bank memory bank = _banks[token];
@@ -342,13 +341,10 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
         uint256 amountCall
     ) external override inExec onlyWhitelistedERC1155(collToken) {
         Position storage pos = _positions[_POSITION_ID];
-        console.log("trying to put col 1");
         if (pos.collToken != collToken || pos.collId != collId) {
             if (!_oracle.isWrappedTokenSupported(collToken, collId)) {
                 revert Errors.ORACLE_NOT_SUPPORT_WTOKEN(collToken);
             }
-            console.log("trying to put col 2");
-
 
             if (pos.collateralSize > 0) revert Errors.DIFF_COL_EXIST(pos.collToken);
 
@@ -602,17 +598,13 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
             return 0;
         } else {
             if (pos.collToken == address(0)) revert Errors.BAD_COLLATERAL(positionId);
-            console.log("WOH");
             uint256 collValue = _oracle.getWrappedTokenValue(pos.collToken, pos.collId, pos.collateralSize);
 
-            console.log(pos.collId, pos.collToken);
             uint256 rewardsValue;
             (address[] memory tokens, uint256[] memory rewards) = IERC20Wrapper(pos.collToken).pendingRewards(
                 pos.collId,
                 pos.collateralSize
             );
-            console.log("WOH2");
-
 
             for (uint256 i; i < tokens.length; ++i) {
                 if (_oracle.isTokenSupported(tokens[i])) {
@@ -651,7 +643,6 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
         uint256 pv = getPositionValue(positionId);
         uint256 ov = getDebtValue(positionId);
         uint256 cv = getIsolatedCollateralValue(positionId);
-        console.log("params: ", ov, pv, cv);
 
         if (
             (cv == 0 && pv == 0 && ov == 0) || pv >= ov /// Closed position or Overcollateralized position
@@ -662,15 +653,11 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
             risk = Constants.DENOMINATOR;
         } else {
             risk = ((ov - pv) * Constants.DENOMINATOR) / cv;
-            console.log("risk: ", risk);
         }
     }
 
     /// @inheritdoc IBank
     function isLiquidatable(uint256 positionId) public view override returns (bool) {
-        console.log("postion risk: ", getPositionRisk(positionId));
-        console.log("under: ", _positions[1].underlyingToken, positionId);
-        console.log("liquidation thresh: ", _banks[_positions[positionId].underlyingToken].liqThreshold);
         return getPositionRisk(positionId) >= _banks[_positions[positionId].underlyingToken].liqThreshold;
     }
 
@@ -682,7 +669,6 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
      * @return Returns the actual repaid amount and the reduced debt share.
      */
     function _repay(uint256 positionId, address token, uint256 amountCall) internal returns (uint256, uint256) {
-        console.log("executing repay in bank");
         Bank storage bank = _banks[token];
         Position storage pos = _positions[positionId];
 
@@ -698,8 +684,6 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
         }
 
         amountCall = _doERC20TransferIn(token, amountCall);
-        console.log("all amounts correct so far");
-
         uint256 paid = _doRepay(token, amountCall);
 
         if (paid > oldDebt) revert Errors.REPAY_EXCEEDS_DEBT(paid, oldDebt); /// prevent share overflow attack
@@ -766,9 +750,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
      */
     function _doERC20TransferIn(address token, uint256 amountCall) internal returns (uint256) {
         uint256 balanceBefore = IERC20Upgradeable(token).balanceOf(address(this));
-        console.log("spell CRV balance: ", IERC20Upgradeable(token).balanceOf(msg.sender), amountCall);
         IERC20Upgradeable(token).safeTransferFrom(msg.sender, address(this), amountCall);
-        console.log("successfully transferred CRV to bank");
         uint256 balanceAfter = IERC20Upgradeable(token).balanceOf(address(this));
 
         return balanceAfter - balanceBefore;

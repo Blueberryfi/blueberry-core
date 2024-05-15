@@ -83,7 +83,6 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
 
     /// @inheritdoc IWERC4626
     function mint(uint256 amount) external nonReentrant returns (uint256) {
-        console.log("wrap mint start");
         IApxEth apxETH = _apxETH;
         address pxETH = apxETH.asset();
         IERC20Upgradeable(pxETH).safeTransferFrom(msg.sender, address(this), amount);
@@ -93,8 +92,6 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
 
         uint256 rewardPerToken = apxETH.rewardPerToken();
         uint256 id = encodeId(rewardPerToken);
-        console.log("encode id: ", id);
-
         _mint(msg.sender, id, amount, "");
 
         emit Minted(id, amount);
@@ -106,7 +103,6 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
     function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
         (, uint256[] memory rewards) = pendingRewards(id, amount);
         _burn(msg.sender, id, amount);
-
         amount += rewards[0];
 
         IApxEth apxETH = _apxETH;
@@ -116,15 +112,10 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         apxETH.harvest();
         uint256 shares = apxETH.convertToShares(amount);
         uint256 apxEthBal = apxETH.balanceOf(address(this));
-        console.log("wApxEth output: ", shares, apxETH.balanceOf(address(this)));
         if(shares > apxEthBal) {
             shares = apxEthBal;
         }
         uint256 assets = apxETH.redeem(shares, address(this), address(this));
-//        uint256 assets = apxETH.redeem(apxETH.convertToShares(amount), address(this), address(this));
-
-
-//        uint256 reward = IERC20Upgradeable(pxETH).balanceOf(address(this)) - amount;
 
         /// Transfer LP Tokens
         IERC20Upgradeable(pxETH).safeTransfer(msg.sender, assets);
@@ -163,14 +154,6 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
     function getUnderlyingToken( uint256 tokenId) public view returns (address) {
         return address(_apxETH);
     }
-
-//    /**
-//     * @notice Get the apxETH contract address for this wrapper.
-//     * @return An IApxEth interface of the apxETH contract.
-//     */
-//    function getApxETH() public view returns (IApxEth) {
-//        return _apxETH;
-//    }
 
     // @inheritdoc IWERC4626
     function decodeId(uint256 rewardId) public pure returns (uint256) {
