@@ -12,8 +12,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 /**
  * @dev Interface for querying historical data from a Pool that can be used as a Price Oracle.
@@ -25,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * Once the oracle is fully initialized, all queries are guaranteed to succeed as long as they require no data that
  * is not older than the largest safe query window.
  */
-interface IPriceOracle {
+interface IBalancerPriceOracle {
     // The three values that can be queried:
     //
     // - PAIR_PRICE: the price of the tokens in the Pool, expressed as the price of the second token in units of the
@@ -38,16 +37,19 @@ interface IPriceOracle {
     //   USDC in which BPT is worth $5 will be 5.0, despite the BPT having 18 decimals and USDC 6.
     //
     // - INVARIANT: the value of the Pool's invariant, which serves as a measure of its liquidity.
-    enum Variable { PAIR_PRICE, BPT_PRICE, INVARIANT }
+    enum Variable {
+        PAIR_PRICE,
+        BPT_PRICE,
+        INVARIANT
+    }
 
     /**
      * @dev Returns the time average weighted price corresponding to each of `queries`. Prices are represented as 18
      * decimal fixed point values.
      */
-    function getTimeWeightedAverage(OracleAverageQuery[] memory queries)
-        external
-        view
-        returns (uint256[] memory results);
+    function getTimeWeightedAverage(
+        OracleAverageQuery[] memory queries
+    ) external view returns (uint256[] memory results);
 
     /**
      * @dev Returns latest sample of `variable`. Prices are represented as 18 decimal fixed point values.
@@ -79,10 +81,9 @@ interface IPriceOracle {
     /**
      * @dev Returns the accumulators corresponding to each of `queries`.
      */
-    function getPastAccumulators(OracleAccumulatorQuery[] memory queries)
-        external
-        view
-        returns (int256[] memory results);
+    function getPastAccumulators(
+        OracleAccumulatorQuery[] memory queries
+    ) external view returns (int256[] memory results);
 
     /**
      * @dev Information for an Accumulator query.
