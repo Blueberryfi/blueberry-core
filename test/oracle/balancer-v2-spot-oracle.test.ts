@@ -1,4 +1,4 @@
-import chai, { assert } from 'chai';
+import chai, { assert, expect } from 'chai';
 import { ethers, upgrades } from 'hardhat';
 import { ADDRESS, CONTRACT_NAMES } from '../../constant';
 import { ChainlinkAdapterOracle, CoreOracle, BalancerV2SpotOracle } from '../../typechain-types';
@@ -12,13 +12,14 @@ const OneDay = 86400;
 
 describe('Balancer Spot Price TWAP Oracle', () => {
   let admin: SignerWithAddress;
+  let alice: SignerWithAddress;
   let balancerV2SpotOracle: BalancerV2SpotOracle;
   let coreOracle: CoreOracle;
   let chainlinkAdapterOracle: ChainlinkAdapterOracle;
 
   beforeEach(async () => {
     await fork(1, 19905622);
-    [admin] = await ethers.getSigners();
+    [admin, alice] = await ethers.getSigners();
 
     const ChainlinkAdapterOracle = await ethers.getContractFactory(CONTRACT_NAMES.ChainlinkAdapterOracle);
     chainlinkAdapterOracle = <ChainlinkAdapterOracle>await upgrades.deployProxy(
@@ -70,6 +71,12 @@ describe('Balancer Spot Price TWAP Oracle', () => {
         chainlinkAdapterOracle.address,
       ]
     );
+  });
+
+  it('Fails when non-admin tries to register a token', async () => {
+    await expect(
+      balancerV2SpotOracle.connect(alice).registerToken(ADDRESS.AURA, ADDRESS.BAL_AURA_WETH_WEIGHTED, 3600)
+    ).to.revertedWith('Ownable: caller is not the owner');
   });
 
   it('Verify Aura spot price using AURA/WETH 80/20 pool', async () => {

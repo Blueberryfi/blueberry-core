@@ -107,7 +107,7 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         return (spotPrice * _base.getPrice(tokenInfo.quoteToken)) / Constants.PRICE_PRECISION;
     }
 
-    function registerToken(address token, address pool, uint256 duration) external {
+    function registerToken(address token, address pool, uint256 duration) external onlyOwner {
         if (token == address(0) || pool == address(0)) {
             revert Errors.ZERO_ADDRESS();
         }
