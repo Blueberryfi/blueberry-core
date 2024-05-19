@@ -22,8 +22,8 @@ import { IBalancerVault } from "../interfaces/balancer-v2/IBalancerVault.sol";
 import { IBalancerPriceOracle } from "../interfaces/balancer-v2/IBalancerPriceOracle.sol";
 
 /**
- * @author BlueberryProtocol
  * @title BalancerV2 Spot Oracle
+ * @author BlueberryProtocol
  * @notice Oracle contract which provides price feeds of tokens from Balancer V2 WeightedPool2Tokens
  *         and Meta Stable Pools
  * @dev The Oracle contract is used soley for calculating the spot price of tokens that do not have
@@ -85,7 +85,8 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
 
     /**
      * @notice Calculates the Spot price for an
-     * @param token The
+     * @param token The address of the token to get the price of
+     * @return The price of the token in USD scaled by 1e18
      */
     function getPrice(address token) public view override returns (uint256) {
         TokenInfo memory tokenInfo = _tokenInfo[token];
@@ -107,6 +108,12 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         return (spotPrice * _base.getPrice(tokenInfo.quoteToken)) / Constants.PRICE_PRECISION;
     }
 
+    /**
+     * @notice Registers a token with the oracle
+     * @param token Address of the token to register
+     * @param pool Address of the Balancer Pool to derive the token price from
+     * @param duration The duration of the TWAP window (Recommend between 30 minutes to 1 hr)
+     */
     function registerToken(address token, address pool, uint256 duration) external onlyOwner {
         if (token == address(0) || pool == address(0)) {
             revert Errors.ZERO_ADDRESS();
