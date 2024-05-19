@@ -40,7 +40,8 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
      * @dev Struct to store token info related to Balancer Pools
      * @param Pool The address of the Balancer pool to derive the tokens spot price from
      * @param quoteToken The token paired against the asset whos price is being calculated
-     * @param twapDuration
+     * @param twapDuration The duration of the TWAP window (Recommend between 30 minutes to 1 hr)
+     * @param isTokenZero Boolean to determine if the token is the first or second token in the pool
      */
     struct TokenInfo {
         address pool;
