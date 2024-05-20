@@ -10,6 +10,8 @@
 
 pragma solidity 0.8.22;
 
+import { VaultReentrancyLib } from "../libraries/balancer-v2/VaultReentrancyLib.sol";
+
 import "../utils/BlueberryConst.sol" as Constants;
 import "../utils/BlueberryErrors.sol" as Errors;
 
@@ -80,6 +82,16 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
     mapping(address => TokenInfo) private _tokenInfo;
 
     /*//////////////////////////////////////////////////////////////////////////
+                                      MODIFIERS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    // Protects the oracle from being manipulated via read-only reentrancy
+    modifier balancerNonReentrant() {
+        VaultReentrancyLib.ensureNotInVaultContext(_vault);
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -108,7 +120,7 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
      * @param token The address of the token to get the price of
      * @return The price of the token in USD scaled by 1e18
      */
-    function getPrice(address token) public view override returns (uint256) {
+    function getPrice(address token) public view override balancerNonReentrant returns (uint256) {
         TokenInfo memory tokenInfo = _tokenInfo[token];
 
         if (tokenInfo.pool == address(0)) {
