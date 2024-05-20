@@ -79,11 +79,17 @@ describe('Balancer Spot Price TWAP Oracle', () => {
     ).to.revertedWith('Ownable: caller is not the owner');
   });
 
+  it('Reverts when trying to register a token with an invalid duration', async () => {
+    await expect(
+      balancerV2SpotOracle.connect(admin).registerToken(ADDRESS.AURA, ADDRESS.BAL_AURA_WETH_WEIGHTED, 3700)
+    ).to.revertedWithCustomError(balancerV2SpotOracle, 'VALUE_OUT_OF_RANGE');
+  });
+
   it('Verify Aura spot price using AURA/WETH 80/20 pool', async () => {
     const pointEight = ethers.utils.parseEther('.8');
     const pointEightFive = ethers.utils.parseEther('.85');
 
-    await balancerV2SpotOracle.connect(admin).registerToken(ADDRESS.AURA, ADDRESS.BAL_AURA_WETH_WEIGHTED, 3600);
+    await balancerV2SpotOracle.connect(admin).registerToken(ADDRESS.AURA, ADDRESS.BAL_AURA_WETH_WEIGHTED, 1800);
 
     const price = await balancerV2SpotOracle.callStatic.getPrice(ADDRESS.AURA);
 

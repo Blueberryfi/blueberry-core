@@ -40,7 +40,7 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
      * @dev Struct to store token info related to Balancer Pools
      * @param Pool The address of the Balancer pool to derive the tokens spot price from
      * @param quoteToken The token paired against the asset whos price is being calculated
-     * @param twapDuration The duration of the TWAP window (Recommend between 30 minutes to 1 hr)
+     * @param twapDuration The duration of the TWAP window (Recommend between 5-30 min)
      * @param isTokenZero Boolean to determine if the token is the first or second token in the pool
      */
     struct TokenInfo {
@@ -49,6 +49,25 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
         uint16 twapDuration;
         bool isTokenZero;
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                      Events
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Emitted when a token is registered with the oracle
+     * @param token The address of the token to register
+     * @param pool The address of the Balancer pool to derive the tokens spot price from
+     * @param duration The duration of the TWAP window
+     */
+    event TokenRegistered(address indexed token, address indexed pool, uint256 duration);
+
+    /**
+     * @notice Emitted when the TWAP duration for a token is updated
+     * @param token The address of the token to update
+     * @param duration The duration of the TWAP window
+     */
+    event TokenTwapDurationUpdated(address indexed token, uint256 duration);
 
     /*//////////////////////////////////////////////////////////////////////////
                                       Storage
@@ -113,7 +132,7 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
      * @notice Registers a token with the oracle
      * @param token Address of the token to register
      * @param pool Address of the Balancer Pool to derive the token price from
-     * @param duration The duration of the TWAP window (Recommend between 30 minutes to 1 hr)
+     * @param duration The duration of the TWAP window (Recommend between 5-30 min)
      */
     function registerToken(address token, address pool, uint256 duration) external onlyOwner {
         if (token == address(0) || pool == address(0)) {
@@ -124,7 +143,7 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
             revert Errors.TOKEN_BPT_ALREADY_REGISTERED(token, pool);
         }
 
-        if (duration > type(uint16).max) {
+        if (duration < 5 minutes || duration > 30 minutes) {
             revert Errors.VALUE_OUT_OF_RANGE();
         }
 
@@ -140,5 +159,22 @@ contract BalancerV2SpotOracle is IBaseOracle, UsingBaseOracle, BaseAdapter {
 
         uint256 price = getPrice(token);
         if (price == 0) revert Errors.PRICE_FAILED(token);
+
+        emit TokenRegistered(token, pool, duration);
+    }
+
+    /**
+     * @notice Update twap duration for a token
+     * @param token Address of the token to update
+     * @param duration The duration of the TWAP window (Recommend between 5-30 min)
+     */
+    function updateTwapDuration(address token, uint256 duration) external onlyOwner {
+        if (duration < 5 minutes || duration > 30 minutes) {
+            revert Errors.VALUE_OUT_OF_RANGE();
+        }
+
+        _tokenInfo[token].twapDuration = uint16(duration);
+
+        emit TokenTwapDurationUpdated(token, duration);
     }
 }
