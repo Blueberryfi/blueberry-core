@@ -9,7 +9,6 @@
 */
 
 pragma solidity 0.8.22;
-import "hardhat/console.sol";
 
 /* solhint-disable max-line-length */
 import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
@@ -27,9 +26,8 @@ import "../utils/BlueberryErrors.sol" as Errors;
 
 import { BBMath } from "../libraries/BBMath.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
-import { IWApxETH } from "../interfaces/IWApxETH.sol";
+import { IWERC4626 } from "../interfaces/IWERC4626.sol";
 import { IApxEth } from "../interfaces/IApxETH.sol";
-import "../interfaces/IWERC4626.sol";
 
 /**
  * @title WApxEth
@@ -49,10 +47,10 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
     //////////////////////////////////////////////////////////////////////////*/
 
     /// @dev apxETH contract address
-    IApxEth private _apxETH;
+    address private _apxETH;
 
     /// @dev pxETH contract address
-    IERC20 private _pxETH;
+    address private _pxETH;
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONSTRUCTOR
@@ -80,13 +78,14 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         __ReentrancyGuard_init();
         __ERC1155_init("wApxETH");
 
-        _apxETH = IApxEth(apxETH);
+        _apxETH = apxETH;
+        _pxETH = IERC4626(apxETH).asset();
     }
 
     /// @inheritdoc IWERC4626
     function mint(uint256 amount) external nonReentrant returns (uint256) {
-        IApxEth apxETH = _apxETH;
-        address pxETH = apxETH.asset();
+        IApxEth apxETH = IApxEth(_apxETH);
+        address pxETH = _pxETH;
         IERC20Upgradeable(pxETH).safeTransferFrom(msg.sender, address(this), amount);
 
         IERC20(pxETH).universalApprove(address(apxETH), amount);
@@ -103,12 +102,12 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
 
     /// @inheritdoc IWERC4626
     function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
+        IApxEth apxETH = IApxEth(_apxETH);
+        address pxETH = _pxETH;
+
         (, uint256[] memory rewards) = pendingRewards(id, amount);
         _burn(msg.sender, id, amount);
         amount += rewards[0];
-
-        IApxEth apxETH = _apxETH;
-        address pxETH = apxETH.asset();
 
         // Collect lpToken + reward
         apxETH.harvest();
@@ -131,7 +130,7 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         uint256 rewardId,
         uint256 amount
     ) public view returns (address[] memory tokens, uint256[] memory rewards) {
-        IApxEth apxETH = _apxETH;
+        IApxEth apxETH = IApxEth(_apxETH);
         uint256 prevRewardPerToken = decodeId(rewardId);
         uint256 currRewardPerToken = apxETH.rewardPerToken();
         uint256 share = currRewardPerToken > prevRewardPerToken ? currRewardPerToken - prevRewardPerToken : 0;
@@ -144,13 +143,13 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
     }
 
     /// @inheritdoc IWERC4626
-    function getUnderlyingToken() public view returns (IERC4626) {
-        return _apxETH;
+    function getUnderlyingToken() external view override returns (IERC4626) {
+        return IERC4626(_apxETH);
     }
 
     /// @inheritdoc IWERC4626
     function getAsset() external view override returns (IERC20) {
-        return _pxETH;
+        return IERC20(_pxETH);
     }
 
     // @inheritdoc IWERC4626

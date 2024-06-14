@@ -71,7 +71,7 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
      */
     function initialize(
         IBank bank,
-        address werc20, // How is this used?
+        address werc20, // Irrelevent for this contract as multiple ERC4626 vaults can be used
         address weth,
         address augustusSwapper,
         address tokenTransferProxy,
@@ -105,11 +105,15 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         /// 2. Borrow specific amounts
         _doBorrow(param.borrowToken, param.borrowAmount);
 
-        /// 1-3 Swap to strategy underlying token, deposit it into its wrapper contract
-        _swapToAsset(param.strategyId, param.borrowToken, param.borrowAmount, vaultInfo.asset, swapData);
+        /// 3. Swap to strategy underlying token
+        _swapToAsset(param.borrowToken, vaultInfo.asset, param.borrowAmount, swapData);
 
         /// 4. Mint wrapper token
         _depositAndMint(vaultInfo, param.strategyId);
+
+        /// 5. Validate MAX LTV and POS Size
+        _validateMaxLTV(param.strategyId);
+        _validatePosSize(param.strategyId);
     }
 
     /// @inheritdoc IShortLongSpell
@@ -117,6 +121,7 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         ClosePosParam calldata param,
         bytes calldata swapData
     ) external existingStrategy(param.strategyId) existingCollateral(param.strategyId, param.collToken) {
+        /// 1. Get all necessary information for the position
         IBank bank = getBank();
         Strategy memory strategy = _strategies[param.strategyId];
         VaultInfo memory vaultInfo = vaultToVaultInfo[address(strategy.vault)];
@@ -125,25 +130,35 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         address posCollToken = pos.collToken;
 
         if (posCollToken != vaultInfo.wrapper) revert Errors.INCORRECT_COLTOKEN(posCollToken);
-        if (address(IWERC4626(posCollToken).getUnderlyingToken()) != vaultInfo.asset) {
+        if (address(IWERC4626(posCollToken).getUnderlyingToken()) != vaultInfo.wrapper) {
             revert Errors.INCORRECT_UNDERLYING(vaultInfo.wrapper);
         }
 
+        /// 2. Exit position in ERC4626 vault
         uint256 swapAmount = _exitPosition(vaultInfo.wrapper, pos.collId, param.amountPosRemove);
 
-        _swapToDebt(param, vaultInfo.asset, swapAmount, swapData);
+        /// 3. Swap strategy token to debt token
+        _swapToDebt(vaultInfo.asset, swapAmount, swapData);
 
+        /// 4. Withdraw Isolated Collateral from the bank
+        _doWithdraw(param.collToken, param.amountShareWithdraw);
+
+        /// 5. Swap isolated collateral to debt token
+        _swapCollToDebt(param.collToken, param.amountToSwap, swapData);
+
+        /// 6. Repay all debt
         _repayDebt(bank, param.borrowToken, param.amountRepay);
 
+        /// 7. Validate MAX LTV
         _validateMaxLTV(param.strategyId);
 
-        /// 7. Refund
+        /// 8. Send tokens to the user
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
     }
 
     /**
-     *
+     * @notice Adds a strategy to the spell
      * @param wrapper Address of the wrapper contract associated with the vault
      * @param minCollSize The minimum size of isolated collateral in USD scaled by 1e18
      * @param maxPosSize The maximum size of the position in USD scaled by 1e18
@@ -154,6 +169,11 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
 
         vaultToVaultInfo[address(erc4626Vault)] = VaultInfo({ wrapper: wrapper, asset: asset });
         _addStrategy(address(erc4626Vault), minCollSize, maxPosSize);
+    }
+
+    /// @inheritdoc BasicSpell
+    function getWrappedERC20() public view override returns (IWERC20) {
+        return IWERC20(address(0));
     }
 
     /**
@@ -168,49 +188,52 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         return IWERC4626(wrapper).burn(collId, burnAmount);
     }
 
-    function _swapToDebt(
-        ClosePosParam calldata param,
-        address asset,
-        uint256 swapAmount,
-        bytes calldata swapData
-    ) internal {
-        /// Swap to isolated collateral token
+    /**
+     * @notice Swaps strategy token to debt token
+     * @param asset Asset being swapped from
+     * @param swapAmount Amount of asset being swapped
+     * @param swapData Bytes data for the swap function to execute
+     */
+    function _swapToDebt(address asset, uint256 swapAmount, bytes calldata swapData) internal {
         IERC20Upgradeable uToken = IERC20Upgradeable(asset);
         uint256 balanceBefore = uToken.balanceOf(address(this));
 
-        // we swapped pxETH for CRV
         if (!PSwapLib.swap(_augustusSwapper, _tokenTransferProxy, address(uToken), swapAmount, swapData))
             revert Errors.SWAP_FAILED(address(uToken));
 
         if (uToken.balanceOf(address(this)) > balanceBefore - swapAmount) {
             revert Errors.INCORRECT_LP(address(uToken));
         }
-        /// 5. Swap some collateral to repay debt(for negative PnL)
-        _swapCollToDebt(param.collToken, param.amountToSwap, swapData);
     }
 
+    /**
+     * @notice Repays the debt of the position
+     * @param bank The Blueberry Bank
+     * @param borrowToken Address of the token being borrowed
+     * @param amountRepay Amount of the debt needing to be repaid
+     */
     function _repayDebt(IBank bank, address borrowToken, uint256 amountRepay) internal {
-        uint256 borrowTokenBal = IERC20Upgradeable(borrowToken).balanceOf(address(this));
-
         if (amountRepay == type(uint256).max) {
             amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
-        }
-
-        if (amountRepay > borrowTokenBal) {
-            amountRepay = borrowTokenBal;
         }
 
         _doRepay(borrowToken, amountRepay);
     }
 
+    /**
+     * @notice Swap borrowed token from the money market into the asset we are depositing into the ERC4626 vault
+     * @param borrowToken Address of the token being borrowed from the money market
+     * @param asset Address of the asset being deposited into the money market (Swapping for this token)
+     * @param borrowAmount The amount of the borrow token to swap
+     * @param swapData Bytes data for the swap function to execute
+     */
     function _swapToAsset(
-        uint256 strategyId,
         address borrowToken,
-        uint256 borrowAmount,
         address asset,
+        uint256 borrowAmount,
         bytes calldata swapData
     ) internal returns (uint256) {
-        /// 3. Swap borrowed token to strategy token
+        /// Swap borrowed token to strategy token
         IERC20Upgradeable swapToken = IERC20Upgradeable(asset);
         uint256 swapTokenAmt = swapToken.balanceOf(address(this));
 
@@ -221,14 +244,14 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         swapTokenAmt = swapToken.balanceOf(address(this)) - swapTokenAmt;
         if (swapTokenAmt == 0) revert Errors.SWAP_FAILED(borrowToken);
 
-        /// 5. Validate MAX LTV
-        _validateMaxLTV(strategyId);
-
-        /// 6. Validate Max Pos Size
-        _validatePosSize(strategyId);
         return swapTokenAmt;
     }
 
+    /**
+     * @notice Deposit the asset into the ERC4626 and wrap the position
+     * @param vaultInfo Information about the ERC4626 Vault
+     * @param amount The amount of asset to deposit
+     */
     function _depositAndMint(VaultInfo memory vaultInfo, uint256 amount) internal {
         IWERC4626 wrapper = IWERC4626(vaultInfo.wrapper);
         IERC20(vaultInfo.asset).universalApprove(address(wrapper), amount);

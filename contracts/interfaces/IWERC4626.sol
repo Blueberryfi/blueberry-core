@@ -53,6 +53,18 @@ interface IWERC4626 is IERC1155Upgradeable {
     function getUnderlyingToken() external view returns (IERC4626);
 
     /**
+     * @notice Fetches pending rewards for a particular ERC-1155 token ID and given amount.
+     * @param id The ERC-1155 token ID for which the pending rewards are to be fetched.
+     * @param amount The amount for which pending rewards are to be calculated.
+     * @return tokens A list of addresses representing reward tokens.
+     * @return rewards A list of amounts corresponding to each reward token in the `tokens` list.
+     */
+    function pendingRewards(
+        uint256 id,
+        uint256 amount
+    ) external view returns (address[] memory tokens, uint256[] memory rewards);
+
+    /**
      * @notice Get the base asset of the vault.
      * @return The address of the base asset.
      */
