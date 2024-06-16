@@ -27,7 +27,7 @@ import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IWETH } from "../interfaces/IWETH.sol";
 import { IBasicSpell } from "../interfaces/spell/IBasicSpell.sol";
-import "hardhat/console.sol";
+
 /**
  * @title BasicSpell
  * @author BlueberryProtocol
@@ -429,10 +429,9 @@ abstract contract BasicSpell is IBasicSpell, ERC1155NaiveReceiver, Ownable2StepU
             } else {
                 t = token;
             }
-            
+
             IBank bank = getBank();
             IERC20(t).universalApprove(address(bank), amount);
-            console.log("approved");
             bank.repay(t, amount);
         }
     }

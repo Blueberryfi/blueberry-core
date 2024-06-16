@@ -11,9 +11,8 @@
 pragma solidity 0.8.22;
 
 /* solhint-disable max-line-length */
-import { IERC4626, IERC20 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { IERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
-import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 /* solhint-enable max-line-length */
 
 import { IERC20Wrapper } from "./IERC20Wrapper.sol";

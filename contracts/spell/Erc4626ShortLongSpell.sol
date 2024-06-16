@@ -24,9 +24,7 @@ import { BasicSpell } from "./BasicSpell.sol";
 import { IBank } from "../interfaces/IBank.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IWERC4626 } from "../interfaces/IWERC4626.sol";
-import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IErc4626ShortLongSpell, IShortLongSpell } from "../interfaces/spell/IErc4626ShortLongSpell.sol";
-import "hardhat/console.sol";
 
 /**
  * @title ERC4626 Short/Long Spell
@@ -135,31 +133,28 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         if (address(IWERC4626(posCollToken).getUnderlyingToken(0)) != lpToken) {
             revert Errors.INCORRECT_UNDERLYING(vaultInfo.wrapper);
         }
-        console.log("pos.collId: %s", pos.collId);
+
         /// 2. Exit position in ERC4626 vault
         uint256 swapAmount = _exitPosition(vaultInfo.wrapper, pos.collId, param.amountPosRemove);
-        console.log("swapAmount: %s", swapAmount);
+
         /// 3. Swap strategy token to debt token
         _swapToDebt(vaultInfo.asset, swapAmount, swapData);
-        console.log("Swap to Debt Done");
+
         /// 4. Withdraw Isolated Collateral from the bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
-        console.log("Withdraw Collateral Done");
+
         /// 5. Swap isolated collateral to debt token
         _swapCollToDebt(param.collToken, param.amountToSwap, swapData);
-        console.log("Swap collateral to debt");
-        console.log("pxETH balance: %s", IERC20Upgradeable(vaultInfo.asset).balanceOf(address(this)));
-        console.log("borrowToken balance: %s", IERC20Upgradeable(param.borrowToken).balanceOf(address(this)));
+
         /// 6. Repay all debt
         _repayDebt(bank, param.borrowToken, param.amountRepay);
-        console.log("Repay Debt Done");
+
         /// 7. Validate MAX LTV
         _validateMaxLTV(param.strategyId);
-        console.log("Validate Max LTV Done");
+
         /// 8. Send tokens to the user
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
-        console.log("Refund Done");
     }
 
     /**
@@ -214,10 +209,15 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
      * @param amountRepay Amount of the debt needing to be repaid
      */
     function _repayDebt(IBank bank, address borrowToken, uint256 amountRepay) internal {
+        uint256 borrowTokenBal = IERC20Upgradeable(borrowToken).balanceOf(address(this));
         if (amountRepay == type(uint256).max) {
             amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
         }
-        console.log("amountRepay: %s", amountRepay);
+
+        if (amountRepay > borrowTokenBal) {
+            amountRepay = borrowTokenBal;
+        }
+
         _doRepay(borrowToken, amountRepay);
     }
 

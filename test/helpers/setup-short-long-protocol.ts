@@ -335,9 +335,13 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   );
 
   const ERC4626OracleFactory = await ethers.getContractFactory(CONTRACT_NAMES.ERC4626Oracle);
-  const erc4626Oracle = <ERC4626Oracle>await upgrades.deployProxy(ERC4626OracleFactory, [mockOracle.address, admin.address], {
-    unsafeAllow: ['delegatecall'],
-  });
+  const erc4626Oracle = <ERC4626Oracle>await upgrades.deployProxy(
+    ERC4626OracleFactory,
+    [mockOracle.address, admin.address],
+    {
+      unsafeAllow: ['delegatecall'],
+    }
+  );
   await erc4626Oracle.deployed();
 
   await erc4626Oracle.registerToken(ApxETH);
@@ -387,7 +391,9 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await werc20.deployed();
 
   const WApxEth = await ethers.getContractFactory(CONTRACT_NAMES.WApxEth);
-  wapxETH = <WApxEth>await upgrades.deployProxy(WApxEth, [apxETH.address, admin.address], { unsafeAllow: ['delegatecall'] });
+  wapxETH = <WApxEth>(
+    await upgrades.deployProxy(WApxEth, [apxETH.address, admin.address], { unsafeAllow: ['delegatecall'] })
+  );
   await wapxETH.deployed();
 
   // Deploy CRV spell
@@ -561,8 +567,8 @@ export const setupShortLongProtocol = async (): Promise<ShortLongProtocol> => {
   await comptroller._setCreditLimit(bank.address, bWETH.address, CREDIT_LIMIT);
 
   await weth.approve(wethSoftVault.address, ethers.constants.MaxUint256);
-  await weth.transfer(alice.address, utils.parseUnits("20", 18));
-  await wethSoftVault.deposit(utils.parseUnits("100", 18));
+  await weth.transfer(alice.address, utils.parseUnits('20', 18));
+  await wethSoftVault.deposit(utils.parseUnits('100', 18));
 
   await usdc.approve(usdcSoftVault.address, ethers.constants.MaxUint256);
   await usdc.transfer(alice.address, utils.parseUnits(strategyDepositInUsd, 6));

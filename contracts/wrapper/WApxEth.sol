@@ -15,7 +15,6 @@ import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { ERC1155Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import { IERC20MetadataUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 /* solhint-enable max-line-length */
@@ -28,7 +27,6 @@ import { BBMath } from "../libraries/BBMath.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IWERC4626 } from "../interfaces/IWERC4626.sol";
 import { IApxEth } from "../interfaces/IApxETH.sol";
-import "hardhat/console.sol";
 
 /**
  * @title WApxEth
@@ -93,7 +91,7 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         apxETH.deposit(amount, address(this));
 
         uint256 rewardPerToken = apxETH.rewardPerToken();
-        console.log("rewardPerToken: %s", rewardPerToken);
+
         id = encodeId(rewardPerToken);
         _mint(msg.sender, id, amount, "");
 
@@ -115,7 +113,7 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
             shares = apxEthBal;
         }
         assetsReceived = apxETH.redeem(shares, address(this), address(this));
-        console.log("assetsReceived: %s", assetsReceived);
+
         /// Transfer LP Tokens
         IERC20Upgradeable(pxETH).safeTransfer(msg.sender, assetsReceived);
 

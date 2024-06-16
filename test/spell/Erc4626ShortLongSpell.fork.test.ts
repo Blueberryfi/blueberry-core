@@ -1,16 +1,8 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import {
-  BlueberryBank,
-  MockOracle,
-  WERC20,
-  ERC20,
-  SoftVault,
-  WApxEth,
-  Erc4626ShortLongSpell,
-} from '../../typechain-types';
+import { BlueberryBank, MockOracle, ERC20, Erc4626ShortLongSpell } from '../../typechain-types';
 import { ethers } from 'hardhat';
 import { ADDRESS } from '../../constant';
-import { ShortLongProtocol, evm_increaseTime, evm_mine_blocks, fork, setupShortLongProtocol } from '../helpers';
+import { ShortLongProtocol, evm_mine_blocks, fork, setupShortLongProtocol } from '../helpers';
 import SpellABI from '../../abi/contracts/spell/Erc4626ShortLongSpell.sol/Erc4626ShortLongSpell.json';
 import chai, { expect } from 'chai';
 import { near } from '../assertions/near';
@@ -42,7 +34,7 @@ describe('Erc4626ShortLong Spell mainnet fork', () => {
   let protocol: ShortLongProtocol;
 
   before(async () => {
-    await fork(1);
+    await fork(1, 20092566);
 
     [admin, alice, treasury] = await ethers.getSigners();
     usdc = <ERC20>await ethers.getContractAt('ERC20', USDC);
@@ -50,11 +42,6 @@ describe('Erc4626ShortLong Spell mainnet fork', () => {
 
     protocol = await setupShortLongProtocol();
 
-    console.log('admin balance usdc', (await usdc.balanceOf(admin.address)).toString());
-    console.log('admin balance weth', (await weth.balanceOf(admin.address)).toString());
-
-    console.log('alice balance usdc', (await usdc.balanceOf(alice.address)).toString());
-    console.log('alice balance weth', (await weth.balanceOf(alice.address)).toString());
     bank = protocol.bank;
     spell = protocol.erc4626ShortLongSpell;
     wApxEth = protocol.wapxETH;
@@ -213,10 +200,10 @@ describe('Erc4626ShortLong Spell mainnet fork', () => {
     const positionId = (await bank.getNextPositionId()).sub(1);
     const position = await bank.getPositionInfo(positionId);
     const debtAmount = await bank.callStatic.currentPositionDebt(positionId);
-    console.log('debtAmount', debtAmount.toString());
+
     const burnAmount = position.collateralSize.div(2);
 
-    const beforeTreasuryBalance = await usdc.balanceOf(treasury.address);
+    const beforeTreasuryBalance = await weth.balanceOf(treasury.address);
     const beforeUSDCBalance = await usdc.balanceOf(admin.address);
     const beforeWETHBalance = await weth.balanceOf(admin.address);
 
@@ -232,7 +219,7 @@ describe('Erc4626ShortLong Spell mainnet fork', () => {
     await ethers.provider.send('evm_mine', []);
 
     const swapAmount = await wApxEth.connect(bank.address).callStatic.burn(position.collId, burnAmount);
-    console.log('swapAmount', swapAmount.toString());
+
     const swapData = await getParaswapCalldata(ADDRESS.pxETH, WETH, swapAmount, spell.address, 100);
 
     await ethers.provider.send('evm_revert', [snapshotId]);
@@ -264,15 +251,13 @@ describe('Erc4626ShortLong Spell mainnet fork', () => {
 
     // expect(afterWETHBalance.sub(beforeWETHBalance)).to.be.gte(depositAmount.sub(depositFee).sub(withdrawFee));
 
-    const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
+    const afterTreasuryBalance = await weth.balanceOf(treasury.address);
     // Plus rewards fee
     // expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(withdrawFee.div(2));
   });
 
   it('should be able to close position', async () => {
-    console.log('timestamp', (await ethers.provider.getBlock('latest')).timestamp);
     await evm_mine_blocks(100000);
-    console.log('timestamp', (await ethers.provider.getBlock('latest')).timestamp);
     const iface = new ethers.utils.Interface(SpellABI);
     const positionId = (await bank.getNextPositionId()).sub(1);
     const position = await bank.getPositionInfo(positionId);
@@ -325,10 +310,10 @@ describe('Erc4626ShortLong Spell mainnet fork', () => {
     const depositFee = depositAmount.mul(50).div(10000);
     const withdrawFee = depositAmount.sub(depositFee).mul(50).div(10000);
 
-    // expect(afterWETHBalance.sub(beforeWETHBalance)).to.be.gte(depositAmount.sub(depositFee).sub(withdrawFee));
+    expect(afterWETHBalance.sub(beforeWETHBalance)).to.be.gte(depositAmount.sub(depositFee).sub(withdrawFee));
 
     const afterTreasuryBalance = await usdc.balanceOf(treasury.address);
     // Plus rewards fee
-    // expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(withdrawFee.div(2));
+    expect(afterTreasuryBalance.sub(beforeTreasuryBalance)).to.be.gte(withdrawFee.div(2));
   });
 });

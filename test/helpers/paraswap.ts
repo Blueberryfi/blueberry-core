@@ -19,7 +19,6 @@ export const getParaswapCalldata = async (
   userAddr: string,
   maxImpact?: number
 ) => {
-
   const srcToken = <ERC20>await ethers.getContractAt('ERC20', fromToken);
   const destToken = <ERC20>await ethers.getContractAt('ERC20', toToken);
 
