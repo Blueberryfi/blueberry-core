@@ -19,9 +19,15 @@ export const getParaswapCalldata = async (
   userAddr: string,
   maxImpact?: number
 ) => {
+
+  const srcToken = <ERC20>await ethers.getContractAt('ERC20', fromToken);
+  const destToken = <ERC20>await ethers.getContractAt('ERC20', toToken);
+
   const priceRoute = await paraswapSdk.swap.getRate({
     srcToken: fromToken,
+    srcDecimals: await srcToken.decimals(),
     destToken: toToken,
+    destDecimals: await destToken.decimals(),
     amount: amount.toString(),
     options: {
       includeDEXS: ['SushiSwap', 'BalancerV1', 'BalancerV2', 'Curve', 'UniswapV3', 'CurveV2', 'CurveV3'],

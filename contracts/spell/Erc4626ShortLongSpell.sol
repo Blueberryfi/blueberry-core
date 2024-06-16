@@ -26,6 +26,7 @@ import { IWERC20 } from "../interfaces/IWERC20.sol";
 import { IWERC4626 } from "../interfaces/IWERC4626.sol";
 import { ISoftVault } from "../interfaces/ISoftVault.sol";
 import { IErc4626ShortLongSpell, IShortLongSpell } from "../interfaces/spell/IErc4626ShortLongSpell.sol";
+import "hardhat/console.sol";
 
 /**
  * @title ERC4626 Short/Long Spell
@@ -106,10 +107,10 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         _doBorrow(param.borrowToken, param.borrowAmount);
 
         /// 3. Swap to strategy underlying token
-        _swapToAsset(param.borrowToken, vaultInfo.asset, param.borrowAmount, swapData);
+        uint256 amount = _swapToAsset(param.borrowToken, vaultInfo.asset, param.borrowAmount, swapData);
 
         /// 4. Mint wrapper token
-        _depositAndMint(vaultInfo, param.strategyId);
+        _depositAndMint(vaultInfo, amount);
 
         /// 5. Validate MAX LTV and POS Size
         _validateMaxLTV(param.strategyId);
@@ -129,32 +130,36 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         IBank.Position memory pos = bank.getCurrentPositionInfo();
         address posCollToken = pos.collToken;
 
+        address lpToken = strategy.vault;
         if (posCollToken != vaultInfo.wrapper) revert Errors.INCORRECT_COLTOKEN(posCollToken);
-        if (address(IWERC4626(posCollToken).getUnderlyingToken()) != vaultInfo.wrapper) {
+        if (address(IWERC4626(posCollToken).getUnderlyingToken(0)) != lpToken) {
             revert Errors.INCORRECT_UNDERLYING(vaultInfo.wrapper);
         }
-
+        console.log("pos.collId: %s", pos.collId);
         /// 2. Exit position in ERC4626 vault
         uint256 swapAmount = _exitPosition(vaultInfo.wrapper, pos.collId, param.amountPosRemove);
-
+        console.log("swapAmount: %s", swapAmount);
         /// 3. Swap strategy token to debt token
         _swapToDebt(vaultInfo.asset, swapAmount, swapData);
-
+        console.log("Swap to Debt Done");
         /// 4. Withdraw Isolated Collateral from the bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
-
+        console.log("Withdraw Collateral Done");
         /// 5. Swap isolated collateral to debt token
         _swapCollToDebt(param.collToken, param.amountToSwap, swapData);
-
+        console.log("Swap collateral to debt");
+        console.log("pxETH balance: %s", IERC20Upgradeable(vaultInfo.asset).balanceOf(address(this)));
+        console.log("borrowToken balance: %s", IERC20Upgradeable(param.borrowToken).balanceOf(address(this)));
         /// 6. Repay all debt
         _repayDebt(bank, param.borrowToken, param.amountRepay);
-
+        console.log("Repay Debt Done");
         /// 7. Validate MAX LTV
         _validateMaxLTV(param.strategyId);
-
+        console.log("Validate Max LTV Done");
         /// 8. Send tokens to the user
         _doRefund(param.borrowToken);
         _doRefund(param.collToken);
+        console.log("Refund Done");
     }
 
     /**
@@ -164,16 +169,12 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
      * @param maxPosSize The maximum size of the position in USD scaled by 1e18
      */
     function addStrategy(address wrapper, uint256 minCollSize, uint256 maxPosSize) external onlyOwner {
-        IERC4626 erc4626Vault = IWERC4626(wrapper).getUnderlyingToken();
+        IERC4626 erc4626Vault = IERC4626(IWERC4626(wrapper).getUnderlyingToken(0));
         address asset = erc4626Vault.asset();
 
         vaultToVaultInfo[address(erc4626Vault)] = VaultInfo({ wrapper: wrapper, asset: asset });
         _addStrategy(address(erc4626Vault), minCollSize, maxPosSize);
-    }
-
-    /// @inheritdoc BasicSpell
-    function getWrappedERC20() public view override returns (IWERC20) {
-        return IWERC20(address(0));
+        IWERC20(wrapper).setApprovalForAll(address(_bank), true);
     }
 
     /**
@@ -216,7 +217,7 @@ contract Erc4626ShortLongSpell is IErc4626ShortLongSpell, BasicSpell {
         if (amountRepay == type(uint256).max) {
             amountRepay = bank.currentPositionDebt(bank.POSITION_ID());
         }
-
+        console.log("amountRepay: %s", amountRepay);
         _doRepay(borrowToken, amountRepay);
     }
 

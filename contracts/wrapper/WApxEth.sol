@@ -28,6 +28,7 @@ import { BBMath } from "../libraries/BBMath.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
 import { IWERC4626 } from "../interfaces/IWERC4626.sol";
 import { IApxEth } from "../interfaces/IApxETH.sol";
+import "hardhat/console.sol";
 
 /**
  * @title WApxEth
@@ -83,7 +84,7 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
     }
 
     /// @inheritdoc IWERC4626
-    function mint(uint256 amount) external nonReentrant returns (uint256) {
+    function mint(uint256 amount) external override nonReentrant returns (uint256 id) {
         IApxEth apxETH = IApxEth(_apxETH);
         address pxETH = _pxETH;
         IERC20Upgradeable(pxETH).safeTransferFrom(msg.sender, address(this), amount);
@@ -92,16 +93,15 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         apxETH.deposit(amount, address(this));
 
         uint256 rewardPerToken = apxETH.rewardPerToken();
-        uint256 id = encodeId(rewardPerToken);
+        console.log("rewardPerToken: %s", rewardPerToken);
+        id = encodeId(rewardPerToken);
         _mint(msg.sender, id, amount, "");
 
         emit Minted(id, amount);
-
-        return id;
     }
 
     /// @inheritdoc IWERC4626
-    function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256) {
+    function burn(uint256 id, uint256 amount) external nonReentrant returns (uint256 assetsReceived) {
         IApxEth apxETH = IApxEth(_apxETH);
         address pxETH = _pxETH;
 
@@ -109,20 +109,17 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         _burn(msg.sender, id, amount);
         amount += rewards[0];
 
-        // Collect lpToken + reward
-        apxETH.harvest();
         uint256 shares = apxETH.convertToShares(amount);
         uint256 apxEthBal = apxETH.balanceOf(address(this));
         if (shares > apxEthBal) {
             shares = apxEthBal;
         }
-        uint256 assets = apxETH.redeem(shares, address(this), address(this));
-
+        assetsReceived = apxETH.redeem(shares, address(this), address(this));
+        console.log("assetsReceived: %s", assetsReceived);
         /// Transfer LP Tokens
-        IERC20Upgradeable(pxETH).safeTransfer(msg.sender, assets);
+        IERC20Upgradeable(pxETH).safeTransfer(msg.sender, assetsReceived);
 
         emit Burned(id, amount);
-        return assets;
     }
 
     /// @notice IWERC4626
@@ -142,9 +139,9 @@ contract WApxEth is IWERC4626, ERC1155Upgradeable, ReentrancyGuardUpgradeable, O
         rewards[0] = (share * amount) / (10 ** apxETH.decimals());
     }
 
-    /// @inheritdoc IWERC4626
-    function getUnderlyingToken() external view override returns (IERC4626) {
-        return IERC4626(_apxETH);
+    /// @inheritdoc IERC20Wrapper
+    function getUnderlyingToken(uint256 /*tokenId*/) external view override returns (address) {
+        return _apxETH;
     }
 
     /// @inheritdoc IWERC4626

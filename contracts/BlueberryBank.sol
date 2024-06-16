@@ -30,7 +30,7 @@ import { IFeeManager } from "./interfaces/IFeeManager.sol";
 import { IHardVault } from "./interfaces/IHardVault.sol";
 import { IProtocolConfig } from "./interfaces/IProtocolConfig.sol";
 import { ISoftVault } from "./interfaces/ISoftVault.sol";
-
+import "hardhat/console.sol";
 /**
  * @title BlueberryBank
  * @author BlueberryProtocol
@@ -330,6 +330,7 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
     /// @inheritdoc IBank
     function repay(address token, uint256 amountCall) external override inExec poke(token) onlyWhitelistedToken(token) {
         if (!isRepayAllowed()) revert Errors.REPAY_NOT_ALLOWED();
+        console.log("Repaying");
         (uint256 amount, uint256 share) = _repay(_POSITION_ID, token, amountCall);
         emit Repay(_POSITION_ID, msg.sender, token, amount, share);
     }
@@ -682,8 +683,10 @@ contract BlueberryBank is IBank, Ownable2StepUpgradeable, ERC1155NaiveReceiver {
         if (amountCall > oldDebt) {
             amountCall = oldDebt;
         }
-
+        console.log("Amount to repay: %s", amountCall);
         amountCall = _doERC20TransferIn(token, amountCall);
+        console.log("transfered amount: %s", amountCall);
+        console.log('balance before repay: %s', IERC20(token).balanceOf(address(this)));
         uint256 paid = _doRepay(token, amountCall);
 
         if (paid > oldDebt) revert Errors.REPAY_EXCEEDS_DEBT(paid, oldDebt); /// prevent share overflow attack

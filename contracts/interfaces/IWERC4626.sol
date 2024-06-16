@@ -24,7 +24,7 @@ import "./IApxETH.sol";
  * @author BlueberryProtocol
  * @notice This is the interface for the WApxEth contract
  */
-interface IWERC4626 is IERC1155Upgradeable {
+interface IWERC4626 is IERC20Wrapper, IERC1155Upgradeable {
     /// @notice Emitted when a user stakes liquidity provider tokens and a new ERC1155 token is minted.
     event Minted(uint256 indexed id, uint256 amount);
 
@@ -44,25 +44,7 @@ interface IWERC4626 is IERC1155Upgradeable {
      * @param amount The amount of ERC1155 tokens to burn.
      * @return rewardAmount Returns the amount of rewards claimed.
      */
-    function burn(uint256 id, uint256 amount) external returns (uint256);
-
-    /**
-     * @notice Get the underlying ERC4626 token for this vault.
-     * @return An ERC4626 interface of the underlying token.
-     */
-    function getUnderlyingToken() external view returns (IERC4626);
-
-    /**
-     * @notice Fetches pending rewards for a particular ERC-1155 token ID and given amount.
-     * @param id The ERC-1155 token ID for which the pending rewards are to be fetched.
-     * @param amount The amount for which pending rewards are to be calculated.
-     * @return tokens A list of addresses representing reward tokens.
-     * @return rewards A list of amounts corresponding to each reward token in the `tokens` list.
-     */
-    function pendingRewards(
-        uint256 id,
-        uint256 amount
-    ) external view returns (address[] memory tokens, uint256[] memory rewards);
+    function burn(uint256 id, uint256 amount) external returns (uint256 rewardAmount);
 
     /**
      * @notice Get the base asset of the vault.
