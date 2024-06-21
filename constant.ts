@@ -77,6 +77,7 @@ export enum CONTRACT_NAMES {
   SoftVaultOracle = 'SoftVaultOracle',
   ERC4626Oracle = 'ERC4626Oracle',
   PendlePtOracle = "PendlePtOracle",
+  PendleSpell = "PendleSpell",
 }
 
 export const ADDRESS_GOERLI = {
@@ -340,6 +341,7 @@ export const ADDRESS = {
   ICHI_VAULT_ETH_WBTC: '0xD1007271D6F8681d34D26EA88EE4B3BDc0D95513',
 
   // Pendle
+  PENDLE_ROUTER: '0x888888888889758F76e7103c6CbF23ABbF58F946',
   PENDLE_PY_YT_LP_ORACLE: '0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2',
   PENDLE_EZETH_PT: '0x248241244356d18f63d0c16082996839ecb0c7bf',
   PENDLE_EZETH_MARKET: '0xcdbd5ff3e03b6828db9c32e2131a60aba5137901',
