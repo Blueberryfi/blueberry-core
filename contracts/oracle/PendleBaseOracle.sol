@@ -70,7 +70,14 @@ abstract contract PendleBaseOracle is IBaseOracle, UsingBaseOracle {
         uint256 initializedTimestamp = _initializeOracle(market, twapDuration);
 
         (IStandardizedYield sy, IPPrincipalToken pt, ) = IPMarket(market).readTokens();
-        address asset = sy.yieldToken();
+
+        // Some markets have the asset as address(0) due to its ibToken not appreciating in value.
+        // In this case, we will use the yield token as the asset
+        (, address asset, ) = sy.assetInfo();
+        if (asset == address(0)) {
+            asset = sy.yieldToken();
+        }
+
         address token = isPt ? address(pt) : market;
 
         _markets[token] = MarketInfo({
@@ -97,7 +104,6 @@ abstract contract PendleBaseOracle is IBaseOracle, UsingBaseOracle {
 
         (bool increaseCardinalityRequired, uint16 cardinalityRequired, bool oldestObservationSatisfied) = _pendleOracle
             .getOracleState(market, duration);
-
         // Here we initialize the oracle if it is not already initialized. Data will be processed once the twap duration has passed
         if (increaseCardinalityRequired) {
             IPMarket(market).increaseObservationsCardinalityNext(cardinalityRequired);

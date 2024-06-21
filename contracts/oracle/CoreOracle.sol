@@ -21,7 +21,7 @@ import "../utils/BlueberryErrors.sol" as Errors;
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
 import { ICoreOracle } from "../interfaces/ICoreOracle.sol";
 import { IERC20Wrapper } from "../interfaces/IERC20Wrapper.sol";
-
+import "hardhat/console.sol";
 /**
  * @title CoreOracle
  * @notice This oracle contract provides reliable price feeds to the Bank contract.
@@ -128,7 +128,7 @@ contract CoreOracle is ICoreOracle, Ownable2StepUpgradeable, PausableUpgradeable
     function _getPrice(address token) internal view whenNotPaused returns (uint256) {
         address route = _routes[token];
         if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
-
+        console.log("token: %s", token);
         uint256 px = IBaseOracle(route).getPrice(token);
         if (px == 0) revert Errors.PRICE_FAILED(token);
 

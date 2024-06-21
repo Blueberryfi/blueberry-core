@@ -59,7 +59,7 @@ contract PendlePtOracle is PendleBaseOracle {
 
         if (marketInfo.isSyTradeable) {
             uint256 priceInSy = IPMarket(marketInfo.market).getPtToSyRate(marketInfo.duration);
-            return (priceInSy * _base.getPrice(marketInfo.sy)) / Constants.PRICE_PRECISION;
+            return (priceInSy * _base.getPrice(marketInfo.asset)) / Constants.PRICE_PRECISION;
         } else {
             uint256 priceInAsset = IPMarket(marketInfo.market).getPtToAssetRate(marketInfo.duration);
             return (priceInAsset * _base.getPrice(marketInfo.asset)) / Constants.PRICE_PRECISION;
