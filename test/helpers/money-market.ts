@@ -241,17 +241,6 @@ export async function deployBTokens(admin: string) {
   );
   console.log('bOHM deployed at: ', bOHM.address);
 
-  const bSUSHI = await deployBToken(
-    ADDRESS.SUSHI,
-    comptroller.address,
-    IRM.address, // IRM.address,
-    'Blueberry SUSHI',
-    'bSUSHI',
-    8,
-    bTokenAdmin.address
-  );
-  console.log('bSUSHI deployed at: ', bSUSHI.address);
-
   const bBAL = await deployBToken(
     ADDRESS.BAL,
     comptroller.address,
@@ -328,7 +317,6 @@ export async function deployBTokens(admin: string) {
   await comptroller._supportMarket(bMIM.address, 0);
   await comptroller._supportMarket(bLINK.address, 0);
   await comptroller._supportMarket(bOHM.address, 0);
-  await comptroller._supportMarket(bSUSHI.address, 0);
   await comptroller._supportMarket(bBAL.address, 0);
   //await comptroller._supportMarket(bALCX.address, 0);
   await comptroller._supportMarket(bWETH.address, 0);
@@ -343,9 +331,7 @@ export async function deployBTokens(admin: string) {
       bMIM.address,
       bLINK.address,
       bOHM.address,
-      // bSUSHI.address,
       bBAL.address,
-      //bALCX.address,
       bWETH.address,
       bWBTC.address,
       bWstETH.address,
@@ -357,9 +343,7 @@ export async function deployBTokens(admin: string) {
       ADDRESS.CHAINLINK_MIM_USD_FEED,
       ADDRESS.CHAINLINK_LINK_USD_FEED,
       ADDRESS.CHAINLINK_OHM_ETH_FEED,
-      // ADDRESS.CHAINLINK_SUSHI_USD_FEED,
       ADDRESS.CHAINLINK_BAL_USD_FEED,
-      //ADDRESS.CHAINLINK_ALCX_USD_FEED,
       ADDRESS.CHAINLINK_ETH_USD_FEED,
       ADDRESS.CHAINLINK_BTC_USD_FEED,
       ADDRESS.CHAINLINK_STETH_USD_FEED,
@@ -378,9 +362,7 @@ export async function deployBTokens(admin: string) {
     bMIM,
     bLINK,
     bOHM,
-    // bSUSHI,
     bBAL,
-    //bALCX,
     bWETH,
     bWBTC,
     bWstETH,

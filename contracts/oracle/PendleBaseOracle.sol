@@ -104,6 +104,7 @@ abstract contract PendleBaseOracle is IBaseOracle, UsingBaseOracle {
 
         (bool increaseCardinalityRequired, uint16 cardinalityRequired, bool oldestObservationSatisfied) = _pendleOracle
             .getOracleState(market, duration);
+
         // Here we initialize the oracle if it is not already initialized. Data will be processed once the twap duration has passed
         if (increaseCardinalityRequired) {
             IPMarket(market).increaseObservationsCardinalityNext(cardinalityRequired);

@@ -21,10 +21,9 @@ interface IPendleSpell is IBasicSpell {
     /**
      * @notice Swaps the debt token to a Pendle PT token
      * @param param Configuration for opening a position.
-     * @param minimumPt The minimum amount of PT tokens to receive from the swap.
      * @param data Data required for swapping the debt token to the PT token.
      */
-    function openPosition(OpenPosParam calldata param, uint256 minimumPt, bytes memory data) external;
+    function openPosition(OpenPosParam calldata param, bytes memory data) external;
 
     /**
      * @notice Swaps the debt token to a Pendle PT token
