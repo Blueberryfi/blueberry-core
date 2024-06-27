@@ -78,6 +78,7 @@ export enum CONTRACT_NAMES {
   ERC4626Oracle = 'ERC4626Oracle',
   PendlePtOracle = 'PendlePtOracle',
   PendleSpell = 'PendleSpell',
+  BalancerV2SpotOracle = 'BalancerV2SpotOracle',
 }
 
 export const ADDRESS_GOERLI = {
@@ -315,6 +316,7 @@ export const ADDRESS = {
   BAL_GHO_3POOL: '0xbE19d87Ea6cd5b05bBC34B564291c371dAe96747',
   BAL_WETH_3POOL: '0x08775ccb6674d6bDCeB0797C364C2653ED84F384',
   BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+  BAL_AURA_WETH_WEIGHTED: '0xc29562b045D80fD77c69Bec09541F5c16fe20d9d',
 
   // Wrapper
   SUSHI_MASTERCHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
