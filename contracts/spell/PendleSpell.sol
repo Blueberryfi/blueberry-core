@@ -13,7 +13,6 @@ pragma solidity 0.8.22;
 import { SafeERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import { PSwapLib } from "../libraries/Paraswap/PSwapLib.sol";
 import { UniversalERC20, IERC20 } from "../libraries/UniversalERC20.sol";
 
 import "../utils/BlueberryErrors.sol" as Errors;
@@ -22,7 +21,7 @@ import { BasicSpell } from "./BasicSpell.sol";
 
 import { IBank } from "../interfaces/IBank.sol";
 import { IWERC20 } from "../interfaces/IWERC20.sol";
-import { IPMarket, IPPrincipalToken, IPYieldToken, IStandardizedYield } from "@pendle/core-v2/contracts/interfaces/IPMarket.sol";
+import { IPMarket, IPYieldToken } from "@pendle/core-v2/contracts/interfaces/IPMarket.sol";
 import { IPendleRouter } from "../interfaces/pendle-v2/IPendleRouter.sol";
 import { ApproxParams, TokenInput, TokenOutput, LimitOrderData } from "../interfaces/pendle-v2/IPendleRouter.sol";
 
@@ -112,7 +111,7 @@ contract PendleSpell is IPendleSpell, BasicSpell {
         _doBorrow(param.borrowToken, param.borrowAmount);
 
         // Approve borrowToken to PendleRouter
-        IERC20Upgradeable(param.borrowToken).safeApprove(address(_pendleRouter), param.borrowAmount);
+        IERC20Upgradeable(param.borrowToken).forceApprove(address(_pendleRouter), param.borrowAmount);
 
         /// 3. Swap borrowToken to PT
         (
@@ -185,16 +184,17 @@ contract PendleSpell is IPendleSpell, BasicSpell {
 
                 IPendleRouter(_pendleRouter).redeemPyToToken(address(this), address(yt), burnAmount, output);
             } else {
-                (, address actualMarket, , TokenOutput memory output, LimitOrderData memory limitOrder) = abi.decode(
+                (, address decodedMarket, , TokenOutput memory output, LimitOrderData memory limitOrder) = abi.decode(
                     data,
                     (address, address, uint256, TokenOutput, LimitOrderData)
                 );
 
-                if (actualMarket != market) revert Errors.INCORRECT_LP(actualMarket);
+                if (decodedMarket != market) revert Errors.INCORRECT_LP(decodedMarket);
 
                 IPendleRouter(_pendleRouter).swapExactPtForToken(address(this), market, burnAmount, output, limitOrder);
             }
         }
+
         /// 4. Withdraw isolated collateral from Bank
         _doWithdraw(param.collToken, param.amountShareWithdraw);
 

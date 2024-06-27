@@ -14,7 +14,6 @@ import { IPPtLpOracle } from "@pendle/core-v2/contracts/interfaces/IPPtLpOracle.
 import { IPMarket } from "@pendle/core-v2/contracts/interfaces/IPMarket.sol";
 import { PendleLpOracleLib } from "@pendle/core-v2/contracts/oracles/PendleLpOracleLib.sol";
 
-import "../utils/BlueberryErrors.sol" as Errors;
 import "../utils/BlueberryConst.sol" as Constants;
 
 import { PendleBaseOracle } from "./PendleBaseOracle.sol";
@@ -58,10 +57,10 @@ contract PendleLpOracle is PendleBaseOracle {
 
         if (marketInfo.isSyTradeable) {
             uint256 priceInSy = IPMarket(marketInfo.market).getLpToSyRate(marketInfo.duration);
-            return (priceInSy * _base.getPrice(marketInfo.sy)) / Constants.PRICE_PRECISION;
+            return (priceInSy * _base.getPrice(marketInfo.unitOfPrice)) / Constants.PRICE_PRECISION;
         } else {
             uint256 priceInAsset = IPMarket(marketInfo.market).getLpToAssetRate(marketInfo.duration);
-            return (priceInAsset * _base.getPrice(marketInfo.asset)) / Constants.PRICE_PRECISION;
+            return (priceInAsset * _base.getPrice(marketInfo.unitOfPrice)) / Constants.PRICE_PRECISION;
         }
     }
 }

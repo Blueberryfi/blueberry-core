@@ -2,6 +2,9 @@
 
 pragma solidity 0.8.22;
 
+/* solhint-disable func-param-name-mixedcase */
+/* solhint-disable var-name-mixedcase */
+
 import { ApproxParams } from "@pendle/core-v2/contracts/router/base/MarketApproxLib.sol";
 import { TokenInput, TokenOutput, LimitOrderData } from "@pendle/core-v2/contracts/interfaces/IPAllActionTypeV3.sol";
 

@@ -10,12 +10,10 @@
 
 pragma solidity 0.8.22;
 
-import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { IPPtLpOracle } from "@pendle/core-v2/contracts/interfaces/IPPtLpOracle.sol";
 import { IPMarket } from "@pendle/core-v2/contracts/interfaces/IPMarket.sol";
 import { PendlePtOracleLib } from "@pendle/core-v2/contracts/oracles/PendlePtOracleLib.sol";
 
-import "../utils/BlueberryErrors.sol" as Errors;
 import "../utils/BlueberryConst.sol" as Constants;
 
 import { PendleBaseOracle } from "./PendleBaseOracle.sol";
@@ -59,10 +57,10 @@ contract PendlePtOracle is PendleBaseOracle {
 
         if (marketInfo.isSyTradeable) {
             uint256 priceInSy = IPMarket(marketInfo.market).getPtToSyRate(marketInfo.duration);
-            return (priceInSy * _base.getPrice(marketInfo.asset)) / Constants.PRICE_PRECISION;
+            return (priceInSy * _base.getPrice(marketInfo.unitOfPrice)) / Constants.PRICE_PRECISION;
         } else {
             uint256 priceInAsset = IPMarket(marketInfo.market).getPtToAssetRate(marketInfo.duration);
-            return (priceInAsset * _base.getPrice(marketInfo.asset)) / Constants.PRICE_PRECISION;
+            return (priceInAsset * _base.getPrice(marketInfo.unitOfPrice)) / Constants.PRICE_PRECISION;
         }
     }
 }

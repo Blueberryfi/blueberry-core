@@ -82,7 +82,7 @@ describe('Pendle Pt Oracle', () => {
 
   it('Verify Price of rstETH PT', async () => {
     const ptToEzETH = ethers.utils.parseEther('.9711');
-    const ezETHPrice = ethers.utils.parseEther('3518'); 
+    const ezETHPrice = ethers.utils.parseEther('3518');
     const ptToUSDLowerBound = ptToEzETH.mul(ezETHPrice).div(ethers.utils.parseEther('1.05'));
     const ptToUSDUpperBound = ptToEzETH.mul(ezETHPrice).div(ethers.utils.parseEther('0.95'));
 
@@ -96,7 +96,7 @@ describe('Pendle Pt Oracle', () => {
 
   it('Verify Price of USDe PT', async () => {
     const ptToUsde = ethers.utils.parseEther('.9792');
-    const usdePrice = ethers.utils.parseEther('1'); 
+    const usdePrice = ethers.utils.parseEther('1');
     const ptToUSDLowerBound = ptToUsde.mul(usdePrice).div(ethers.utils.parseEther('1.05'));
     const ptToUSDUpperBound = ptToUsde.mul(usdePrice).div(ethers.utils.parseEther('0.95'));
 
@@ -110,7 +110,7 @@ describe('Pendle Pt Oracle', () => {
 
   it('Verify Price of aUSDC PT', async () => {
     const ptToUsde = ethers.utils.parseEther('0.9768');
-    const usdtPrice = ethers.utils.parseEther('1'); 
+    const usdtPrice = ethers.utils.parseEther('1');
     const ptToUSDLowerBound = ptToUsde.mul(usdtPrice).div(ethers.utils.parseEther('1.05'));
     const ptToUSDUpperBound = ptToUsde.mul(usdtPrice).div(ethers.utils.parseEther('0.95'));
 

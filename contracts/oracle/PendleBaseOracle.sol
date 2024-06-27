@@ -10,13 +10,14 @@
 
 pragma solidity 0.8.22;
 
+/* solhint-disable max-line-length */
 import { IPPtLpOracle } from "@pendle/core-v2/contracts/interfaces/IPPtLpOracle.sol";
 import { IPMarket } from "@pendle/core-v2/contracts/interfaces/IPMarket.sol";
 import { IStandardizedYield } from "@pendle/core-v2/contracts/interfaces/IStandardizedYield.sol";
 import { IPPrincipalToken } from "@pendle/core-v2/contracts/interfaces/IPPrincipalToken.sol";
+/* solhint-enable max-line-length */
 
 import "../utils/BlueberryErrors.sol" as Errors;
-import "../utils/BlueberryConst.sol" as Constants;
 
 import { UsingBaseOracle } from "./UsingBaseOracle.sol";
 import { IBaseOracle } from "../interfaces/IBaseOracle.sol";
@@ -33,15 +34,15 @@ abstract contract PendleBaseOracle is IBaseOracle, UsingBaseOracle {
     /**
      * @notice Struct to store information about a market
      * @param market The address of the Pendle market
+     * @param unitOfPrice The address of the asset that the market is priced on
      * @param duration The duration of the twap for the market oracle
-     * @param asset The address of the underlying asset of the token
      * @param initializedTimestamp The timestamp at which the oracle was initialized
      * @param isSyTradeable True if the markets sy token is tradeable, false otherwise
      */
     struct MarketInfo {
         address market;
+        address unitOfPrice;
         uint32 duration;
-        address asset;
         uint32 initializedTimestamp;
         address sy;
         bool isSyTradeable;
@@ -62,28 +63,28 @@ abstract contract PendleBaseOracle is IBaseOracle, UsingBaseOracle {
     /**
      *
      * @param market The address of the Pendle market
+     * @param unitOfPrice The address of the asset that the market is priced on
      * @param twapDuration The duration of the twap for the market oracle
      * @param isPt True if we a registering a market for a PT, false if we are registering a market for an LP
      * @param isSyTradeable True if the markets SY token is tradeable, false otherwise
      */
-    function registerMarket(address market, uint32 twapDuration, bool isPt, bool isSyTradeable) external onlyOwner {
+    function registerMarket(
+        address market,
+        address unitOfPrice,
+        uint32 twapDuration,
+        bool isPt,
+        bool isSyTradeable
+    ) external onlyOwner {
         uint256 initializedTimestamp = _initializeOracle(market, twapDuration);
 
         (IStandardizedYield sy, IPPrincipalToken pt, ) = IPMarket(market).readTokens();
-
-        // Some markets have the asset as address(0) due to its ibToken not appreciating in value.
-        // In this case, we will use the yield token as the asset
-        (, address asset, ) = sy.assetInfo();
-        if (asset == address(0)) {
-            asset = sy.yieldToken();
-        }
 
         address token = isPt ? address(pt) : market;
 
         _markets[token] = MarketInfo({
             market: market,
+            unitOfPrice: unitOfPrice,
             duration: twapDuration,
-            asset: asset,
             initializedTimestamp: uint32(initializedTimestamp),
             sy: address(sy),
             isSyTradeable: isSyTradeable
@@ -105,7 +106,8 @@ abstract contract PendleBaseOracle is IBaseOracle, UsingBaseOracle {
         (bool increaseCardinalityRequired, uint16 cardinalityRequired, bool oldestObservationSatisfied) = _pendleOracle
             .getOracleState(market, duration);
 
-        // Here we initialize the oracle if it is not already initialized. Data will be processed once the twap duration has passed
+        // Here we initialize the oracle if it is not already initialized.
+        // Data will be processed once the twap duration has passed.
         if (increaseCardinalityRequired) {
             IPMarket(market).increaseObservationsCardinalityNext(cardinalityRequired);
             return uint32(block.timestamp);
@@ -114,8 +116,9 @@ abstract contract PendleBaseOracle is IBaseOracle, UsingBaseOracle {
         if (!oldestObservationSatisfied) {
             return uint32(block.timestamp);
         }
-        // If the oracle is initialized we can return the block timestamp minus the duration as the initialized timestamp
-        //    since we will use that going forward to validate that the oracle is initialized
+        // If the oracle is initialized we can return the block timestamp minus the duration
+        // as the initialized timestamp since we will use that going forward to validate that
+        // the oracle is initialized
         return uint32(block.timestamp - duration);
     }
 }

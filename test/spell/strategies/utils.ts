@@ -202,7 +202,7 @@ export const setupVaults = async (
 ): Promise<Vaults> => {
   const [admin] = await ethers.getSigners();
   const bTokens = await deployBTokens(signer.address);
-  
+
   const HardVault = await ethers.getContractFactory(CONTRACT_NAMES.HardVault);
   const hardVault = <HardVault>await upgrades.deployProxy(HardVault, [config.address, admin.address], {
     unsafeAllow: ['delegatecall'],
@@ -218,7 +218,7 @@ export const setupVaults = async (
     if (key === 'comptroller') continue;
     if (key === 'bTokenAdmin') continue;
     const bToken = (bTokens as any)[key] as any as BErc20Delegator;
-    
+
     const softVault = <SoftVault>(
       await upgrades.deployProxy(
         SoftVault,

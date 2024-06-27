@@ -2,59 +2,58 @@ import { ethers, upgrades } from 'hardhat';
 import { utils } from 'ethers';
 import { WERC20, PendleSpell, PendlePtOracle } from '../../../../typechain-types';
 import { ADDRESS, CONTRACT_NAMES } from '../../../../constant';
-import { StrategyInfo, setupBasicBank } from '../utils';
-import { oracle } from '../../../../typechain-types/contracts';
+import { setupBasicBank } from '../utils';
 
 export type PendleStrategy = {
-    ptAddress: string;
-    market: string;
-    borrowAssets: string[];
-    collateralAssets: string[];
-    maxLtv: number;
-    maxStrategyBorrow: number;
-    isSyTradeable: boolean;
-    pricedAsset: string;
-    pricedAssetOracle: string;
-    isPricedInUSD: boolean;
-}
+  ptAddress: string;
+  market: string;
+  borrowAssets: string[];
+  collateralAssets: string[];
+  maxLtv: number;
+  maxStrategyBorrow: number;
+  isSyTradeable: boolean;
+  unitOfPrice: string;
+  unitOfPriceOracle: string;
+  isPricedInUSD: boolean;
+};
 
 export const strategies: PendleStrategy[] = [
   {
-    ptAddress: ADDRESS.PENDLE_AUSDT_PT,
-    market: ADDRESS.PENDLE_AUSDT_MARKET,
-    borrowAssets: [ADDRESS.USDC, ADDRESS.DAI],
-    collateralAssets: [ADDRESS.DAI, ADDRESS.USDC],
-    maxLtv: 2500,
-    maxStrategyBorrow: 5_000_000,
-    isSyTradeable: false,
-    pricedAsset: ADDRESS.USDT,
-    pricedAssetOracle: ADDRESS.CHAINLINK_USDT_USD_FEED,
-    isPricedInUSD: true,
-  },
-  {
-    ptAddress: ADDRESS.PENDLE_EZETH_PT,
-    market: ADDRESS.PENDLE_EZETH_MARKET,
+    ptAddress: ADDRESS.PENDLE_APXETH_PT,
+    market: ADDRESS.PENDLE_APXETH_MARKET,
     borrowAssets: [ADDRESS.WETH],
     collateralAssets: [ADDRESS.WETH],
     maxLtv: 2500,
     maxStrategyBorrow: 5_000_000,
     isSyTradeable: true,
-    pricedAsset: ADDRESS.ezETH,
-    pricedAssetOracle: ADDRESS.REDSTONE_EZETH_ETH_FEED,
+    unitOfPrice: ADDRESS.apxETH,
+    unitOfPriceOracle: ADDRESS.REDSTONE_APXETH_ETH_FEED,
     isPricedInUSD: false,
   },
   {
-    ptAddress: ADDRESS.PENDLE_USDE_PT,
-    market: ADDRESS.PENDLE_USDE_MARKET,
-    borrowAssets: [ADDRESS.USDC, ADDRESS.DAI],
-    collateralAssets: [ADDRESS.DAI, ADDRESS.USDC],
+    ptAddress: ADDRESS.PENDLE_SDAI_PT,
+    market: ADDRESS.PENDLE_SDAI_MARKET,
+    borrowAssets: [ADDRESS.USDC],
+    collateralAssets: [ADDRESS.USDC],
+    maxLtv: 2500,
+    maxStrategyBorrow: 5_000_000,
+    isSyTradeable: false,
+    unitOfPrice: ADDRESS.DAI,
+    unitOfPriceOracle: ADDRESS.CHAINLINK_DAI_USD_FEED,
+    isPricedInUSD: true,
+  },
+  {
+    ptAddress: ADDRESS.PENDLE_EETH_PT,
+    market: ADDRESS.PENDLE_EETH_MARKET,
+    borrowAssets: [ADDRESS.WETH],
+    collateralAssets: [ADDRESS.WETH],
     maxLtv: 2500,
     maxStrategyBorrow: 5_000_000,
     isSyTradeable: true,
-    pricedAsset: ADDRESS.USDe,
-    pricedAssetOracle: ADDRESS.REDSTONE_USDE_USD_FEED,
+    unitOfPrice: ADDRESS.WETH,
+    unitOfPriceOracle: ADDRESS.CHAINLINK_ETH_USD_FEED,
     isPricedInUSD: true,
-  }
+  },
 ];
 
 export const setupStrategy = async () => {
@@ -66,7 +65,7 @@ export const setupStrategy = async () => {
 
   const chainlinkAdapterOracleAddr = await protocol.oracle.getRoute(ADDRESS.USDC);
   const chainlinkAdapterOracle = await ethers.getContractAt('ChainlinkAdapterOracle', chainlinkAdapterOracleAddr);
-  
+
   const PendlePtOracle = await ethers.getContractFactory(CONTRACT_NAMES.PendlePtOracle);
   const pendlePtOracle = <PendlePtOracle>(
     await upgrades.deployProxy(
@@ -100,19 +99,27 @@ export const setupStrategy = async () => {
   for (let i = 0; i < strategies.length; i += 1) {
     const strategy = strategies[i];
 
-    await chainlinkAdapterOracle.setPriceFeeds([strategy.pricedAsset], [strategy.pricedAssetOracle]);
-    await chainlinkAdapterOracle.setTimeGap([strategy.pricedAsset], [86400]);
-    
+    await chainlinkAdapterOracle.setPriceFeeds([strategy.unitOfPrice], [strategy.unitOfPriceOracle]);
+    await chainlinkAdapterOracle.setTimeGap([strategy.unitOfPrice], [86400]);
+
     if (!strategy.isPricedInUSD) {
-      await chainlinkAdapterOracle.setEthDenominatedToken(strategy.pricedAsset, true);
+      await chainlinkAdapterOracle.setEthDenominatedToken(strategy.unitOfPrice, true);
     }
 
-    await protocol.oracle.setRoutes([strategy.pricedAsset], [chainlinkAdapterOracle.address]);
+    await protocol.oracle.setRoutes([strategy.unitOfPrice], [chainlinkAdapterOracle.address]);
 
-    await pendlePtOracle.registerMarket(strategy.market, 900, true, strategy.isSyTradeable);
-    await protocol.oracle.setRoutes([strategy.ptAddress, strategy.pricedAsset], [pendlePtOracle.address, chainlinkAdapterOracleAddr]);
+    await pendlePtOracle.registerMarket(strategy.market, strategy.unitOfPrice, 900, true, strategy.isSyTradeable);
+    await protocol.oracle.setRoutes(
+      [strategy.ptAddress, strategy.unitOfPrice],
+      [pendlePtOracle.address, chainlinkAdapterOracleAddr]
+    );
 
-    await pendleSpell.addStrategy(strategy.ptAddress, strategy.market,utils.parseUnits('100', 18), utils.parseUnits('2000000', 18));
+    await pendleSpell.addStrategy(
+      strategy.ptAddress,
+      strategy.market,
+      utils.parseUnits('100', 18),
+      utils.parseUnits('2000000', 18)
+    );
 
     await pendleSpell.setCollateralsMaxLTVs(
       i,
