@@ -134,7 +134,7 @@ contract PendleSpell is IPendleSpell, BasicSpell {
             limitOrder
         );
 
-        if (ptAmount != IERC20Upgradeable(pt).balanceOf(address(this))) revert Errors.SWAP_FAILED(pt);
+        if (ptAmount > IERC20Upgradeable(pt).balanceOf(address(this))) revert Errors.SWAP_FAILED(pt);
 
         /// 4. Validate MAX LTV
         _validateMaxLTV(param.strategyId);
