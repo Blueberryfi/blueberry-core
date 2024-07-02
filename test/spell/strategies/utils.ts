@@ -216,15 +216,16 @@ export const setupVaults = async (
 
   for (const key of Object.keys(bTokens)) {
     if (key === 'comptroller') continue;
-    if (key === 'extraBTokens') continue;
+    if (key === 'bTokenAdmin') continue;
     const bToken = (bTokens as any)[key] as any as BErc20Delegator;
+
     const softVault = <SoftVault>(
       await upgrades.deployProxy(
         SoftVault,
         [
           config.address,
           bToken.address,
-          `Interest Bearing ${(await bToken.name()).split(' ')[1]}`,
+          `Interest Bearing ${await bToken.symbol()}`,
           `i${await bToken.symbol()}`,
           admin.address,
         ],
@@ -235,6 +236,7 @@ export const setupVaults = async (
     softVaults.push(softVault);
     bTokenList.push(bToken);
 
+    await bTokens.bTokenAdmin._setSoftVault(bToken.address, softVault.address);
     await bTokens.comptroller._setCreditLimit(bank.address, bToken.address, utils.parseEther('3000000'));
 
     const underlyingToken = <ERC20>await ethers.getContractAt('ERC20', await bToken.underlying());
@@ -250,8 +252,7 @@ export const setupVaults = async (
     }
 
     await underlyingToken.connect(signer).approve(softVault.address, ethers.constants.MaxUint256);
-
-    await softVault.connect(signer).deposit(amount);
+    await softVault.deposit(amount);
   }
   return {
     hardVault,

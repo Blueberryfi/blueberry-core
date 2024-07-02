@@ -128,7 +128,6 @@ contract CoreOracle is ICoreOracle, Ownable2StepUpgradeable, PausableUpgradeable
     function _getPrice(address token) internal view whenNotPaused returns (uint256) {
         address route = _routes[token];
         if (route == address(0)) revert Errors.NO_ORACLE_ROUTE(token);
-
         uint256 px = IBaseOracle(route).getPrice(token);
         if (px == 0) revert Errors.PRICE_FAILED(token);
 
